@@ -1,0 +1,29 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/gui_esp32s3_simulator.dir/link.d"
+  "CMakeFiles/gui_esp32s3_simulator_autogen.dir/AutogenUsed.txt"
+  "CMakeFiles/gui_esp32s3_simulator_autogen.dir/ParseCache.txt"
+  "gui_esp32s3_simulator_autogen"
+  "CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o"
+  "CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o.d"
+  "CMakeFiles/gui_esp32s3_simulator.dir/gui_esp32s3_simulator_autogen/mocs_compilation.cpp.o"
+  "CMakeFiles/gui_esp32s3_simulator.dir/gui_esp32s3_simulator_autogen/mocs_compilation.cpp.o.d"
+  "CMakeFiles/gui_esp32s3_simulator.dir/src/ControlPanelWidget.cpp.o"
+  "CMakeFiles/gui_esp32s3_simulator.dir/src/ControlPanelWidget.cpp.o.d"
+  "CMakeFiles/gui_esp32s3_simulator.dir/src/CpuStatusWidget.cpp.o"
+  "CMakeFiles/gui_esp32s3_simulator.dir/src/CpuStatusWidget.cpp.o.d"
+  "CMakeFiles/gui_esp32s3_simulator.dir/src/DebugWidget.cpp.o"
+  "CMakeFiles/gui_esp32s3_simulator.dir/src/DebugWidget.cpp.o.d"
+  "CMakeFiles/gui_esp32s3_simulator.dir/src/MainWindow.cpp.o"
+  "CMakeFiles/gui_esp32s3_simulator.dir/src/MainWindow.cpp.o.d"
+  "CMakeFiles/gui_esp32s3_simulator.dir/src/SerialConsoleWidget.cpp.o"
+  "CMakeFiles/gui_esp32s3_simulator.dir/src/SerialConsoleWidget.cpp.o.d"
+  "CMakeFiles/gui_esp32s3_simulator.dir/src/main.cpp.o"
+  "CMakeFiles/gui_esp32s3_simulator.dir/src/main.cpp.o.d"
+  "gui_esp32s3_simulator"
+  "gui_esp32s3_simulator.pdb"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX)
+  include(CMakeFiles/gui_esp32s3_simulator.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

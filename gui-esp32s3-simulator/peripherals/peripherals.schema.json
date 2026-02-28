@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ESP32-S3 GUI Simulator Peripheral Hooks",
+  "type": "object",
+  "required": ["board", "devices"],
+  "properties": {
+    "board": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "target": { "type": "string", "default": "esp32s3" }
+      }
+    },
+    "devices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "bus", "simulator"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string" },
+          "bus": {
+            "type": "object",
+            "required": ["kind", "controller"],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["i2c", "spi", "uart", "gpio", "custom"]
+              },
+              "controller": { "type": "string" },
+              "address": { "type": "string" },
+              "chip_select": { "type": "integer" },
+              "pins": {
+                "type": "array",
+                "items": { "type": "integer" }
+              }
+            }
+          },
+          "simulator": {
+            "type": "object",
+            "required": ["exec"],
+            "properties": {
+              "exec": { "type": "string" },
+              "args": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "transport": {
+                "type": "string",
+                "enum": ["stdio", "tcp", "unix"],
+                "default": "stdio"
+              }
+            }
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    }
+  }
+}

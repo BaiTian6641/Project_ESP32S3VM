@@ -1,0 +1,41 @@
+{
+  "board": {
+    "name": "esp32s3-devkitc-1",
+    "target": "esp32s3"
+  },
+  "devices": [
+    {
+      "id": "screen0",
+      "type": "ssd1306",
+      "bus": {
+        "kind": "i2c",
+        "controller": "i2c0",
+        "address": "0x3c"
+      },
+      "simulator": {
+        "exec": "./device-sims/ssd1306_sim",
+        "args": ["--width", "128", "--height", "64"],
+        "transport": "stdio"
+      },
+      "properties": {
+        "rotation": 0
+      }
+    },
+    {
+      "id": "temp0",
+      "type": "tmp102",
+      "bus": {
+        "kind": "i2c",
+        "controller": "i2c0",
+        "address": "0x48"
+      },
+      "simulator": {
+        "exec": "./device-sims/tmp102_sim",
+        "transport": "stdio"
+      },
+      "properties": {
+        "initial_celsius": 25.0
+      }
+    }
+  ]
+}

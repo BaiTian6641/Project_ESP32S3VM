@@ -1,0 +1,2 @@
+set(__QT_DEPLOY_TARGET_gui_esp32s3_simulator_FILE /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator)
+set(__QT_DEPLOY_TARGET_gui_esp32s3_simulator_TYPE EXECUTABLE)
