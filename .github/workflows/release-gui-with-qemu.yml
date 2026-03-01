@@ -55,7 +55,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             git make ninja-build pkg-config python3 python3-pip \
-            libglib2.0-dev libpixman-1-dev zlib1g-dev
+            libglib2.0-dev libpixman-1-dev zlib1g-dev libgcrypt20-dev
 
       - name: Setup MSYS2 (Windows)
         if: runner.os == 'Windows'
@@ -70,6 +70,7 @@ jobs:
             mingw-w64-x86_64-glib2
             mingw-w64-x86_64-pixman
             mingw-w64-x86_64-zlib
+            mingw-w64-x86_64-libgcrypt
             mingw-w64-x86_64-python
             mingw-w64-x86_64-pkgconf
 
@@ -78,8 +79,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git clone --depth 1 "${{ env.QEMU_REPO }}" "${{ env.QEMU_DIR }}"
+          git clone --depth 1 --recurse-submodules --shallow-submodules "${{ env.QEMU_REPO }}" "${{ env.QEMU_DIR }}"
           cd "${{ env.QEMU_DIR }}"
+          git submodule update --init --recursive
           ./configure \
             --target-list=xtensa-softmmu \
             --disable-werror \
@@ -98,8 +100,9 @@ jobs:
         shell: msys2 {0}
         run: |
           set -euo pipefail
-          git clone --depth 1 "${{ env.QEMU_REPO }}" "${{ env.QEMU_DIR }}"
+          git clone --depth 1 --recurse-submodules --shallow-submodules "${{ env.QEMU_REPO }}" "${{ env.QEMU_DIR }}"
           cd "${{ env.QEMU_DIR }}"
+          git submodule update --init --recursive
           ./configure \
             --target-list=xtensa-softmmu \
             --disable-werror \
