@@ -149,8 +149,13 @@ jobs:
           git clone --depth 1 --recurse-submodules --shallow-submodules "${{ env.QEMU_REPO }}" "${{ env.QEMU_DIR }}"
           cd "${{ env.QEMU_DIR }}"
           git submodule update --init --recursive
+
+          # Meson runs on native Windows Python here, so use a native absolute prefix path.
+          MESON_PREFIX="$(cygpath -m "$PWD/install-root")"
+
           ./configure \
             --target-list=xtensa-softmmu \
+            --prefix="$MESON_PREFIX" \
             --disable-werror \
             --disable-docs \
             --disable-tools \
