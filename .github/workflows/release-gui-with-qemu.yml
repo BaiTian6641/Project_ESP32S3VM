@@ -89,6 +89,7 @@ jobs:
           pkg-config --modversion libgcrypt
           pkg-config --modversion slirp
           pkg-config --cflags slirp
+          pkg-config --libs slirp
 
       - name: Dependency preflight (Windows / MSYS2)
         if: runner.os == 'Windows'
@@ -102,6 +103,7 @@ jobs:
           pkg-config --modversion libgcrypt
           pkg-config --modversion slirp
           pkg-config --cflags slirp
+          pkg-config --libs slirp
 
       - name: Build ESP32S3 QEMU (Linux)
         if: runner.os == 'Linux'
@@ -117,14 +119,15 @@ jobs:
           cd "${{ env.QEMU_DIR }}"
           git submodule update --init --recursive
 
-          # Ensure libslirp include paths are available if this fork still enables slirp.
-          SLIRP_CFLAGS="$(pkg-config --cflags slirp || true)"
+          # This fork builds slirp.c; force-enable and link libslirp explicitly.
+          SLIRP_CFLAGS="$(pkg-config --cflags slirp)"
+          SLIRP_LIBS="$(pkg-config --libs slirp)"
 
           ./configure \
             --target-list=xtensa-softmmu \
             --disable-werror \
             --disable-xen \
-            --disable-slirp \
+            --enable-slirp \
             --disable-docs \
             --disable-tools \
             --disable-gtk \
@@ -133,15 +136,18 @@ jobs:
             --disable-opengl \
             --disable-guest-agent \
             --extra-cflags="$SLIRP_CFLAGS" \
-            -Dslirp=disabled \
+            --extra-ldflags="$SLIRP_LIBS" \
+            -Dslirp=enabled \
             -Dguest_agent=disabled || { cat build/meson-logs/meson-log.txt || true; exit 1; }
-          meson configure build -Dslirp=disabled -Dguest_agent=disabled
+          meson configure build -Dslirp=enabled -Dguest_agent=disabled
 
           if grep -q '^#define CONFIG_SLIRP' build/config-host.h; then
-            echo '[configure] slirp is enabled on Linux build (continuing)'
+            echo '[configure] slirp is enabled on Linux build'
             grep '^#define CONFIG_.*SLIRP' build/config-host.h || true
           else
-            echo '[configure] slirp is disabled on Linux build'
+            echo '[configure] slirp is NOT enabled on Linux build; forcing this build to fail early'
+            grep '^#define CONFIG_.*SLIRP' build/config-host.h || true
+            exit 1
           fi
           make -j"$(nproc)"
           test -x build/qemu-system-xtensa
@@ -174,15 +180,16 @@ jobs:
           # Meson runs on native Windows Python here, so use a native absolute prefix path.
           MESON_PREFIX="$(cygpath -m "$PWD/install-root")"
 
-          # Ensure libslirp include paths are available if this fork still enables slirp.
-          SLIRP_CFLAGS="$(pkg-config --cflags slirp || true)"
+          # This fork builds slirp.c; force-enable and link libslirp explicitly.
+          SLIRP_CFLAGS="$(pkg-config --cflags slirp)"
+          SLIRP_LIBS="$(pkg-config --libs slirp)"
 
           ./configure \
             --target-list=xtensa-softmmu \
             --prefix="$MESON_PREFIX" \
             --disable-werror \
             --disable-xen \
-            --disable-slirp \
+            --enable-slirp \
             --disable-docs \
             --disable-tools \
             --disable-gtk \
@@ -191,15 +198,18 @@ jobs:
             --disable-opengl \
             --disable-guest-agent \
             --extra-cflags="$SLIRP_CFLAGS" \
-            -Dslirp=disabled \
+            --extra-ldflags="$SLIRP_LIBS" \
+            -Dslirp=enabled \
             -Dguest_agent=disabled || { cat build/meson-logs/meson-log.txt || true; exit 1; }
-          meson configure build -Dslirp=disabled -Dguest_agent=disabled
+          meson configure build -Dslirp=enabled -Dguest_agent=disabled
 
           if grep -q '^#define CONFIG_SLIRP' build/config-host.h; then
-            echo '[configure] slirp is enabled on Windows build (continuing)'
+            echo '[configure] slirp is enabled on Windows build'
             grep '^#define CONFIG_.*SLIRP' build/config-host.h || true
           else
-            echo '[configure] slirp is disabled on Windows build'
+            echo '[configure] slirp is NOT enabled on Windows build; forcing this build to fail early'
+            grep '^#define CONFIG_.*SLIRP' build/config-host.h || true
+            exit 1
           fi
           make -j"$(nproc)"
           test -f build/qemu-system-xtensa.exe
