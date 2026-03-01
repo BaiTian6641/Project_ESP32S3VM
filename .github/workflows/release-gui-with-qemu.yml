@@ -149,7 +149,7 @@ jobs:
             grep '^#define CONFIG_.*SLIRP' build/config-host.h || true
             exit 1
           fi
-          make -j"$(nproc)"
+          make -j"$(nproc)" qemu-system-xtensa
           test -x build/qemu-system-xtensa
 
       - name: Verify ESP32S3 machine support (Linux)
@@ -211,7 +211,7 @@ jobs:
             grep '^#define CONFIG_.*SLIRP' build/config-host.h || true
             exit 1
           fi
-          make -j"$(nproc)"
+          make -j"$(nproc)" qemu-system-xtensa.exe
           test -f build/qemu-system-xtensa.exe
 
       - name: Verify ESP32S3 machine support (Windows / MSYS2)
