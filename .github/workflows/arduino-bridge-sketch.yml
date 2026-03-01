@@ -1,0 +1,28 @@
+name: Arduino Bridge Sketch Build
+
+on:
+  push:
+    paths:
+      - 'tests/arduino/**'
+      - '.github/workflows/arduino-bridge-sketch.yml'
+  pull_request:
+    paths:
+      - 'tests/arduino/**'
+      - '.github/workflows/arduino-bridge-sketch.yml'
+
+jobs:
+  compile-esp32s3-sketch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Show arduino-cli version
+        run: arduino-cli version
+
+      - name: Compile ESP32-S3 bridge tester
+        run: bash tests/arduino/build_esp32s3_bridge_tester.sh

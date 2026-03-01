@@ -8,6 +8,8 @@ class CpuStatusWidget;
 class ControlPanelWidget;
 class DebugWidget;
 class QemuController;
+class PeripheralManager;
+class PeripheralsWidget;
 
 class MainWindow : public QMainWindow
 {
@@ -22,5 +24,7 @@ private:
     CpuStatusWidget *cpuWidget;
     ControlPanelWidget *controlWidget;
     DebugWidget *debugWidget;
+    PeripheralsWidget *peripheralsWidget;
     QemuController *controller;
+    PeripheralManager *peripheralManager;
 };

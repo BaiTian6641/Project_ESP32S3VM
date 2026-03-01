@@ -1,5 +1,9 @@
 /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles/gui_esp32s3_simulator.dir
+/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles/gui_esp32s3_bridge_contract_test.dir
+/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles/test.dir
 /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles/edit_cache.dir
 /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles/rebuild_cache.dir
 /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles/gui_esp32s3_simulator_autogen_timestamp_deps.dir
 /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles/gui_esp32s3_simulator_autogen.dir
+/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles/gui_esp32s3_bridge_contract_test_autogen_timestamp_deps.dir
+/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles/gui_esp32s3_bridge_contract_test_autogen.dir

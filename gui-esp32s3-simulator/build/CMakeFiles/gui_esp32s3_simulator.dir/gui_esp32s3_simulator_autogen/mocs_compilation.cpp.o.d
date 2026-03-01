@@ -1,8 +1,8 @@
 CMakeFiles/gui_esp32s3_simulator.dir/gui_esp32s3_simulator_autogen/mocs_compilation.cpp.o: \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/mocs_compilation.cpp \
  /usr/include/stdc-predef.h \
- /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/FVSNT77ZGO/moc_QemuController.cpp \
- /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/FVSNT77ZGO/../../../backend/QemuController.h \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/FVSNT77ZGO/moc_PeripheralManager.cpp \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/FVSNT77ZGO/../../../backend/PeripheralManager.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qobjectdefs.h \
@@ -333,10 +333,10 @@ CMakeFiles/gui_esp32s3_simulator.dir/gui_esp32s3_simulator_autogen/mocs_compilat
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qbindingstorage.h \
  /usr/include/c++/15/chrono /usr/include/c++/15/bits/chrono.h \
  /usr/include/c++/15/ratio /usr/include/c++/15/ctime \
- /usr/include/x86_64-linux-gnu/qt6/QtCore/QByteArray \
- /usr/include/x86_64-linux-gnu/qt6/QtCore/qbytearray.h \
- /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \
- /usr/include/x86_64-linux-gnu/qt6/QtCore/qjsonobject.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QHash \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qhash.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonArray \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qjsonarray.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qjsonvalue.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qcborvalue.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qcborcommon.h \
@@ -377,14 +377,22 @@ CMakeFiles/gui_esp32s3_simulator.dir/gui_esp32s3_simulator_autogen/mocs_compilat
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qendian.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qjsondocument.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qjsonparseerror.h \
- /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
- /usr/include/x86_64-linux-gnu/qt6/QtCore/qstringlist.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qjsonobject.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qlist.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qstring.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qstringlist.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qtmochelpers.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qtmocconstants.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/q20algorithm.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/q23type_traits.h \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/FVSNT77ZGO/moc_QemuController.cpp \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/FVSNT77ZGO/../../../backend/QemuController.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QByteArray \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qbytearray.h \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_ControlPanelWidget.cpp \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/ControlPanelWidget.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QWidget \
@@ -436,5 +444,7 @@ CMakeFiles/gui_esp32s3_simulator.dir/gui_esp32s3_simulator_autogen/mocs_compilat
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qwidget.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtabwidget.h \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_PeripheralsWidget.cpp \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/PeripheralsWidget.h \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_SerialConsoleWidget.cpp \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/SerialConsoleWidget.h

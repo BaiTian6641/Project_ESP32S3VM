@@ -1,5 +1,7 @@
 gui_esp32s3_simulator_autogen/timestamp: \
 	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/CMakeLists.txt \
+	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/backend/PeripheralManager.cpp \
+	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/backend/PeripheralManager.h \
 	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/backend/QemuController.cpp \
 	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/backend/QemuController.h \
 	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles/3.31.6/CMakeCXXCompiler.cmake \
@@ -13,6 +15,8 @@ gui_esp32s3_simulator_autogen/timestamp: \
 	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/DebugWidget.h \
 	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/MainWindow.cpp \
 	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/MainWindow.h \
+	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/PeripheralsWidget.cpp \
+	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/PeripheralsWidget.h \
 	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SerialConsoleWidget.cpp \
 	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SerialConsoleWidget.h \
 	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/main.cpp \
@@ -64,6 +68,7 @@ gui_esp32s3_simulator_autogen/timestamp: \
 	/usr/include/c++/15/bits/localefwd.h \
 	/usr/include/c++/15/bits/memory_resource.h \
 	/usr/include/c++/15/bits/memoryfwd.h \
+	/usr/include/c++/15/bits/monostate.h \
 	/usr/include/c++/15/bits/move.h \
 	/usr/include/c++/15/bits/nested_exception.h \
 	/usr/include/c++/15/bits/new_allocator.h \
@@ -156,6 +161,8 @@ gui_esp32s3_simulator_autogen/timestamp: \
 	/usr/include/c++/15/numeric \
 	/usr/include/c++/15/optional \
 	/usr/include/c++/15/pstl/execution_defs.h \
+	/usr/include/c++/15/pstl/glue_algorithm_defs.h \
+	/usr/include/c++/15/pstl/glue_memory_defs.h \
 	/usr/include/c++/15/pstl/glue_numeric_defs.h \
 	/usr/include/c++/15/pstl/pstl_config.h \
 	/usr/include/c++/15/ratio \
@@ -291,7 +298,10 @@ gui_esp32s3_simulator_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
 	/usr/include/x86_64-linux-gnu/gnu/stubs.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QByteArray \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/QHash \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonArray \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
@@ -349,6 +359,7 @@ gui_esp32s3_simulator_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qiodevicebase.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qiterable.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qiterator.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/qjsonarray.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qjsondocument.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qjsonobject.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qjsonparseerror.h \
@@ -603,6 +614,22 @@ gui_esp32s3_simulator_autogen/timestamp: \
 	/usr/lib/x86_64-linux-gnu/cmake/Qt6NetworkPrivate/Qt6NetworkPrivateDependencies.cmake \
 	/usr/lib/x86_64-linux-gnu/cmake/Qt6NetworkPrivate/Qt6NetworkPrivateTargets.cmake \
 	/usr/lib/x86_64-linux-gnu/cmake/Qt6NetworkPrivate/Qt6NetworkPrivateVersionlessAliasTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestDependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestVersionlessAliasTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/QtTestProperties.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateDependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateVersionlessAliasTargets.cmake \
 	/usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsAdditionalTargetInfo.cmake \
 	/usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsConfig.cmake \
 	/usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsConfigVersion.cmake \

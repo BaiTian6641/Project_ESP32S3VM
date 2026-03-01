@@ -1,21 +1,82 @@
 {
+  "version": 2,
   "board": {
     "name": "esp32s3-devkitc-1",
     "target": "esp32s3"
   },
+  "buses": [
+    {
+      "id": "i2c0-main",
+      "kind": "i2c",
+      "controller": "i2c0",
+      "clock_hz": 400000,
+      "pins": {
+        "scl": 9,
+        "sda": 8
+      },
+      "electrical": {
+        "pullup_ohms": 4700,
+        "voltage": 3.3
+      }
+    },
+    {
+      "id": "spi2-main",
+      "kind": "spi",
+      "controller": "spi2",
+      "clock_hz": 20000000,
+      "spi_mode": "quad",
+      "data_lines": 4,
+      "pins": {
+        "mosi": 11,
+        "miso": 13,
+        "sclk": 12,
+        "cs": 10
+      },
+      "electrical": {
+        "voltage": 3.3
+      }
+    },
+    {
+      "id": "uart1-main",
+      "kind": "uart",
+      "controller": "uart1",
+      "baud": 115200,
+      "data_bits": 8,
+      "parity": "none",
+      "stop_bits": 1,
+      "pins": {
+        "tx": 17,
+        "rx": 18
+      }
+    }
+  ],
   "devices": [
     {
       "id": "screen0",
       "type": "ssd1306",
+      "compatible": ["solomon,ssd1306"],
+      "status": "okay",
+      "bus_ref": "i2c0-main",
+      "reg": "0x3c",
       "bus": {
         "kind": "i2c",
         "controller": "i2c0",
-        "address": "0x3c"
+        "address": "0x3c",
+        "clock_hz": 400000,
+        "pins": {
+          "scl": 9,
+          "sda": 8
+        },
+        "electrical": {
+          "pullup_ohms": 4700,
+          "voltage": 3.3
+        }
       },
       "simulator": {
-        "exec": "./device-sims/ssd1306_sim",
+        "exec": "./device-sims/ssd1306_sim.py",
         "args": ["--width", "128", "--height", "64"],
-        "transport": "stdio"
+        "transport": "stdio",
+        "protocol": "jsonrpc-i2c-v1"
       },
       "properties": {
         "rotation": 0
@@ -23,18 +84,89 @@
     },
     {
       "id": "temp0",
-      "type": "tmp102",
+      "type": "sht21",
+      "compatible": ["sensirion,sht21"],
+      "status": "okay",
+      "bus_ref": "i2c0-main",
+      "reg": "0x40",
       "bus": {
         "kind": "i2c",
         "controller": "i2c0",
-        "address": "0x48"
+        "address": "0x40",
+        "clock_hz": 100000,
+        "pins": {
+          "scl": 9,
+          "sda": 8
+        },
+        "electrical": {
+          "pullup_ohms": 4700,
+          "voltage": 3.3
+        }
       },
       "simulator": {
-        "exec": "./device-sims/tmp102_sim",
-        "transport": "stdio"
+        "exec": "./device-sims/sht21_sim.py",
+        "args": ["--address", "0x40"],
+        "transport": "stdio",
+        "protocol": "jsonrpc-i2c-v1"
       },
       "properties": {
-        "initial_celsius": 25.0
+        "initial_celsius": 25.0,
+        "csv_example": "./device-sims/sht21_sample.csv"
+      }
+    },
+    {
+      "id": "spiflash0",
+      "type": "spi.flash",
+      "compatible": ["jedec,spi-nor"],
+      "status": "okay",
+      "bus_ref": "spi2-main",
+      "reg": 0,
+      "bus": {
+        "kind": "spi",
+        "controller": "spi2",
+        "chip_select": 0,
+        "clock_hz": 20000000,
+        "spi_mode": "quad",
+        "data_lines": 4,
+        "pins": {
+          "mosi": 11,
+          "miso": 13,
+          "sclk": 12,
+          "cs": 10
+        }
+      },
+      "simulator": {
+        "exec": "./device-sims/spi_mem_sim.py",
+        "args": ["--size", "1048576"],
+        "transport": "stdio",
+        "protocol": "jsonrpc-spi-v1"
+      }
+    },
+    {
+      "id": "uart-loop0",
+      "type": "uart.loopback",
+      "compatible": ["vendor,uart-loopback"],
+      "status": "okay",
+      "bus_ref": "uart1-main",
+      "reg": 1,
+      "bus": {
+        "kind": "uart",
+        "controller": "uart1",
+        "unit": 1,
+        "baud": 115200,
+        "data_bits": 8,
+        "parity": "none",
+        "stop_bits": 1,
+        "pins": {
+          "tx": 17,
+          "rx": 18
+        }
+      },
+      "simulator": {
+        "exec": "./device-sims/uart_loopback_sim.py",
+        "args": ["--baud", "115200"],
+        "transport": "stdio",
+        "protocol": "jsonrpc-uart-v1"
       }
     }
   ]

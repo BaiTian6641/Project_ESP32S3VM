@@ -7,7 +7,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Core Network)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Core Network Test)
 
 add_executable(gui_esp32s3_simulator
     src/main.cpp
@@ -21,8 +21,12 @@ add_executable(gui_esp32s3_simulator
     src/ControlPanelWidget.cpp
     src/DebugWidget.h
     src/DebugWidget.cpp
+    src/PeripheralsWidget.h
+    src/PeripheralsWidget.cpp
     backend/QemuController.h
     backend/QemuController.cpp
+    backend/PeripheralManager.h
+    backend/PeripheralManager.cpp
 )
 
 target_include_directories(gui_esp32s3_simulator PRIVATE
@@ -35,3 +39,27 @@ target_link_libraries(gui_esp32s3_simulator PRIVATE Qt6::Widgets Qt6::Core Qt6::
 if(UNIX AND NOT APPLE)
     target_link_libraries(gui_esp32s3_simulator PRIVATE util)
 endif()
+
+enable_testing()
+
+add_executable(gui_esp32s3_bridge_contract_test
+    tests/BridgeContractTest.cpp
+    backend/QemuController.h
+    backend/QemuController.cpp
+)
+
+target_include_directories(gui_esp32s3_bridge_contract_test PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/backend
+)
+
+target_link_libraries(gui_esp32s3_bridge_contract_test PRIVATE
+    Qt6::Core
+    Qt6::Network
+    Qt6::Test
+)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(gui_esp32s3_bridge_contract_test PRIVATE util)
+endif()
+
+add_test(NAME bridge_contract_test COMMAND gui_esp32s3_bridge_contract_test)

@@ -65,6 +65,16 @@ CMAKE_BINARY_DIR = /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build
 #=============================================================================
 # Targets provided globally by CMake.
 
+# Special rule for the target test
+test:
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Running tests..."
+	/usr/bin/ctest --force-new-ctest-process $(ARGS)
+.PHONY : test
+
+# Special rule for the target test
+test/fast: test
+.PHONY : test/fast
+
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "No interactive CMake dialog available..."
@@ -130,6 +140,19 @@ gui_esp32s3_simulator/fast:
 .PHONY : gui_esp32s3_simulator/fast
 
 #=============================================================================
+# Target rules for targets named gui_esp32s3_bridge_contract_test
+
+# Build rule for target.
+gui_esp32s3_bridge_contract_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gui_esp32s3_bridge_contract_test
+.PHONY : gui_esp32s3_bridge_contract_test
+
+# fast build rule for target.
+gui_esp32s3_bridge_contract_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_bridge_contract_test.dir/build.make CMakeFiles/gui_esp32s3_bridge_contract_test.dir/build
+.PHONY : gui_esp32s3_bridge_contract_test/fast
+
+#=============================================================================
 # Target rules for targets named gui_esp32s3_simulator_autogen_timestamp_deps
 
 # Build rule for target.
@@ -155,12 +178,63 @@ gui_esp32s3_simulator_autogen/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_simulator_autogen.dir/build.make CMakeFiles/gui_esp32s3_simulator_autogen.dir/build
 .PHONY : gui_esp32s3_simulator_autogen/fast
 
+#=============================================================================
+# Target rules for targets named gui_esp32s3_bridge_contract_test_autogen_timestamp_deps
+
+# Build rule for target.
+gui_esp32s3_bridge_contract_test_autogen_timestamp_deps: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gui_esp32s3_bridge_contract_test_autogen_timestamp_deps
+.PHONY : gui_esp32s3_bridge_contract_test_autogen_timestamp_deps
+
+# fast build rule for target.
+gui_esp32s3_bridge_contract_test_autogen_timestamp_deps/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_bridge_contract_test_autogen_timestamp_deps.dir/build.make CMakeFiles/gui_esp32s3_bridge_contract_test_autogen_timestamp_deps.dir/build
+.PHONY : gui_esp32s3_bridge_contract_test_autogen_timestamp_deps/fast
+
+#=============================================================================
+# Target rules for targets named gui_esp32s3_bridge_contract_test_autogen
+
+# Build rule for target.
+gui_esp32s3_bridge_contract_test_autogen: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gui_esp32s3_bridge_contract_test_autogen
+.PHONY : gui_esp32s3_bridge_contract_test_autogen
+
+# fast build rule for target.
+gui_esp32s3_bridge_contract_test_autogen/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_bridge_contract_test_autogen.dir/build.make CMakeFiles/gui_esp32s3_bridge_contract_test_autogen.dir/build
+.PHONY : gui_esp32s3_bridge_contract_test_autogen/fast
+
+backend/PeripheralManager.o: backend/PeripheralManager.cpp.o
+.PHONY : backend/PeripheralManager.o
+
+# target to build an object file
+backend/PeripheralManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_simulator.dir/build.make CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.o
+.PHONY : backend/PeripheralManager.cpp.o
+
+backend/PeripheralManager.i: backend/PeripheralManager.cpp.i
+.PHONY : backend/PeripheralManager.i
+
+# target to preprocess a source file
+backend/PeripheralManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_simulator.dir/build.make CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.i
+.PHONY : backend/PeripheralManager.cpp.i
+
+backend/PeripheralManager.s: backend/PeripheralManager.cpp.s
+.PHONY : backend/PeripheralManager.s
+
+# target to generate assembly for a file
+backend/PeripheralManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_simulator.dir/build.make CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.s
+.PHONY : backend/PeripheralManager.cpp.s
+
 backend/QemuController.o: backend/QemuController.cpp.o
 .PHONY : backend/QemuController.o
 
 # target to build an object file
 backend/QemuController.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_simulator.dir/build.make CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_bridge_contract_test.dir/build.make CMakeFiles/gui_esp32s3_bridge_contract_test.dir/backend/QemuController.cpp.o
 .PHONY : backend/QemuController.cpp.o
 
 backend/QemuController.i: backend/QemuController.cpp.i
@@ -169,6 +243,7 @@ backend/QemuController.i: backend/QemuController.cpp.i
 # target to preprocess a source file
 backend/QemuController.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_simulator.dir/build.make CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_bridge_contract_test.dir/build.make CMakeFiles/gui_esp32s3_bridge_contract_test.dir/backend/QemuController.cpp.i
 .PHONY : backend/QemuController.cpp.i
 
 backend/QemuController.s: backend/QemuController.cpp.s
@@ -177,7 +252,32 @@ backend/QemuController.s: backend/QemuController.cpp.s
 # target to generate assembly for a file
 backend/QemuController.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_simulator.dir/build.make CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_bridge_contract_test.dir/build.make CMakeFiles/gui_esp32s3_bridge_contract_test.dir/backend/QemuController.cpp.s
 .PHONY : backend/QemuController.cpp.s
+
+gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.o: gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.cpp.o
+.PHONY : gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.o
+
+# target to build an object file
+gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_bridge_contract_test.dir/build.make CMakeFiles/gui_esp32s3_bridge_contract_test.dir/gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.cpp.o
+.PHONY : gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.cpp.o
+
+gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.i: gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.cpp.i
+.PHONY : gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.i
+
+# target to preprocess a source file
+gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_bridge_contract_test.dir/build.make CMakeFiles/gui_esp32s3_bridge_contract_test.dir/gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.cpp.i
+.PHONY : gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.cpp.i
+
+gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.s: gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.cpp.s
+.PHONY : gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.s
+
+# target to generate assembly for a file
+gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_bridge_contract_test.dir/build.make CMakeFiles/gui_esp32s3_bridge_contract_test.dir/gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.cpp.s
+.PHONY : gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.cpp.s
 
 gui_esp32s3_simulator_autogen/mocs_compilation.o: gui_esp32s3_simulator_autogen/mocs_compilation.cpp.o
 .PHONY : gui_esp32s3_simulator_autogen/mocs_compilation.o
@@ -299,6 +399,30 @@ src/MainWindow.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_simulator.dir/build.make CMakeFiles/gui_esp32s3_simulator.dir/src/MainWindow.cpp.s
 .PHONY : src/MainWindow.cpp.s
 
+src/PeripheralsWidget.o: src/PeripheralsWidget.cpp.o
+.PHONY : src/PeripheralsWidget.o
+
+# target to build an object file
+src/PeripheralsWidget.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_simulator.dir/build.make CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.o
+.PHONY : src/PeripheralsWidget.cpp.o
+
+src/PeripheralsWidget.i: src/PeripheralsWidget.cpp.i
+.PHONY : src/PeripheralsWidget.i
+
+# target to preprocess a source file
+src/PeripheralsWidget.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_simulator.dir/build.make CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.i
+.PHONY : src/PeripheralsWidget.cpp.i
+
+src/PeripheralsWidget.s: src/PeripheralsWidget.cpp.s
+.PHONY : src/PeripheralsWidget.s
+
+# target to generate assembly for a file
+src/PeripheralsWidget.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_simulator.dir/build.make CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.s
+.PHONY : src/PeripheralsWidget.cpp.s
+
 src/SerialConsoleWidget.o: src/SerialConsoleWidget.cpp.o
 .PHONY : src/SerialConsoleWidget.o
 
@@ -347,6 +471,30 @@ src/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_simulator.dir/build.make CMakeFiles/gui_esp32s3_simulator.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
+tests/BridgeContractTest.o: tests/BridgeContractTest.cpp.o
+.PHONY : tests/BridgeContractTest.o
+
+# target to build an object file
+tests/BridgeContractTest.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_bridge_contract_test.dir/build.make CMakeFiles/gui_esp32s3_bridge_contract_test.dir/tests/BridgeContractTest.cpp.o
+.PHONY : tests/BridgeContractTest.cpp.o
+
+tests/BridgeContractTest.i: tests/BridgeContractTest.cpp.i
+.PHONY : tests/BridgeContractTest.i
+
+# target to preprocess a source file
+tests/BridgeContractTest.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_bridge_contract_test.dir/build.make CMakeFiles/gui_esp32s3_bridge_contract_test.dir/tests/BridgeContractTest.cpp.i
+.PHONY : tests/BridgeContractTest.cpp.i
+
+tests/BridgeContractTest.s: tests/BridgeContractTest.cpp.s
+.PHONY : tests/BridgeContractTest.s
+
+# target to generate assembly for a file
+tests/BridgeContractTest.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_bridge_contract_test.dir/build.make CMakeFiles/gui_esp32s3_bridge_contract_test.dir/tests/BridgeContractTest.cpp.s
+.PHONY : tests/BridgeContractTest.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -355,12 +503,22 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... test"
+	@echo "... gui_esp32s3_bridge_contract_test_autogen"
+	@echo "... gui_esp32s3_bridge_contract_test_autogen_timestamp_deps"
 	@echo "... gui_esp32s3_simulator_autogen"
 	@echo "... gui_esp32s3_simulator_autogen_timestamp_deps"
+	@echo "... gui_esp32s3_bridge_contract_test"
 	@echo "... gui_esp32s3_simulator"
+	@echo "... backend/PeripheralManager.o"
+	@echo "... backend/PeripheralManager.i"
+	@echo "... backend/PeripheralManager.s"
 	@echo "... backend/QemuController.o"
 	@echo "... backend/QemuController.i"
 	@echo "... backend/QemuController.s"
+	@echo "... gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.o"
+	@echo "... gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.i"
+	@echo "... gui_esp32s3_bridge_contract_test_autogen/mocs_compilation.s"
 	@echo "... gui_esp32s3_simulator_autogen/mocs_compilation.o"
 	@echo "... gui_esp32s3_simulator_autogen/mocs_compilation.i"
 	@echo "... gui_esp32s3_simulator_autogen/mocs_compilation.s"
@@ -376,12 +534,18 @@ help:
 	@echo "... src/MainWindow.o"
 	@echo "... src/MainWindow.i"
 	@echo "... src/MainWindow.s"
+	@echo "... src/PeripheralsWidget.o"
+	@echo "... src/PeripheralsWidget.i"
+	@echo "... src/PeripheralsWidget.s"
 	@echo "... src/SerialConsoleWidget.o"
 	@echo "... src/SerialConsoleWidget.i"
 	@echo "... src/SerialConsoleWidget.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
+	@echo "... tests/BridgeContractTest.o"
+	@echo "... tests/BridgeContractTest.i"
+	@echo "... tests/BridgeContractTest.s"
 .PHONY : help
 
 

@@ -216,7 +216,7 @@ void CpuStatusWidget::setupVectorTable()
     const int vecCount = 8;
     vectorRegsTable->setRowCount(vecCount);
     for (int i = 0; i < vecCount; ++i) {
-        vectorRegsTable->setItem(i, 0, new QTableWidgetItem(QString("V%1").arg(i)));
-        vectorRegsTable->setItem(i, 1, new QTableWidgetItem("0x0000000000000000"));
+        vectorRegsTable->setItem(i, 0, new QTableWidgetItem(QString("F%1").arg(i)));
+        vectorRegsTable->setItem(i, 1, new QTableWidgetItem("0x00000000"));
     }
 }

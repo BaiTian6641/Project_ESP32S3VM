@@ -1,0 +1,29 @@
+Start testing: Mar 01 01:02 CST
+----------------------------------------------------------
+1/1 Testing: bridge_contract_test
+1/1 Test: bridge_contract_test
+Command: "/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_bridge_contract_test"
+Directory: /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build
+"bridge_contract_test" start time: Mar 01 01:02 CST
+Output:
+----------------------------------------------------------
+********* Start testing of BridgeContractTest *********
+Config: Using QtTest library 6.9.2, Qt 6.9.2 (x86_64-little_endian-lp64 shared (dynamic) release build; by GCC 15.2.0), ubuntu 26.04
+PASS   : BridgeContractTest::initTestCase()
+PASS   : BridgeContractTest::parsesI2cEventLine()
+PASS   : BridgeContractTest::parsesSpiEventLine()
+PASS   : BridgeContractTest::parsesUartEventLine()
+PASS   : BridgeContractTest::ignoresInvalidEventLine()
+PASS   : BridgeContractTest::emitsResponseLine()
+PASS   : BridgeContractTest::cleanupTestCase()
+Totals: 7 passed, 0 failed, 0 skipped, 0 blacklisted, 1ms
+********* Finished testing of BridgeContractTest *********
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"bridge_contract_test" end time: Mar 01 01:02 CST
+"bridge_contract_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Mar 01 01:02 CST

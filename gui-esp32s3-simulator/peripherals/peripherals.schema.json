@@ -4,12 +4,67 @@
   "type": "object",
   "required": ["board", "devices"],
   "properties": {
+    "version": {
+      "type": "integer",
+      "default": 2
+    },
     "board": {
       "type": "object",
       "required": ["name"],
       "properties": {
         "name": { "type": "string" },
         "target": { "type": "string", "default": "esp32s3" }
+      }
+    },
+    "buses": {
+      "type": "array",
+      "description": "Optional DT-like bus registry; devices may reference entries by bus_ref",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "controller"],
+        "properties": {
+          "id": { "type": "string" },
+          "kind": { "type": "string", "enum": ["i2c", "spi", "uart", "gpio", "custom"] },
+          "controller": { "type": "string" },
+          "clock_hz": { "type": "integer", "minimum": 1 },
+          "spi_mode": {
+            "type": "string",
+            "enum": ["single", "dual", "quad"],
+            "default": "single"
+          },
+          "data_lines": {
+            "type": "integer",
+            "enum": [1, 2, 4],
+            "default": 1
+          },
+          "baud": { "type": "integer", "minimum": 1 },
+          "data_bits": { "type": "integer", "enum": [5, 6, 7, 8, 9] },
+          "parity": { "type": "string", "enum": ["none", "even", "odd", "mark", "space"] },
+          "stop_bits": { "type": "integer", "enum": [1, 2] },
+          "pins": {
+            "type": "object",
+            "properties": {
+              "scl": { "type": "integer" },
+              "sda": { "type": "integer" },
+              "mosi": { "type": "integer" },
+              "miso": { "type": "integer" },
+              "sclk": { "type": "integer" },
+              "cs": { "type": "integer" },
+              "tx": { "type": "integer" },
+              "rx": { "type": "integer" }
+            },
+            "additionalProperties": false
+          },
+          "electrical": {
+            "type": "object",
+            "properties": {
+              "pullup_ohms": { "type": "integer", "minimum": 1 },
+              "voltage": { "type": "number" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
       }
     },
     "devices": {
@@ -20,6 +75,32 @@
         "properties": {
           "id": { "type": "string" },
           "type": { "type": "string" },
+          "compatible": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "DT-like compatible list, e.g. [\"solomon,ssd1306\"]"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["okay", "disabled"],
+            "default": "okay"
+          },
+          "bus_ref": {
+            "type": "string",
+            "description": "Reference to buses[].id"
+          },
+          "reg": {
+            "type": ["string", "integer"],
+            "description": "DT-like reg cell value (I2C address / SPI CS / UART unit)"
+          },
+          "interrupts": {
+            "type": "array",
+            "items": { "type": "integer" }
+          },
+          "reset-gpios": {
+            "type": "array",
+            "items": { "type": "integer" }
+          },
           "bus": {
             "type": "object",
             "required": ["kind", "controller"],
@@ -29,13 +110,48 @@
                 "enum": ["i2c", "spi", "uart", "gpio", "custom"]
               },
               "controller": { "type": "string" },
+              "clock_hz": { "type": "integer", "minimum": 1 },
+              "spi_mode": {
+                "type": "string",
+                "enum": ["single", "dual", "quad"],
+                "default": "single"
+              },
+              "data_lines": {
+                "type": "integer",
+                "enum": [1, 2, 4],
+                "default": 1
+              },
+              "baud": { "type": "integer", "minimum": 1 },
+              "data_bits": { "type": "integer", "enum": [5, 6, 7, 8, 9] },
+              "parity": { "type": "string", "enum": ["none", "even", "odd", "mark", "space"] },
+              "stop_bits": { "type": "integer", "enum": [1, 2] },
               "address": { "type": "string" },
               "chip_select": { "type": "integer" },
+              "unit": { "type": "integer" },
               "pins": {
-                "type": "array",
-                "items": { "type": "integer" }
+                "type": "object",
+                "properties": {
+                  "scl": { "type": "integer" },
+                  "sda": { "type": "integer" },
+                  "mosi": { "type": "integer" },
+                  "miso": { "type": "integer" },
+                  "sclk": { "type": "integer" },
+                  "cs": { "type": "integer" },
+                  "tx": { "type": "integer" },
+                  "rx": { "type": "integer" }
+                },
+                "additionalProperties": false
+              },
+              "electrical": {
+                "type": "object",
+                "properties": {
+                  "pullup_ohms": { "type": "integer", "minimum": 1 },
+                  "voltage": { "type": "number" }
+                },
+                "additionalProperties": false
               }
-            }
+            },
+            "additionalProperties": false
           },
           "simulator": {
             "type": "object",
@@ -50,6 +166,11 @@
                 "type": "string",
                 "enum": ["stdio", "tcp", "unix"],
                 "default": "stdio"
+              },
+              "protocol": {
+                "type": "string",
+                "default": "jsonrpc-i2c-v1",
+                "description": "Preferred protocol flavor"
               }
             }
           },

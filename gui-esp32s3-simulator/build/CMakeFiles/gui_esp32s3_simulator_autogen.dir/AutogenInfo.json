@@ -276,7 +276,25 @@
 		"/usr/lib/x86_64-linux-gnu/cmake/Qt6NetworkPrivate/Qt6NetworkPrivateTargets.cmake",
 		"/usr/lib/x86_64-linux-gnu/cmake/Qt6NetworkPrivate/Qt6NetworkPrivateAdditionalTargetInfo.cmake",
 		"/usr/lib/x86_64-linux-gnu/cmake/Qt6NetworkPrivate/Qt6NetworkPrivateVersionlessAliasTargets.cmake",
-		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkVersionlessAliasTargets.cmake"
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkVersionlessAliasTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestConfigVersionImpl.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestConfig.cmake",
+		"/usr/share/cmake-3.31/Modules/CMakeFindDependencyMacro.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestDependencies.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestTargets-none.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestAdditionalTargetInfo.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateConfigVersion.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateConfigVersionImpl.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateConfig.cmake",
+		"/usr/share/cmake-3.31/Modules/CMakeFindDependencyMacro.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateDependencies.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateAdditionalTargetInfo.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateVersionlessAliasTargets.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/QtTestProperties.cmake",
+		"/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestVersionlessAliasTargets.cmake"
 	],
 	"CMAKE_SOURCE_DIR" : "/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator",
 	"CROSS_CONFIG" : false,
@@ -284,6 +302,12 @@
 	"DEP_FILE_RULE_NAME" : "gui_esp32s3_simulator_autogen/timestamp",
 	"HEADERS" : 
 	[
+		[
+			"/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/backend/PeripheralManager.h",
+			"MU",
+			"FVSNT77ZGO/moc_PeripheralManager.cpp",
+			null
+		],
 		[
 			"/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/backend/QemuController.h",
 			"MU",
@@ -312,6 +336,12 @@
 			"/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/MainWindow.h",
 			"MU",
 			"UVLADIE3JM/moc_MainWindow.cpp",
+			null
+		],
+		[
+			"/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/PeripheralsWidget.h",
+			"MU",
+			"UVLADIE3JM/moc_PeripheralsWidget.cpp",
 			null
 		],
 		[
@@ -391,6 +421,11 @@
 	"SOURCES" : 
 	[
 		[
+			"/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/backend/PeripheralManager.cpp",
+			"MU",
+			null
+		],
+		[
 			"/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/backend/QemuController.cpp",
 			"MU",
 			null
@@ -412,6 +447,11 @@
 		],
 		[
 			"/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/MainWindow.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/PeripheralsWidget.cpp",
 			"MU",
 			null
 		],

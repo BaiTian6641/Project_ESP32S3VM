@@ -11,6 +11,7 @@
 #include <QProcess>
 #include <QRegularExpression>
 #include <QSocketNotifier>
+#include <QStandardPaths>
 #include <QTimer>
 
 #ifdef Q_OS_LINUX
@@ -52,6 +53,7 @@ static QByteArray filterPrintableSerialLog(const QByteArray &bytes)
 
 static constexpr char kEspSyncPreamble[] = {0x07, 0x07, 0x12, 0x20};
 
+#ifdef Q_OS_LINUX
 static speed_t baudToSpeed(int baud)
 {
     switch (baud) {
@@ -73,6 +75,7 @@ static speed_t baudToSpeed(int baud)
         return B115200;
     }
 }
+#endif
 
 QemuController::QemuController(QObject *parent)
     : QObject(parent),
@@ -112,7 +115,7 @@ QemuController::QemuController(QObject *parent)
             autoDownloadSwitchPending(false)
 {
     qemuProcess->setProcessChannelMode(QProcess::SeparateChannels);
-        liveTimer->setInterval(200);
+        liveTimer->setInterval(500);
 
     connect(qemuProcess, &QProcess::readyReadStandardOutput, this, [this]() {
         const QByteArray bytes = qemuProcess->readAllStandardOutput();
@@ -149,6 +152,7 @@ QemuController::QemuController(QObject *parent)
 
     connect(qemuProcess, &QProcess::started, this, [this]() {
         emit serialLineReceived("[QEMU] process started");
+        emit qemuStarted();
         if (bootMode == 1) {
             qmpReady = false;
             emit serialLineReceived("[QMP] disabled in Download Boot mode to keep ROM serial downloader path exclusive");
@@ -172,6 +176,7 @@ QemuController::QemuController(QObject *parent)
                 qmpReady = false;
                 liveTimer->stop();
                 autoDownloadSwitchPending = false;
+                emit qemuStopped();
             });
 
     connect(qmpSocket, &QLocalSocket::connected, this, [this]() {
@@ -291,8 +296,18 @@ void QemuController::requestCpuSnapshot()
         return;
     }
 
-    pendingSnapshotCb = qmpSeq++;
-    sendQmpCommand("query-cpus-fast", QJsonObject(), pendingSnapshotCb);
+    if (pendingRegsCb >= 0 || pendingMemCb >= 0) {
+        return;
+    }
+
+    pendingPcText = "0x00000000";
+    pendingScalars.fill("0x00000000", 16);
+    pendingVectors.fill("0x00000000", 8);
+
+    pendingRegsCb = qmpSeq++;
+    QJsonObject args;
+    args["command-line"] = "info registers";
+    sendQmpCommand("human-monitor-command", args, pendingRegsCb);
 }
 
 void QemuController::startLiveUpdates(bool enabled)
@@ -314,6 +329,19 @@ void QemuController::setMemoryInspectBase(const QString &addressText)
         memoryInspectBase = "0x3FC80000";
     }
     emit serialLineReceived(QString("[Debug] memory inspect base set: %1").arg(memoryInspectBase));
+}
+
+void QemuController::handleBridgeResponse(const QString &busKind, const QJsonObject &payload)
+{
+    const QString upper = busKind.trimmed().toUpper();
+    const QString jsonText = QString::fromUtf8(QJsonDocument(payload).toJson(QJsonDocument::Compact));
+    const QString line = QString("[PERIPH][%1][RSP] %2").arg(upper, jsonText);
+
+    emit serialLineReceived(line);
+
+    if (qemuProcess->state() == QProcess::Running) {
+        qemuProcess->write((line + "\n").toUtf8());
+    }
 }
 
 void QemuController::pauseExecution()
@@ -461,15 +489,20 @@ QString QemuController::currentUartPort() const
     if (!uartSlavePath.isEmpty()) {
         return uartSlavePath;
     }
-    return uartAliasPath;
+    return QString();
 }
 
 QString QemuController::recommendedEsptoolCommand(const QString &firmwarePath) const
 {
+    const QString port = currentUartPort();
+    if (port.isEmpty()) {
+        return QString("# External esptool flashing port is unavailable on this platform/runtime");
+    }
+
     const QString fw = firmwarePath.trimmed().isEmpty() ? QString("<firmware.bin>")
                                                         : firmwarePath.trimmed();
     return QString("esptool --chip esp32s3 --port %1 --before no-reset --after no-reset --no-stub write-flash 0x0 %2")
-        .arg(currentUartPort(), fw);
+        .arg(port, fw);
 }
 
 void QemuController::resetTarget()
@@ -516,7 +549,7 @@ void QemuController::startQemuWithFirmware(const QString &firmwarePath)
     }
 
     if (uartMasterFd < 0 && !setupUartPty()) {
-        return;
+        emit serialLineReceived("[Serial] PTY bridge unavailable, continuing with integrated GUI serial only");
     }
 
     flushUartBridgeBuffers();
@@ -537,11 +570,18 @@ void QemuController::startQemuWithFirmware(const QString &firmwarePath)
     }
 
     args << "-M" << "esp32s3"
+            << "-accel" << "tcg,thread=multi,tb-size=1024"
          << "-display" << "none"
          << "-monitor" << "none"
             << "-serial" << "stdio"
-            << "-qmp" << QString("unix:%1,server=on,wait=off").arg(qmpSocketPath())
          ;
+
+#if !defined(Q_OS_WIN)
+    QFile::remove(qmpSocketPath());
+    args << "-qmp" << QString("unix:%1,server=on,wait=off").arg(qmpSocketPath());
+#else
+    emit serialLineReceived("[QMP] disabled on Windows in this build; CPU debug controls are unavailable");
+#endif
 
     args[1] = machineArg;
 
@@ -594,11 +634,15 @@ void QemuController::startQemuWithFirmware(const QString &firmwarePath)
     }
 
     if (bootMode == 1) {
-        const QString flashPort = !uartSlavePath.isEmpty() ? uartSlavePath : uartAliasPath;
+        const QString flashPort = currentUartPort();
         emit serialLineReceived("[QEMU] Download Boot mode selected (BootROM UART/USB downloader)");
-        emit serialLineReceived(QString("[Flash] recommended: esptool --chip esp32s3 --port %1 --before no-reset --after no-reset --no-stub write-flash 0x0 <firmware.bin>\n"
-                                        "[Flash] baud negotiation: add --baud <rate> (esptool syncs at ROM speed first, then switches)")
-                                .arg(flashPort));
+        if (!flashPort.isEmpty()) {
+            emit serialLineReceived(QString("[Flash] recommended: esptool --chip esp32s3 --port %1 --before no-reset --after no-reset --no-stub write-flash 0x0 <firmware.bin>\n"
+                                            "[Flash] baud negotiation: add --baud <rate> (esptool syncs at ROM speed first, then switches)")
+                                    .arg(flashPort));
+        } else {
+            emit serialLineReceived("[Flash] no host PTY bridge available for external esptool in this runtime");
+        }
     } else {
         emit serialLineReceived("[QEMU] Normal Boot mode selected (SPI flash boot)");
         emit serialLineReceived("[Flash] UART sync auto-entry is enabled: esptool sync packet can auto-switch simulator to Download Boot mode");
@@ -841,7 +885,7 @@ bool QemuController::prepareSpiFlashImage(const QString &firmwarePath, QString &
         return false;
     }
 
-    spiFlashImagePath = QDir::tempPath() + "/esp32s3_gui_flash.bin";
+    spiFlashImagePath = QDir::tempPath() + QString("/esp32s3_gui_flash_%1.bin").arg(QCoreApplication::applicationPid());
     QFile flashFile(spiFlashImagePath);
     if (!flashFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
         emit serialLineReceived(QString("[SPI Flash] failed to create flash image: %1").arg(spiFlashImagePath));
@@ -898,16 +942,33 @@ QString QemuController::resolveQemuBinary() const
     }
 
     const QString appDir = QCoreApplication::applicationDirPath();
+    const QString exeName =
+#if defined(Q_OS_WIN)
+        QStringLiteral("qemu-system-xtensa.exe");
+#else
+        QStringLiteral("qemu-system-xtensa");
+#endif
+
     const QStringList candidates = {
-        QDir::cleanPath(appDir + "/../../qemu/build/qemu-system-xtensa"),
-        QDir::cleanPath(QDir::currentPath() + "/../qemu/build/qemu-system-xtensa"),
-        QDir::cleanPath(QDir::currentPath() + "/qemu/build/qemu-system-xtensa")
+        QDir::cleanPath(appDir + "/" + exeName),
+        QDir::cleanPath(appDir + "/../" + exeName),
+        QDir::cleanPath(appDir + "/../../" + exeName),
+        QDir::cleanPath(appDir + "/../../qemu/build/" + exeName),
+        QDir::cleanPath(appDir + "/../../../qemu/build/" + exeName),
+        QDir::cleanPath(QDir::currentPath() + "/../qemu/build/" + exeName),
+        QDir::cleanPath(QDir::currentPath() + "/qemu/build/" + exeName),
+        QDir::cleanPath(QDir::currentPath() + "/../../qemu/build/" + exeName)
     };
 
     for (const QString &candidate : candidates) {
         if (QFileInfo::exists(candidate)) {
             return QFileInfo(candidate).absoluteFilePath();
         }
+    }
+
+    const QString fromPath = QStandardPaths::findExecutable(exeName);
+    if (!fromPath.isEmpty()) {
+        return fromPath;
     }
 
     return QString();
@@ -918,12 +979,48 @@ void QemuController::handleQemuOutputChunk(const QString &chunk)
     serialBuffer += chunk;
     const QStringList lines = splitLines(serialBuffer);
     for (const QString &line : lines) {
+        ingestBridgeEventLine(line);
         emit serialLineReceived(line);
     }
 }
 
+bool QemuController::ingestBridgeEventLine(const QString &line)
+{
+    const QString trimmed = line.trimmed();
+
+    auto parseAndEmit = [&](const QString &prefix, auto emitter) -> bool {
+        if (!trimmed.startsWith(prefix)) {
+            return false;
+        }
+        const QString jsonText = trimmed.mid(prefix.size()).trimmed();
+        QJsonParseError err;
+        const QJsonDocument doc = QJsonDocument::fromJson(jsonText.toUtf8(), &err);
+        if (err.error != QJsonParseError::NoError || !doc.isObject()) {
+            return false;
+        }
+        emitter(doc.object());
+        return true;
+    };
+
+    if (parseAndEmit("[PERIPH][I2C]", [this](const QJsonObject &obj) { emit i2cTransferRequested(obj); })) {
+        return true;
+    }
+    if (parseAndEmit("[PERIPH][SPI]", [this](const QJsonObject &obj) { emit spiTransferRequested(obj); })) {
+        return true;
+    }
+    if (parseAndEmit("[PERIPH][UART]", [this](const QJsonObject &obj) { emit uartTxRequested(obj); })) {
+        return true;
+    }
+
+    return false;
+}
+
 void QemuController::connectQmp()
 {
+#if defined(Q_OS_WIN)
+    return;
+#endif
+
     if (qemuProcess->state() != QProcess::Running) {
         return;
     }
@@ -943,6 +1040,9 @@ void QemuController::disconnectQmp()
     liveTimer->stop();
     qmpSocket->abort();
     qmpBuffer.clear();
+    pendingSnapshotCb = -1;
+    pendingRegsCb = -1;
+    pendingMemCb = -1;
 }
 
 void QemuController::processQmpBuffer()
@@ -982,25 +1082,23 @@ void QemuController::handleQmpMessage(const QJsonObject &obj)
     }
 
     const int id = obj.value("id").toInt(-1);
-    if (id == pendingSnapshotCb && obj.contains("return")) {
-        pendingSnapshotCb = -1;
-        pendingPcText = "0x00000000";
-        pendingScalars.fill("0x00000000", 16);
-        pendingVectors.fill("0x0000000000000000", 8);
-
-        const quint64 pc = parsePcFromQmp(obj);
-        pendingPcText = QString("0x%1").arg(pc, 8, 16, QLatin1Char('0')).toUpper();
-
-        pendingRegsCb = qmpSeq++;
-        QJsonObject args;
-        args["command-line"] = "info registers";
-        sendQmpCommand("human-monitor-command", args, pendingRegsCb);
+    if (obj.contains("error")) {
+        if (id == pendingSnapshotCb) {
+            pendingSnapshotCb = -1;
+        }
+        if (id == pendingRegsCb) {
+            pendingRegsCb = -1;
+        }
+        if (id == pendingMemCb) {
+            pendingMemCb = -1;
+        }
+        emit serialLineReceived(QString("[QMP] command error for id=%1").arg(id));
         return;
     }
 
     if (id == pendingRegsCb && obj.contains("return")) {
         pendingRegsCb = -1;
-        parseRegisterDump(obj.value("return").toString(), pendingScalars, pendingVectors);
+        parseRegisterDump(obj.value("return").toString(), pendingPcText, pendingScalars, pendingVectors);
 
         pendingMemCb = qmpSeq++;
         QJsonObject args;
@@ -1046,35 +1144,33 @@ void QemuController::pollLiveState()
 
 QString QemuController::qmpSocketPath() const
 {
-    return QDir::tempPath() + "/esp32s3_gui_qmp.sock";
+    return QDir::tempPath() + QString("/esp32s3_gui_qmp_%1.sock").arg(QCoreApplication::applicationPid());
 }
 
-quint64 QemuController::parsePcFromQmp(const QJsonObject &obj) const
+void QemuController::parseRegisterDump(const QString &dump,
+                                       QString &pcText,
+                                       QStringList &scalars,
+                                       QStringList &vectors) const
 {
-    const QJsonArray cpus = obj.value("return").toArray();
-    if (cpus.isEmpty()) {
-        return 0;
-    }
+    QRegularExpression pcRe("\\bPC\\s*[:=]\\s*([0-9A-Fa-fx]+)", QRegularExpression::CaseInsensitiveOption);
+    QRegularExpression scalarRe("\\bA0?([0-9]|1[0-5])\\s*[:=]\\s*([0-9A-Fa-fx]+)", QRegularExpression::CaseInsensitiveOption);
+    QRegularExpression floatRe("\\bF0?([0-7])\\s*[:=]\\s*([0-9A-Fa-fx]+)", QRegularExpression::CaseInsensitiveOption);
 
-    const QJsonObject cpu0 = cpus.first().toObject();
-    const QJsonValue pcVal = cpu0.value("pc");
-    if (pcVal.isDouble()) {
-        return static_cast<quint64>(pcVal.toDouble());
+    const QRegularExpressionMatch pcMatch = pcRe.match(dump);
+    if (pcMatch.hasMatch()) {
+        QString val = pcMatch.captured(1).toUpper();
+        if (!val.startsWith("0X")) {
+            val.prepend("0x");
+        }
+        pcText = val;
     }
-    return 0;
-}
-
-void QemuController::parseRegisterDump(const QString &dump, QStringList &scalars, QStringList &vectors) const
-{
-    QRegularExpression scalarRe("\\b(a([0-9]|1[0-5]))\\s*=\\s*([0-9a-fA-Fx]+)", QRegularExpression::CaseInsensitiveOption);
-    QRegularExpression vectorRe("\\b([vq]([0-7]))\\s*=\\s*([0-9a-fA-Fx]+)", QRegularExpression::CaseInsensitiveOption);
 
     QRegularExpressionMatchIterator it = scalarRe.globalMatch(dump);
     while (it.hasNext()) {
         QRegularExpressionMatch m = it.next();
-        const int index = m.captured(2).toInt();
+        const int index = m.captured(1).toInt();
         if (index >= 0 && index < scalars.size()) {
-            QString val = m.captured(3).toUpper();
+            QString val = m.captured(2).toUpper();
             if (!val.startsWith("0X")) {
                 val.prepend("0x");
             }
@@ -1082,12 +1178,12 @@ void QemuController::parseRegisterDump(const QString &dump, QStringList &scalars
         }
     }
 
-    it = vectorRe.globalMatch(dump);
+    it = floatRe.globalMatch(dump);
     while (it.hasNext()) {
         QRegularExpressionMatch m = it.next();
-        const int index = m.captured(2).toInt();
+        const int index = m.captured(1).toInt();
         if (index >= 0 && index < vectors.size()) {
-            QString val = m.captured(3).toUpper();
+            QString val = m.captured(2).toUpper();
             if (!val.startsWith("0X")) {
                 val.prepend("0x");
             }
@@ -1101,20 +1197,27 @@ QStringList QemuController::parseMemoryDump(const QString &dump) const
     QStringList out;
     out.fill("0x00000000", 8);
 
-    QRegularExpression lineRe(":\\s*(0x[0-9A-Fa-f]+|[0-9A-Fa-f]+)");
+    QRegularExpression wordRe("0x[0-9A-Fa-f]+|[0-9A-Fa-f]{8}");
     const QStringList lines = dump.split('\n', Qt::SkipEmptyParts);
     int pos = 0;
     for (const QString &line : lines) {
-        QRegularExpressionMatch m = lineRe.match(line);
-        if (!m.hasMatch()) {
+        const int colonPos = line.indexOf(':');
+        if (colonPos < 0) {
             continue;
         }
-        QString val = m.captured(1).toUpper();
-        if (!val.startsWith("0X")) {
-            val.prepend("0x");
-        }
-        if (pos < out.size()) {
+
+        QRegularExpressionMatchIterator it = wordRe.globalMatch(line.mid(colonPos + 1));
+        while (it.hasNext() && pos < out.size()) {
+            const QRegularExpressionMatch m = it.next();
+            QString val = m.captured(0).toUpper();
+            if (!val.startsWith("0X")) {
+                val.prepend("0x");
+            }
             out[pos++] = val;
+        }
+
+        if (pos >= out.size()) {
+            break;
         }
     }
 

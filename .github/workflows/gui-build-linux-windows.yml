@@ -1,0 +1,45 @@
+name: GUI Build (Linux + Windows)
+
+on:
+  push:
+    paths:
+      - 'gui-esp32s3-simulator/**'
+      - '.github/workflows/gui-build-linux-windows.yml'
+  pull_request:
+    paths:
+      - 'gui-esp32s3-simulator/**'
+      - '.github/workflows/gui-build-linux-windows.yml'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt (Windows)
+        if: runner.os == 'Windows'
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.6.3'
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build g++ qt6-base-dev
+
+      - name: Configure
+        run: cmake -S gui-esp32s3-simulator -B gui-esp32s3-simulator/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build gui-esp32s3-simulator/build --config Release -j 4
+
+      - name: Test
+        run: ctest --test-dir gui-esp32s3-simulator/build --output-on-failure -C Release

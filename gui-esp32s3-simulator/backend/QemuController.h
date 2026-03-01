@@ -30,6 +30,8 @@ public:
     void requestCpuSnapshot();
     void startLiveUpdates(bool enabled);
     void setMemoryInspectBase(const QString &addressText);
+    void handleBridgeResponse(const QString &busKind, const QJsonObject &payload);
+    bool ingestBridgeEventLine(const QString &line);
 
     void pauseExecution();
     void continueExecution();
@@ -50,6 +52,11 @@ public:
     void loadFirmware(const QString &path);
 
 signals:
+    void qemuStarted();
+    void qemuStopped();
+    void i2cTransferRequested(const QJsonObject &request);
+    void spiTransferRequested(const QJsonObject &request);
+    void uartTxRequested(const QJsonObject &request);
     void serialLineReceived(const QString &line);
     void cpuSnapshotUpdated(const QString &pc,
                             const QStringList &scalarRegs,
@@ -78,8 +85,10 @@ private:
                         int callbackId = -1);
     void pollLiveState();
     QString qmpSocketPath() const;
-    quint64 parsePcFromQmp(const QJsonObject &obj) const;
-    void parseRegisterDump(const QString &dump, QStringList &scalars, QStringList &vectors) const;
+    void parseRegisterDump(const QString &dump,
+                           QString &pcText,
+                           QStringList &scalars,
+                           QStringList &vectors) const;
     QStringList parseMemoryDump(const QString &dump) const;
 
     QProcess *qemuProcess;

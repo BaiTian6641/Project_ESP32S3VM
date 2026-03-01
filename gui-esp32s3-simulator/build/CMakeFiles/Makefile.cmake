@@ -140,6 +140,22 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/usr/lib/x86_64-linux-gnu/cmake/Qt6NetworkPrivate/Qt6NetworkPrivateDependencies.cmake"
   "/usr/lib/x86_64-linux-gnu/cmake/Qt6NetworkPrivate/Qt6NetworkPrivateTargets.cmake"
   "/usr/lib/x86_64-linux-gnu/cmake/Qt6NetworkPrivate/Qt6NetworkPrivateVersionlessAliasTargets.cmake"
+  "/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestAdditionalTargetInfo.cmake"
+  "/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestConfig.cmake"
+  "/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestConfigVersion.cmake"
+  "/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestConfigVersionImpl.cmake"
+  "/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestDependencies.cmake"
+  "/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestTargets-none.cmake"
+  "/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestTargets.cmake"
+  "/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/Qt6TestVersionlessAliasTargets.cmake"
+  "/usr/lib/x86_64-linux-gnu/cmake/Qt6Test/QtTestProperties.cmake"
+  "/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateAdditionalTargetInfo.cmake"
+  "/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateConfig.cmake"
+  "/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateConfigVersion.cmake"
+  "/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateConfigVersionImpl.cmake"
+  "/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateDependencies.cmake"
+  "/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateTargets.cmake"
+  "/usr/lib/x86_64-linux-gnu/cmake/Qt6TestPrivate/Qt6TestPrivateVersionlessAliasTargets.cmake"
   "/usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsAdditionalTargetInfo.cmake"
   "/usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsConfig.cmake"
   "/usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsConfigVersion.cmake"
@@ -216,6 +232,7 @@ set(CMAKE_MAKEFILE_OUTPUTS
 # Byproducts of CMake generate step:
 set(CMAKE_MAKEFILE_PRODUCTS
   "CMakeFiles/gui_esp32s3_simulator_autogen.dir/AutogenInfo.json"
+  "CMakeFiles/gui_esp32s3_bridge_contract_test_autogen.dir/AutogenInfo.json"
   ".qt/QtDeploySupport.cmake"
   ".qt/QtDeployTargets.cmake"
   "CMakeFiles/CMakeDirectoryInformation.cmake"
@@ -224,6 +241,9 @@ set(CMAKE_MAKEFILE_PRODUCTS
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/gui_esp32s3_simulator.dir/DependInfo.cmake"
+  "CMakeFiles/gui_esp32s3_bridge_contract_test.dir/DependInfo.cmake"
   "CMakeFiles/gui_esp32s3_simulator_autogen_timestamp_deps.dir/DependInfo.cmake"
   "CMakeFiles/gui_esp32s3_simulator_autogen.dir/DependInfo.cmake"
+  "CMakeFiles/gui_esp32s3_bridge_contract_test_autogen_timestamp_deps.dir/DependInfo.cmake"
+  "CMakeFiles/gui_esp32s3_bridge_contract_test_autogen.dir/DependInfo.cmake"
   )

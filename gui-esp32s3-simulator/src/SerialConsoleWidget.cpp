@@ -28,6 +28,7 @@ SerialConsoleWidget::SerialConsoleWidget(QWidget *parent)
 {
     outputView->setReadOnly(true);
     outputView->setPlaceholderText("UART0 output will appear here...");
+    outputView->document()->setMaximumBlockCount(4000);
     inputLine->setPlaceholderText("Type data to send to UART0...");
 
         commTypeCombo->addItems({"UART TTL", "RS-232", "RS-485"});

@@ -9,7 +9,9 @@ gui_esp32s3_simulator: \
   CMakeFiles/gui_esp32s3_simulator.dir/src/CpuStatusWidget.cpp.o \
   CMakeFiles/gui_esp32s3_simulator.dir/src/ControlPanelWidget.cpp.o \
   CMakeFiles/gui_esp32s3_simulator.dir/src/DebugWidget.cpp.o \
+  CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.o \
   CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o \
+  CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.o \
   /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.9.2 \
   /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.9.2 \
   /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libutil.a \
@@ -197,7 +199,11 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/ControlPanelWidget.cpp.o:
 
 CMakeFiles/gui_esp32s3_simulator.dir/src/DebugWidget.cpp.o:
 
+CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.o:
+
 CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o:
+
+CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.o:
 
 /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.9.2:
 
