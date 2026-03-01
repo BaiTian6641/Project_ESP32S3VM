@@ -158,7 +158,7 @@ jobs:
         run: |
           set -euo pipefail
           cd "${{ env.QEMU_DIR }}"
-          ./build/qemu-system-xtensa --version
+          ./build/qemu-system-xtensa -version
           ./build/qemu-system-xtensa -machine help | grep -i esp32s3
 
       - name: Build ESP32S3 QEMU (Windows / MSYS2)
@@ -220,7 +220,7 @@ jobs:
         run: |
           set -euo pipefail
           cd "${{ env.QEMU_DIR }}"
-          ./build/qemu-system-xtensa.exe --version
+          ./build/qemu-system-xtensa.exe -version
           ./build/qemu-system-xtensa.exe -machine help | grep -i esp32s3
 
       - name: Package runtime bundle
@@ -311,12 +311,12 @@ jobs:
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             EXE="$PKG_ROOT/qemu/qemu-system-xtensa.exe"
             test -f "$EXE"
-            PATH="$PKG_ROOT/qemu:$PATH" "$EXE" --version
+            PATH="$PKG_ROOT/qemu:$PATH" "$EXE" -version
             PATH="$PKG_ROOT/qemu:$PATH" "$EXE" -machine help | grep -i esp32s3
           else
             EXE="$PKG_ROOT/qemu/qemu-system-xtensa"
             test -x "$EXE"
-            "$EXE" --version
+            "$EXE" -version
             "$EXE" -machine help | grep -i esp32s3
           fi
 
