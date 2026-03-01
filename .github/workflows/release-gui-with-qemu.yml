@@ -74,6 +74,7 @@ jobs:
             mingw-w64-x86_64-libslirp
             mingw-w64-x86_64-python
             mingw-w64-x86_64-python-pip
+            mingw-w64-x86_64-ninja
             mingw-w64-x86_64-pkgconf
 
       - name: Dependency preflight (Linux)
@@ -92,6 +93,7 @@ jobs:
         shell: msys2 {0}
         run: |
           set -euo pipefail
+          ninja --version
           pkg-config --modversion glib-2.0
           pkg-config --modversion pixman-1
           pkg-config --modversion zlib
