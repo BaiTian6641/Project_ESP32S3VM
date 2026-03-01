@@ -123,7 +123,9 @@ jobs:
             --disable-sdl \
             --disable-curses \
             --disable-opengl \
-            --disable-guest-agent || { cat build/meson-logs/meson-log.txt || true; exit 1; }
+            --disable-guest-agent \
+            -Dslirp=disabled \
+            -Dguest_agent=disabled || { cat build/meson-logs/meson-log.txt || true; exit 1; }
           make -j"$(nproc)"
           test -x build/qemu-system-xtensa
 
@@ -167,7 +169,14 @@ jobs:
             --disable-sdl \
             --disable-curses \
             --disable-opengl \
-            --disable-guest-agent || { cat build/meson-logs/meson-log.txt || true; exit 1; }
+            --disable-guest-agent \
+            -Dslirp=disabled \
+            -Dguest_agent=disabled || { cat build/meson-logs/meson-log.txt || true; exit 1; }
+          if grep -q '^CONFIG_SLIRP=y' build/config-host.mak; then
+            echo '[configure] slirp unexpectedly enabled on Windows build'
+            cat build/config-host.mak
+            exit 1
+          fi
           make -j"$(nproc)"
           test -f build/qemu-system-xtensa.exe
 
