@@ -121,7 +121,8 @@ jobs:
             --disable-gtk \
             --disable-sdl \
             --disable-curses \
-            --disable-opengl || { cat build/meson-logs/meson-log.txt || true; exit 1; }
+            --disable-opengl \
+            --disable-guest-agent || { cat build/meson-logs/meson-log.txt || true; exit 1; }
           make -j"$(nproc)"
           test -x build/qemu-system-xtensa
 
@@ -163,7 +164,8 @@ jobs:
             --disable-gtk \
             --disable-sdl \
             --disable-curses \
-            --disable-opengl || { cat build/meson-logs/meson-log.txt || true; exit 1; }
+            --disable-opengl \
+            --disable-guest-agent || { cat build/meson-logs/meson-log.txt || true; exit 1; }
           make -j"$(nproc)"
           test -f build/qemu-system-xtensa.exe
 
