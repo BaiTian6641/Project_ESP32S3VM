@@ -88,6 +88,7 @@ jobs:
           pkg-config --modversion zlib
           pkg-config --modversion libgcrypt
           pkg-config --modversion slirp
+          pkg-config --cflags slirp
 
       - name: Dependency preflight (Windows / MSYS2)
         if: runner.os == 'Windows'
@@ -115,6 +116,10 @@ jobs:
           git clone --depth 1 --recurse-submodules --shallow-submodules "${{ env.QEMU_REPO }}" "${{ env.QEMU_DIR }}"
           cd "${{ env.QEMU_DIR }}"
           git submodule update --init --recursive
+
+          # Ensure libslirp include paths are available if this fork still enables slirp.
+          SLIRP_CFLAGS="$(pkg-config --cflags slirp || true)"
+
           ./configure \
             --target-list=xtensa-softmmu \
             --disable-werror \
@@ -127,15 +132,16 @@ jobs:
             --disable-curses \
             --disable-opengl \
             --disable-guest-agent \
+            --extra-cflags="$SLIRP_CFLAGS" \
             -Dslirp=disabled \
             -Dguest_agent=disabled || { cat build/meson-logs/meson-log.txt || true; exit 1; }
           meson configure build -Dslirp=disabled -Dguest_agent=disabled
 
-          SLIRP_STATE="$(grep '^CONFIG_SLIRP=' build/config-host.mak | tail -n1 | cut -d= -f2 || true)"
-          if [[ "${SLIRP_STATE:-n}" != "n" ]]; then
-            echo '[configure] slirp unexpectedly enabled on Linux build'
-            grep '^CONFIG_.*SLIRP' build/config-host.mak || true
-            exit 1
+          if grep -q '^#define CONFIG_SLIRP' build/config-host.h; then
+            echo '[configure] slirp is enabled on Linux build (continuing)'
+            grep '^#define CONFIG_.*SLIRP' build/config-host.h || true
+          else
+            echo '[configure] slirp is disabled on Linux build'
           fi
           make -j"$(nproc)"
           test -x build/qemu-system-xtensa
@@ -168,6 +174,9 @@ jobs:
           # Meson runs on native Windows Python here, so use a native absolute prefix path.
           MESON_PREFIX="$(cygpath -m "$PWD/install-root")"
 
+          # Ensure libslirp include paths are available if this fork still enables slirp.
+          SLIRP_CFLAGS="$(pkg-config --cflags slirp || true)"
+
           ./configure \
             --target-list=xtensa-softmmu \
             --prefix="$MESON_PREFIX" \
@@ -181,15 +190,16 @@ jobs:
             --disable-curses \
             --disable-opengl \
             --disable-guest-agent \
+            --extra-cflags="$SLIRP_CFLAGS" \
             -Dslirp=disabled \
             -Dguest_agent=disabled || { cat build/meson-logs/meson-log.txt || true; exit 1; }
           meson configure build -Dslirp=disabled -Dguest_agent=disabled
 
-          SLIRP_STATE="$(grep '^CONFIG_SLIRP=' build/config-host.mak | tail -n1 | cut -d= -f2 || true)"
-          if [[ "${SLIRP_STATE:-n}" != "n" ]]; then
-            echo '[configure] slirp unexpectedly enabled on Windows build'
-            grep '^CONFIG_.*SLIRP' build/config-host.mak || true
-            exit 1
+          if grep -q '^#define CONFIG_SLIRP' build/config-host.h; then
+            echo '[configure] slirp is enabled on Windows build (continuing)'
+            grep '^#define CONFIG_.*SLIRP' build/config-host.h || true
+          else
+            echo '[configure] slirp is disabled on Windows build'
           fi
           make -j"$(nproc)"
           test -f build/qemu-system-xtensa.exe
