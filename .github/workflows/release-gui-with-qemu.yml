@@ -55,7 +55,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             git make ninja-build pkg-config python3 python3-pip \
-            libglib2.0-dev libpixman-1-dev zlib1g-dev libgcrypt20-dev
+            libglib2.0-dev libpixman-1-dev zlib1g-dev libgcrypt20-dev libslirp-dev libfdt-dev
 
       - name: Setup MSYS2 (Windows)
         if: runner.os == 'Windows'
@@ -71,14 +71,42 @@ jobs:
             mingw-w64-x86_64-pixman
             mingw-w64-x86_64-zlib
             mingw-w64-x86_64-libgcrypt
+            mingw-w64-x86_64-libslirp
             mingw-w64-x86_64-python
             mingw-w64-x86_64-pkgconf
+
+      - name: Dependency preflight (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          pkg-config --modversion glib-2.0
+          pkg-config --modversion pixman-1
+          pkg-config --modversion zlib
+          pkg-config --modversion libgcrypt
+          pkg-config --modversion slirp
+
+      - name: Dependency preflight (Windows / MSYS2)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          pkg-config --modversion glib-2.0
+          pkg-config --modversion pixman-1
+          pkg-config --modversion zlib
+          pkg-config --modversion libgcrypt
+          pkg-config --modversion slirp
 
       - name: Build ESP32S3 QEMU (Linux)
         if: runner.os == 'Linux'
         shell: bash
         run: |
           set -euo pipefail
+
+          # Ensure QEMU's required Python tooling exists before configure.
+          python3 -m pip install --upgrade pip
+          python3 -m pip install meson==1.5.0 pycotap==1.3.1
+
           git clone --depth 1 --recurse-submodules --shallow-submodules "${{ env.QEMU_REPO }}" "${{ env.QEMU_DIR }}"
           cd "${{ env.QEMU_DIR }}"
           git submodule update --init --recursive
@@ -91,15 +119,30 @@ jobs:
             --disable-gtk \
             --disable-sdl \
             --disable-curses \
-            --disable-opengl
+            --disable-opengl || { cat build/meson-logs/meson-log.txt || true; exit 1; }
           make -j"$(nproc)"
           test -x build/qemu-system-xtensa
+
+      - name: Verify ESP32S3 machine support (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${{ env.QEMU_DIR }}"
+          ./build/qemu-system-xtensa --version
+          ./build/qemu-system-xtensa -machine help | grep -i esp32s3
 
       - name: Build ESP32S3 QEMU (Windows / MSYS2)
         if: runner.os == 'Windows'
         shell: msys2 {0}
         run: |
           set -euo pipefail
+
+          # Ensure QEMU's required Python tooling exists before configure.
+          # This avoids mkvenv offline wheel lookup failures when python/wheels is unavailable.
+          python3 -m pip install --upgrade pip
+          python3 -m pip install meson==1.5.0 pycotap==1.3.1
+
           git clone --depth 1 --recurse-submodules --shallow-submodules "${{ env.QEMU_REPO }}" "${{ env.QEMU_DIR }}"
           cd "${{ env.QEMU_DIR }}"
           git submodule update --init --recursive
@@ -112,9 +155,18 @@ jobs:
             --disable-gtk \
             --disable-sdl \
             --disable-curses \
-            --disable-opengl
+            --disable-opengl || { cat build/meson-logs/meson-log.txt || true; exit 1; }
           make -j"$(nproc)"
           test -f build/qemu-system-xtensa.exe
+
+      - name: Verify ESP32S3 machine support (Windows / MSYS2)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          cd "${{ env.QEMU_DIR }}"
+          ./build/qemu-system-xtensa.exe --version
+          ./build/qemu-system-xtensa.exe -machine help | grep -i esp32s3
 
       - name: Package runtime bundle
         id: package
@@ -144,6 +196,18 @@ jobs:
           mkdir -p "$PKG_ROOT/qemu"
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa.exe" "$PKG_ROOT/qemu/"
+
+            # Copy only required MinGW runtime DLL dependencies for qemu-system-xtensa.exe
+            mapfile -t DLLS < <(ldd "${{ env.QEMU_DIR }}/build/qemu-system-xtensa.exe" \
+              | awk '/=> \/mingw64\/bin\// {print $3}' \
+              | sed '/^$/d' \
+              | sort -u)
+
+            for dll in "${DLLS[@]:-}"; do
+              if [[ -f "$dll" ]]; then
+                cp "$dll" "$PKG_ROOT/qemu/"
+              fi
+            done
           else
             cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa" "$PKG_ROOT/qemu/"
             chmod +x "$PKG_ROOT/qemu/qemu-system-xtensa"
@@ -180,7 +244,26 @@ jobs:
           ARCHIVE="dist/${PKG_NAME}.zip"
           cmake -E tar cfv "$ARCHIVE" --format=zip "$PKG_ROOT"
 
+          echo "pkg_root=$PKG_ROOT" >> "$GITHUB_OUTPUT"
           echo "archive=$ARCHIVE" >> "$GITHUB_OUTPUT"
+
+      - name: Verify packaged QEMU runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          PKG_ROOT="${{ steps.package.outputs.pkg_root }}"
+
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            EXE="$PKG_ROOT/qemu/qemu-system-xtensa.exe"
+            test -f "$EXE"
+            PATH="$PKG_ROOT/qemu:$PATH" "$EXE" --version
+            PATH="$PKG_ROOT/qemu:$PATH" "$EXE" -machine help | grep -i esp32s3
+          else
+            EXE="$PKG_ROOT/qemu/qemu-system-xtensa"
+            test -x "$EXE"
+            "$EXE" --version
+            "$EXE" -machine help | grep -i esp32s3
+          fi
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
