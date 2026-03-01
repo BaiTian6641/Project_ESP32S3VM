@@ -1,0 +1,193 @@
+name: Release GUI + ESP32S3 QEMU
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      GUI_BUILD_DIR: gui-esp32s3-simulator/build-release
+      QEMU_REPO: https://github.com/BaiTian6641/qemu.git
+      QEMU_DIR: qemu-upstream
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt (Windows)
+        if: runner.os == 'Windows'
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.6.3'
+
+      - name: Install GUI dependencies (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build g++ qt6-base-dev
+
+      - name: Build GUI
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -E rm -rf "${{ env.GUI_BUILD_DIR }}"
+          cmake -S gui-esp32s3-simulator -B "${{ env.GUI_BUILD_DIR }}" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "${{ env.GUI_BUILD_DIR }}" --config Release -j 4
+
+      - name: Install QEMU build dependencies (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git make ninja-build pkg-config python3 python3-pip \
+            libglib2.0-dev libpixman-1-dev zlib1g-dev
+
+      - name: Setup MSYS2 (Windows)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            git
+            make
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-glib2
+            mingw-w64-x86_64-pixman
+            mingw-w64-x86_64-zlib
+            mingw-w64-x86_64-python
+            mingw-w64-x86_64-pkgconf
+
+      - name: Build ESP32S3 QEMU (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 "${{ env.QEMU_REPO }}" "${{ env.QEMU_DIR }}"
+          cd "${{ env.QEMU_DIR }}"
+          ./configure \
+            --target-list=xtensa-softmmu \
+            --disable-werror \
+            --disable-docs \
+            --disable-tools \
+            --disable-slirp \
+            --disable-gtk \
+            --disable-sdl \
+            --disable-curses \
+            --disable-opengl
+          make -j"$(nproc)"
+          test -x build/qemu-system-xtensa
+
+      - name: Build ESP32S3 QEMU (Windows / MSYS2)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          git clone --depth 1 "${{ env.QEMU_REPO }}" "${{ env.QEMU_DIR }}"
+          cd "${{ env.QEMU_DIR }}"
+          ./configure \
+            --target-list=xtensa-softmmu \
+            --disable-werror \
+            --disable-docs \
+            --disable-tools \
+            --disable-slirp \
+            --disable-gtk \
+            --disable-sdl \
+            --disable-curses \
+            --disable-opengl
+          make -j"$(nproc)"
+          test -f build/qemu-system-xtensa.exe
+
+      - name: Package runtime bundle
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PKG_NAME="esp32s3-simulator-bundle-${{ runner.os }}"
+          PKG_ROOT="dist/${PKG_NAME}"
+          mkdir -p "$PKG_ROOT"
+
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            GUI_BIN="${{ env.GUI_BUILD_DIR }}/Release/gui_esp32s3_simulator.exe"
+            if [[ ! -f "$GUI_BIN" ]]; then
+              GUI_BIN="${{ env.GUI_BUILD_DIR }}/gui_esp32s3_simulator.exe"
+            fi
+            cp "$GUI_BIN" "$PKG_ROOT/"
+          else
+            cp "${{ env.GUI_BUILD_DIR }}/gui_esp32s3_simulator" "$PKG_ROOT/"
+            chmod +x "$PKG_ROOT/gui_esp32s3_simulator"
+          fi
+
+          cp -r gui-esp32s3-simulator/peripherals "$PKG_ROOT/"
+          cp -r gui-esp32s3-simulator/device-sims "$PKG_ROOT/"
+          cp gui-esp32s3-simulator/README.md "$PKG_ROOT/README.gui.md"
+
+          mkdir -p "$PKG_ROOT/qemu"
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa.exe" "$PKG_ROOT/qemu/"
+          else
+            cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa" "$PKG_ROOT/qemu/"
+            chmod +x "$PKG_ROOT/qemu/qemu-system-xtensa"
+          fi
+
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            {
+              printf '%s\n' '@echo off'
+              printf '%s\n' 'setlocal'
+              printf '%s\n' 'set "SCRIPT_DIR=%~dp0"'
+              printf '%s\n' 'set "ESP32S3_QEMU_BIN=%SCRIPT_DIR%qemu\qemu-system-xtensa.exe"'
+              printf '%s\n' 'echo [launcher] Using bundled QEMU: %ESP32S3_QEMU_BIN%'
+              printf '%s\n' '"%SCRIPT_DIR%gui_esp32s3_simulator.exe"'
+              printf '%s\n' 'endlocal'
+            } > "$PKG_ROOT/run-gui.cmd"
+          else
+            {
+              printf '%s\n' '#!/usr/bin/env bash'
+              printf '%s\n' 'set -euo pipefail'
+              printf '%s\n' 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"'
+              printf '%s\n' 'export ESP32S3_QEMU_BIN="$SCRIPT_DIR/qemu/qemu-system-xtensa"'
+              printf '%s\n' 'echo "[launcher] Using bundled QEMU: $ESP32S3_QEMU_BIN"'
+              printf '%s\n' 'exec "$SCRIPT_DIR/gui_esp32s3_simulator"'
+            } > "$PKG_ROOT/run-gui.sh"
+            chmod +x "$PKG_ROOT/run-gui.sh"
+          fi
+
+          {
+            printf '%s\n' "Bundle for ${{ runner.os }}"
+            printf '%s\n' '- Includes GUI binary, device simulators, peripheral configs, and built ESP32S3 QEMU.'
+            printf '%s\n' '- Launch via run-gui.sh (Linux) or run-gui.cmd (Windows).'
+          } > "$PKG_ROOT/run-info.txt"
+
+          ARCHIVE="dist/${PKG_NAME}.zip"
+          cmake -E tar cfv "$ARCHIVE" --format=zip "$PKG_ROOT"
+
+          echo "archive=$ARCHIVE" >> "$GITHUB_OUTPUT"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-bundle
+          path: ${{ steps.package.outputs.archive }}
+          if-no-files-found: error
+
+      - name: Upload to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.package.outputs.archive }}
