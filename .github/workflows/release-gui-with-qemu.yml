@@ -116,6 +116,7 @@ jobs:
             --target-list=xtensa-softmmu \
             --disable-werror \
             --disable-xen \
+            --disable-slirp \
             --disable-docs \
             --disable-tools \
             --disable-gtk \
@@ -159,6 +160,7 @@ jobs:
             --prefix="$MESON_PREFIX" \
             --disable-werror \
             --disable-xen \
+            --disable-slirp \
             --disable-docs \
             --disable-tools \
             --disable-gtk \
