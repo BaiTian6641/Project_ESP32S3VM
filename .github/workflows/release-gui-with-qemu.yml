@@ -74,7 +74,9 @@ jobs:
             mingw-w64-x86_64-libslirp
             mingw-w64-x86_64-python
             mingw-w64-x86_64-python-pip
-            mingw-w64-x86_64-ninja            mingw-w64-x86_64-diffutils            mingw-w64-x86_64-pkgconf
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-diffutils
+            mingw-w64-x86_64-pkgconf
 
       - name: Dependency preflight (Linux)
         if: runner.os == 'Linux'
@@ -98,6 +100,7 @@ jobs:
           pkg-config --modversion zlib
           pkg-config --modversion libgcrypt
           pkg-config --modversion slirp
+          pkg-config --cflags slirp
 
       - name: Build ESP32S3 QEMU (Linux)
         if: runner.os == 'Linux'
@@ -126,6 +129,14 @@ jobs:
             --disable-guest-agent \
             -Dslirp=disabled \
             -Dguest_agent=disabled || { cat build/meson-logs/meson-log.txt || true; exit 1; }
+          meson configure build -Dslirp=disabled -Dguest_agent=disabled
+
+          SLIRP_STATE="$(grep '^CONFIG_SLIRP=' build/config-host.mak | tail -n1 | cut -d= -f2 || true)"
+          if [[ "${SLIRP_STATE:-n}" != "n" ]]; then
+            echo '[configure] slirp unexpectedly enabled on Linux build'
+            grep '^CONFIG_.*SLIRP' build/config-host.mak || true
+            exit 1
+          fi
           make -j"$(nproc)"
           test -x build/qemu-system-xtensa
 
@@ -172,9 +183,12 @@ jobs:
             --disable-guest-agent \
             -Dslirp=disabled \
             -Dguest_agent=disabled || { cat build/meson-logs/meson-log.txt || true; exit 1; }
-          if grep -q '^CONFIG_SLIRP=y' build/config-host.mak; then
+          meson configure build -Dslirp=disabled -Dguest_agent=disabled
+
+          SLIRP_STATE="$(grep '^CONFIG_SLIRP=' build/config-host.mak | tail -n1 | cut -d= -f2 || true)"
+          if [[ "${SLIRP_STATE:-n}" != "n" ]]; then
             echo '[configure] slirp unexpectedly enabled on Windows build'
-            cat build/config-host.mak
+            grep '^CONFIG_.*SLIRP' build/config-host.mak || true
             exit 1
           fi
           make -j"$(nproc)"
