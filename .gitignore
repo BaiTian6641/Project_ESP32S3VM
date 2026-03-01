@@ -41,7 +41,6 @@ Testing/
 # --- Project-specific generated dirs ---
 /gui-esp32s3-simulator/build/
 /gui-esp32s3-simulator/build-ci/
-/qemu/build/
 /tests/arduino/build/
 
 # --- Coverage / reports ---

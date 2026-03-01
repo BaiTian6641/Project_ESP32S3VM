@@ -34,17 +34,110 @@ jobs:
 
       - name: Install dependencies (Linux)
         if: runner.os == 'Linux'
+        shell: bash
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build g++ qt6-base-dev
 
       - name: Configure
+        shell: bash
         run: |
-          cmake -E rm -rf "$BUILD_DIR"
-          cmake -S gui-esp32s3-simulator -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=Release
+          cmake -E rm -rf "${{ env.BUILD_DIR }}"
+          cmake -S gui-esp32s3-simulator -B "${{ env.BUILD_DIR }}" -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
-        run: cmake --build "$BUILD_DIR" --config Release -j 4
+        shell: bash
+        run: cmake --build "${{ env.BUILD_DIR }}" --config Release -j 4
 
       - name: Test
-        run: ctest --test-dir "$BUILD_DIR" --output-on-failure -C Release
+        shell: bash
+        run: ctest --test-dir "${{ env.BUILD_DIR }}" --output-on-failure -C Release
+
+      - name: Package Runtime Artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PKG_ROOT="dist/gui-esp32s3-simulator-${{ runner.os }}"
+          mkdir -p "$PKG_ROOT"
+
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            GUI_BIN="${{ env.BUILD_DIR }}/Release/gui_esp32s3_simulator.exe"
+            if [[ ! -f "$GUI_BIN" ]]; then
+              GUI_BIN="${{ env.BUILD_DIR }}/gui_esp32s3_simulator.exe"
+            fi
+            cp "$GUI_BIN" "$PKG_ROOT/"
+          else
+            cp "${{ env.BUILD_DIR }}/gui_esp32s3_simulator" "$PKG_ROOT/"
+            chmod +x "$PKG_ROOT/gui_esp32s3_simulator"
+          fi
+
+          cp -r gui-esp32s3-simulator/peripherals "$PKG_ROOT/"
+          cp -r gui-esp32s3-simulator/device-sims "$PKG_ROOT/"
+          cp gui-esp32s3-simulator/README.md "$PKG_ROOT/README.gui.md"
+
+          QEMU_STATUS_FILE="$PKG_ROOT/qemu-binary-status.txt"
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            if [[ -f "qemu/build/qemu-system-xtensa.exe" ]]; then
+              mkdir -p "$PKG_ROOT/qemu"
+              cp "qemu/build/qemu-system-xtensa.exe" "$PKG_ROOT/qemu/"
+              echo "included=qemu/build/qemu-system-xtensa.exe" > "$QEMU_STATUS_FILE"
+            else
+              echo "included=none" > "$QEMU_STATUS_FILE"
+              echo "note=Set ESP32S3_QEMU_BIN to a Windows qemu-system-xtensa.exe path." >> "$QEMU_STATUS_FILE"
+            fi
+
+            cat > "$PKG_ROOT/run-gui.cmd" <<'EOF'
+            @echo off
+            setlocal
+            set "SCRIPT_DIR=%~dp0"
+            if exist "%SCRIPT_DIR%qemu\qemu-system-xtensa.exe" (
+              set "ESP32S3_QEMU_BIN=%SCRIPT_DIR%qemu\qemu-system-xtensa.exe"
+              echo [launcher] Using bundled QEMU: %ESP32S3_QEMU_BIN%
+            ) else (
+              echo [launcher] Bundled QEMU not found. Set ESP32S3_QEMU_BIN if needed.
+            )
+            "%SCRIPT_DIR%gui_esp32s3_simulator.exe"
+            endlocal
+            EOF
+          else
+            if [[ -f "qemu/build/qemu-system-xtensa" ]]; then
+              mkdir -p "$PKG_ROOT/qemu"
+              cp "qemu/build/qemu-system-xtensa" "$PKG_ROOT/qemu/"
+              chmod +x "$PKG_ROOT/qemu/qemu-system-xtensa"
+              echo "included=qemu/build/qemu-system-xtensa" > "$QEMU_STATUS_FILE"
+            else
+              echo "included=none" > "$QEMU_STATUS_FILE"
+              echo "note=Set ESP32S3_QEMU_BIN to a Linux qemu-system-xtensa path." >> "$QEMU_STATUS_FILE"
+            fi
+
+            cat > "$PKG_ROOT/run-gui.sh" <<'EOF'
+            #!/usr/bin/env bash
+            set -euo pipefail
+            SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+            if [[ -x "$SCRIPT_DIR/qemu/qemu-system-xtensa" ]]; then
+              export ESP32S3_QEMU_BIN="$SCRIPT_DIR/qemu/qemu-system-xtensa"
+              echo "[launcher] Using bundled QEMU: $ESP32S3_QEMU_BIN"
+            else
+              echo "[launcher] Bundled QEMU not found. Set ESP32S3_QEMU_BIN if needed."
+            fi
+
+            exec "$SCRIPT_DIR/gui_esp32s3_simulator"
+            EOF
+            chmod +x "$PKG_ROOT/run-gui.sh"
+          fi
+
+          cat > "$PKG_ROOT/run-info.txt" <<EOF
+          GUI runtime package for ${{ runner.os }}
+          - Contains gui_esp32s3_simulator binary + peripheral assets.
+          - See qemu-binary-status.txt for bundled QEMU binary availability.
+          - If QEMU is not bundled, set ESP32S3_QEMU_BIN before launch.
+          EOF
+
+      - name: Upload Runtime Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gui-esp32s3-simulator-${{ matrix.os }}
+          path: dist/gui-esp32s3-simulator-${{ runner.os }}
+          if-no-files-found: error
