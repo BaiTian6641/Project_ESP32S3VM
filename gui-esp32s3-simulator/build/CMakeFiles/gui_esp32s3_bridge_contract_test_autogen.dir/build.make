@@ -72,7 +72,7 @@ gui_esp32s3_bridge_contract_test_autogen/timestamp: /usr/lib/qt6/libexec/moc
 gui_esp32s3_bridge_contract_test_autogen/timestamp: /usr/lib/qt6/libexec/uic
 gui_esp32s3_bridge_contract_test_autogen/timestamp: CMakeFiles/gui_esp32s3_bridge_contract_test_autogen.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Automatic MOC and UIC for target gui_esp32s3_bridge_contract_test"
-	/usr/bin/cmake -E cmake_autogen /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles/gui_esp32s3_bridge_contract_test_autogen.dir/AutogenInfo.json ""
+	/usr/bin/cmake -E cmake_autogen /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles/gui_esp32s3_bridge_contract_test_autogen.dir/AutogenInfo.json Release
 	/usr/bin/cmake -E touch /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_bridge_contract_test_autogen/timestamp
 
 CMakeFiles/gui_esp32s3_bridge_contract_test_autogen.dir/codegen:

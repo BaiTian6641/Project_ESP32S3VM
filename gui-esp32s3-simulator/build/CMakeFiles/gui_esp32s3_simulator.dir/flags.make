@@ -6,5 +6,5 @@ CXX_DEFINES = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_WID
 
 CXX_INCLUDES = -I/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/include -I/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src -I/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/backend -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork
 
-CXX_FLAGS = -std=gnu++17
+CXX_FLAGS = -O3 -DNDEBUG -std=gnu++17
 

@@ -19,6 +19,9 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+    env:
+      BUILD_DIR: gui-esp32s3-simulator/build-ci
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,10 +39,12 @@ jobs:
           sudo apt-get install -y cmake ninja-build g++ qt6-base-dev
 
       - name: Configure
-        run: cmake -S gui-esp32s3-simulator -B gui-esp32s3-simulator/build -DCMAKE_BUILD_TYPE=Release
+        run: |
+          cmake -E rm -rf "$BUILD_DIR"
+          cmake -S gui-esp32s3-simulator -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
-        run: cmake --build gui-esp32s3-simulator/build --config Release -j 4
+        run: cmake --build "$BUILD_DIR" --config Release -j 4
 
       - name: Test
-        run: ctest --test-dir gui-esp32s3-simulator/build --output-on-failure -C Release
+        run: ctest --test-dir "$BUILD_DIR" --output-on-failure -C Release

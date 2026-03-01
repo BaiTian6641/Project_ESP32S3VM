@@ -1,0 +1,53 @@
+# --- OS / editor noise ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# --- CMake / native build outputs ---
+build/
+build-*/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile
+compile_commands.json
+Testing/
+
+# --- Generic binaries / logs ---
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.dylib
+*.exe
+*.log
+
+# --- Project-specific generated dirs ---
+/gui-esp32s3-simulator/build/
+/gui-esp32s3-simulator/build-ci/
+/qemu/build/
+/tests/arduino/build/
+
+# --- Coverage / reports ---
+coverage/
+coverage.*
+*.gcda
+*.gcno
+*.profraw
+*.profdata
