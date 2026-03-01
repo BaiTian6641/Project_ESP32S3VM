@@ -87,19 +87,19 @@ jobs:
               echo "note=Set ESP32S3_QEMU_BIN to a Windows qemu-system-xtensa.exe path." >> "$QEMU_STATUS_FILE"
             fi
 
-            cat > "$PKG_ROOT/run-gui.cmd" <<'EOF'
-            @echo off
-            setlocal
-            set "SCRIPT_DIR=%~dp0"
-            if exist "%SCRIPT_DIR%qemu\qemu-system-xtensa.exe" (
-              set "ESP32S3_QEMU_BIN=%SCRIPT_DIR%qemu\qemu-system-xtensa.exe"
-              echo [launcher] Using bundled QEMU: %ESP32S3_QEMU_BIN%
-            ) else (
-              echo [launcher] Bundled QEMU not found. Set ESP32S3_QEMU_BIN if needed.
-            )
-            "%SCRIPT_DIR%gui_esp32s3_simulator.exe"
-            endlocal
-            EOF
+            {
+              printf '%s\n' '@echo off'
+              printf '%s\n' 'setlocal'
+              printf '%s\n' 'set "SCRIPT_DIR=%~dp0"'
+              printf '%s\n' 'if exist "%SCRIPT_DIR%qemu\qemu-system-xtensa.exe" ('
+              printf '%s\n' '  set "ESP32S3_QEMU_BIN=%SCRIPT_DIR%qemu\qemu-system-xtensa.exe"'
+              printf '%s\n' '  echo [launcher] Using bundled QEMU: %ESP32S3_QEMU_BIN%'
+              printf '%s\n' ') else ('
+              printf '%s\n' '  echo [launcher] Bundled QEMU not found. Set ESP32S3_QEMU_BIN if needed.'
+              printf '%s\n' ')'
+              printf '%s\n' '"%SCRIPT_DIR%gui_esp32s3_simulator.exe"'
+              printf '%s\n' 'endlocal'
+            } > "$PKG_ROOT/run-gui.cmd"
           else
             if [[ -f "qemu/build/qemu-system-xtensa" ]]; then
               mkdir -p "$PKG_ROOT/qemu"
@@ -111,29 +111,29 @@ jobs:
               echo "note=Set ESP32S3_QEMU_BIN to a Linux qemu-system-xtensa path." >> "$QEMU_STATUS_FILE"
             fi
 
-            cat > "$PKG_ROOT/run-gui.sh" <<'EOF'
-            #!/usr/bin/env bash
-            set -euo pipefail
-            SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-            if [[ -x "$SCRIPT_DIR/qemu/qemu-system-xtensa" ]]; then
-              export ESP32S3_QEMU_BIN="$SCRIPT_DIR/qemu/qemu-system-xtensa"
-              echo "[launcher] Using bundled QEMU: $ESP32S3_QEMU_BIN"
-            else
-              echo "[launcher] Bundled QEMU not found. Set ESP32S3_QEMU_BIN if needed."
-            fi
-
-            exec "$SCRIPT_DIR/gui_esp32s3_simulator"
-            EOF
+            {
+              printf '%s\n' '#!/usr/bin/env bash'
+              printf '%s\n' 'set -euo pipefail'
+              printf '%s\n' 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"'
+              printf '%s\n' ''
+              printf '%s\n' 'if [[ -x "$SCRIPT_DIR/qemu/qemu-system-xtensa" ]]; then'
+              printf '%s\n' '  export ESP32S3_QEMU_BIN="$SCRIPT_DIR/qemu/qemu-system-xtensa"'
+              printf '%s\n' '  echo "[launcher] Using bundled QEMU: $ESP32S3_QEMU_BIN"'
+              printf '%s\n' 'else'
+              printf '%s\n' '  echo "[launcher] Bundled QEMU not found. Set ESP32S3_QEMU_BIN if needed."'
+              printf '%s\n' 'fi'
+              printf '%s\n' ''
+              printf '%s\n' 'exec "$SCRIPT_DIR/gui_esp32s3_simulator"'
+            } > "$PKG_ROOT/run-gui.sh"
             chmod +x "$PKG_ROOT/run-gui.sh"
           fi
 
-          cat > "$PKG_ROOT/run-info.txt" <<EOF
-          GUI runtime package for ${{ runner.os }}
-          - Contains gui_esp32s3_simulator binary + peripheral assets.
-          - See qemu-binary-status.txt for bundled QEMU binary availability.
-          - If QEMU is not bundled, set ESP32S3_QEMU_BIN before launch.
-          EOF
+          {
+            printf '%s\n' "GUI runtime package for ${{ runner.os }}"
+            printf '%s\n' '- Contains gui_esp32s3_simulator binary + peripheral assets.'
+            printf '%s\n' '- See qemu-binary-status.txt for bundled QEMU binary availability.'
+            printf '%s\n' '- If QEMU is not bundled, set ESP32S3_QEMU_BIN before launch.'
+          } > "$PKG_ROOT/run-info.txt"
 
       - name: Upload Runtime Artifact
         uses: actions/upload-artifact@v4
