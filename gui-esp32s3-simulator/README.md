@@ -165,6 +165,30 @@ Build steps (Developer PowerShell):
 Run:
 - `build\\Release\\gui_esp32s3_simulator.exe`
 
+### Windows peripheral troubleshooting
+- If a Python peripheral simulator exits with:
+	- `OSError: [WinError 10093] ... WSAStartup`
+- Cause:
+	- An older `device-sims/jsonrpc_stdio.py` in the packaged bundle can still use `select()` on stdin in a Windows-incompatible way.
+- Fix:
+	- Rebuild/rebundle using the latest `device-sims/jsonrpc_stdio.py` from this repository.
+	- Ensure the distributed bundle includes the updated `device-sims` directory.
+	- Temporary workaround in an existing bundle: replace bundled `peripherals/device-sims/jsonrpc_stdio.py` with the current source copy.
+
+### Cross-platform virtual device notes (Linux/Windows/macOS)
+- JSON-RPC stdio transport now handles:
+	- Windows stdin polling limitations (threaded stdin fallback)
+	- graceful shutdown on stdout pipe close (`BrokenPipeError` / `OSError`)
+- Bus handlers now validate malformed payloads consistently (`invalid_ops`, `invalid_op`, `invalid_data`) rather than crashing simulator processes.
+- SPI simulator exports both class names for compatibility:
+	- `SpiFlashSimulator` (primary)
+	- `SpiMemorySimulator` (alias for legacy tests/tools)
+- Smoke verification (`device-sims/smoke_bridge_check.py`) covers both bus simulation approaches:
+	- split I2C methods (`i2c_write` + `i2c_read`)
+	- transaction I2C method (`i2c_transfer` with repeated-start)
+	- SPI mode coverage (`single` / `dual` / `quad`) + program/readback
+	- UART line config + tick-driven loopback delivery
+
 ## CI
 - Linux + Windows GUI build workflow:
 	- `.github/workflows/gui-build-linux-windows.yml`

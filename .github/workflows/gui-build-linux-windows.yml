@@ -59,6 +59,7 @@ jobs:
           set -euo pipefail
 
           PKG_ROOT="dist/gui-esp32s3-simulator-${{ runner.os }}"
+          rm -rf "$PKG_ROOT"
           mkdir -p "$PKG_ROOT"
 
           if [[ "${{ runner.os }}" == "Windows" ]]; then
@@ -152,6 +153,14 @@ jobs:
 
           cp -r gui-esp32s3-simulator/peripherals "$PKG_ROOT/"
           cp -r gui-esp32s3-simulator/device-sims "$PKG_ROOT/"
+          find "$PKG_ROOT/device-sims" -type d -name "__pycache__" -prune -exec rm -rf {} +
+          find "$PKG_ROOT/device-sims" -type f -name "*.pyc" -delete
+
+          if ! grep -q "_enable_stdin_thread_mode" "$PKG_ROOT/device-sims/jsonrpc_stdio.py"; then
+            echo "Bundled jsonrpc_stdio.py is missing Windows stdin fallback"
+            exit 1
+          fi
+
           cp gui-esp32s3-simulator/README.md "$PKG_ROOT/README.gui.md"
 
           QEMU_STATUS_FILE="$PKG_ROOT/qemu-binary-status.txt"

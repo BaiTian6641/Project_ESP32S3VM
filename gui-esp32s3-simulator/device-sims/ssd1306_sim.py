@@ -45,6 +45,7 @@ class Ssd1306Simulator:
     }
 
     def __init__(self, width: int = 128, height: int = 64) -> None:
+        self.server: Optional[JsonRpcStdioServer] = None
         self.width = width
         self.height = height
         self.pages = height // 8
@@ -109,6 +110,9 @@ class Ssd1306Simulator:
         # -- Frame-update debounce (coalesce rapid partial writes) --
         self._frame_dirty = False
         self._dirty_since_ms = 0
+
+    def bind_server(self, server: JsonRpcStdioServer) -> None:
+        self.server = server
 
     # -- JSON-RPC request handler --
     def handle(self, req: RpcRequest) -> Dict[str, Any]:
@@ -182,6 +186,8 @@ class Ssd1306Simulator:
             data = params.get("data", [])
             if addr not in (0x3C, 0x3D):
                 return {"ack": False}
+            if not isinstance(data, list):
+                return {"ack": False, "error": "invalid_data"}
             self._handle_i2c_payload([int(x) & 0xFF for x in data])
             return {"ack": True, "written": len(data)}
 
@@ -199,11 +205,11 @@ class Ssd1306Simulator:
 
     def tick(self) -> None:
         """Called on every JSON-RPC event-loop cycle.  Flush a
-        deferred frame_update once the I2C burst quiets down (>= 16 ms
+        deferred frame_update once the I2C burst quiets down (>= 80 ms
         since the first dirty mark)."""
         if self._frame_dirty:
             elapsed = monotonic_ms() - self._dirty_since_ms
-            if elapsed >= 16:
+            if elapsed >= 80:
                 self._frame_dirty = False
                 self._emit_frame_update()
 
@@ -214,12 +220,21 @@ class Ssd1306Simulator:
             return {"ack": False, "ops": [], "error": "address_nack"}
 
         ops = params.get("ops", [])
+        if not isinstance(ops, list):
+            return {"ack": False, "ops": [], "error": "invalid_ops"}
         out_ops: List[Dict[str, Any]] = []
         wrote_any = False
         for op in ops:
+            if not isinstance(op, dict):
+                out_ops.append({"dir": "", "error": "invalid_op"})
+                continue
             direction = str(op.get("dir", "")).lower()
             if direction == "write":
-                data = [int(x) & 0xFF for x in op.get("data", [])]
+                raw_data = op.get("data", [])
+                if not isinstance(raw_data, list):
+                    out_ops.append({"dir": "write", "error": "invalid_data"})
+                    continue
+                data = [int(x) & 0xFF for x in raw_data]
                 self._handle_i2c_payload(data)
                 if data:
                     wrote_any = True
@@ -235,17 +250,17 @@ class Ssd1306Simulator:
             else:
                 out_ops.append({"dir": direction, "error": "unsupported_op"})
 
+        clock_hz = int(params.get("clock_hz", 400000))
+        if clock_hz <= 0:
+            clock_hz = 400000
         timing = {
-            "clock_hz": int(params.get("clock_hz", 400000)),
+            "clock_hz": clock_hz,
             "repeated_start": bool(params.get("repeated_start", False)),
         }
 
-        # Ensure coherent transaction-level display update delivery.
-        # Debounce still applies during burst writes, but we flush at the end
-        # of the full transfer so GUI does not stall on stale frame data.
-        if wrote_any and self._frame_dirty:
-            self._frame_dirty = False
-            self._emit_frame_update()
+        # Do not force immediate frame flush per transfer; coalesced tick-based
+        # rendering avoids excessive JSON payload bursts that can throttle stdio
+        # transport on Windows and cause simulator/GUI stalls under heavy I2C.
 
         return {"ack": True, "ops": out_ops, "timing": timing}
 
@@ -328,7 +343,10 @@ class Ssd1306Simulator:
         self._frame_dirty = True
 
     def _emit_frame_update(self) -> None:
-        server.notify(
+        if self.server is None:
+            return
+
+        self.server.notify(
             "frame_update",
             {
                 "width": self.width,
@@ -651,7 +669,10 @@ class Ssd1306Simulator:
         if isinstance(value, int):
             return value
         text = str(value).strip().lower()
-        return int(text, 16 if text.startswith("0x") else 10)
+        try:
+            return int(text, 16 if text.startswith("0x") else 10)
+        except (TypeError, ValueError):
+            return -1
 
 
 def main() -> None:
@@ -659,11 +680,12 @@ def main() -> None:
         description="SSD1306 peripheral simulator (JSON-RPC over stdio)")
     parser.add_argument("--width", type=int, default=128, help="Panel width")
     parser.add_argument("--height", type=int, default=64, help="Panel height")
-    args = parser.parse_args()
+    args, _unknown = parser.parse_known_args()
 
     global server
     server = JsonRpcStdioServer()
     sim = Ssd1306Simulator(width=args.width, height=args.height)
+    sim.bind_server(server)
     server.serve_forever(sim)
 
 

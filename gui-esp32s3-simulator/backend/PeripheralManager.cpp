@@ -272,8 +272,16 @@ void PeripheralManager::emitTrace(DeviceRuntime *device,
     if (!device) {
         return;
     }
-    const QString compact = QString::fromUtf8(
+
+    QString compact = QString::fromUtf8(
         QJsonDocument(obj).toJson(QJsonDocument::Compact));
+
+    constexpr int kTraceMaxChars = 1200;
+    if (compact.size() > kTraceMaxChars) {
+        compact = compact.left(kTraceMaxChars)
+            + QString("...<truncated:%1 chars>").arg(compact.size());
+    }
+
     emit deviceTraceLine(device->id, QString("[%1] %2").arg(dir, compact));
 }
 
@@ -470,6 +478,7 @@ QMap<int, QSet<QString>> PeripheralManager::getI2cBusAddresses() const
 void PeripheralManager::dispatchI2cTransfer(const QJsonObject &request)
 {
     const QString controller = request.value("controller").toString().trimmed();
+    const QString controllerNorm = controller.toLower();
     const QString address = normalizeAddressText(request.value("address").toString());
 
     for (DeviceRuntime *device : devices) {
@@ -479,7 +488,7 @@ void PeripheralManager::dispatchI2cTransfer(const QJsonObject &request)
         if (device->busKind != "i2c") {
             continue;
         }
-        if (!controller.isEmpty() && device->busController != controller) {
+        if (!controllerNorm.isEmpty() && device->busController.trimmed().toLower() != controllerNorm) {
             continue;
         }
         if (!address.isEmpty() && normalizeAddressText(device->busAddress) != address) {
@@ -498,6 +507,7 @@ void PeripheralManager::dispatchI2cTransfer(const QJsonObject &request)
 void PeripheralManager::dispatchSpiTransfer(const QJsonObject &request)
 {
     const QString controller = request.value("controller").toString().trimmed();
+    const QString controllerNorm = controller.toLower();
     const QString csText = request.value("chip_select").toVariant().toString().trimmed();
 
     for (DeviceRuntime *device : devices) {
@@ -507,7 +517,7 @@ void PeripheralManager::dispatchSpiTransfer(const QJsonObject &request)
         if (device->busKind != "spi") {
             continue;
         }
-        if (!controller.isEmpty() && device->busController != controller) {
+        if (!controllerNorm.isEmpty() && device->busController.trimmed().toLower() != controllerNorm) {
             continue;
         }
         if (!csText.isEmpty() && device->busAddress != csText) {
@@ -526,6 +536,7 @@ void PeripheralManager::dispatchSpiTransfer(const QJsonObject &request)
 void PeripheralManager::dispatchUartTx(const QJsonObject &request)
 {
     const QString controller = request.value("controller").toString().trimmed();
+    const QString controllerNorm = controller.toLower();
     const QString unitText = request.value("unit").toVariant().toString().trimmed();
 
     for (DeviceRuntime *device : devices) {
@@ -535,7 +546,7 @@ void PeripheralManager::dispatchUartTx(const QJsonObject &request)
         if (device->busKind != "uart") {
             continue;
         }
-        if (!controller.isEmpty() && device->busController != controller) {
+        if (!controllerNorm.isEmpty() && device->busController.trimmed().toLower() != controllerNorm) {
             continue;
         }
         if (!unitText.isEmpty() && device->busAddress != unitText) {
@@ -846,16 +857,16 @@ void PeripheralManager::parseStdout(DeviceRuntime *device, const QByteArray &byt
         const QByteArray lineBytes = device->stdoutBuffer.left(newline);
         device->stdoutBuffer.remove(0, newline + 1);
 
-        const QString line = QString::fromUtf8(lineBytes).trimmed();
-        if (!line.isEmpty()) {
-            emit deviceLogLine(device->id, line);
-        }
-
         QJsonParseError err;
         const QJsonDocument doc = QJsonDocument::fromJson(lineBytes, &err);
         if (err.error == QJsonParseError::NoError && doc.isObject()) {
             emitTrace(device, "RX", doc.object());
             handleJsonMessage(device, doc.object());
+        } else {
+            const QString line = QString::fromUtf8(lineBytes).trimmed();
+            if (!line.isEmpty()) {
+                emit deviceLogLine(device->id, line);
+            }
         }
 
         newline = device->stdoutBuffer.indexOf('\n');

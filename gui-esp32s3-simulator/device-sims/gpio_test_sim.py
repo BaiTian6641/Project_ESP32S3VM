@@ -193,7 +193,7 @@ class GpioTestSimulator:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="GPIO test simulator (JSON-RPC over stdio)")
-    parser.parse_args()
+    parser.parse_known_args()
 
     global server
     server = JsonRpcStdioServer()

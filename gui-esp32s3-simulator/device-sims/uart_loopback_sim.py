@@ -217,7 +217,11 @@ class UartLoopbackSimulator:
 
     # -- UART TX handler --
     def _uart_tx(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        payload = [int(x) & 0xFF for x in params.get("data", [])]
+        raw_payload = params.get("data", [])
+        if not isinstance(raw_payload, list):
+            return {"ok": False, "error": "invalid_data", "tx_bytes": 0, "loopback": True}
+
+        payload = [int(x) & 0xFF for x in raw_payload]
         self.tx_count += len(payload)
 
         if not payload:
@@ -372,7 +376,7 @@ def main() -> None:
                         help="Device-side baud rate (default 115200)")
     parser.add_argument("--fifo", type=int, default=128,
                         help="RX FIFO depth (default 128)")
-    args = parser.parse_args()
+    args, _unknown = parser.parse_known_args()
 
     global server
     server = JsonRpcStdioServer()

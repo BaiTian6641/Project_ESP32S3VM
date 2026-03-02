@@ -267,7 +267,15 @@ class SpiFlashSimulator:
         freq_hz = int(params.get("frequency_hz", 20_000_000))
         self.last_freq_hz = max(1000, freq_hz)
 
-        tx = [int(x) & 0xFF for x in params.get("tx", [])]
+        raw_tx = params.get("tx", [])
+        if not isinstance(raw_tx, list):
+            return {
+                "ok": False,
+                "error": "invalid_tx",
+                "rx": [],
+                "timing": {"mode": mode, "frequency_hz": self.last_freq_hz},
+            }
+        tx = [int(x) & 0xFF for x in raw_tx]
         rx_len = max(0, int(params.get("rx_len", 0)))
 
         if not tx:
@@ -500,6 +508,7 @@ class SpiFlashSimulator:
         # Unknown command -- ignore
         return []
 
+
     # -- Memory operations --
     def _read_mem(self, addr: int, length: int) -> List[int]:
         result = []
@@ -548,12 +557,15 @@ class SpiFlashSimulator:
         self._suspended = False
 
 
+SpiMemorySimulator = SpiFlashSimulator
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="SPI NOR flash simulator (JSON-RPC over stdio)")
     parser.add_argument("--size", type=int, default=16 * 1024 * 1024,
                         help="Flash size in bytes (default 16MB / W25Q128)")
-    args = parser.parse_args()
+    args, _unknown = parser.parse_known_args()
 
     global server
     server = JsonRpcStdioServer()

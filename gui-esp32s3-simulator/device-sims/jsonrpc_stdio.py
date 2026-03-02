@@ -3,6 +3,7 @@ import json
 import os
 import queue
 import selectors
+import socket
 import sys
 import threading
 import time
@@ -39,23 +40,27 @@ def _stdin_reader_thread(q: "queue.Queue[str | None]") -> None:
 class JsonRpcStdioServer:
     def __init__(self) -> None:
         self.running = True
+        self._selector = None
+        self._stdin_queue = None
+        self._reader_thread = None
 
         # On Windows, selectors.select() cannot poll stdin (pipes);
         # use a background reader thread + queue instead.
         if _IS_WINDOWS:
-            self._stdin_queue: "queue.Queue[str | None]" = queue.Queue()
-            self._reader_thread = threading.Thread(
-                target=_stdin_reader_thread,
-                args=(self._stdin_queue,),
-                daemon=True,
-            )
-            self._reader_thread.start()
-            self._selector = None
+            self._enable_stdin_thread_mode()
         else:
             self._selector = selectors.DefaultSelector()
             self._selector.register(sys.stdin, selectors.EVENT_READ)
-            self._stdin_queue = None  # type: ignore[assignment]
-            self._reader_thread = None  # type: ignore[assignment]
+
+    def _enable_stdin_thread_mode(self) -> None:
+        self._stdin_queue = queue.Queue()
+        self._reader_thread = threading.Thread(
+            target=_stdin_reader_thread,
+            args=(self._stdin_queue,),
+            daemon=True,
+        )
+        self._reader_thread.start()
+        self._selector = None
 
     def serve_forever(self, handler, tick_interval: float = 0.1) -> None:
         if callable(handler):
@@ -67,20 +72,36 @@ class JsonRpcStdioServer:
 
         while self.running:
             line: str | None = None
+            got_line = False
 
-            if _IS_WINDOWS:
+            if self._selector is None:
                 # Drain as many complete lines as available (non-blocking
                 # after the first one which blocks up to tick_interval).
                 try:
                     line = self._stdin_queue.get(timeout=tick_interval)
+                    got_line = True
                 except queue.Empty:
                     line = None
+                    got_line = False
             else:
-                events = self._selector.select(timeout=tick_interval)
+                try:
+                    events = self._selector.select(timeout=tick_interval)
+                except OSError as exc:
+                    # Defensive fallback for Windows builds/bundles where
+                    # select() can fail with WSAStartup-related errors.
+                    if getattr(exc, "winerror", None) in (10093, 10038) and self._stdin_queue is None:
+                        _tmp = socket.socket()
+                        _tmp.close()
+                        self._enable_stdin_thread_mode()
+                        continue
+                    raise
                 if events:
                     line = sys.stdin.readline()
+                    got_line = True
 
-            if line is not None:
+            if got_line:
+                if line is None:
+                    break  # EOF sentinel in thread mode
                 if not line:
                     break  # EOF
                 line = line.strip()
@@ -129,8 +150,11 @@ class JsonRpcStdioServer:
         self._write(payload)
 
     def _write(self, payload: Dict[str, Any]) -> None:
-        sys.stdout.write(json.dumps(payload, separators=(",", ":")) + "\n")
-        sys.stdout.flush()
+        try:
+            sys.stdout.write(json.dumps(payload, separators=(",", ":")) + "\n")
+            sys.stdout.flush()
+        except (BrokenPipeError, OSError):
+            self.running = False
 
 
 def monotonic_ms() -> int:

@@ -99,7 +99,8 @@ class Sht21Simulator:
     # User register reset default = 0b0000_0010  (OTP_reload disabled)
     _USER_REG_DEFAULT = 0x02
 
-    def __init__(self) -> None:
+    def __init__(self, address: int = 0x40) -> None:
+        self.i2c_addr = address & 0x7F
         # Simulated environment values
         self.temperature: float = 25.0      # °C
         self.humidity: float = 50.0         # %RH
@@ -190,7 +191,7 @@ class Sht21Simulator:
                     ],
                 },
                 "transports": ["i2c"],
-                "i2c": {"addresses": ["0x40"]},
+                "i2c": {"addresses": [f"0x{self.i2c_addr:02x}"]},
             }
 
         if method == "get_state":
@@ -228,10 +229,13 @@ class Sht21Simulator:
 
     # -- I2C write --
     def _i2c_write(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        addr = self._parse_addr(params.get("addr", "0x40"))
-        if addr != 0x40:
+        addr = self._parse_addr(params.get("addr", f"0x{self.i2c_addr:02x}"))
+        if addr != self.i2c_addr:
             return {"ack": False}
-        data = [int(x) & 0xFF for x in params.get("data", [])]
+        raw_data = params.get("data", [])
+        if not isinstance(raw_data, list):
+            return {"ack": False, "error": "invalid_data"}
+        data = [int(x) & 0xFF for x in raw_data]
         if not data:
             return {"ack": True, "written": 0}
 
@@ -240,8 +244,8 @@ class Sht21Simulator:
 
     # -- I2C read --
     def _i2c_read(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        addr = self._parse_addr(params.get("addr", "0x40"))
-        if addr != 0x40:
+        addr = self._parse_addr(params.get("addr", f"0x{self.i2c_addr:02x}"))
+        if addr != self.i2c_addr:
             return {"ack": False}
         req_len = max(0, int(params.get("len", 0)))
         result = self._get_read_data(req_len)
@@ -249,16 +253,25 @@ class Sht21Simulator:
 
     # -- I2C transfer (multi-op) --
     def _i2c_transfer(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        addr = self._parse_addr(params.get("address", params.get("addr", "0x40")))
-        if addr != 0x40:
+        addr = self._parse_addr(params.get("address", params.get("addr", f"0x{self.i2c_addr:02x}")))
+        if addr != self.i2c_addr:
             return {"ack": False, "ops": [], "error": "address_nack"}
 
         ops = params.get("ops", [])
+        if not isinstance(ops, list):
+            return {"ack": False, "ops": [], "error": "invalid_ops"}
         out_ops: List[Dict[str, Any]] = []
         for op in ops:
+            if not isinstance(op, dict):
+                out_ops.append({"dir": "", "error": "invalid_op"})
+                continue
             direction = str(op.get("dir", "")).lower()
             if direction == "write":
-                data = [int(x) & 0xFF for x in op.get("data", [])]
+                raw_data = op.get("data", [])
+                if not isinstance(raw_data, list):
+                    out_ops.append({"dir": "write", "error": "invalid_data"})
+                    continue
+                data = [int(x) & 0xFF for x in raw_data]
                 self._process_command(data)
                 out_ops.append({
                     "dir": "write",
@@ -271,8 +284,11 @@ class Sht21Simulator:
             else:
                 out_ops.append({"dir": direction, "error": "unsupported_op"})
 
+        clock_hz = int(params.get("clock_hz", 400000))
+        if clock_hz <= 0:
+            clock_hz = 400000
         timing = {
-            "clock_hz": int(params.get("clock_hz", 400000)),
+            "clock_hz": clock_hz,
             "repeated_start": bool(params.get("repeated_start", False)),
         }
         return {"ack": True, "ops": out_ops, "timing": timing}
@@ -451,19 +467,28 @@ class Sht21Simulator:
         if isinstance(value, int):
             return value
         text = str(value).strip().lower()
-        return int(text, 16 if text.startswith("0x") else 10)
+        try:
+            return int(text, 16 if text.startswith("0x") else 10)
+        except (TypeError, ValueError):
+            return -1
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="SHT21 peripheral simulator (JSON-RPC over stdio)")
     parser.add_argument("--address", type=str, default="0x40",
-                        help="I2C device address (informational, e.g. 0x40)")
-    parser.parse_args()
+                        help="I2C device address (e.g. 0x40)")
+    parser.add_argument("--addr", dest="address", type=str,
+                        help="Alias for --address")
+    args, _unknown = parser.parse_known_args()
+
+    parsed_addr = Sht21Simulator._parse_addr(args.address)
+    if parsed_addr < 0 or parsed_addr > 0x7F:
+        parsed_addr = 0x40
 
     global server
     server = JsonRpcStdioServer()
-    sim = Sht21Simulator()
+    sim = Sht21Simulator(address=parsed_addr)
     server.serve_forever(sim)
 
 
