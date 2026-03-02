@@ -431,16 +431,60 @@ jobs:
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa.exe" "$PKG_ROOT/qemu/"
 
-            # Copy only required MinGW runtime DLL dependencies for qemu-system-xtensa.exe
-            while IFS= read -r dll; do
-              [[ -z "$dll" ]] && continue
-              if [[ -f "$dll" ]]; then
-                cp "$dll" "$PKG_ROOT/qemu/"
-              fi
-            done < <(ldd "${{ env.QEMU_DIR }}/build/qemu-system-xtensa.exe" \
-              | awk '/=> \/mingw64\/bin\// {print $3}' \
-              | sed '/^$/d' \
-              | sort -u)
+            # Recursively copy all non-system DLL dependencies into qemu/.
+            # This ensures the packaged simulator is out-of-box runnable.
+            declare -A SEEN_DLLS
+            QUEUE=("$PKG_ROOT/qemu/qemu-system-xtensa.exe")
+
+            while [[ ${#QUEUE[@]} -gt 0 ]]; do
+              CURRENT="${QUEUE[0]}"
+              QUEUE=("${QUEUE[@]:1}")
+
+              while IFS= read -r dll; do
+                [[ -z "$dll" ]] && continue
+
+                case "$dll" in
+                  /c/Windows/*|/c/WINDOWS/*|/C/Windows/*|/C/WINDOWS/*|/windows/*)
+                    continue
+                    ;;
+                esac
+
+                if [[ "$dll" != *.dll ]]; then
+                  continue
+                fi
+
+                if [[ ! -f "$dll" ]]; then
+                  continue
+                fi
+
+                base="$(basename "$dll")"
+                if [[ -n "${SEEN_DLLS[$base]:-}" ]]; then
+                  continue
+                fi
+
+                SEEN_DLLS[$base]=1
+                cp "$dll" "$PKG_ROOT/qemu/$base"
+                QUEUE+=("$PKG_ROOT/qemu/$base")
+              done < <(
+                ldd "$CURRENT" 2>/dev/null \
+                  | awk '
+                      /=>/ && $3 ~ /\.dll$/ { print $3 }
+                      /^[[:space:]]*\/.*\.dll([[:space:]]|$)/ { print $1 }
+                    ' \
+                  | sed '/^$/d' \
+                  | sort -u
+              )
+            done
+
+            # Hard-fail if any direct QEMU deps are unresolved.
+            if ldd "$PKG_ROOT/qemu/qemu-system-xtensa.exe" | grep -qi 'not found'; then
+              echo "[Windows package] unresolved DLL dependencies for qemu-system-xtensa.exe"
+              ldd "$PKG_ROOT/qemu/qemu-system-xtensa.exe" || true
+              exit 1
+            fi
+
+            # Helpful visibility in CI logs.
+            ls -1 "$PKG_ROOT/qemu"/*.dll 2>/dev/null | sed 's#^.*/##' | sort -u || true
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa" "$PKG_ROOT/qemu/"
             chmod +x "$PKG_ROOT/qemu/qemu-system-xtensa"
@@ -550,6 +594,12 @@ jobs:
             EXE="$PKG_ROOT/qemu/qemu-system-xtensa.exe"
             test -f "$EXE"
             ls -l "$EXE"
+            # Verify packaged Windows runtime is self-contained for QEMU.
+            if ldd "$EXE" | grep -qi 'not found'; then
+              echo "[verify] unresolved DLL dependencies after packaging"
+              ldd "$EXE" || true
+              exit 1
+            fi
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             APP="$PKG_ROOT/gui_esp32s3_simulator.app"
             test -d "$APP"
