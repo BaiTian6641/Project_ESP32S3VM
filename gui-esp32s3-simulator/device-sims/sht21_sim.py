@@ -457,6 +457,8 @@ class Sht21Simulator:
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="SHT21 peripheral simulator (JSON-RPC over stdio)")
+    parser.add_argument("--address", type=str, default="0x40",
+                        help="I2C device address (informational, e.g. 0x40)")
     parser.parse_args()
 
     global server
