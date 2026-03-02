@@ -110,6 +110,7 @@ Supported control types in schema panel:
    - `display` (state-key driven framebuffer render)
    - `metrics` (live card values from `state_path`)
    - `scripts` (read-only text/JSON panes from `state_path`)
+   - `script` (device script owns panel event/state loop via RPC container mode)
 
 ### Device Panel Factory
 `DevicePanelFactory::createPanel()` now selects panels by device-owned capabilities:

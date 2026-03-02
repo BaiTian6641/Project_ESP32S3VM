@@ -125,6 +125,13 @@ class Ssd1306Simulator:
                     "kind": "display",
                     "title": "SSD1306 Display",
                     "description": "Monochrome OLED panel controls and live framebuffer state.",
+                    "script": {
+                        "enabled": True,
+                        "event_method": "panel_event",
+                        "state_method": "panel_state",
+                        "runtime_state_key": "",
+                        "fallback_set_parameter": False,
+                    },
                     "width": self.width,
                     "height": self.height,
                     "pixel_format": "mono1",
@@ -161,15 +168,14 @@ class Ssd1306Simulator:
         if method == "set_parameter":
             name = params.get("name")
             value = params.get("value")
-            if name == "display_on":
-                self.display_on = bool(value)
-            elif name == "inverted":
-                self.inverted = bool(value)
-            elif name == "contrast":
-                self.contrast = max(0, min(255, int(value)))
-            else:
-                raise ValueError(f"Unsupported parameter: {name}")
+            self._apply_panel_parameter(str(name), value)
             return {"ok": True, "state": self._state_payload(include_buffer=False)}
+
+        if method == "panel_event":
+            return self._panel_event(params)
+
+        if method == "panel_state":
+            return {"panel_state": self._panel_state(params.get("state", {}))}
 
         if method == "i2c_write":
             addr = self._parse_addr(params.get("addr", "0x3c"))
@@ -209,11 +215,14 @@ class Ssd1306Simulator:
 
         ops = params.get("ops", [])
         out_ops: List[Dict[str, Any]] = []
+        wrote_any = False
         for op in ops:
             direction = str(op.get("dir", "")).lower()
             if direction == "write":
                 data = [int(x) & 0xFF for x in op.get("data", [])]
                 self._handle_i2c_payload(data)
+                if data:
+                    wrote_any = True
                 out_ops.append({
                     "dir": "write",
                     "written": len(data),
@@ -230,6 +239,14 @@ class Ssd1306Simulator:
             "clock_hz": int(params.get("clock_hz", 400000)),
             "repeated_start": bool(params.get("repeated_start", False)),
         }
+
+        # Ensure coherent transaction-level display update delivery.
+        # Debounce still applies during burst writes, but we flush at the end
+        # of the full transfer so GUI does not stall on stale frame data.
+        if wrote_any and self._frame_dirty:
+            self._frame_dirty = False
+            self._emit_frame_update()
+
         return {"ack": True, "ops": out_ops, "timing": timing}
 
     # -- State payload for GUI --
@@ -261,6 +278,47 @@ class Ssd1306Simulator:
                 "data": list(self.gddram),
             }
         return state
+
+    def _panel_state(self, gui_state: Dict[str, Any]) -> Dict[str, Any]:
+        current = self._state_payload(include_buffer=False)
+        return {
+            "summary": {
+                "display_on": current["display_on"],
+                "inverted": current["inverted"],
+                "contrast": current["contrast"],
+            },
+            "cursor": current["cursor"],
+            "from_gui": {
+                "has_frame_update": bool(gui_state.get("frame_update")),
+                "has_buffer": bool(gui_state.get("buffer")),
+            },
+        }
+
+    def _apply_panel_parameter(self, name: str, value: Any) -> None:
+        if name == "display_on":
+            self.display_on = bool(value)
+            return
+        if name == "inverted":
+            self.inverted = bool(value)
+            return
+        if name == "contrast":
+            self.contrast = max(0, min(255, int(value)))
+            return
+        raise ValueError(f"Unsupported parameter: {name}")
+
+    def _panel_event(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        control = str(params.get("control", "")).strip()
+        value = params.get("value")
+        event = str(params.get("event", "set_control")).strip().lower()
+
+        if control and event in ("set_control", "action"):
+            self._apply_panel_parameter(control, value)
+
+        return {
+            "ok": True,
+            "state_patch": self._state_payload(include_buffer=False),
+            "panel_state": self._panel_state({}),
+        }
 
     def _mark_frame_dirty(self) -> None:
         """Record that the GDDRAM changed; actual frame_update will
@@ -316,6 +374,13 @@ class Ssd1306Simulator:
                     while idx < len(data):
                         idx = self._process_command_byte(data, idx)
                 else:
+                    # If a previous command stream was interrupted/incomplete,
+                    # drop it before entering data mode to avoid stale params
+                    # corrupting subsequent command parsing.
+                    if self._pending_cmd is not None:
+                        self._pending_cmd = None
+                        self._pending_params = []
+                        self._expected_params = 0
                     # -- data stream -> GDDRAM --
                     while idx < len(data):
                         self._write_gddram_byte(data[idx])
@@ -329,6 +394,10 @@ class Ssd1306Simulator:
                 if dc == 0:
                     idx = self._process_command_byte(data, idx)
                 else:
+                    if self._pending_cmd is not None:
+                        self._pending_cmd = None
+                        self._pending_params = []
+                        self._expected_params = 0
                     self._write_gddram_byte(data[idx])
                     dirty = True
                     idx += 1

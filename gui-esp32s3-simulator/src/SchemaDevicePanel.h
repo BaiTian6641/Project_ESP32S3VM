@@ -64,6 +64,10 @@ private:
 
     void rebuildScriptsView(const QJsonObject &panelObj);
     void updateScriptsView(const QJsonObject &state);
+    void emitControlChange(const QJsonObject &ctrlObj,
+                           const QString &name,
+                           const QVariant &value,
+                           const QString &eventType = "set_control");
 
     QWidget *m_controlsHost = nullptr;
     QVBoxLayout *m_controlsRootLayout = nullptr;
@@ -83,6 +87,18 @@ private:
     QString m_frameFallbackKey = "buffer";
     QString m_frameLayout = "page-major";
     QString m_frameEncoding = "u8";
+    bool m_displayOn = true;
+    bool m_displayInverted = false;
+    bool m_displayEntireOn = false;
+    int m_displayContrast = 127;
+    QJsonObject m_lastDisplayBuffer;
+
+    bool m_scriptOwnedPanel = false;
+    QString m_scriptEventMethod = "panel_event";
+    QString m_scriptStateMethod;
+    QString m_scriptRuntimeStateKey = "panel_runtime";
+    bool m_scriptFallbackToSetParameter = true;
+    QByteArray m_lastScriptStatePayload;
 
     QHash<QString, ControlBinding> m_bindings;
     QHash<QString, QFormLayout *> m_sectionLayouts;

@@ -462,6 +462,7 @@ Goal: each configured peripheral has its own interactive panel in GUI, so users 
 The following Python peripheral simulators are now available:
 - `device-sims/ssd1306_sim.py`
 - `device-sims/sht21_sim.py`
+- `device-sims/gpio_test_sim.py`
 - shared JSON-RPC stdio server helper: `device-sims/jsonrpc_stdio.py`
 
 ### SSD1306 simulator
@@ -472,6 +473,15 @@ The following Python peripheral simulators are now available:
 	- display on/off, invert, contrast
 	- GDDRAM writes via data stream
 	- `frame_update` notification after framebuffer changes
+	- transaction-coherent I2C frame flush at end of transfer for stable UI updates
+
+### GPIO test simulator
+- Transport: JSON-RPC over `stdio`
+- Purpose: quick GPIO interaction testing in GUI
+- Controls:
+	- Inputs: button, switch
+	- Outputs: LED
+	- RGB LED via PWM channels: `pwm_r`, `pwm_g`, `pwm_b`
 
 ### SHT21 simulator
 - Transport: JSON-RPC over `stdio`
@@ -569,6 +579,21 @@ Optional dynamic view blocks:
 - `display`: for `kind: "display"`; supports `state_key`, `fallback_state_key`, `layout`, `encoding`
 - `metrics`: live summary cards with `label`, `state_path`, optional `decimals`, `unit`, `true_text`, `false_text`
 - `scripts`: read-only text/JSON panes with `title`, `state_path`, optional `min_height`
+
+Script-owned panel container (optional):
+- `script.enabled`: when true, GUI forwards subpanel UI events to device script RPC
+- `script.event_method`: RPC method name for UI events (default `panel_event`)
+- `script.state_method`: RPC method name for state sync from GUI (optional)
+- `script.runtime_state_key`: where GUI stores script runtime model in state (default `panel_runtime`)
+- `script.fallback_set_parameter`: when true, GUI also sends normal `set_parameter` for compatibility
+
+Panel script RPC contract:
+- GUI -> script `panel_event`: `{ event, control, value, rpc_method?, rpc_params? }`
+- GUI -> script `panel_state`: `{ state, panel }` (optional, if `state_method` configured)
+- Script -> GUI response can include:
+	- `panel_state` (stored in `state.panel_runtime` by default)
+	- `state_patch` (merged into top-level device state)
+- Script can also push notifications: `panel_update` or `panel_state` with params object.
 
 ### Notifications currently emitted
 - `frame_update` (SSD1306)

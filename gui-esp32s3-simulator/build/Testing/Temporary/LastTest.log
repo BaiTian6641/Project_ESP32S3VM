@@ -1,10 +1,10 @@
-Start testing: Mar 01 23:21 CST
+Start testing: Mar 01 23:45 CST
 ----------------------------------------------------------
 1/1 Testing: bridge_contract_test
 1/1 Test: bridge_contract_test
 Command: "/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_bridge_contract_test"
 Directory: /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build
-"bridge_contract_test" start time: Mar 01 23:21 CST
+"bridge_contract_test" start time: Mar 01 23:45 CST
 Output:
 ----------------------------------------------------------
 ********* Start testing of BridgeContractTest *********
@@ -22,8 +22,8 @@ Totals: 7 passed, 0 failed, 0 skipped, 0 blacklisted, 1ms
 Test time =   0.01 sec
 ----------------------------------------------------------
 Test Passed.
-"bridge_contract_test" end time: Mar 01 23:21 CST
+"bridge_contract_test" end time: Mar 01 23:45 CST
 "bridge_contract_test" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-End testing: Mar 01 23:21 CST
+End testing: Mar 01 23:45 CST

@@ -942,6 +942,26 @@ void PeripheralManager::handleJsonMessage(DeviceRuntime *device, const QJsonObje
             return;
         }
 
+        if (method.startsWith("panel_")) {
+            const QJsonObject result = obj.value("result").toObject();
+            if (!result.isEmpty()) {
+                if (result.contains("state_patch") && result.value("state_patch").isObject()) {
+                    const QJsonObject patch = result.value("state_patch").toObject();
+                    for (auto it = patch.constBegin(); it != patch.constEnd(); ++it) {
+                        device->state[it.key()] = it.value();
+                    }
+                }
+
+                if (result.contains("panel_state") && result.value("panel_state").isObject()) {
+                    device->state["panel_runtime"] = result.value("panel_state").toObject();
+                } else {
+                    device->state["panel_runtime"] = result;
+                }
+                emit devicesChanged();
+            }
+            return;
+        }
+
         return;
     }
 
@@ -957,6 +977,9 @@ void PeripheralManager::handleJsonMessage(DeviceRuntime *device, const QJsonObje
         emit devicesChanged();
     } else if (notifyMethod == "playback_finished") {
         device->state["playback"] = obj.value("params").toObject();
+        emit devicesChanged();
+    } else if (notifyMethod == "panel_update" || notifyMethod == "panel_state") {
+        device->state["panel_runtime"] = obj.value("params").toObject();
         emit devicesChanged();
     }
 }

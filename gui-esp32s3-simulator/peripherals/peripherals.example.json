@@ -48,6 +48,22 @@
         "tx": 17,
         "rx": 18
       }
+    },
+    {
+      "id": "gpio-main",
+      "kind": "gpio",
+      "controller": "gpio0",
+      "pins": {
+        "button": 0,
+        "switch": 1,
+        "led": 2,
+        "rgb_r": 3,
+        "rgb_g": 4,
+        "rgb_b": 5
+      },
+      "electrical": {
+        "voltage": 3.3
+      }
     }
   ],
   "devices": [
@@ -167,6 +183,32 @@
         "args": ["--baud", "115200"],
         "transport": "stdio",
         "protocol": "jsonrpc-uart-v1"
+      }
+    },
+    {
+      "id": "gpio-test0",
+      "type": "gpio.test",
+      "compatible": ["virtual,gpio-test"],
+      "status": "okay",
+      "bus_ref": "gpio-main",
+      "reg": 0,
+      "bus": {
+        "kind": "gpio",
+        "controller": "gpio0",
+        "pins": {
+          "button": 0,
+          "switch": 1,
+          "led": 2,
+          "rgb_r": 3,
+          "rgb_g": 4,
+          "rgb_b": 5
+        }
+      },
+      "simulator": {
+        "exec": "./device-sims/gpio_test_sim.py",
+        "args": [],
+        "transport": "stdio",
+        "protocol": "jsonrpc-gpio-v1"
       }
     }
   ]

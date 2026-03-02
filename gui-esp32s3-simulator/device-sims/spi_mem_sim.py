@@ -120,6 +120,13 @@ class SpiFlashSimulator:
                     "kind": "memory.spi",
                     "title": "SPI Flash",
                     "description": "NOR flash model controls and status indicators.",
+                    "script": {
+                        "enabled": True,
+                        "event_method": "panel_event",
+                        "state_method": "panel_state",
+                        "runtime_state_key": "panel_runtime",
+                        "fallback_set_parameter": False,
+                    },
                     "metrics": [
                         {"label": "Busy", "state_path": "busy", "true_text": "YES", "false_text": "NO"},
                         {"label": "Power Down", "state_path": "power_down", "true_text": "YES", "false_text": "NO"},
@@ -160,6 +167,12 @@ class SpiFlashSimulator:
                 self._busy = False
                 return {"ok": True, "state": self._state()}
             raise ValueError(f"Unsupported parameter: {name}")
+
+        if method == "panel_event":
+            return self._panel_event(params)
+
+        if method == "panel_state":
+            return {"panel_state": self._panel_runtime(params.get("state", {}))}
 
         if method == "spi_transfer":
             return self._spi_transfer(params)
@@ -204,6 +217,37 @@ class SpiFlashSimulator:
             "quad_enabled": bool(self.sr2 & self.SR2_QE),
             "last_mode": self.last_mode,
             "last_freq_hz": self.last_freq_hz,
+        }
+
+    def _panel_runtime(self, _state_from_gui: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        state = self._state()
+        return {
+            "summary": {
+                "busy": state["busy"],
+                "power_down": state["power_down"],
+                "mode": state["last_mode"],
+                "frequency_hz": state["last_freq_hz"],
+            },
+            "status_registers": state["status_registers"],
+            "script_log": (
+                f"mode={state['last_mode']} freq={state['last_freq_hz']}Hz "
+                f"busy={int(state['busy'])} pd={int(state['power_down'])}"
+            ),
+        }
+
+    def _panel_event(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        event = str(params.get("event", "")).strip().lower()
+        control = str(params.get("control", "")).strip()
+
+        if event in ("action", "set_control") and control == "erase_chip":
+            self.mem[:] = b"\xFF" * self.size_bytes
+            self._wel = False
+            self._busy = False
+
+        return {
+            "ok": True,
+            "panel_state": self._panel_runtime(),
+            "state_patch": self._state(),
         }
 
     # -- Set busy for a given duration --

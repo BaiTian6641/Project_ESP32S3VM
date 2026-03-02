@@ -210,6 +210,28 @@ void SchemaDevicePanel::updateDisplayView(const QJsonObject &state)
         return;
     }
 
+    bool visualStateChanged = false;
+    if (state.contains("display_on")) {
+        const bool next = state.value("display_on").toBool(m_displayOn);
+        visualStateChanged = visualStateChanged || (next != m_displayOn);
+        m_displayOn = next;
+    }
+    if (state.contains("inverted")) {
+        const bool next = state.value("inverted").toBool(m_displayInverted);
+        visualStateChanged = visualStateChanged || (next != m_displayInverted);
+        m_displayInverted = next;
+    }
+    if (state.contains("entire_display_on")) {
+        const bool next = state.value("entire_display_on").toBool(m_displayEntireOn);
+        visualStateChanged = visualStateChanged || (next != m_displayEntireOn);
+        m_displayEntireOn = next;
+    }
+    if (state.contains("contrast")) {
+        const int next = qBound(0, state.value("contrast").toInt(m_displayContrast), 255);
+        visualStateChanged = visualStateChanged || (next != m_displayContrast);
+        m_displayContrast = next;
+    }
+
     if (state.contains("geometry")) {
         const QJsonObject geo = state.value("geometry").toObject();
         m_displayWidth = geo.value("width").toInt(m_displayWidth);
@@ -222,10 +244,15 @@ void SchemaDevicePanel::updateDisplayView(const QJsonObject &state)
         }
     }
 
-    if (state.contains(m_framePrimaryKey)) {
-        renderDisplayBuffer(state.value(m_framePrimaryKey).toObject());
-    } else if (state.contains(m_frameFallbackKey)) {
-        renderDisplayBuffer(state.value(m_frameFallbackKey).toObject());
+    const QVariant primaryBuffer = valueFromPath(state, m_framePrimaryKey);
+    const QVariant fallbackBuffer = valueFromPath(state, m_frameFallbackKey);
+
+    if (primaryBuffer.isValid() && primaryBuffer.canConvert<QVariantMap>()) {
+        renderDisplayBuffer(QJsonObject::fromVariantMap(primaryBuffer.toMap()));
+    } else if (fallbackBuffer.isValid() && fallbackBuffer.canConvert<QVariantMap>()) {
+        renderDisplayBuffer(QJsonObject::fromVariantMap(fallbackBuffer.toMap()));
+    } else if (visualStateChanged && !m_lastDisplayBuffer.isEmpty()) {
+        renderDisplayBuffer(m_lastDisplayBuffer);
     }
 }
 
@@ -234,6 +261,8 @@ void SchemaDevicePanel::renderDisplayBuffer(const QJsonObject &bufferObj)
     if (bufferObj.isEmpty()) {
         return;
     }
+
+    m_lastDisplayBuffer = bufferObj;
 
     const QString encoding = bufferObj.value("encoding").toString(m_frameEncoding).trimmed().toLower();
     const QString layout = bufferObj.value("layout").toString(m_frameLayout).trimmed().toLower();
@@ -264,8 +293,13 @@ void SchemaDevicePanel::renderPageMajorMono(const QList<int> &data, int w, int h
     img.fill(QColor(0, 0, 0));
 
     const int pages = qMax(1, h / 8);
-    const QColor onColor(230, 240, 255);
-    const QColor offColor(0, 0, 0);
+    const int bright = qBound(40, m_displayContrast, 255);
+    const QColor normalOn(bright, bright, qBound(0, bright + 30, 255));
+    const QColor normalOff(0, 0, 0);
+    const QColor invertedOn(0, 0, 0);
+    const QColor invertedOff(bright, bright, bright);
+    const QColor onColor = m_displayInverted ? invertedOn : normalOn;
+    const QColor offColor = m_displayInverted ? invertedOff : normalOff;
 
     for (int page = 0; page < pages && page * w < data.size(); ++page) {
         for (int col = 0; col < w && page * w + col < data.size(); ++col) {
@@ -279,6 +313,12 @@ void SchemaDevicePanel::renderPageMajorMono(const QList<int> &data, int w, int h
                 img.setPixelColor(col, y, pixelOn ? onColor : offColor);
             }
         }
+    }
+
+    if (!m_displayOn) {
+        img.fill(QColor(5, 5, 8));
+    } else if (m_displayEntireOn) {
+        img.fill(onColor);
     }
 
     m_displayImage = img;
@@ -417,6 +457,36 @@ void SchemaDevicePanel::updateScriptsView(const QJsonObject &state)
     }
 }
 
+void SchemaDevicePanel::emitControlChange(const QJsonObject &ctrlObj,
+                                          const QString &name,
+                                          const QVariant &value,
+                                          const QString &eventType)
+{
+    if (!m_scriptOwnedPanel || m_scriptEventMethod.trimmed().isEmpty()) {
+        emit parameterChangeRequested(deviceId(), name, value);
+        return;
+    }
+
+    QJsonObject params;
+    params["event"] = eventType;
+    params["control"] = name;
+    params["value"] = QJsonValue::fromVariant(value);
+    if (ctrlObj.contains("rpc_method")) {
+        params["rpc_method"] = ctrlObj.value("rpc_method").toString();
+    }
+    if (ctrlObj.contains("rpc_params")) {
+        params["rpc_params"] = ctrlObj.value("rpc_params").toObject();
+    }
+
+    emit parameterChangeRequested(deviceId(),
+                                 QString("__rpc:%1").arg(m_scriptEventMethod),
+                                 QVariant::fromValue(params));
+
+    if (m_scriptFallbackToSetParameter && eventType == "set_control") {
+        emit parameterChangeRequested(deviceId(), name, value);
+    }
+}
+
 QWidget *SchemaDevicePanel::buildControlWidget(const QJsonObject &ctrlObj,
                                                const QString &name,
                                                const QString &type)
@@ -430,8 +500,8 @@ QWidget *SchemaDevicePanel::buildControlWidget(const QJsonObject &ctrlObj,
         if (!helpText.isEmpty()) {
             check->setToolTip(helpText);
         }
-        connect(check, &QCheckBox::toggled, this, [this, name](bool v) {
-            emit parameterChangeRequested(deviceId(), name, v);
+        connect(check, &QCheckBox::toggled, this, [this, name, ctrlObj](bool v) {
+            emitControlChange(ctrlObj, name, v);
         });
         return check;
     }
@@ -445,8 +515,8 @@ QWidget *SchemaDevicePanel::buildControlWidget(const QJsonObject &ctrlObj,
         if (!helpText.isEmpty()) {
             spin->setToolTip(helpText);
         }
-        connect(spin, &QSpinBox::editingFinished, this, [this, name, spin]() {
-            emit parameterChangeRequested(deviceId(), name, spin->value());
+        connect(spin, &QSpinBox::editingFinished, this, [this, name, spin, ctrlObj]() {
+            emitControlChange(ctrlObj, name, spin->value());
         });
         return spin;
     }
@@ -465,8 +535,8 @@ QWidget *SchemaDevicePanel::buildControlWidget(const QJsonObject &ctrlObj,
         if (!helpText.isEmpty()) {
             spin->setToolTip(helpText);
         }
-        connect(spin, &QDoubleSpinBox::editingFinished, this, [this, name, spin]() {
-            emit parameterChangeRequested(deviceId(), name, spin->value());
+        connect(spin, &QDoubleSpinBox::editingFinished, this, [this, name, spin, ctrlObj]() {
+            emitControlChange(ctrlObj, name, spin->value());
         });
         return spin;
     }
@@ -487,11 +557,11 @@ QWidget *SchemaDevicePanel::buildControlWidget(const QJsonObject &ctrlObj,
             combo->setToolTip(helpText);
         }
         connect(combo, &QComboBox::currentIndexChanged, this,
-                [this, name, combo](int idx) {
+                [this, name, combo, ctrlObj](int idx) {
                     if (idx < 0) return;
                     const QVariant data = combo->itemData(idx);
-                    emit parameterChangeRequested(deviceId(), name,
-                                                 data.isValid() ? data : combo->currentText());
+                    emitControlChange(ctrlObj, name,
+                                      data.isValid() ? data : combo->currentText());
                 });
         return combo;
     }
@@ -508,6 +578,10 @@ QWidget *SchemaDevicePanel::buildControlWidget(const QJsonObject &ctrlObj,
         connect(btn, &QPushButton::clicked, this, [this, name, ctrlObj]() {
             const QString rpcMethod = ctrlObj.value("rpc_method").toString().trimmed();
             const QJsonObject rpcParams = ctrlObj.value("rpc_params").toObject();
+            if (m_scriptOwnedPanel && !m_scriptEventMethod.trimmed().isEmpty()) {
+                emitControlChange(ctrlObj, name, true, "action");
+                return;
+            }
             if (!rpcMethod.isEmpty()) {
                 emit parameterChangeRequested(deviceId(),
                                              QString("__rpc:%1").arg(rpcMethod),
@@ -528,8 +602,8 @@ QWidget *SchemaDevicePanel::buildControlWidget(const QJsonObject &ctrlObj,
     if (!helpText.isEmpty()) {
         line->setToolTip(helpText);
     }
-    connect(line, &QLineEdit::editingFinished, this, [this, name, line]() {
-        emit parameterChangeRequested(deviceId(), name, line->text());
+    connect(line, &QLineEdit::editingFinished, this, [this, name, line, ctrlObj]() {
+        emitControlChange(ctrlObj, name, line->text());
     });
     return line;
 }
@@ -564,6 +638,16 @@ void SchemaDevicePanel::rebuildControls(const QJsonObject &panelObj)
     m_displayLabel = nullptr;
     m_displayMetaLabel = nullptr;
     m_displayZoom = nullptr;
+    m_scriptOwnedPanel = false;
+    m_scriptEventMethod = "panel_event";
+    m_scriptStateMethod.clear();
+    m_scriptRuntimeStateKey = "panel_runtime";
+    m_scriptFallbackToSetParameter = true;
+    m_lastScriptStatePayload.clear();
+    m_framePrimaryKey = "frame_update";
+    m_frameFallbackKey = "buffer";
+    m_frameLayout = "page-major";
+    m_frameEncoding = "u8";
 
     const QString title = panelObj.value("title").toString().trimmed();
     if (!title.isEmpty()) {
@@ -582,6 +666,22 @@ void SchemaDevicePanel::rebuildControls(const QJsonObject &panelObj)
     }
 
     const QJsonArray controls = panelObj.value("controls").toArray();
+
+    const QJsonObject scriptObj = panelObj.value("script").toObject();
+    m_scriptOwnedPanel = scriptObj.value("enabled").toBool(false);
+    m_scriptEventMethod = scriptObj.value("event_method").toString("panel_event").trimmed();
+    m_scriptStateMethod = scriptObj.value("state_method").toString().trimmed();
+    m_scriptRuntimeStateKey = scriptObj.value("runtime_state_key").toString("panel_runtime").trimmed();
+    m_scriptFallbackToSetParameter = scriptObj.value("fallback_set_parameter").toBool(true);
+
+    if (m_scriptOwnedPanel && !m_scriptRuntimeStateKey.isEmpty()) {
+        if (!m_framePrimaryKey.contains('.')) {
+            m_framePrimaryKey = QString("%1.%2").arg(m_scriptRuntimeStateKey, m_framePrimaryKey);
+        }
+        if (!m_frameFallbackKey.contains('.')) {
+            m_frameFallbackKey = QString("%1.%2").arg(m_scriptRuntimeStateKey, m_frameFallbackKey);
+        }
+    }
 
     rebuildDisplayView(panelObj);
     rebuildMetricsView(panelObj);
@@ -656,6 +756,19 @@ void SchemaDevicePanel::updateState(const QJsonObject &state)
     updateDisplayView(state);
     updateMetricsView(state);
     updateScriptsView(state);
+
+    if (m_scriptOwnedPanel && !m_scriptStateMethod.trimmed().isEmpty()) {
+        QJsonObject params;
+        params["state"] = state;
+        params["panel"] = m_lastPanel;
+        const QByteArray serialized = QJsonDocument(params).toJson(QJsonDocument::Compact);
+        if (serialized != m_lastScriptStatePayload) {
+            m_lastScriptStatePayload = serialized;
+            emit parameterChangeRequested(deviceId(),
+                                         QString("__rpc:%1").arg(m_scriptStateMethod),
+                                         QVariant::fromValue(params));
+        }
+    }
 
     for (auto it = m_bindings.begin(); it != m_bindings.end(); ++it) {
         const QVariant value = valueFromState(state, it.key());

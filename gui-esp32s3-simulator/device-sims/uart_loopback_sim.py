@@ -82,6 +82,13 @@ class UartLoopbackSimulator:
                     "kind": "uart",
                     "title": "UART Loopback",
                     "description": "UART line model with flow/framing behavior and loopback counters.",
+                    "script": {
+                        "enabled": True,
+                        "event_method": "panel_event",
+                        "state_method": "panel_state",
+                        "runtime_state_key": "",
+                        "fallback_set_parameter": False,
+                    },
                     "metrics": [
                         {"label": "TX", "state_path": "counters.tx"},
                         {"label": "RX", "state_path": "counters.rx"},
@@ -123,6 +130,12 @@ class UartLoopbackSimulator:
 
         if method == "set_parameter":
             return self._set_parameter(params)
+
+        if method == "panel_event":
+            return self._panel_event(params)
+
+        if method == "panel_state":
+            return {"panel_state": self._panel_state(params.get("state", {}))}
 
         if method == "uart_set_line":
             return self._uart_set_line(params)
@@ -244,44 +257,81 @@ class UartLoopbackSimulator:
     def _set_parameter(self, params: Dict[str, Any]) -> Dict[str, Any]:
         name = str(params.get("name", ""))
         value = params.get("value")
+        self._apply_parameter(name, value)
 
+        return {"ok": True, "state": self._state()}
+
+    def _apply_parameter(self, name: str, value: Any) -> None:
         if name == "baud":
             self.baud = max(300, int(value))
-        elif name == "data_bits":
+            return
+        if name == "data_bits":
             v = int(value)
             if v in (5, 6, 7, 8):
                 self.data_bits = v
-        elif name == "parity":
+            return
+        if name == "parity":
             text = str(value).strip().lower()
             if text in ("none", "even", "odd"):
                 self.parity = text
-        elif name == "stop_bits":
+            return
+        if name == "stop_bits":
             v = float(value)
             if v in (1.0, 1.5, 2.0):
                 self.stop_bits = v
-        elif name == "flow_control":
+            return
+        if name == "flow_control":
             text = str(value).strip().lower()
             if text in ("none", "rtscts", "xonxoff"):
                 self.flow_control = text
-        elif name == "fifo_depth":
+            return
+        if name == "fifo_depth":
             depth = max(1, min(1024, int(value)))
             self.fifo_depth = depth
             self._rx_fifo = collections.deque(self._rx_fifo, maxlen=depth)
-        elif name == "rts":
+            return
+        if name == "rts":
             self.rts_active = bool(value)
-        elif name == "cts":
+            return
+        if name == "cts":
             self.cts_active = bool(value)
-        elif name == "reset_counters":
+            return
+        if name == "reset_counters":
             self.tx_count = 0
             self.rx_count = 0
             self.framing_errors = 0
             self.parity_errors = 0
             self.overrun_errors = 0
             self.break_count = 0
-        else:
-            raise ValueError(f"Unsupported parameter: {name}")
+            return
+        raise ValueError(f"Unsupported parameter: {name}")
 
-        return {"ok": True, "state": self._state()}
+    def _panel_state(self, _gui_state: Dict[str, Any]) -> Dict[str, Any]:
+        state = self._state()
+        return {
+            "summary": {
+                "tx": state["counters"]["tx"],
+                "rx": state["counters"]["rx"],
+                "fifo_level": state["fifo_level"],
+                "flow_control": state["flow_control"],
+            },
+            "device_config": state["device_config"],
+            "host_config": state["host_config"],
+        }
+
+    def _panel_event(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        control = str(params.get("control", "")).strip()
+        value = params.get("value")
+        event = str(params.get("event", "set_control")).strip().lower()
+
+        if control and event in ("set_control", "action"):
+            self._apply_parameter(control, value)
+
+        return {
+            "ok": True,
+            "state_patch": self._state(),
+            "panel_state": self._panel_state({}),
+        }
 
     # -- State for GUI --
     def _state(self) -> Dict[str, Any]:

@@ -163,6 +163,13 @@ class Sht21Simulator:
                     "kind": "sensor",
                     "title": "SHT21 Sensor",
                     "description": "Temperature and humidity source with configurable noise/drift.",
+                    "script": {
+                        "enabled": True,
+                        "event_method": "panel_event",
+                        "state_method": "panel_state",
+                        "runtime_state_key": "",
+                        "fallback_set_parameter": False,
+                    },
                     "metrics": [
                         {"label": "Temperature", "state_path": "temperature", "decimals": 2, "unit": "°C"},
                         {"label": "Humidity", "state_path": "humidity", "decimals": 2, "unit": "%RH"},
@@ -191,6 +198,12 @@ class Sht21Simulator:
 
         if method == "set_parameter":
             return self._set_parameter(params)
+
+        if method == "panel_event":
+            return self._panel_event(params)
+
+        if method == "panel_state":
+            return {"panel_state": self._panel_state(params.get("state", {}))}
 
         if method == "i2c_write":
             return self._i2c_write(params)
@@ -367,19 +380,52 @@ class Sht21Simulator:
     def _set_parameter(self, params: Dict[str, Any]) -> Dict[str, Any]:
         name = params.get("name")
         value = params.get("value")
+        self._apply_parameter(str(name), value)
+        return {"ok": True, "state": self._state_payload()}
+
+    def _apply_parameter(self, name: str, value: Any) -> None:
         if name == "temperature":
             self.temperature = max(-40.0, min(125.0, float(value)))
-        elif name == "humidity":
+            return
+        if name == "humidity":
             self.humidity = max(0.0, min(100.0, float(value)))
-        elif name == "noise":
+            return
+        if name == "noise":
             self._noise = bool(value)
-        elif name == "temp_drift":
+            return
+        if name == "temp_drift":
             self._temp_drift = float(value)
-        elif name == "rh_drift":
+            return
+        if name == "rh_drift":
             self._rh_drift = float(value)
-        else:
-            raise ValueError(f"Unsupported parameter: {name}")
-        return {"ok": True, "state": self._state_payload()}
+            return
+        raise ValueError(f"Unsupported parameter: {name}")
+
+    def _panel_state(self, _gui_state: Dict[str, Any]) -> Dict[str, Any]:
+        state = self._state_payload()
+        return {
+            "summary": {
+                "temperature": state["temperature"],
+                "humidity": state["humidity"],
+                "noise": state["noise"],
+            },
+            "resolution": state["resolution"],
+            "pending_measurement": state["pending_measurement"],
+        }
+
+    def _panel_event(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        control = str(params.get("control", "")).strip()
+        value = params.get("value")
+        event = str(params.get("event", "set_control")).strip().lower()
+
+        if control and event in ("set_control", "action"):
+            self._apply_parameter(control, value)
+
+        return {
+            "ok": True,
+            "state_patch": self._state_payload(),
+            "panel_state": self._panel_state({}),
+        }
 
     # -- Build state dict for GUI --
     def _state_payload(self) -> Dict[str, Any]:
