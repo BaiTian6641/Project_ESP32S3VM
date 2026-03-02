@@ -45,6 +45,12 @@ add_executable(gui_esp32s3_simulator
     backend/PeripheralManager.cpp
 )
 
+if(APPLE)
+    set_target_properties(gui_esp32s3_simulator PROPERTIES
+        MACOSX_BUNDLE TRUE
+    )
+endif()
+
 target_include_directories(gui_esp32s3_simulator PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/backend

@@ -1,4 +1,4 @@
-name: GUI Build (Linux + Windows)
+name: GUI Build (Linux + Windows + macOS)
 
 on:
   push:
@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -26,8 +26,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Qt (Windows)
-        if: runner.os == 'Windows'
+      - name: Install Qt (Windows/macOS)
+        if: runner.os == 'Windows' || runner.os == 'macOS'
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.6.3'
@@ -67,9 +67,87 @@ jobs:
               GUI_BIN="${{ env.BUILD_DIR }}/gui_esp32s3_simulator.exe"
             fi
             cp "$GUI_BIN" "$PKG_ROOT/"
+
+            DEPLOY_QT=""
+            if command -v windeployqt >/dev/null 2>&1; then
+              DEPLOY_QT="windeployqt"
+            elif command -v windeployqt6 >/dev/null 2>&1; then
+              DEPLOY_QT="windeployqt6"
+            else
+              echo "windeployqt not found in PATH"
+              exit 1
+            fi
+
+            "$DEPLOY_QT" --release --no-compiler-runtime --no-translations --dir "$PKG_ROOT" "$PKG_ROOT/gui_esp32s3_simulator.exe"
+
+            test -f "$PKG_ROOT/Qt6Core.dll"
+            test -f "$PKG_ROOT/Qt6Gui.dll"
+            test -f "$PKG_ROOT/Qt6Widgets.dll"
+            test -f "$PKG_ROOT/Qt6Network.dll"
+            test -f "$PKG_ROOT/platforms/qwindows.dll"
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            GUI_APP="${{ env.BUILD_DIR }}/gui_esp32s3_simulator.app"
+            if [[ ! -d "$GUI_APP" ]]; then
+              echo "Expected app bundle not found: $GUI_APP"
+              exit 1
+            fi
+
+            cp -R "$GUI_APP" "$PKG_ROOT/"
+
+            DEPLOY_QT=""
+            if command -v macdeployqt >/dev/null 2>&1; then
+              DEPLOY_QT="macdeployqt"
+            else
+              echo "macdeployqt not found in PATH"
+              exit 1
+            fi
+
+            "$DEPLOY_QT" "$PKG_ROOT/gui_esp32s3_simulator.app"
+
+            test -d "$PKG_ROOT/gui_esp32s3_simulator.app/Contents/Frameworks/QtCore.framework"
+            test -d "$PKG_ROOT/gui_esp32s3_simulator.app/Contents/Frameworks/QtGui.framework"
+            test -d "$PKG_ROOT/gui_esp32s3_simulator.app/Contents/Frameworks/QtWidgets.framework"
+            test -d "$PKG_ROOT/gui_esp32s3_simulator.app/Contents/Frameworks/QtNetwork.framework"
           else
             cp "${{ env.BUILD_DIR }}/gui_esp32s3_simulator" "$PKG_ROOT/"
             chmod +x "$PKG_ROOT/gui_esp32s3_simulator"
+
+            mapfile -t QT_LIBS < <(ldd "$PKG_ROOT/gui_esp32s3_simulator" \
+              | awk '/=>/ && /libQt6/ {print $3}' \
+              | sed '/^$/d' \
+              | sort -u)
+            if [[ ${#QT_LIBS[@]} -eq 0 ]]; then
+              echo "No Qt runtime libraries found via ldd"
+              exit 1
+            fi
+
+            for so in "${QT_LIBS[@]}"; do
+              cp "$so" "$PKG_ROOT/"
+            done
+
+            QT_PLUGIN_BASE="/usr/lib/x86_64-linux-gnu/qt6/plugins"
+            mkdir -p "$PKG_ROOT/platforms"
+            cp "$QT_PLUGIN_BASE/platforms/libqxcb.so" "$PKG_ROOT/platforms/"
+            if [[ -d "$QT_PLUGIN_BASE/platformthemes" ]]; then
+              mkdir -p "$PKG_ROOT/platformthemes"
+              cp -a "$QT_PLUGIN_BASE/platformthemes/." "$PKG_ROOT/platformthemes/"
+            fi
+            if [[ -d "$QT_PLUGIN_BASE/styles" ]]; then
+              mkdir -p "$PKG_ROOT/styles"
+              cp -a "$QT_PLUGIN_BASE/styles/." "$PKG_ROOT/styles/"
+            fi
+
+            {
+              printf '%s\n' '[Paths]'
+              printf '%s\n' 'Prefix=.'
+              printf '%s\n' 'Plugins=.'
+            } > "$PKG_ROOT/qt.conf"
+
+            test -f "$PKG_ROOT/libQt6Core.so.6"
+            test -f "$PKG_ROOT/libQt6Gui.so.6"
+            test -f "$PKG_ROOT/libQt6Widgets.so.6"
+            test -f "$PKG_ROOT/libQt6Network.so.6"
+            test -f "$PKG_ROOT/platforms/libqxcb.so"
           fi
 
           cp -r gui-esp32s3-simulator/peripherals "$PKG_ROOT/"
@@ -100,6 +178,17 @@ jobs:
               printf '%s\n' '"%SCRIPT_DIR%gui_esp32s3_simulator.exe"'
               printf '%s\n' 'endlocal'
             } > "$PKG_ROOT/run-gui.cmd"
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            echo "included=none" > "$QEMU_STATUS_FILE"
+            echo "note=Set ESP32S3_QEMU_BIN to a macOS qemu-system-xtensa path." >> "$QEMU_STATUS_FILE"
+
+            {
+              printf '%s\n' '#!/usr/bin/env bash'
+              printf '%s\n' 'set -euo pipefail'
+              printf '%s\n' 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"'
+              printf '%s\n' 'exec open "$SCRIPT_DIR/gui_esp32s3_simulator.app"'
+            } > "$PKG_ROOT/run-gui.command"
+            chmod +x "$PKG_ROOT/run-gui.command"
           else
             if [[ -f "qemu/build/qemu-system-xtensa" ]]; then
               mkdir -p "$PKG_ROOT/qemu"
