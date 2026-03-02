@@ -48,6 +48,7 @@ template <> constexpr inline auto QemuController::qt_create_metaobjectdata<qt_me
         "uartTxRequested",
         "serialLineReceived",
         "line",
+        "debugMessageReceived",
         "cpuSnapshotUpdated",
         "pc",
         "scalarRegs",
@@ -80,17 +81,21 @@ template <> constexpr inline auto QemuController::qt_create_metaobjectdata<qt_me
         QtMocHelpers::SignalData<void(const QString &)>(8, 2, QMC::AccessPublic, QMetaType::Void, {{
             { QMetaType::QString, 9 },
         }}),
+        // Signal 'debugMessageReceived'
+        QtMocHelpers::SignalData<void(const QString &)>(10, 2, QMC::AccessPublic, QMetaType::Void, {{
+            { QMetaType::QString, 9 },
+        }}),
         // Signal 'cpuSnapshotUpdated'
-        QtMocHelpers::SignalData<void(const QString &, const QStringList &, const QStringList &, const QStringList &)>(10, 2, QMC::AccessPublic, QMetaType::Void, {{
-            { QMetaType::QString, 11 }, { QMetaType::QStringList, 12 }, { QMetaType::QStringList, 13 }, { QMetaType::QStringList, 14 },
+        QtMocHelpers::SignalData<void(const QString &, const QStringList &, const QStringList &, const QStringList &)>(11, 2, QMC::AccessPublic, QMetaType::Void, {{
+            { QMetaType::QString, 12 }, { QMetaType::QStringList, 13 }, { QMetaType::QStringList, 14 }, { QMetaType::QStringList, 15 },
         }}),
         // Signal 'debugStatusUpdated'
-        QtMocHelpers::SignalData<void(const QString &)>(15, 2, QMC::AccessPublic, QMetaType::Void, {{
-            { QMetaType::QString, 16 },
+        QtMocHelpers::SignalData<void(const QString &)>(16, 2, QMC::AccessPublic, QMetaType::Void, {{
+            { QMetaType::QString, 17 },
         }}),
         // Signal 'gdbAttachCommandUpdated'
-        QtMocHelpers::SignalData<void(const QString &)>(17, 2, QMC::AccessPublic, QMetaType::Void, {{
-            { QMetaType::QString, 18 },
+        QtMocHelpers::SignalData<void(const QString &)>(18, 2, QMC::AccessPublic, QMetaType::Void, {{
+            { QMetaType::QString, 19 },
         }}),
     };
     QtMocHelpers::UintData qt_properties {
@@ -121,9 +126,10 @@ void QemuController::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _
         case 3: _t->spiTransferRequested((*reinterpret_cast< std::add_pointer_t<QJsonObject>>(_a[1]))); break;
         case 4: _t->uartTxRequested((*reinterpret_cast< std::add_pointer_t<QJsonObject>>(_a[1]))); break;
         case 5: _t->serialLineReceived((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 6: _t->cpuSnapshotUpdated((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QStringList>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QStringList>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<QStringList>>(_a[4]))); break;
-        case 7: _t->debugStatusUpdated((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 8: _t->gdbAttachCommandUpdated((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 6: _t->debugMessageReceived((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 7: _t->cpuSnapshotUpdated((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QStringList>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QStringList>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<QStringList>>(_a[4]))); break;
+        case 8: _t->debugStatusUpdated((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 9: _t->gdbAttachCommandUpdated((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
         default: ;
         }
     }
@@ -140,11 +146,13 @@ void QemuController::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _
             return;
         if (QtMocHelpers::indexOfMethod<void (QemuController::*)(const QString & )>(_a, &QemuController::serialLineReceived, 5))
             return;
-        if (QtMocHelpers::indexOfMethod<void (QemuController::*)(const QString & , const QStringList & , const QStringList & , const QStringList & )>(_a, &QemuController::cpuSnapshotUpdated, 6))
+        if (QtMocHelpers::indexOfMethod<void (QemuController::*)(const QString & )>(_a, &QemuController::debugMessageReceived, 6))
             return;
-        if (QtMocHelpers::indexOfMethod<void (QemuController::*)(const QString & )>(_a, &QemuController::debugStatusUpdated, 7))
+        if (QtMocHelpers::indexOfMethod<void (QemuController::*)(const QString & , const QStringList & , const QStringList & , const QStringList & )>(_a, &QemuController::cpuSnapshotUpdated, 7))
             return;
-        if (QtMocHelpers::indexOfMethod<void (QemuController::*)(const QString & )>(_a, &QemuController::gdbAttachCommandUpdated, 8))
+        if (QtMocHelpers::indexOfMethod<void (QemuController::*)(const QString & )>(_a, &QemuController::debugStatusUpdated, 8))
+            return;
+        if (QtMocHelpers::indexOfMethod<void (QemuController::*)(const QString & )>(_a, &QemuController::gdbAttachCommandUpdated, 9))
             return;
     }
 }
@@ -168,14 +176,14 @@ int QemuController::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 9)
+        if (_id < 10)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 9;
+        _id -= 10;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 9)
+        if (_id < 10)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 9;
+        _id -= 10;
     }
     return _id;
 }
@@ -217,20 +225,26 @@ void QemuController::serialLineReceived(const QString & _t1)
 }
 
 // SIGNAL 6
-void QemuController::cpuSnapshotUpdated(const QString & _t1, const QStringList & _t2, const QStringList & _t3, const QStringList & _t4)
+void QemuController::debugMessageReceived(const QString & _t1)
 {
-    QMetaObject::activate<void>(this, &staticMetaObject, 6, nullptr, _t1, _t2, _t3, _t4);
+    QMetaObject::activate<void>(this, &staticMetaObject, 6, nullptr, _t1);
 }
 
 // SIGNAL 7
-void QemuController::debugStatusUpdated(const QString & _t1)
+void QemuController::cpuSnapshotUpdated(const QString & _t1, const QStringList & _t2, const QStringList & _t3, const QStringList & _t4)
 {
-    QMetaObject::activate<void>(this, &staticMetaObject, 7, nullptr, _t1);
+    QMetaObject::activate<void>(this, &staticMetaObject, 7, nullptr, _t1, _t2, _t3, _t4);
 }
 
 // SIGNAL 8
-void QemuController::gdbAttachCommandUpdated(const QString & _t1)
+void QemuController::debugStatusUpdated(const QString & _t1)
 {
     QMetaObject::activate<void>(this, &staticMetaObject, 8, nullptr, _t1);
+}
+
+// SIGNAL 9
+void QemuController::gdbAttachCommandUpdated(const QString & _t1)
+{
+    QMetaObject::activate<void>(this, &staticMetaObject, 9, nullptr, _t1);
 }
 QT_WARNING_POP

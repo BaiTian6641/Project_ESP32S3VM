@@ -9,10 +9,16 @@
 #include <QProcess>
 #include <QSet>
 #include <QStandardPaths>
+#include <QTimer>
 
 PeripheralManager::PeripheralManager(QObject *parent)
     : QObject(parent)
 {
+    autoRefreshTimer = new QTimer(this);
+    autoRefreshTimer->setInterval(500);
+    connect(autoRefreshTimer, &QTimer::timeout,
+            this, &PeripheralManager::refreshStates);
+    autoRefreshTimer->start();
 }
 
 PeripheralManager::~PeripheralManager()
@@ -115,6 +121,10 @@ bool PeripheralManager::loadConfig(const QString &path)
                         .arg(devices.size())
                         .arg(loadedConfigPath));
     emit devicesChanged();
+
+    /* Auto-start all valid devices so they are ready before QEMU boots */
+    startAll();
+
     return true;
 }
 
@@ -326,6 +336,20 @@ void PeripheralManager::startAll()
     emit devicesChanged();
 }
 
+void PeripheralManager::ensureAllRunning()
+{
+    for (DeviceRuntime *device : devices) {
+        if (!device || device->status == "disabled" || device->status == "invalid") {
+            continue;
+        }
+        if (device->process && device->process->state() == QProcess::Running) {
+            continue;
+        }
+        startDevice(device);
+    }
+    emit devicesChanged();
+}
+
 void PeripheralManager::stopAll()
 {
     for (DeviceRuntime *device : devices) {
@@ -402,6 +426,42 @@ QJsonArray PeripheralManager::devicesSnapshot() const
 QString PeripheralManager::configPath() const
 {
     return loadedConfigPath;
+}
+
+QMap<int, QSet<QString>> PeripheralManager::getI2cBusAddresses() const
+{
+    QMap<int, QSet<QString>> result;
+
+    for (const DeviceRuntime *device : devices) {
+        if (device->busKind.compare("i2c", Qt::CaseInsensitive) != 0) {
+            continue;
+        }
+        if (device->status == "invalid" || device->status == "disabled") {
+            continue;
+        }
+
+        /* Determine bus index from controller name like "i2c0" / "i2c1" */
+        int busIdx = 0;
+        const QString ctrl = device->busController.trimmed().toLower();
+        if (ctrl.startsWith("i2c") && ctrl.length() > 3) {
+            bool ok = false;
+            int idx = ctrl.mid(3).toInt(&ok);
+            if (ok) {
+                busIdx = idx;
+            }
+        }
+
+        /* Strip "0x" prefix so we get bare hex like "3c" */
+        QString addr = normalizeAddressText(device->busAddress);
+        if (addr.startsWith("0x")) {
+            addr = addr.mid(2);
+        }
+        if (!addr.isEmpty()) {
+            result[busIdx].insert(addr);
+        }
+    }
+
+    return result;
 }
 
 void PeripheralManager::dispatchI2cTransfer(const QJsonObject &request)

@@ -5,8 +5,11 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QList>
+#include <QMap>
+#include <QSet>
 #include <QString>
 #include <QStringList>
+#include <QTimer>
 
 class QProcess;
 
@@ -24,6 +27,7 @@ public:
     bool loadDefaultConfig();
 
     void startAll();
+    void ensureAllRunning();
     void stopAll();
     void refreshStates();
     void dispatchI2cTransfer(const QJsonObject &request);
@@ -39,6 +43,11 @@ public:
 
     QJsonArray devicesSnapshot() const;
     QString configPath() const;
+
+    /** Return I2C addresses per bus index (0‑based).
+     *  Map key = bus index (e.g. 0 for "i2c0"), value = set of hex addresses
+     *  without "0x" prefix (e.g. "3c", "40"). */
+    QMap<int, QSet<QString>> getI2cBusAddresses() const;
 
 signals:
     void devicesChanged();
@@ -92,6 +101,7 @@ private:
     void handleJsonMessage(DeviceRuntime *device, const QJsonObject &obj);
 
     QList<DeviceRuntime *> devices;
+    QTimer *autoRefreshTimer = nullptr;
     QString loadedConfigPath;
     QString configDir;
     QString workspaceRoot;

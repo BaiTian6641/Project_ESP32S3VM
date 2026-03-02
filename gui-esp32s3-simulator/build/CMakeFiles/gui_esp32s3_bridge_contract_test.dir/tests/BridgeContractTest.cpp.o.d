@@ -912,6 +912,7 @@ CMakeFiles/gui_esp32s3_bridge_contract_test.dir/tests/BridgeContractTest.cpp.o: 
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QSet \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_bridge_contract_test_autogen/include/BridgeContractTest.moc \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qtmochelpers.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qtmocconstants.h \

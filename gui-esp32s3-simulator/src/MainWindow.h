@@ -19,6 +19,8 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
 
 private:
+    void syncI2cBridgeAddresses();
+
     QTabWidget *tabWidget;
     SerialConsoleWidget *serialWidget;
     CpuStatusWidget *cpuWidget;

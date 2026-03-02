@@ -5,6 +5,7 @@
 #include <QJsonObject>
 #include <QStringList>
 #include <QString>
+#include <QSet>
 
 class QProcess;
 class QLocalSocket;
@@ -33,6 +34,11 @@ public:
     void handleBridgeResponse(const QString &busKind, const QJsonObject &payload);
     bool ingestBridgeEventLine(const QString &line);
 
+    /* I2C bridge address management (dynamic device registration) */
+    void registerI2cBridgeAddress(int busIndex, const QString &hexAddr);
+    void unregisterI2cBridgeAddress(int busIndex, const QString &hexAddr);
+    void clearAllI2cBridgeAddresses();
+
     void pauseExecution();
     void continueExecution();
     void stepInstruction();
@@ -58,6 +64,7 @@ signals:
     void spiTransferRequested(const QJsonObject &request);
     void uartTxRequested(const QJsonObject &request);
     void serialLineReceived(const QString &line);
+    void debugMessageReceived(const QString &line);
     void cpuSnapshotUpdated(const QString &pc,
                             const QStringList &scalarRegs,
                             const QStringList &vectorRegs,
@@ -83,6 +90,8 @@ private:
     void sendQmpCommand(const QString &execute,
                         const QJsonObject &arguments = QJsonObject(),
                         int callbackId = -1);
+    void pushI2cBridgeAddresses(int busIndex);
+    void pushAllI2cBridgeAddresses();
     void pollLiveState();
     QString qmpSocketPath() const;
     void parseRegisterDump(const QString &dump,
@@ -140,4 +149,8 @@ private:
     QByteArray uartIngressHistory;
     bool autoDownloadByUartSync;
     bool autoDownloadSwitchPending;
+
+    /* I2C bridge address sets (one per bus, indexed 0/1) */
+    static constexpr int I2C_BUS_COUNT = 2;
+    QSet<QString> i2cBridgeAddrs[I2C_BUS_COUNT];
 };

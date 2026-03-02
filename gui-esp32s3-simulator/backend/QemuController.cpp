@@ -127,7 +127,7 @@ QemuController::QemuController(QObject *parent)
         if (uartMasterFd >= 0) {
             const qint64 written = ::write(uartMasterFd, bytes.constData(), static_cast<size_t>(bytes.size()));
             if (written < 0 && errno != EIO) {
-                emit serialLineReceived(QString("[Serial] virtual UART write error: errno=%1").arg(errno));
+                emit debugMessageReceived(QString("[Serial] virtual UART write error: errno=%1").arg(errno));
             }
         }
 #endif
@@ -151,27 +151,27 @@ QemuController::QemuController(QObject *parent)
     });
 
     connect(qemuProcess, &QProcess::started, this, [this]() {
-        emit serialLineReceived("[QEMU] process started");
+        emit debugMessageReceived("[QEMU] process started");
         emit qemuStarted();
         if (bootMode == 1) {
             qmpReady = false;
-            emit serialLineReceived("[QMP] disabled in Download Boot mode to keep ROM serial downloader path exclusive");
+            emit debugMessageReceived("[QMP] disabled in Download Boot mode to keep ROM serial downloader path exclusive");
         } else {
             QTimer::singleShot(250, this, &QemuController::connectQmp);
         }
     });
 
     connect(qemuProcess, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {
-        emit serialLineReceived(QString("[QEMU] process error: %1").arg(static_cast<int>(error)));
+        emit debugMessageReceived(QString("[QEMU] process error: %1").arg(static_cast<int>(error)));
     });
 
     connect(qemuProcess, qOverload<int, QProcess::ExitStatus>(&QProcess::finished), this,
             [this](int code, QProcess::ExitStatus status) {
-                emit serialLineReceived(QString("[QEMU] exited code=%1 status=%2")
+                emit debugMessageReceived(QString("[QEMU] exited code=%1 status=%2")
                                         .arg(code)
                                         .arg(status == QProcess::NormalExit ? "normal" : "crash"));
                 if (status == QProcess::CrashExit || code == 139 || code == 11) {
-                    emit serialLineReceived("[QEMU] guest/emulator crash detected; UART/QMP transport may disconnect as a consequence");
+                    emit debugMessageReceived("[QEMU] guest/emulator crash detected; UART/QMP transport may disconnect as a consequence");
                 }
                 qmpReady = false;
                 liveTimer->stop();
@@ -180,7 +180,7 @@ QemuController::QemuController(QObject *parent)
             });
 
     connect(qmpSocket, &QLocalSocket::connected, this, [this]() {
-        emit serialLineReceived("[QMP] connected");
+        emit debugMessageReceived("[QMP] connected");
     });
 
     connect(qmpSocket, &QLocalSocket::readyRead, this, [this]() {
@@ -193,13 +193,13 @@ QemuController::QemuController(QObject *parent)
     });
 
     connect(qmpSocket, &QLocalSocket::errorOccurred, this, [this](QLocalSocket::LocalSocketError e) {
-        emit serialLineReceived(QString("[QMP] socket error: %1").arg(static_cast<int>(e)));
+        emit debugMessageReceived(QString("[QMP] socket error: %1").arg(static_cast<int>(e)));
     });
 
     connect(liveTimer, &QTimer::timeout, this, &QemuController::pollLiveState);
 
     if (!setupUartPty()) {
-        emit serialLineReceived("[Serial] startup PTY initialization failed; external adapter disabled");
+        emit debugMessageReceived("[Serial] startup PTY initialization failed; external adapter disabled");
     }
 }
 
@@ -222,12 +222,12 @@ QemuController::~QemuController()
 void QemuController::sendUart0(const QString &text)
 {
     if (qemuProcess->state() != QProcess::Running) {
-        emit serialLineReceived("[UART0] QEMU is not running");
+        emit debugMessageReceived("[UART0] QEMU is not running");
         return;
     }
 
     if (bootMode == 1) {
-        emit serialLineReceived("[UART0] input blocked in Download Boot mode; use esptool on the recommended /dev/pts/<N> port");
+        emit debugMessageReceived("[UART0] input blocked in Download Boot mode; use esptool on the recommended /dev/pts/<N> port");
         return;
     }
 
@@ -250,7 +250,7 @@ void QemuController::setSerialConfig(const QString &communicationType,
     serialFlowControl = flowControl;
     serialLineEnding = lineEnding;
 
-    emit serialLineReceived(QString("[Serial] mode=%1 baud=%2 %3%4 %5 flow=%6 line=%7")
+    emit debugMessageReceived(QString("[Serial] mode=%1 baud=%2 %3%4 %5 flow=%6 line=%7")
                             .arg(serialCommunicationType)
                             .arg(serialBaudRate)
                             .arg(serialDataBits)
@@ -260,7 +260,7 @@ void QemuController::setSerialConfig(const QString &communicationType,
                             .arg(serialLineEnding));
 
     if (qemuProcess->state() == QProcess::Running) {
-        emit serialLineReceived("[Serial] settings applied to GUI/backend; stdio transport remains host-side byte stream");
+        emit debugMessageReceived("[Serial] settings applied to GUI/backend; stdio transport remains host-side byte stream");
     }
 
 #ifdef Q_OS_LINUX
@@ -292,7 +292,7 @@ void QemuController::setSerialConfig(const QString &communicationType,
 void QemuController::requestCpuSnapshot()
 {
     if (!qmpReady) {
-        emit serialLineReceived("[QMP] not ready for snapshot");
+        emit debugMessageReceived("[QMP] not ready for snapshot");
         return;
     }
 
@@ -314,11 +314,11 @@ void QemuController::startLiveUpdates(bool enabled)
 {
     if (enabled) {
         liveTimer->start();
-        emit serialLineReceived("[Debug] live mode enabled");
+        emit debugMessageReceived("[Debug] live mode enabled");
         pollLiveState();
     } else {
         liveTimer->stop();
-        emit serialLineReceived("[Debug] live mode disabled");
+        emit debugMessageReceived("[Debug] live mode disabled");
     }
 }
 
@@ -328,7 +328,7 @@ void QemuController::setMemoryInspectBase(const QString &addressText)
     if (memoryInspectBase.isEmpty()) {
         memoryInspectBase = "0x3FC80000";
     }
-    emit serialLineReceived(QString("[Debug] memory inspect base set: %1").arg(memoryInspectBase));
+    emit debugMessageReceived(QString("[Debug] memory inspect base set: %1").arg(memoryInspectBase));
 }
 
 void QemuController::handleBridgeResponse(const QString &busKind, const QJsonObject &payload)
@@ -337,7 +337,7 @@ void QemuController::handleBridgeResponse(const QString &busKind, const QJsonObj
     const QString jsonText = QString::fromUtf8(QJsonDocument(payload).toJson(QJsonDocument::Compact));
     const QString line = QString("[PERIPH][%1][RSP] %2").arg(upper, jsonText);
 
-    emit serialLineReceived(line);
+    emit debugMessageReceived(line);
 
     if (qemuProcess->state() == QProcess::Running) {
         qemuProcess->write((line + "\n").toUtf8());
@@ -350,7 +350,7 @@ void QemuController::pauseExecution()
         return;
     }
     sendQmpCommand("stop");
-    emit serialLineReceived("[Debug] pause requested");
+    emit debugMessageReceived("[Debug] pause requested");
 }
 
 void QemuController::continueExecution()
@@ -359,7 +359,7 @@ void QemuController::continueExecution()
         return;
     }
     sendQmpCommand("cont");
-    emit serialLineReceived("[Debug] continue requested");
+    emit debugMessageReceived("[Debug] continue requested");
 }
 
 void QemuController::stepInstruction()
@@ -370,7 +370,7 @@ void QemuController::stepInstruction()
     QJsonObject args;
     args["command-line"] = "si";
     sendQmpCommand("human-monitor-command", args);
-    emit serialLineReceived("[Debug] single-step requested");
+    emit debugMessageReceived("[Debug] single-step requested");
     requestCpuSnapshot();
 }
 
@@ -382,7 +382,7 @@ void QemuController::addBreakpoint(const QString &addressText)
     QJsonObject args;
     args["command-line"] = QString("break %1").arg(addressText.trimmed());
     sendQmpCommand("human-monitor-command", args);
-    emit serialLineReceived(QString("[Debug] breakpoint set at %1").arg(addressText.trimmed()));
+    emit debugMessageReceived(QString("[Debug] breakpoint set at %1").arg(addressText.trimmed()));
 }
 
 void QemuController::clearBreakpoints()
@@ -393,7 +393,77 @@ void QemuController::clearBreakpoints()
     QJsonObject args;
     args["command-line"] = "delete";
     sendQmpCommand("human-monitor-command", args);
-    emit serialLineReceived("[Debug] all breakpoints clear requested");
+    emit debugMessageReceived("[Debug] all breakpoints clear requested");
+}
+
+/* ================================================================== */
+/*  I2C bridge address management                                      */
+/* ================================================================== */
+
+void QemuController::registerI2cBridgeAddress(int busIndex, const QString &hexAddr)
+{
+    if (busIndex < 0 || busIndex >= I2C_BUS_COUNT) {
+        return;
+    }
+    const QString norm = hexAddr.trimmed().toLower();
+    if (norm.isEmpty()) {
+        return;
+    }
+    i2cBridgeAddrs[busIndex].insert(norm);
+    pushI2cBridgeAddresses(busIndex);
+}
+
+void QemuController::unregisterI2cBridgeAddress(int busIndex, const QString &hexAddr)
+{
+    if (busIndex < 0 || busIndex >= I2C_BUS_COUNT) {
+        return;
+    }
+    const QString norm = hexAddr.trimmed().toLower();
+    i2cBridgeAddrs[busIndex].remove(norm);
+    pushI2cBridgeAddresses(busIndex);
+}
+
+void QemuController::clearAllI2cBridgeAddresses()
+{
+    for (int b = 0; b < I2C_BUS_COUNT; b++) {
+        i2cBridgeAddrs[b].clear();
+        pushI2cBridgeAddresses(b);
+    }
+}
+
+void QemuController::pushI2cBridgeAddresses(int busIndex)
+{
+    if (!qmpReady || busIndex < 0 || busIndex >= I2C_BUS_COUNT) {
+        return;
+    }
+
+    /* Build comma-separated hex string (no 0x prefix, e.g. "3c,40") */
+    QStringList sorted(i2cBridgeAddrs[busIndex].begin(),
+                       i2cBridgeAddrs[busIndex].end());
+    sorted.sort();
+    const QString addrsValue = sorted.join(',');
+
+    /*
+     * QOM path for the bridge on bus N:
+     *   /machine/soc/i2cN/i2c/child[0]
+     * (the bridge is the first — and only — slave created on each bus)
+     */
+    const QString path = QString("/machine/soc/i2c%1/i2c/child[0]").arg(busIndex);
+
+    QJsonObject args;
+    args["path"]     = path;
+    args["property"] = QStringLiteral("registered-addrs");
+    args["value"]    = addrsValue;
+    sendQmpCommand("qom-set", args);
+}
+
+void QemuController::pushAllI2cBridgeAddresses()
+{
+    for (int b = 0; b < I2C_BUS_COUNT; b++) {
+        if (!i2cBridgeAddrs[b].isEmpty()) {
+            pushI2cBridgeAddresses(b);
+        }
+    }
 }
 
 void QemuController::setGdbServerConfig(bool enabled, int port, bool waitForAttach)
@@ -408,7 +478,7 @@ void QemuController::setGdbServerConfig(bool enabled, int port, bool waitForAtta
               .arg(gdbWaitForAttach ? "wait" : "no-wait")
         : QString("[GDB] disabled");
 
-    emit serialLineReceived(status);
+    emit debugMessageReceived(status);
     emit debugStatusUpdated(status);
 
     const QString attachCommand = pendingFirmware.endsWith(".elf", Qt::CaseInsensitive)
@@ -422,7 +492,7 @@ void QemuController::setGdbServerConfig(bool enabled, int port, bool waitForAtta
 void QemuController::startWithGdb(const QString &firmwarePath, int port, bool waitForAttach)
 {
     if (firmwarePath.trimmed().isEmpty()) {
-        emit serialLineReceived("[GDB] firmware path is empty");
+        emit debugMessageReceived("[GDB] firmware path is empty");
         return;
     }
 
@@ -437,7 +507,7 @@ void QemuController::setSpiFlashConfig(bool enabled, int sizeMB)
         spiFlashSizeMB = sizeMB;
     }
 
-    emit serialLineReceived(QString("[SPI Flash] %1, size=%2MB")
+    emit debugMessageReceived(QString("[SPI Flash] %1, size=%2MB")
                             .arg(spiFlashEnabled ? "enabled" : "disabled")
                             .arg(spiFlashSizeMB));
 }
@@ -457,7 +527,7 @@ void QemuController::setPsramConfig(bool enabled, int sizeMB, const QString &mod
         psramMode = "qspi";
     }
 
-    emit serialLineReceived(QString("[PSRAM] %1, size=%2MB, mode=%3")
+    emit debugMessageReceived(QString("[PSRAM] %1, size=%2MB, mode=%3")
                             .arg(psramEnabled ? "enabled" : "disabled")
                             .arg(psramSizeMB)
                             .arg(psramMode.toUpper()));
@@ -472,15 +542,15 @@ void QemuController::setChipIdentityConfig(const QString &baseMac,
     chipRevision = revision;
 
     if (!customBaseMac.isEmpty()) {
-        emit serialLineReceived(QString("[Chip] custom base MAC: %1").arg(customBaseMac));
+        emit debugMessageReceived(QString("[Chip] custom base MAC: %1").arg(customBaseMac));
     } else {
-        emit serialLineReceived("[Chip] base MAC: default");
+        emit debugMessageReceived("[Chip] base MAC: default");
     }
 
     if (chipRevisionEnabled) {
-        emit serialLineReceived(QString("[Chip] chip revision override: %1").arg(chipRevision));
+        emit debugMessageReceived(QString("[Chip] chip revision override: %1").arg(chipRevision));
     } else {
-        emit serialLineReceived("[Chip] chip revision: default");
+        emit debugMessageReceived("[Chip] chip revision: default");
     }
 }
 
@@ -508,11 +578,11 @@ QString QemuController::recommendedEsptoolCommand(const QString &firmwarePath) c
 void QemuController::resetTarget()
 {
     if (pendingFirmware.isEmpty()) {
-        emit serialLineReceived("[Control] No firmware selected for reset/restart");
+        emit debugMessageReceived("[Control] No firmware selected for reset/restart");
         return;
     }
 
-    emit serialLineReceived("[Control] Reset requested: restarting QEMU process");
+    emit debugMessageReceived("[Control] Reset requested: restarting QEMU process");
     startQemuWithFirmware(pendingFirmware);
 }
 
@@ -520,13 +590,13 @@ void QemuController::setBootMode(int modeIndex)
 {
     bootMode = modeIndex;
     const QString modeName = (bootMode == 0) ? "Normal Boot" : "Download Boot";
-    emit serialLineReceived(QString("[Control] Boot mode set: %1").arg(modeName));
+    emit debugMessageReceived(QString("[Control] Boot mode set: %1").arg(modeName));
 }
 
 void QemuController::loadFirmware(const QString &path)
 {
     pendingFirmware = path;
-    emit serialLineReceived(QString("[Control] Firmware selected: %1").arg(pendingFirmware));
+    emit debugMessageReceived(QString("[Control] Firmware selected: %1").arg(pendingFirmware));
     startQemuWithFirmware(pendingFirmware);
 }
 
@@ -538,18 +608,18 @@ void QemuController::startQemuWithFirmware(const QString &firmwarePath)
 
     QFileInfo fwInfo(firmwarePath);
     if (!fwInfo.exists()) {
-        emit serialLineReceived(QString("[QEMU] Firmware file not found: %1").arg(firmwarePath));
+        emit debugMessageReceived(QString("[QEMU] Firmware file not found: %1").arg(firmwarePath));
         return;
     }
 
     qemuBinaryPath = resolveQemuBinary();
     if (qemuBinaryPath.isEmpty()) {
-        emit serialLineReceived("[QEMU] qemu-system-xtensa not found. Set ESP32S3_QEMU_BIN or build qemu/build/qemu-system-xtensa");
+        emit debugMessageReceived("[QEMU] qemu-system-xtensa not found. Set ESP32S3_QEMU_BIN or build qemu/build/qemu-system-xtensa");
         return;
     }
 
     if (uartMasterFd < 0 && !setupUartPty()) {
-        emit serialLineReceived("[Serial] PTY bridge unavailable, continuing with integrated GUI serial only");
+        emit debugMessageReceived("[Serial] PTY bridge unavailable, continuing with integrated GUI serial only");
     }
 
     flushUartBridgeBuffers();
@@ -580,7 +650,7 @@ void QemuController::startQemuWithFirmware(const QString &firmwarePath)
     QFile::remove(qmpSocketPath());
     args << "-qmp" << QString("unix:%1,server=on,wait=off").arg(qmpSocketPath());
 #else
-    emit serialLineReceived("[QMP] disabled on Windows in this build; CPU debug controls are unavailable");
+    emit debugMessageReceived("[QMP] disabled on Windows in this build; CPU debug controls are unavailable");
 #endif
 
     args[1] = machineArg;
@@ -596,7 +666,7 @@ void QemuController::startQemuWithFirmware(const QString &firmwarePath)
         args << "-kernel" << firmwarePath;
     } else if (isBin) {
         if (!spiFlashEnabled) {
-            emit serialLineReceived("[QEMU] .bin firmware requires SPI flash in this launcher; enable SPI flash in Control tab");
+            emit debugMessageReceived("[QEMU] .bin firmware requires SPI flash in this launcher; enable SPI flash in Control tab");
             return;
         }
 
@@ -606,11 +676,11 @@ void QemuController::startQemuWithFirmware(const QString &firmwarePath)
         }
 
         args << "-drive" << QString("file=%1,if=mtd,format=raw").arg(flashPath);
-        emit serialLineReceived(QString("[QEMU] SPI flash image prepared: %1 (%2MB)")
+        emit debugMessageReceived(QString("[QEMU] SPI flash image prepared: %1 (%2MB)")
                                 .arg(flashPath)
                                 .arg(spiFlashSizeMB));
     } else {
-        emit serialLineReceived("[QEMU] Unsupported firmware type; use .elf or .bin");
+        emit debugMessageReceived("[QEMU] Unsupported firmware type; use .elf or .bin");
         return;
     }
 
@@ -622,33 +692,33 @@ void QemuController::startQemuWithFirmware(const QString &firmwarePath)
     }
 
     if (!isElf) {
-        emit serialLineReceived("[QEMU] BIN launch uses SPI flash boot path (no -kernel)");
+        emit debugMessageReceived("[QEMU] BIN launch uses SPI flash boot path (no -kernel)");
     }
 
     if (psramEnabled) {
-        emit serialLineReceived(QString("[PSRAM] enabled: %1MB (%2)")
+        emit debugMessageReceived(QString("[PSRAM] enabled: %1MB (%2)")
                                 .arg(psramSizeMB)
                                 .arg(psramMode.toUpper()));
     } else {
-        emit serialLineReceived("[PSRAM] disabled");
+        emit debugMessageReceived("[PSRAM] disabled");
     }
 
     if (bootMode == 1) {
         const QString flashPort = currentUartPort();
-        emit serialLineReceived("[QEMU] Download Boot mode selected (BootROM UART/USB downloader)");
+        emit debugMessageReceived("[QEMU] Download Boot mode selected (BootROM UART/USB downloader)");
         if (!flashPort.isEmpty()) {
-            emit serialLineReceived(QString("[Flash] recommended: esptool --chip esp32s3 --port %1 --before no-reset --after no-reset --no-stub write-flash 0x0 <firmware.bin>\n"
+            emit debugMessageReceived(QString("[Flash] recommended: esptool --chip esp32s3 --port %1 --before no-reset --after no-reset --no-stub write-flash 0x0 <firmware.bin>\n"
                                             "[Flash] baud negotiation: add --baud <rate> (esptool syncs at ROM speed first, then switches)")
                                     .arg(flashPort));
         } else {
-            emit serialLineReceived("[Flash] no host PTY bridge available for external esptool in this runtime");
+            emit debugMessageReceived("[Flash] no host PTY bridge available for external esptool in this runtime");
         }
     } else {
-        emit serialLineReceived("[QEMU] Normal Boot mode selected (SPI flash boot)");
-        emit serialLineReceived("[Flash] UART sync auto-entry is enabled: esptool sync packet can auto-switch simulator to Download Boot mode");
+        emit debugMessageReceived("[QEMU] Normal Boot mode selected (SPI flash boot)");
+        emit debugMessageReceived("[Flash] UART sync auto-entry is enabled: esptool sync packet can auto-switch simulator to Download Boot mode");
     }
 
-    emit serialLineReceived(QString("[QEMU] Launch: %1 %2").arg(qemuBinaryPath, args.join(' ')));
+    emit debugMessageReceived(QString("[QEMU] Launch: %1 %2").arg(qemuBinaryPath, args.join(' ')));
     if (gdbEnabled) {
         const QString endpoint = QString("127.0.0.1:%1").arg(gdbPort);
         const QString mode = gdbWaitForAttach ? "waiting for debugger" : "running";
@@ -696,7 +766,7 @@ void QemuController::flushUartBridgeBuffers()
     }
 
     if (flushed > 0) {
-        emit serialLineReceived(QString("[Serial] flushed %1 stale bytes from virtual adapter").arg(flushed));
+        emit debugMessageReceived(QString("[Serial] flushed %1 stale bytes from virtual adapter").arg(flushed));
     }
 #endif
 }
@@ -712,7 +782,7 @@ bool QemuController::setupUartPty()
     int slaveFd = -1;
     char slaveName[256] = {0};
     if (::openpty(&masterFd, &slaveFd, slaveName, nullptr, nullptr) != 0) {
-        emit serialLineReceived(QString("[Serial] failed to create virtual UART PTY: errno=%1").arg(errno));
+        emit debugMessageReceived(QString("[Serial] failed to create virtual UART PTY: errno=%1").arg(errno));
         return false;
     }
 
@@ -751,8 +821,8 @@ bool QemuController::setupUartPty()
                 && !autoDownloadSwitchPending && !pendingFirmware.isEmpty()
                 && containsDownloadSyncPreamble(bytes)) {
                 autoDownloadSwitchPending = true;
-                emit serialLineReceived("[Flash] esptool UART sync detected (0x07 0x07 0x12 0x20)");
-                emit serialLineReceived("[Flash] auto-switching to Download Boot mode for firmware transfer");
+                emit debugMessageReceived("[Flash] esptool UART sync detected (0x07 0x07 0x12 0x20)");
+                emit debugMessageReceived("[Flash] auto-switching to Download Boot mode for firmware transfer");
 
                 QTimer::singleShot(0, this, [this]() {
                     if (!autoDownloadSwitchPending || pendingFirmware.isEmpty()) {
@@ -760,7 +830,7 @@ bool QemuController::setupUartPty()
                     }
                     autoDownloadSwitchPending = false;
                     bootMode = 1;
-                    emit serialLineReceived("[Control] Boot mode auto-switched: Download Boot (UART sync)");
+                    emit debugMessageReceived("[Control] Boot mode auto-switched: Download Boot (UART sync)");
                     startQemuWithFirmware(pendingFirmware);
                 });
                 return;
@@ -781,31 +851,31 @@ bool QemuController::setupUartPty()
         }
 
         if (readLen < 0) {
-            emit serialLineReceived(QString("[Serial] virtual UART read error: errno=%1").arg(errno));
+            emit debugMessageReceived(QString("[Serial] virtual UART read error: errno=%1").arg(errno));
         }
     });
 
-    emit serialLineReceived(QString("[Serial] virtual UART device ready at startup: %1").arg(uartSlavePath));
+    emit debugMessageReceived(QString("[Serial] virtual UART device ready at startup: %1").arg(uartSlavePath));
 
     QFile::remove(uartAliasPath);
     if (::symlink(uartSlavePath.toUtf8().constData(), uartAliasPath.toUtf8().constData()) == 0) {
-        emit serialLineReceived(QString("[Serial] stable UART alias: %1 -> %2")
+        emit debugMessageReceived(QString("[Serial] stable UART alias: %1 -> %2")
                                 .arg(uartAliasPath)
                                 .arg(uartSlavePath));
-        emit serialLineReceived(QString("[Serial] monitor command: python3 -m serial.tools.miniterm %1 115200 --raw")
+        emit debugMessageReceived(QString("[Serial] monitor command: python3 -m serial.tools.miniterm %1 115200 --raw")
                                 .arg(uartAliasPath));
-        emit serialLineReceived(QString("[Serial] esptool port: %1 (use PTY path directly for best compatibility)")
+        emit debugMessageReceived(QString("[Serial] esptool port: %1 (use PTY path directly for best compatibility)")
                                 .arg(uartSlavePath));
     } else {
-        emit serialLineReceived(QString("[Serial] failed to create stable UART alias %1 (errno=%2)")
+        emit debugMessageReceived(QString("[Serial] failed to create stable UART alias %1 (errno=%2)")
                                 .arg(uartAliasPath)
                                 .arg(errno));
     }
 
-    emit serialLineReceived("[Serial] GUI UART output is always active; external tools can also open this virtual adapter");
+    emit debugMessageReceived("[Serial] GUI UART output is always active; external tools can also open this virtual adapter");
     return true;
 #else
-    emit serialLineReceived("[Serial] virtual UART PTY mode is only supported on Linux");
+    emit debugMessageReceived("[Serial] virtual UART PTY mode is only supported on Linux");
     return false;
 #endif
 }
@@ -844,7 +914,7 @@ bool QemuController::prepareSpiFlashImage(const QString &firmwarePath, QString &
 {
     QFile fwFile(firmwarePath);
     if (!fwFile.open(QIODevice::ReadOnly)) {
-        emit serialLineReceived(QString("[SPI Flash] failed to open firmware: %1").arg(firmwarePath));
+        emit debugMessageReceived(QString("[SPI Flash] failed to open firmware: %1").arg(firmwarePath));
         return false;
     }
 
@@ -870,7 +940,7 @@ bool QemuController::prepareSpiFlashImage(const QString &firmwarePath, QString &
             }
 
             if (imageFlashSizeMB > 0 && spiFlashSizeMB < imageFlashSizeMB) {
-                emit serialLineReceived(QString("[SPI Flash] warning: firmware header indicates %1MB flash, but current simulator flash is %2MB")
+                emit debugMessageReceived(QString("[SPI Flash] warning: firmware header indicates %1MB flash, but current simulator flash is %2MB")
                                         .arg(imageFlashSizeMB)
                                         .arg(spiFlashSizeMB));
             }
@@ -879,7 +949,7 @@ bool QemuController::prepareSpiFlashImage(const QString &firmwarePath, QString &
 
     const qint64 flashSizeBytes = static_cast<qint64>(spiFlashSizeMB) * 1024 * 1024;
     if (fwData.size() > flashSizeBytes) {
-        emit serialLineReceived(QString("[SPI Flash] firmware too large (%1 bytes) for %2MB flash")
+        emit debugMessageReceived(QString("[SPI Flash] firmware too large (%1 bytes) for %2MB flash")
                                 .arg(fwData.size())
                                 .arg(spiFlashSizeMB));
         return false;
@@ -888,7 +958,7 @@ bool QemuController::prepareSpiFlashImage(const QString &firmwarePath, QString &
     spiFlashImagePath = QDir::tempPath() + QString("/esp32s3_gui_flash_%1.bin").arg(QCoreApplication::applicationPid());
     QFile flashFile(spiFlashImagePath);
     if (!flashFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-        emit serialLineReceived(QString("[SPI Flash] failed to create flash image: %1").arg(spiFlashImagePath));
+        emit debugMessageReceived(QString("[SPI Flash] failed to create flash image: %1").arg(spiFlashImagePath));
         return false;
     }
 
@@ -896,20 +966,20 @@ bool QemuController::prepareSpiFlashImage(const QString &firmwarePath, QString &
     int remainingMB = spiFlashSizeMB;
     while (remainingMB-- > 0) {
         if (flashFile.write(fillChunk) != fillChunk.size()) {
-            emit serialLineReceived("[SPI Flash] failed while initializing flash image");
+            emit debugMessageReceived("[SPI Flash] failed while initializing flash image");
             flashFile.close();
             return false;
         }
     }
 
     if (!flashFile.seek(0)) {
-        emit serialLineReceived("[SPI Flash] failed to seek flash image");
+        emit debugMessageReceived("[SPI Flash] failed to seek flash image");
         flashFile.close();
         return false;
     }
 
     if (flashFile.write(fwData) != fwData.size()) {
-        emit serialLineReceived("[SPI Flash] failed writing firmware into flash image");
+        emit debugMessageReceived("[SPI Flash] failed writing firmware into flash image");
         flashFile.close();
         return false;
     }
@@ -979,7 +1049,10 @@ void QemuController::handleQemuOutputChunk(const QString &chunk)
     serialBuffer += chunk;
     const QStringList lines = splitLines(serialBuffer);
     for (const QString &line : lines) {
-        ingestBridgeEventLine(line);
+        /* Bridge events are consumed silently — never shown in the serial console */
+        if (ingestBridgeEventLine(line)) {
+            continue;
+        }
         emit serialLineReceived(line);
     }
 }
@@ -1073,7 +1146,9 @@ void QemuController::handleQmpMessage(const QJsonObject &obj)
 
     if (obj.contains("return") && !qmpReady) {
         qmpReady = true;
-        emit serialLineReceived("[QMP] capabilities enabled");
+        emit debugMessageReceived("[QMP] capabilities enabled");
+        /* Push any pending I2C bridge addresses now that QMP is live */
+        pushAllI2cBridgeAddresses();
         return;
     }
 
@@ -1092,7 +1167,7 @@ void QemuController::handleQmpMessage(const QJsonObject &obj)
         if (id == pendingMemCb) {
             pendingMemCb = -1;
         }
-        emit serialLineReceived(QString("[QMP] command error for id=%1").arg(id));
+        emit debugMessageReceived(QString("[QMP] command error for id=%1").arg(id));
         return;
     }
 

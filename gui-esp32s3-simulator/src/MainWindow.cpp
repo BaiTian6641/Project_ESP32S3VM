@@ -41,19 +41,48 @@ MainWindow::MainWindow(QWidget *parent)
     cpuWidget->setController(controller);
     controlWidget->setController(controller);
     debugWidget->setController(controller);
+
+    /* Load & auto-start peripheral config before QEMU launches */
     peripheralManager->loadDefaultConfig();
     peripheralsWidget->setManager(peripheralManager);
 
-        connect(controller, &QemuController::qemuStarted,
-            peripheralManager, &PeripheralManager::startAll);
-        connect(controller, &QemuController::qemuStopped,
-            peripheralManager, &PeripheralManager::stopAll);
-            connect(controller, &QemuController::i2cTransferRequested,
-                peripheralManager, &PeripheralManager::dispatchI2cTransfer);
-            connect(controller, &QemuController::spiTransferRequested,
-                peripheralManager, &PeripheralManager::dispatchSpiTransfer);
-            connect(controller, &QemuController::uartTxRequested,
-                peripheralManager, &PeripheralManager::dispatchUartTx);
-                connect(peripheralManager, &PeripheralManager::bridgeResponseReady,
-                    controller, &QemuController::handleBridgeResponse);
+    /* Pre-load I2C bridge addresses from peripheral config so that
+     * when QMP becomes ready the addresses are immediately pushed. */
+    syncI2cBridgeAddresses();
+
+    /* ---- Route debug/status messages to peripherals log, not serial ---- */
+    connect(controller, &QemuController::debugMessageReceived,
+            peripheralManager, &PeripheralManager::managerMessage);
+
+    /* ---- QEMU lifecycle → peripheral sims ---- */
+    connect(controller, &QemuController::qemuStarted,
+            peripheralManager, &PeripheralManager::ensureAllRunning);
+
+    /* ---- Bridge event routing ---- */
+    connect(controller, &QemuController::i2cTransferRequested,
+            peripheralManager, &PeripheralManager::dispatchI2cTransfer);
+    connect(controller, &QemuController::spiTransferRequested,
+            peripheralManager, &PeripheralManager::dispatchSpiTransfer);
+    connect(controller, &QemuController::uartTxRequested,
+            peripheralManager, &PeripheralManager::dispatchUartTx);
+    connect(peripheralManager, &PeripheralManager::bridgeResponseReady,
+            controller, &QemuController::handleBridgeResponse);
+
+    /* When peripheral config changes (reload, etc.), re-sync bridge addresses */
+    connect(peripheralManager, &PeripheralManager::devicesChanged,
+            this, &MainWindow::syncI2cBridgeAddresses);
+
+        /* Ensure sims are up once wiring is complete */
+        peripheralManager->ensureAllRunning();
+}
+
+void MainWindow::syncI2cBridgeAddresses()
+{
+    controller->clearAllI2cBridgeAddresses();
+    const auto busAddrs = peripheralManager->getI2cBusAddresses();
+    for (auto it = busAddrs.cbegin(); it != busAddrs.cend(); ++it) {
+        for (const QString &hex : it.value()) {
+            controller->registerI2cBridgeAddress(it.key(), hex);
+        }
+    }
 }

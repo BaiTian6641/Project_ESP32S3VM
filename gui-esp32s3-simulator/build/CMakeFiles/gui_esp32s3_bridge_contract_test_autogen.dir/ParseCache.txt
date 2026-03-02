@@ -286,6 +286,7 @@
  mdp:/usr/include/x86_64-linux-gnu/qt6/QtCore/QMetaType
  mdp:/usr/include/x86_64-linux-gnu/qt6/QtCore/QMutex
  mdp:/usr/include/x86_64-linux-gnu/qt6/QtCore/QObject
+ mdp:/usr/include/x86_64-linux-gnu/qt6/QtCore/QSet
  mdp:/usr/include/x86_64-linux-gnu/qt6/QtCore/QSharedDataPointer
  mdp:/usr/include/x86_64-linux-gnu/qt6/QtCore/QString
  mdp:/usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList
@@ -989,6 +990,7 @@
  mdp:/usr/include/x86_64-linux-gnu/qt6/QtCore/QByteArray
  mdp:/usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject
  mdp:/usr/include/x86_64-linux-gnu/qt6/QtCore/QObject
+ mdp:/usr/include/x86_64-linux-gnu/qt6/QtCore/QSet
  mdp:/usr/include/x86_64-linux-gnu/qt6/QtCore/QString
  mdp:/usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList
  mdp:/usr/include/x86_64-linux-gnu/qt6/QtCore/q17memory.h

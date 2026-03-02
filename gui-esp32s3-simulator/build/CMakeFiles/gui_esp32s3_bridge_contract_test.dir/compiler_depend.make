@@ -388,6 +388,7 @@ CMakeFiles/gui_esp32s3_bridge_contract_test.dir/backend/QemuController.cpp.o: /h
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QProcess \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QRegularExpression \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QSet \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QSocketNotifier \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QStandardPaths \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
@@ -870,6 +871,7 @@ CMakeFiles/gui_esp32s3_bridge_contract_test.dir/gui_esp32s3_bridge_contract_test
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QByteArray \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QSet \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q17memory.h \
@@ -1379,6 +1381,7 @@ CMakeFiles/gui_esp32s3_bridge_contract_test.dir/tests/BridgeContractTest.cpp.o: 
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QMetaType \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QMutex \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QSet \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QSharedDataPointer \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
@@ -2471,6 +2474,8 @@ gui_esp32s3_bridge_contract_test_autogen/FVSNT77ZGO/moc_QemuController.cpp:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qvarlengtharray.h:
 
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qvariant.h:
+
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qregularexpression.h:
 
 /usr/include/c++/15/bits/stl_list.h:
@@ -2548,6 +2553,8 @@ gui_esp32s3_bridge_contract_test_autogen/FVSNT77ZGO/moc_QemuController.cpp:
 /usr/include/libintl.h:
 
 /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h:
+
+/usr/include/x86_64-linux-gnu/qt6/QtCore/QSet:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qgenericatomic.h:
 
@@ -3904,5 +3911,3 @@ gui_esp32s3_bridge_contract_test_autogen/include/BridgeContractTest.moc:
 /usr/lib/i386-linux-gnu/libidn2.so.0:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qutf8stringview.h:
-
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qvariant.h:

@@ -346,12 +346,14 @@ CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.o: /home/pola
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonParseError \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QMap \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QProcess \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QSet \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QStandardPaths \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QTimer \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q17memory.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q20functional.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q20iterator.h \
@@ -484,6 +486,7 @@ CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.o: /home/pola
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtenvironmentvariables.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtextstream.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtformat_impl.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qtimer.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtimezone.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtnoop.h \
@@ -901,6 +904,7 @@ CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o: /home/polar/P
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QProcess \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QRegularExpression \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QSet \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QSocketNotifier \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QStandardPaths \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
@@ -1414,9 +1418,12 @@ CMakeFiles/gui_esp32s3_simulator.dir/gui_esp32s3_simulator_autogen/mocs_compilat
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonArray \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QMap \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QSet \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QTimer \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q17memory.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q20algorithm.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q20functional.h \
@@ -1426,6 +1433,7 @@ CMakeFiles/gui_esp32s3_simulator.dir/gui_esp32s3_simulator_autogen/mocs_compilat
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q20utility.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q23type_traits.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q23utility.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qabstracteventdispatcher.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qalgorithms.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qanystringview.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qarraydata.h \
@@ -1435,6 +1443,7 @@ CMakeFiles/gui_esp32s3_simulator.dir/gui_esp32s3_simulator_autogen/mocs_compilat
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qatomic.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qatomic_cxx11.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qbasicatomic.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qbasictimer.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qbindingstorage.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qbytearray.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qbytearrayalgorithms.h \
@@ -1457,8 +1466,11 @@ CMakeFiles/gui_esp32s3_simulator.dir/gui_esp32s3_simulator_autogen/mocs_compilat
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qdarwinhelpers.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qdatastream.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qdatetime.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qdeadlinetimer.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qdebug.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qelapsedtimer.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qendian.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qeventloop.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qexceptionhandling.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qflags.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qfloat16.h \
@@ -1539,6 +1551,7 @@ CMakeFiles/gui_esp32s3_simulator.dir/gui_esp32s3_simulator_autogen/mocs_compilat
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtenvironmentvariables.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtextstream.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtformat_impl.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qtimer.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtmocconstants.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtmochelpers.h \
@@ -1944,6 +1957,7 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/ControlPanelWidget.cpp.o: /home/polar/P
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QByteArray \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QSet \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q17memory.h \
@@ -2493,6 +2507,7 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/CpuStatusWidget.cpp.o: /home/polar/Proj
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QByteArray \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QSet \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q17memory.h \
@@ -3055,6 +3070,7 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/DebugWidget.cpp.o: /home/polar/Project_
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QByteArray \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QSet \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q17memory.h \
@@ -5630,9 +5646,12 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/MainWindow.cpp.o: /home/polar/Project_E
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonArray \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QMap \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QSet \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QTimer \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q17memory.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q20functional.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q20iterator.h \
@@ -5766,6 +5785,7 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/MainWindow.cpp.o: /home/polar/Project_E
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtenvironmentvariables.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtextstream.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtformat_impl.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qtimer.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtimezone.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtnoop.h \
@@ -6174,9 +6194,12 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.o: /home/polar/Pr
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonDocument \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QMap \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QSet \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QTimer \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q17memory.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q20functional.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q20iterator.h \
@@ -6184,6 +6207,7 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.o: /home/polar/Pr
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q20type_traits.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q20utility.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q23utility.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qabstracteventdispatcher.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qalgorithms.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qanystringview.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qarraydata.h \
@@ -6193,6 +6217,7 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.o: /home/polar/Pr
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qatomic.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qatomic_cxx11.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qbasicatomic.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qbasictimer.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qbindingstorage.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qbytearray.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qbytearrayalgorithms.h \
@@ -6215,10 +6240,13 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.o: /home/polar/Pr
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qdarwinhelpers.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qdatastream.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qdatetime.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qdeadlinetimer.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qdebug.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qdir.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qdirlisting.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qelapsedtimer.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qendian.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qeventloop.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qexceptionhandling.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qfile.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qfiledevice.h \
@@ -6303,6 +6331,7 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.o: /home/polar/Pr
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtenvironmentvariables.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtextstream.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtformat_impl.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qtimer.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtimezone.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtnoop.h \
@@ -7720,6 +7749,7 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/SerialConsoleWidget.cpp.o: /home/polar/
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QByteArray \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonObject \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QSet \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q17memory.h \
@@ -9665,8 +9695,6 @@ CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.o:
 
 /usr/lib/x86_64-linux-gnu/libgssapi_krb5.so.2:
 
-/usr/lib/x86_64-linux-gnu/libgmp.so.10:
-
 /usr/lib/x86_64-linux-gnu/libffi.so.8:
 
 /usr/lib/x86_64-linux-gnu/libexpat.so.1:
@@ -10027,8 +10055,6 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.o:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qsocketnotifier.h:
 
-/usr/include/x86_64-linux-gnu/qt6/QtCore/QTimer:
-
 /usr/include/x86_64-linux-gnu/qt6/QtCore/QRegularExpression:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/QByteArray:
@@ -10048,6 +10074,12 @@ gui_esp32s3_simulator_autogen/FVSNT77ZGO/moc_QemuController.cpp:
 /usr/include/x86_64-linux-gnu/bits/termios-c_iflag.h:
 
 /usr/include/x86_64-linux-gnu/bits/termios-c_cflag.h:
+
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QPushButton:
+
+/usr/include/x86_64-linux-gnu/qt6/QtGui/qpixelformat.h:
+
+/usr/include/x86_64-linux-gnu/bits/termios-baud.h:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qelapsedtimer.h:
 
@@ -10969,6 +11001,12 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/main.cpp.o:
 
 /usr/include/x86_64-linux-gnu/bits/waitflags.h:
 
+/usr/lib/i386-linux-gnu/libnettle.so.8:
+
+/usr/include/x86_64-linux-gnu/bits/stat.h:
+
+/usr/include/x86_64-linux-gnu/bits/waitstatus.h:
+
 /usr/include/x86_64-linux-gnu/qt6/QtCore/QHash:
 
 /usr/include/x86_64-linux-gnu/bits/wchar.h:
@@ -11061,11 +11099,21 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/CpuStatusWidget.cpp.o:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qoverload.h:
 
+/usr/lib/x86_64-linux-gnu/libgmp.so.10:
+
+/usr/include/x86_64-linux-gnu/qt6/QtCore/QMap:
+
+/usr/lib/i386-linux-gnu/libglib-2.0.so.0:
+
+/usr/include/x86_64-linux-gnu/sys/types.h:
+
 /usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonParseError:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList:
+
+/usr/include/x86_64-linux-gnu/qt6/QtCore/QTimer:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/q20functional.h:
 
@@ -11136,12 +11184,6 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/CpuStatusWidget.cpp.o:
 /usr/include/c++/15/bits/fs_fwd.h:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qsharedpointer_impl.h:
-
-/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QPushButton:
-
-/usr/include/x86_64-linux-gnu/qt6/QtGui/qpixelformat.h:
-
-/usr/include/x86_64-linux-gnu/bits/termios-baud.h:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qcontainerfwd.h:
 
@@ -11361,10 +11403,6 @@ gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_MainWindow.cpp:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qvariant.h:
 
-/usr/lib/i386-linux-gnu/libglib-2.0.so.0:
-
-/usr/include/x86_64-linux-gnu/sys/types.h:
-
 /usr/include/c++/15/bits/stl_iterator.h:
 
 /usr/lib/gcc/x86_64-linux-gnu/15/include/stdarg.h:
@@ -11404,9 +11442,3 @@ gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_MainWindow.cpp:
 /usr/include/x86_64-linux-gnu/bits/ioctls.h:
 
 /usr/include/x86_64-linux-gnu/bits/posix_opt.h:
-
-/usr/lib/i386-linux-gnu/libnettle.so.8:
-
-/usr/include/x86_64-linux-gnu/bits/waitstatus.h:
-
-/usr/include/x86_64-linux-gnu/bits/stat.h:

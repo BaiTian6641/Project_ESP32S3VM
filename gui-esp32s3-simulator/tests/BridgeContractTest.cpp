@@ -81,6 +81,7 @@ void BridgeContractTest::ignoresInvalidEventLine()
 void BridgeContractTest::emitsResponseLine()
 {
     QemuController controller;
+    QSignalSpy debugSpy(&controller, &QemuController::debugMessageReceived);
     QSignalSpy serialSpy(&controller, &QemuController::serialLineReceived);
 
     QJsonObject payload;
@@ -92,8 +93,9 @@ void BridgeContractTest::emitsResponseLine()
 
     controller.handleBridgeResponse("i2c", payload);
 
-    QVERIFY(serialSpy.count() >= 1);
-    const QList<QVariant> args = serialSpy.takeLast();
+    QCOMPARE(serialSpy.count(), 0);
+    QVERIFY(debugSpy.count() >= 1);
+    const QList<QVariant> args = debugSpy.takeLast();
     const QString line = args.at(0).toString();
     QVERIFY(line.startsWith("[PERIPH][I2C][RSP] "));
     QVERIFY(line.contains("\"ok\":true"));
