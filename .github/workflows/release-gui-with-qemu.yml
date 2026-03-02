@@ -434,11 +434,42 @@ jobs:
             # Recursively copy all non-system DLL dependencies into qemu/.
             # This ensures the packaged simulator is out-of-box runnable.
             declare -A SEEN_DLLS
-            QUEUE=("$PKG_ROOT/qemu/qemu-system-xtensa.exe")
+            QUEUE=(
+              "${{ env.QEMU_DIR }}/build/qemu-system-xtensa.exe"
+              "$PKG_ROOT/qemu/qemu-system-xtensa.exe"
+            )
+            SEARCH_DIRS=(
+              "/mingw64/bin"
+              "/ucrt64/bin"
+              "/clang64/bin"
+              "${{ env.QEMU_DIR }}/build"
+              "$PKG_ROOT/qemu"
+            )
+
+            resolve_dll_path() {
+              local dep="$1"
+              local found=""
+
+              for d in "${SEARCH_DIRS[@]}"; do
+                [[ -d "$d" ]] || continue
+                if [[ -f "$d/$dep" ]]; then
+                  found="$d/$dep"
+                  break
+                fi
+                found="$(find "$d" -maxdepth 1 -type f -iname "$dep" -print -quit 2>/dev/null || true)"
+                if [[ -n "$found" ]]; then
+                  break
+                fi
+              done
+
+              printf '%s' "$found"
+            }
 
             while [[ ${#QUEUE[@]} -gt 0 ]]; do
               CURRENT="${QUEUE[0]}"
               QUEUE=("${QUEUE[@]:1}")
+
+              [[ -f "$CURRENT" ]] || continue
 
               while IFS= read -r dll; do
                 [[ -z "$dll" ]] && continue
@@ -449,7 +480,8 @@ jobs:
                     ;;
                 esac
 
-                if [[ "$dll" != *.dll ]]; then
+                dllLower="${dll,,}"
+                if [[ "$dllLower" != *.dll ]]; then
                   continue
                 fi
 
@@ -468,16 +500,49 @@ jobs:
               done < <(
                 ldd "$CURRENT" 2>/dev/null \
                   | awk '
+                      BEGIN { IGNORECASE=1 }
                       /=>/ && $3 ~ /\.dll$/ { print $3 }
                       /^[[:space:]]*\/.*\.dll([[:space:]]|$)/ { print $1 }
                     ' \
                   | sed '/^$/d' \
                   | sort -u
               )
+
+              # Resolve missing deps reported as "name.dll => not found".
+              while IFS= read -r dep; do
+                [[ -z "$dep" ]] && continue
+                case "$dep" in
+                  api-ms-win-*|ext-ms-win-*)
+                    # Windows API-set pseudo DLLs are forwarded by the loader.
+                    continue
+                    ;;
+                esac
+
+                dllPath="$(resolve_dll_path "$dep")"
+                if [[ -z "$dllPath" || ! -f "$dllPath" ]]; then
+                  continue
+                fi
+
+                base="$(basename "$dllPath")"
+                if [[ -n "${SEEN_DLLS[$base]:-}" ]]; then
+                  continue
+                fi
+
+                SEEN_DLLS[$base]=1
+                cp "$dllPath" "$PKG_ROOT/qemu/$base"
+                QUEUE+=("$PKG_ROOT/qemu/$base")
+              done < <(
+                ldd "$CURRENT" 2>/dev/null \
+                  | awk 'BEGIN { IGNORECASE=1 } /=> not found/ && $1 ~ /\.dll$/ { print $1 }' \
+                  | sed '/^$/d' \
+                  | sort -u
+              )
             done
 
             # Hard-fail if any direct QEMU deps are unresolved.
-            if ldd "$PKG_ROOT/qemu/qemu-system-xtensa.exe" | grep -qi 'not found'; then
+            if ldd "$PKG_ROOT/qemu/qemu-system-xtensa.exe" \
+              | grep -i 'not found' \
+              | grep -viE 'api-ms-win-|ext-ms-win-' >/dev/null; then
               echo "[Windows package] unresolved DLL dependencies for qemu-system-xtensa.exe"
               ldd "$PKG_ROOT/qemu/qemu-system-xtensa.exe" || true
               exit 1
@@ -595,7 +660,7 @@ jobs:
             test -f "$EXE"
             ls -l "$EXE"
             # Verify packaged Windows runtime is self-contained for QEMU.
-            if ldd "$EXE" | grep -qi 'not found'; then
+            if ldd "$EXE" | grep -i 'not found' | grep -viE 'api-ms-win-|ext-ms-win-' >/dev/null; then
               echo "[verify] unresolved DLL dependencies after packaging"
               ldd "$EXE" || true
               exit 1
