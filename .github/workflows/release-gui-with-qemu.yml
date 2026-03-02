@@ -323,6 +323,124 @@ jobs:
           test -x ./build/qemu-system-xtensa
           ./build/qemu-system-xtensa -machine help | grep -i esp32s3
 
+      - name: Stage QEMU + DLLs (Windows / MSYS2)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          STAGING="qemu-dll-staging"
+          mkdir -p "$STAGING"
+          cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa.exe" "$STAGING/"
+
+          # In the MSYS2 MINGW64 shell, /mingw64/bin is on PATH and ldd
+          # correctly resolves all MINGW64 DLL paths.  Walk recursively.
+          declare -A SEEN_DLLS
+          QUEUE=("$STAGING/qemu-system-xtensa.exe")
+
+          while [[ ${#QUEUE[@]} -gt 0 ]]; do
+            CURRENT="${QUEUE[0]}"
+            QUEUE=("${QUEUE[@]:1}")
+            [[ -f "$CURRENT" ]] || continue
+
+            while IFS= read -r dll; do
+              [[ -z "$dll" ]] && continue
+              case "$dll" in
+                /c/[Ww][Ii][Nn][Dd][Oo][Ww][Ss]/*|/C/[Ww][Ii][Nn][Dd][Oo][Ww][Ss]/*) continue ;;
+              esac
+              dllLower="${dll,,}"
+              [[ "$dllLower" == *.dll ]] || continue
+              [[ -f "$dll" ]] || continue
+
+              base="$(basename "$dll")"
+              [[ -n "${SEEN_DLLS[$base]:-}" ]] && continue
+
+              SEEN_DLLS[$base]=1
+              cp "$dll" "$STAGING/$base"
+              QUEUE+=("$STAGING/$base")
+            done < <(
+              ldd "$CURRENT" 2>/dev/null \
+                | awk 'BEGIN{IGNORECASE=1}
+                       /=>/ && $3 ~ /\.dll$/ {print $3}
+                       /^[[:space:]]*\/.*\.dll([[:space:]]|$)/ {print $1}' \
+                | sed '/^$/d' | sort -u
+            )
+
+            # Resolve "=> not found" entries using MINGW64 PATH.
+            while IFS= read -r dep; do
+              [[ -z "$dep" ]] && continue
+              dep="${dep//$'\r'/}"
+              case "$dep" in api-ms-win-*|ext-ms-win-*) continue ;; esac
+              dllPath="$(which "$dep" 2>/dev/null || true)"
+              if [[ -z "$dllPath" || ! -f "$dllPath" ]]; then
+                dllPath="$(find /mingw64/bin -maxdepth 1 -iname "$dep" -print -quit 2>/dev/null || true)"
+              fi
+              [[ -z "$dllPath" || ! -f "$dllPath" ]] && continue
+
+              base="$(basename "$dllPath")"
+              [[ -n "${SEEN_DLLS[$base]:-}" ]] && continue
+
+              SEEN_DLLS[$base]=1
+              cp "$dllPath" "$STAGING/$base"
+              QUEUE+=("$STAGING/$base")
+            done < <(
+              ldd "$CURRENT" 2>/dev/null \
+                | awk 'BEGIN{IGNORECASE=1} /=> not found/ && $1 ~ /\.dll$/ {print $1}' \
+                | sed '/^$/d' | sort -u
+            )
+          done
+
+          # Deterministic check: ensure core runtime DLLs are present.
+          REQUIRED_DLLS=(
+            "libglib-2.0-0.dll"
+            "libgio-2.0-0.dll"
+            "libgmodule-2.0-0.dll"
+            "libgobject-2.0-0.dll"
+            "libslirp-0.dll"
+            "libpixman-1-0.dll"
+            "libgcc_s_seh-1.dll"
+            "libstdc++-6.dll"
+            "libwinpthread-1.dll"
+            "zlib1.dll"
+            "libintl-8.dll"
+            "libiconv-2.dll"
+          )
+          for dep in "${REQUIRED_DLLS[@]}"; do
+            depLower="${dep,,}"
+            if [[ -f "$STAGING/$dep" || -f "$STAGING/$depLower" ]]; then continue; fi
+            dllPath="$(find /mingw64/bin -maxdepth 1 -iname "$dep" -print -quit 2>/dev/null || true)"
+            if [[ -n "$dllPath" && -f "$dllPath" ]]; then
+              cp "$dllPath" "$STAGING/$(basename "$dllPath")"
+            else
+              echo "[stage-dlls] WARNING: required DLL not found: $dep"
+            fi
+          done
+
+          MISSING=0
+          for dep in "${REQUIRED_DLLS[@]}"; do
+            depLower="${dep,,}"
+            if [[ ! -f "$STAGING/$dep" && ! -f "$STAGING/$depLower" ]]; then
+              echo "[stage-dlls] MISSING: $dep"
+              MISSING=1
+            fi
+          done
+          if [[ "$MISSING" -ne 0 ]]; then
+            echo "[stage-dlls] critical DLLs missing"
+            ls -1 "$STAGING"/*.dll 2>/dev/null | sed 's#^.*/##' | sort -u || true
+            exit 1
+          fi
+
+          # Verify self-contained with bundled DLLs on PATH.
+          if PATH="$STAGING:$PATH" ldd "$STAGING/qemu-system-xtensa.exe" \
+            | grep -i 'not found' \
+            | grep -viE 'api-ms-win-|ext-ms-win-' >/dev/null; then
+            echo "[stage-dlls] unresolved DLLs remain:"
+            PATH="$STAGING:$PATH" ldd "$STAGING/qemu-system-xtensa.exe" || true
+            exit 1
+          fi
+
+          echo "[stage-dlls] success — bundled DLLs:"
+          ls -1 "$STAGING"/*.dll 2>/dev/null | sed 's#^.*/##' | sort -u || true
+
       - name: Package runtime bundle
         id: package
         shell: bash
@@ -384,13 +502,23 @@ jobs:
             cp "${{ env.GUI_BUILD_DIR }}/gui_esp32s3_simulator" "$PKG_ROOT/"
             chmod +x "$PKG_ROOT/gui_esp32s3_simulator"
 
+            # -- System/glibc libs that must NOT be bundled (must match host glibc) --
+            SYSTEM_LIBS_RE='linux-vdso|ld-linux|libc\.so|libm\.so|libdl\.so|libpthread|librt\.so|libresolv|libnss_|libutil\.so'
+
+            # Bundle ALL non-system shared libraries the GUI depends on.
+            # This captures Qt6 libs PLUS their transitive deps (libicu, pcre2,
+            # double-conversion, xkbcommon, etc.) ensuring out-of-box startup.
+            mkdir -p "$PKG_ROOT/lib"
             QT_FOUND=0
             while IFS= read -r so; do
               [[ -z "$so" ]] && continue
-              cp "$so" "$PKG_ROOT/"
-              QT_FOUND=1
+              cp -n "$so" "$PKG_ROOT/lib/" 2>/dev/null || true
+              if [[ "$(basename "$so")" == libQt6* ]]; then
+                QT_FOUND=1
+              fi
             done < <(ldd "$PKG_ROOT/gui_esp32s3_simulator" \
-              | awk '/=>/ && /libQt6/ {print $3}' \
+              | awk -v skip="$SYSTEM_LIBS_RE" '/=>/ && $3 ~ /^\//' \
+              | awk -v skip="$SYSTEM_LIBS_RE" '$3 !~ skip {print $3}' \
               | sed '/^$/d' \
               | sort -u)
             if [[ "$QT_FOUND" -eq 0 ]]; then
@@ -398,29 +526,53 @@ jobs:
               exit 1
             fi
 
-            QT_PLUGIN_BASE="/usr/lib/x86_64-linux-gnu/qt6/plugins"
-            mkdir -p "$PKG_ROOT/platforms"
-            cp "$QT_PLUGIN_BASE/platforms/libqxcb.so" "$PKG_ROOT/platforms/"
+            # Discover Qt plugin directory from qmake or known paths.
+            QT_PLUGIN_BASE=""
+            if command -v qmake6 >/dev/null 2>&1; then
+              QT_PLUGIN_BASE="$(qmake6 -query QT_INSTALL_PLUGINS 2>/dev/null || true)"
+            fi
+            if [[ -z "$QT_PLUGIN_BASE" || ! -d "$QT_PLUGIN_BASE" ]]; then
+              for _cand in /usr/lib/x86_64-linux-gnu/qt6/plugins /usr/lib/qt6/plugins /usr/lib64/qt6/plugins; do
+                if [[ -d "$_cand" ]]; then QT_PLUGIN_BASE="$_cand"; break; fi
+              done
+            fi
+
+            mkdir -p "$PKG_ROOT/plugins/platforms"
+            cp "$QT_PLUGIN_BASE/platforms/libqxcb.so" "$PKG_ROOT/plugins/platforms/"
+
+            # Also bundle transitive deps of the XCB platform plugin.
+            while IFS= read -r so; do
+              [[ -z "$so" ]] && continue
+              base="$(basename "$so")"
+              [[ -f "$PKG_ROOT/lib/$base" ]] && continue
+              cp "$so" "$PKG_ROOT/lib/" 2>/dev/null || true
+            done < <(ldd "$PKG_ROOT/plugins/platforms/libqxcb.so" \
+              | awk '/=>/ && $3 ~ /^\//' \
+              | awk -v skip="$SYSTEM_LIBS_RE" '$3 !~ skip {print $3}' \
+              | sed '/^$/d' \
+              | sort -u)
+
             if [[ -d "$QT_PLUGIN_BASE/platformthemes" ]]; then
-              mkdir -p "$PKG_ROOT/platformthemes"
-              cp -a "$QT_PLUGIN_BASE/platformthemes/." "$PKG_ROOT/platformthemes/"
+              mkdir -p "$PKG_ROOT/plugins/platformthemes"
+              cp -a "$QT_PLUGIN_BASE/platformthemes/." "$PKG_ROOT/plugins/platformthemes/"
             fi
             if [[ -d "$QT_PLUGIN_BASE/styles" ]]; then
-              mkdir -p "$PKG_ROOT/styles"
-              cp -a "$QT_PLUGIN_BASE/styles/." "$PKG_ROOT/styles/"
+              mkdir -p "$PKG_ROOT/plugins/styles"
+              cp -a "$QT_PLUGIN_BASE/styles/." "$PKG_ROOT/plugins/styles/"
             fi
 
             {
               printf '%s\n' '[Paths]'
               printf '%s\n' 'Prefix=.'
-              printf '%s\n' 'Plugins=.'
+              printf '%s\n' 'Libraries=lib'
+              printf '%s\n' 'Plugins=plugins'
             } > "$PKG_ROOT/qt.conf"
 
-            test -f "$PKG_ROOT/libQt6Core.so.6"
-            test -f "$PKG_ROOT/libQt6Gui.so.6"
-            test -f "$PKG_ROOT/libQt6Widgets.so.6"
-            test -f "$PKG_ROOT/libQt6Network.so.6"
-            test -f "$PKG_ROOT/platforms/libqxcb.so"
+            test -f "$PKG_ROOT/lib/libQt6Core.so.6"
+            test -f "$PKG_ROOT/lib/libQt6Gui.so.6"
+            test -f "$PKG_ROOT/lib/libQt6Widgets.so.6"
+            test -f "$PKG_ROOT/lib/libQt6Network.so.6"
+            test -f "$PKG_ROOT/plugins/platforms/libqxcb.so"
           fi
 
           cp -r gui-esp32s3-simulator/peripherals "$PKG_ROOT/"
@@ -429,13 +581,22 @@ jobs:
 
           mkdir -p "$PKG_ROOT/qemu"
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa.exe" "$PKG_ROOT/qemu/"
+            # Prefer QEMU + DLLs pre-staged by the MSYS2 step (correct MINGW64 context).
+            if [[ -d "qemu-dll-staging" ]]; then
+              cp qemu-dll-staging/* "$PKG_ROOT/qemu/" 2>/dev/null || true
+              echo "[Windows package] loaded pre-staged QEMU DLLs from MSYS2 step"
+            else
+              cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa.exe" "$PKG_ROOT/qemu/"
+            fi
 
-            # Recursively copy all non-system DLL dependencies into qemu/.
-            # This ensures the packaged simulator is out-of-box runnable.
+            # Supplementary DLL walker as safety net (runs in bash/Git-Bash context).
+            # Pre-populate SEEN_DLLS with already-staged files to skip duplicates.
             declare -A SEEN_DLLS
+            for _f in "$PKG_ROOT/qemu"/*.dll "$PKG_ROOT/qemu"/*.exe; do
+              [[ -f "$_f" ]] || continue
+              SEEN_DLLS[$(basename "$_f")]=1
+            done
             QUEUE=(
-              "${{ env.QEMU_DIR }}/build/qemu-system-xtensa.exe"
               "$PKG_ROOT/qemu/qemu-system-xtensa.exe"
             )
             SEARCH_DIRS=(
@@ -631,7 +792,7 @@ jobs:
             chmod +x "$PKG_ROOT/qemu/qemu-system-xtensa"
             mkdir -p "$PKG_ROOT/qemu/lib"
 
-            # Bundle non-system dylibs needed by qemu-system-xtensa.
+            # Bundle non-system dylibs needed by qemu-system-xtensa (first level).
             while IFS= read -r dylib; do
               [[ -z "$dylib" ]] && continue
               if [[ -f "$dylib" ]]; then
@@ -643,36 +804,72 @@ jobs:
               | grep -E '^(/opt/homebrew|/usr/local)/' \
               | sort -u)
 
+            # Recursively resolve transitive Homebrew dylib dependencies
+            # until no new libraries are discovered (handles arbitrary depth).
+            _DYLIB_CHANGED=1
+            while [[ "$_DYLIB_CHANGED" -ne 0 ]]; do
+              _DYLIB_CHANGED=0
+              for lib in "$PKG_ROOT"/qemu/lib/*.dylib; do
+                [[ -f "$lib" ]] || continue
+                install_name_tool -id "@loader_path/$(basename "$lib")" "$lib" || true
+                while IFS= read -r dep; do
+                  [[ -z "$dep" ]] && continue
+                  depBase="$(basename "$dep")"
+                  if [[ ! -f "$PKG_ROOT/qemu/lib/$depBase" && -f "$dep" ]]; then
+                    cp "$dep" "$PKG_ROOT/qemu/lib/$depBase"
+                    _DYLIB_CHANGED=1
+                  fi
+                  if [[ -f "$PKG_ROOT/qemu/lib/$depBase" ]]; then
+                    install_name_tool -change "$dep" "@loader_path/$depBase" "$lib" || true
+                  fi
+                done < <(otool -L "$lib" \
+                  | awk 'NR>1 {print $1}' \
+                  | grep -E '^(/opt/homebrew|/usr/local)/' \
+                  | sort -u)
+              done
+            done
+
+            # Re-pass qemu binary to rewrite any remaining absolute Homebrew refs.
+            while IFS= read -r dep; do
+              [[ -z "$dep" ]] && continue
+              depBase="$(basename "$dep")"
+              if [[ -f "$PKG_ROOT/qemu/lib/$depBase" ]]; then
+                install_name_tool -change "$dep" "@loader_path/lib/$depBase" "$PKG_ROOT/qemu/qemu-system-xtensa" || true
+              fi
+            done < <(otool -L "$PKG_ROOT/qemu/qemu-system-xtensa" \
+              | awk 'NR>1 {print $1}' \
+              | grep -E '^(/opt/homebrew|/usr/local)/' \
+              | sort -u)
+
+            # Re-sign binaries after install_name_tool changes to avoid
+            # "app is damaged/corrupt" launch errors due invalid signatures.
+            codesign --force --sign - "$PKG_ROOT/qemu/qemu-system-xtensa"
             for lib in "$PKG_ROOT"/qemu/lib/*.dylib; do
               [[ -f "$lib" ]] || continue
-              install_name_tool -id "@loader_path/$(basename "$lib")" "$lib" || true
-              while IFS= read -r dep; do
-                [[ -z "$dep" ]] && continue
-                depBase="$(basename "$dep")"
-                if [[ ! -f "$PKG_ROOT/qemu/lib/$depBase" && -f "$dep" ]]; then
-                  cp "$dep" "$PKG_ROOT/qemu/lib/$depBase"
-                fi
-                if [[ -f "$PKG_ROOT/qemu/lib/$depBase" ]]; then
-                  install_name_tool -change "$dep" "@loader_path/$depBase" "$lib" || true
-                fi
-              done < <(otool -L "$lib" \
-                | awk 'NR>1 {print $1}' \
-                | grep -E '^(/opt/homebrew|/usr/local)/' \
-                | sort -u)
+              codesign --force --sign - "$lib"
             done
+
+            APP_BIN="$PKG_ROOT/gui_esp32s3_simulator.app/Contents/MacOS/gui_esp32s3_simulator"
+            if [[ -x "$APP_BIN" ]]; then
+              codesign --force --sign - "$APP_BIN"
+            fi
+            codesign --force --deep --sign - "$PKG_ROOT/gui_esp32s3_simulator.app"
           else
             cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa" "$PKG_ROOT/qemu/"
             chmod +x "$PKG_ROOT/qemu/qemu-system-xtensa"
             mkdir -p "$PKG_ROOT/qemu/lib"
 
-            # Bundle Linux shared libraries used by QEMU and run with LD_LIBRARY_PATH.
+            # Bundle Linux shared libraries used by QEMU.
+            # Filter out glibc/system libs — bundling a mismatched libc causes segfaults.
+            SYSTEM_LIBS_RE='linux-vdso|ld-linux|libc\.so|libm\.so|libdl\.so|libpthread|librt\.so|libresolv|libnss_|libutil\.so'
             while IFS= read -r so; do
               [[ -z "$so" ]] && continue
               if [[ -f "$so" ]]; then
                 cp "$so" "$PKG_ROOT/qemu/lib/"
               fi
             done < <(ldd "$PKG_ROOT/qemu/qemu-system-xtensa" \
-              | awk '/=> \// {print $3}' \
+              | awk '/=>/ && $3 ~ /^\//' \
+              | awk -v skip="$SYSTEM_LIBS_RE" '$3 !~ skip {print $3}' \
               | sed '/^$/d' \
               | sort -u)
           fi
@@ -684,6 +881,7 @@ jobs:
               printf '%s\n' 'set "SCRIPT_DIR=%~dp0"'
               printf '%s\n' 'set "ESP32S3_QEMU_BIN=%SCRIPT_DIR%qemu\qemu-system-xtensa.exe"'
               printf '%s\n' 'echo [launcher] Using bundled QEMU: %ESP32S3_QEMU_BIN%'
+              printf '%s\n' 'py -3 --version >nul 2>&1 || python --version >nul 2>&1 || echo [launcher] WARNING: Python 3 not found. Device simulators require Python 3.'
               printf '%s\n' '"%SCRIPT_DIR%gui_esp32s3_simulator.exe"'
               printf '%s\n' 'endlocal'
             } > "$PKG_ROOT/run-gui.cmd"
@@ -696,6 +894,9 @@ jobs:
               printf '%s\n' '  export ESP32S3_QEMU_BIN="$SCRIPT_DIR/qemu/qemu-system-xtensa"'
               printf '%s\n' '  echo "[launcher] Using bundled QEMU: $ESP32S3_QEMU_BIN"'
               printf '%s\n' 'fi'
+              printf '%s\n' 'if ! command -v python3 &>/dev/null && ! command -v python &>/dev/null; then'
+              printf '%s\n' '  echo "[launcher] WARNING: Python 3 not found. Device simulators require Python 3."'
+              printf '%s\n' 'fi'
               printf '%s\n' 'export DYLD_LIBRARY_PATH="$SCRIPT_DIR/qemu/lib:${DYLD_LIBRARY_PATH:-}"'
               printf '%s\n' 'exec "$SCRIPT_DIR/gui_esp32s3_simulator.app/Contents/MacOS/gui_esp32s3_simulator"'
             } > "$PKG_ROOT/run-gui.command"
@@ -707,7 +908,10 @@ jobs:
               printf '%s\n' 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"'
               printf '%s\n' 'export ESP32S3_QEMU_BIN="$SCRIPT_DIR/qemu/qemu-system-xtensa"'
               printf '%s\n' 'echo "[launcher] Using bundled QEMU: $ESP32S3_QEMU_BIN"'
-              printf '%s\n' 'export LD_LIBRARY_PATH="$SCRIPT_DIR/qemu/lib:${LD_LIBRARY_PATH:-}"'
+              printf '%s\n' 'if ! command -v python3 &>/dev/null && ! command -v python &>/dev/null; then'
+              printf '%s\n' '  echo "[launcher] WARNING: Python 3 not found. Device simulators require Python 3."'
+              printf '%s\n' 'fi'
+              printf '%s\n' 'export LD_LIBRARY_PATH="$SCRIPT_DIR/lib:$SCRIPT_DIR/qemu/lib:${LD_LIBRARY_PATH:-}"'
               printf '%s\n' 'exec "$SCRIPT_DIR/gui_esp32s3_simulator"'
             } > "$PKG_ROOT/run-gui.sh"
             chmod +x "$PKG_ROOT/run-gui.sh"
@@ -717,10 +921,20 @@ jobs:
             printf '%s\n' "Bundle for ${{ runner.os }}"
             printf '%s\n' '- Includes GUI binary, device simulators, peripheral configs, and built ESP32S3 QEMU.'
             printf '%s\n' '- Launch via run-gui.sh (Linux), run-gui.cmd (Windows), or run-gui.command (macOS).'
+            printf '%s\n' '- Python 3 is required for device simulator scripts (only stdlib modules needed).'
+            if [[ "${{ runner.os }}" == "macOS" ]]; then
+              printf '%s\n' '- If macOS marks app as damaged after download, clear quarantine on bundle folder:'
+              printf '%s\n' '  xattr -dr com.apple.quarantine .'
+            fi
           } > "$PKG_ROOT/run-info.txt"
 
           ARCHIVE="dist/${PKG_NAME}.zip"
-          cmake -E tar cfv "$ARCHIVE" --format=zip "$PKG_ROOT"
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            # Use ditto on macOS to preserve .app bundle symlinks/metadata.
+            ditto -c -k --keepParent "$PKG_ROOT" "$ARCHIVE"
+          else
+            cmake -E tar cfv "$ARCHIVE" --format=zip "$PKG_ROOT"
+          fi
 
           echo "pkg_root=$PKG_ROOT" >> "$GITHUB_OUTPUT"
           echo "archive=$ARCHIVE" >> "$GITHUB_OUTPUT"
@@ -747,11 +961,20 @@ jobs:
             test -d "$APP/Contents/Frameworks/QtCore.framework"
             EXE="$PKG_ROOT/qemu/qemu-system-xtensa"
             test -x "$EXE"
+            # Ensure signatures are not left in invalid state after patching.
+            codesign --verify --deep --strict "$APP"
+            codesign --verify --strict "$EXE"
             DYLD_LIBRARY_PATH="$PKG_ROOT/qemu/lib:${DYLD_LIBRARY_PATH:-}" "$EXE" -machine help | grep -i esp32s3
           else
             EXE="$PKG_ROOT/qemu/qemu-system-xtensa"
             test -x "$EXE"
             LD_LIBRARY_PATH="$PKG_ROOT/qemu/lib:${LD_LIBRARY_PATH:-}" "$EXE" -machine help | grep -i esp32s3
+            # Verify GUI binary can resolve all shared libs via the bundled lib/ dir.
+            if LD_LIBRARY_PATH="$PKG_ROOT/lib:${LD_LIBRARY_PATH:-}" ldd "$PKG_ROOT/gui_esp32s3_simulator" | grep 'not found'; then
+              echo "[verify] GUI binary has unresolved shared library dependencies"
+              LD_LIBRARY_PATH="$PKG_ROOT/lib" ldd "$PKG_ROOT/gui_esp32s3_simulator"
+              exit 1
+            fi
           fi
 
       - name: Upload workflow artifact
