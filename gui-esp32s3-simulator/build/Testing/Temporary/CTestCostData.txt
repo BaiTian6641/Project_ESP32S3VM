@@ -1,2 +1,2 @@
-bridge_contract_test 3 0.00275622
+bridge_contract_test 5 0.00231148
 ---

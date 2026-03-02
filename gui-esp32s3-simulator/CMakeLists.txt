@@ -39,6 +39,8 @@ add_executable(gui_esp32s3_simulator
     src/UartDevicePanel.cpp
     src/GenericDevicePanel.h
     src/GenericDevicePanel.cpp
+    src/SchemaDevicePanel.h
+    src/SchemaDevicePanel.cpp
     backend/QemuController.h
     backend/QemuController.cpp
     backend/PeripheralManager.h

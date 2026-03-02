@@ -2,6 +2,7 @@
 
 #include <QTabWidget>
 #include <QCoreApplication>
+#include <QDir>
 #include <QFileInfo>
 
 #include "SerialConsoleWidget.h"
@@ -26,9 +27,28 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle("ESP32-S3 GUI Simulator (MVP)");
     resize(1200, 800);
 
-    const QString workspaceRoot =
-        QFileInfo(QCoreApplication::applicationDirPath() + "/../").absoluteFilePath();
-    peripheralManager->setWorkspaceRoot(workspaceRoot);
+        const QString appDir = QCoreApplication::applicationDirPath();
+        QString workspaceRoot = QFileInfo(appDir + "/../").absoluteFilePath();
+
+        const QStringList candidateRoots = {
+                QDir::cleanPath(appDir),
+                QDir::cleanPath(appDir + "/../"),
+                QDir::cleanPath(appDir + "/../../"),
+                QDir::cleanPath(appDir + "/../../../"),
+                QDir::cleanPath(appDir + "/../../../../"),
+                QDir::cleanPath(QDir::currentPath())
+        };
+
+        for (const QString &candidate : candidateRoots) {
+                const bool hasConfig = QFileInfo::exists(QDir(candidate).absoluteFilePath("peripherals/peripherals.example.json"));
+                const bool hasSims = QFileInfo::exists(QDir(candidate).absoluteFilePath("device-sims"));
+                if (hasConfig && hasSims) {
+                        workspaceRoot = candidate;
+                        break;
+                }
+        }
+
+        peripheralManager->setWorkspaceRoot(workspaceRoot);
 
     tabWidget->addTab(serialWidget, "Serial");
     tabWidget->addTab(cpuWidget, "Processor Status");

@@ -286,8 +286,11 @@ QString PeripheralManager::findDefaultConfigPath() const
 
     const QString appDir = QCoreApplication::applicationDirPath();
     const QStringList candidates = {
+        QDir::cleanPath(appDir + "/peripherals/peripherals.example.json"),
         QDir::cleanPath(appDir + "/../peripherals/peripherals.example.json"),
         QDir::cleanPath(appDir + "/../../peripherals/peripherals.example.json"),
+        QDir::cleanPath(appDir + "/../../../peripherals/peripherals.example.json"),
+        QDir::cleanPath(appDir + "/../../../../peripherals/peripherals.example.json"),
         QDir::cleanPath(QDir::currentPath() + "/peripherals/peripherals.example.json"),
         QDir::cleanPath(QDir::currentPath() + "/../peripherals/peripherals.example.json"),
         QDir::cleanPath(QDir::currentPath() + "/../../peripherals/peripherals.example.json"),
@@ -584,6 +587,11 @@ QString PeripheralManager::resolvePathForConfig(const QString &raw) const
         const QString fromConfig = QDir(configDir).absoluteFilePath(raw);
         if (QFileInfo::exists(fromConfig)) {
             return fromConfig;
+        }
+
+        const QString fromConfigParent = QDir(configDir + "/..").absoluteFilePath(raw);
+        if (QFileInfo::exists(fromConfigParent)) {
+            return fromConfigParent;
         }
 
         if (!workspaceRoot.isEmpty()) {

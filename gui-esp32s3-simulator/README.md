@@ -500,6 +500,76 @@ The following Python peripheral simulators are now available:
 	- `seek_csv_playback`
 	- `stop_csv_playback`
 
+### Device-owned subpanels (capability schema)
+The Peripherals tab subpanel is now defined by each virtual device via
+`get_capabilities.result.panel`. If `panel` is present, GUI renders controls
+with `SchemaDevicePanel`; otherwise it falls back to a generic JSON view.
+
+Example `get_capabilities` payload fragment:
+
+```json
+{
+	"panel": {
+		"kind": "sensor",
+		"title": "SHT21 Sensor",
+		"description": "Environment source for test scenarios.",
+		"controls": [
+			{
+				"name": "temperature",
+				"label": "Temperature",
+				"type": "float",
+				"min": -40,
+				"max": 125,
+				"step": 0.1,
+				"unit": "°C",
+				"section": "Environment",
+				"description": "Injected ambient temperature.",
+				"writable": true
+			},
+			{
+				"name": "humidity",
+				"label": "Humidity",
+				"type": "float",
+				"min": 0,
+				"max": 100,
+				"step": 0.1,
+				"unit": "%",
+				"section": "Environment",
+				"writable": true
+			},
+			{
+				"name": "reset_stats",
+				"label": "Reset Statistics",
+				"type": "action",
+				"rpc_method": "reset_stats",
+				"rpc_params": {"scope": "all"},
+				"section": "Operations"
+			}
+		]
+	}
+}
+```
+
+Supported `controls[].type` values:
+- `bool`
+- `int`
+- `float` / `double`
+- `enum` (requires `options`)
+- `string`
+- `action`
+
+Useful control fields:
+- required: `name`, `type`
+- optional display: `label`, `description`, `section`, `unit`, `placeholder`
+- optional numeric constraints: `min`, `max`, `step`, `decimals`
+- behavior: `writable` (false means read-only)
+- action RPC: `rpc_method`, `rpc_params`
+
+Optional dynamic view blocks:
+- `display`: for `kind: "display"`; supports `state_key`, `fallback_state_key`, `layout`, `encoding`
+- `metrics`: live summary cards with `label`, `state_path`, optional `decimals`, `unit`, `true_text`, `false_text`
+- `scripts`: read-only text/JSON panes with `title`, `state_path`, optional `min_height`
+
 ### Notifications currently emitted
 - `frame_update` (SSD1306)
 - `telemetry` (SHT21)

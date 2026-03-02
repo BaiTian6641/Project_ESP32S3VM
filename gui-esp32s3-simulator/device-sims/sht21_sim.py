@@ -161,12 +161,25 @@ class Sht21Simulator:
                 "device": {"type": "sht21", "id": params.get("id", "sht21")},
                 "panel": {
                     "kind": "sensor",
+                    "title": "SHT21 Sensor",
+                    "description": "Temperature and humidity source with configurable noise/drift.",
+                    "metrics": [
+                        {"label": "Temperature", "state_path": "temperature", "decimals": 2, "unit": "°C"},
+                        {"label": "Humidity", "state_path": "humidity", "decimals": 2, "unit": "%RH"},
+                        {"label": "Heater", "state_path": "heater_enabled", "true_text": "ON", "false_text": "OFF"}
+                    ],
+                    "scripts": [
+                        {"title": "Resolution", "state_path": "resolution", "min_height": 100}
+                    ],
                     "controls": [
                         {"name": "temperature", "type": "float",
-                         "min": -40, "max": 125, "unit": "°C", "writable": True},
+                         "label": "Temperature", "min": -40, "max": 125, "unit": "°C", "writable": True,
+                         "section": "Environment", "description": "Injected ambient temperature value."},
                         {"name": "humidity", "type": "float",
-                         "min": 0, "max": 100, "unit": "%RH", "writable": True},
-                        {"name": "noise", "type": "bool", "writable": True},
+                         "label": "Humidity", "min": 0, "max": 100, "unit": "%RH", "writable": True,
+                         "section": "Environment", "description": "Injected relative humidity value."},
+                        {"name": "noise", "label": "Noise", "type": "bool", "writable": True,
+                         "section": "Model", "description": "Enable measurement noise and tiny random drift."},
                     ],
                 },
                 "transports": ["i2c"],

@@ -1006,11 +1006,6 @@ void QemuController::stopQemu()
 
 QString QemuController::resolveQemuBinary() const
 {
-    const QString envBin = qEnvironmentVariable("ESP32S3_QEMU_BIN");
-    if (!envBin.isEmpty() && QFileInfo::exists(envBin)) {
-        return QFileInfo(envBin).absoluteFilePath();
-    }
-
     const QString appDir = QCoreApplication::applicationDirPath();
     const QString exeName =
 #if defined(Q_OS_WIN)
@@ -1020,6 +1015,9 @@ QString QemuController::resolveQemuBinary() const
 #endif
 
     const QStringList candidates = {
+        QDir::cleanPath(appDir + "/qemu/" + exeName),
+        QDir::cleanPath(appDir + "/../qemu/" + exeName),
+        QDir::cleanPath(appDir + "/../../qemu/" + exeName),
         QDir::cleanPath(appDir + "/" + exeName),
         QDir::cleanPath(appDir + "/../" + exeName),
         QDir::cleanPath(appDir + "/../../" + exeName),
@@ -1034,6 +1032,11 @@ QString QemuController::resolveQemuBinary() const
         if (QFileInfo::exists(candidate)) {
             return QFileInfo(candidate).absoluteFilePath();
         }
+    }
+
+    const QString envBin = qEnvironmentVariable("ESP32S3_QEMU_BIN");
+    if (!envBin.isEmpty() && QFileInfo::exists(envBin)) {
+        return QFileInfo(envBin).absoluteFilePath();
     }
 
     const QString fromPath = QStandardPaths::findExecutable(exeName);

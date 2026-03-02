@@ -543,6 +543,30 @@ src/PinConnectionWidget.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_simulator.dir/build.make CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.s
 .PHONY : src/PinConnectionWidget.cpp.s
 
+src/SchemaDevicePanel.o: src/SchemaDevicePanel.cpp.o
+.PHONY : src/SchemaDevicePanel.o
+
+# target to build an object file
+src/SchemaDevicePanel.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_simulator.dir/build.make CMakeFiles/gui_esp32s3_simulator.dir/src/SchemaDevicePanel.cpp.o
+.PHONY : src/SchemaDevicePanel.cpp.o
+
+src/SchemaDevicePanel.i: src/SchemaDevicePanel.cpp.i
+.PHONY : src/SchemaDevicePanel.i
+
+# target to preprocess a source file
+src/SchemaDevicePanel.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_simulator.dir/build.make CMakeFiles/gui_esp32s3_simulator.dir/src/SchemaDevicePanel.cpp.i
+.PHONY : src/SchemaDevicePanel.cpp.i
+
+src/SchemaDevicePanel.s: src/SchemaDevicePanel.cpp.s
+.PHONY : src/SchemaDevicePanel.s
+
+# target to generate assembly for a file
+src/SchemaDevicePanel.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gui_esp32s3_simulator.dir/build.make CMakeFiles/gui_esp32s3_simulator.dir/src/SchemaDevicePanel.cpp.s
+.PHONY : src/SchemaDevicePanel.cpp.s
+
 src/SensorPanel.o: src/SensorPanel.cpp.o
 .PHONY : src/SensorPanel.o
 
@@ -744,6 +768,9 @@ help:
 	@echo "... src/PinConnectionWidget.o"
 	@echo "... src/PinConnectionWidget.i"
 	@echo "... src/PinConnectionWidget.s"
+	@echo "... src/SchemaDevicePanel.o"
+	@echo "... src/SchemaDevicePanel.i"
+	@echo "... src/SchemaDevicePanel.s"
 	@echo "... src/SensorPanel.o"
 	@echo "... src/SensorPanel.i"
 	@echo "... src/SensorPanel.s"

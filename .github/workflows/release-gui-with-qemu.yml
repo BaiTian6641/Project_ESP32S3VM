@@ -444,21 +444,52 @@ jobs:
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa" "$PKG_ROOT/qemu/"
             chmod +x "$PKG_ROOT/qemu/qemu-system-xtensa"
+            mkdir -p "$PKG_ROOT/qemu/lib"
 
             # Bundle non-system dylibs needed by qemu-system-xtensa.
             while IFS= read -r dylib; do
               [[ -z "$dylib" ]] && continue
               if [[ -f "$dylib" ]]; then
-                cp "$dylib" "$PKG_ROOT/qemu/"
-                install_name_tool -change "$dylib" "@loader_path/$(basename "$dylib")" "$PKG_ROOT/qemu/qemu-system-xtensa" || true
+                cp "$dylib" "$PKG_ROOT/qemu/lib/"
+                install_name_tool -change "$dylib" "@loader_path/lib/$(basename "$dylib")" "$PKG_ROOT/qemu/qemu-system-xtensa" || true
               fi
             done < <(otool -L "$PKG_ROOT/qemu/qemu-system-xtensa" \
               | awk 'NR>1 {print $1}' \
               | grep -E '^(/opt/homebrew|/usr/local)/' \
               | sort -u)
+
+            for lib in "$PKG_ROOT"/qemu/lib/*.dylib; do
+              [[ -f "$lib" ]] || continue
+              install_name_tool -id "@loader_path/$(basename "$lib")" "$lib" || true
+              while IFS= read -r dep; do
+                [[ -z "$dep" ]] && continue
+                depBase="$(basename "$dep")"
+                if [[ ! -f "$PKG_ROOT/qemu/lib/$depBase" && -f "$dep" ]]; then
+                  cp "$dep" "$PKG_ROOT/qemu/lib/$depBase"
+                fi
+                if [[ -f "$PKG_ROOT/qemu/lib/$depBase" ]]; then
+                  install_name_tool -change "$dep" "@loader_path/$depBase" "$lib" || true
+                fi
+              done < <(otool -L "$lib" \
+                | awk 'NR>1 {print $1}' \
+                | grep -E '^(/opt/homebrew|/usr/local)/' \
+                | sort -u)
+            done
           else
             cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa" "$PKG_ROOT/qemu/"
             chmod +x "$PKG_ROOT/qemu/qemu-system-xtensa"
+            mkdir -p "$PKG_ROOT/qemu/lib"
+
+            # Bundle Linux shared libraries used by QEMU and run with LD_LIBRARY_PATH.
+            while IFS= read -r so; do
+              [[ -z "$so" ]] && continue
+              if [[ -f "$so" ]]; then
+                cp "$so" "$PKG_ROOT/qemu/lib/"
+              fi
+            done < <(ldd "$PKG_ROOT/qemu/qemu-system-xtensa" \
+              | awk '/=> \// {print $3}' \
+              | sed '/^$/d' \
+              | sort -u)
           fi
 
           if [[ "${{ runner.os }}" == "Windows" ]]; then
@@ -480,7 +511,8 @@ jobs:
               printf '%s\n' '  export ESP32S3_QEMU_BIN="$SCRIPT_DIR/qemu/qemu-system-xtensa"'
               printf '%s\n' '  echo "[launcher] Using bundled QEMU: $ESP32S3_QEMU_BIN"'
               printf '%s\n' 'fi'
-              printf '%s\n' 'exec open "$SCRIPT_DIR/gui_esp32s3_simulator.app"'
+              printf '%s\n' 'export DYLD_LIBRARY_PATH="$SCRIPT_DIR/qemu/lib:${DYLD_LIBRARY_PATH:-}"'
+              printf '%s\n' 'exec "$SCRIPT_DIR/gui_esp32s3_simulator.app/Contents/MacOS/gui_esp32s3_simulator"'
             } > "$PKG_ROOT/run-gui.command"
             chmod +x "$PKG_ROOT/run-gui.command"
           else
@@ -490,6 +522,7 @@ jobs:
               printf '%s\n' 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"'
               printf '%s\n' 'export ESP32S3_QEMU_BIN="$SCRIPT_DIR/qemu/qemu-system-xtensa"'
               printf '%s\n' 'echo "[launcher] Using bundled QEMU: $ESP32S3_QEMU_BIN"'
+              printf '%s\n' 'export LD_LIBRARY_PATH="$SCRIPT_DIR/qemu/lib:${LD_LIBRARY_PATH:-}"'
               printf '%s\n' 'exec "$SCRIPT_DIR/gui_esp32s3_simulator"'
             } > "$PKG_ROOT/run-gui.sh"
             chmod +x "$PKG_ROOT/run-gui.sh"
@@ -523,11 +556,11 @@ jobs:
             test -d "$APP/Contents/Frameworks/QtCore.framework"
             EXE="$PKG_ROOT/qemu/qemu-system-xtensa"
             test -x "$EXE"
-            "$EXE" -machine help | grep -i esp32s3
+            DYLD_LIBRARY_PATH="$PKG_ROOT/qemu/lib:${DYLD_LIBRARY_PATH:-}" "$EXE" -machine help | grep -i esp32s3
           else
             EXE="$PKG_ROOT/qemu/qemu-system-xtensa"
             test -x "$EXE"
-            "$EXE" -machine help | grep -i esp32s3
+            LD_LIBRARY_PATH="$PKG_ROOT/qemu/lib:${LD_LIBRARY_PATH:-}" "$EXE" -machine help | grep -i esp32s3
           fi
 
       - name: Upload workflow artifact

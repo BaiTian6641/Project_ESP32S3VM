@@ -123,13 +123,32 @@ class Ssd1306Simulator:
                 "device": {"type": "ssd1306", "id": params.get("id", "ssd1306")},
                 "panel": {
                     "kind": "display",
+                    "title": "SSD1306 Display",
+                    "description": "Monochrome OLED panel controls and live framebuffer state.",
                     "width": self.width,
                     "height": self.height,
                     "pixel_format": "mono1",
+                    "display": {
+                        "state_key": "frame_update",
+                        "fallback_state_key": "buffer",
+                        "layout": "page-major",
+                        "encoding": "u8"
+                    },
+                    "metrics": [
+                        {"label": "Display", "state_path": "display_on", "true_text": "ON", "false_text": "OFF"},
+                        {"label": "Contrast", "state_path": "contrast"},
+                        {"label": "Addressing", "state_path": "addr_mode"}
+                    ],
+                    "scripts": [
+                        {"title": "Cursor", "state_path": "cursor", "min_height": 80}
+                    ],
                     "controls": [
-                        {"name": "display_on", "type": "bool", "writable": True},
-                        {"name": "inverted", "type": "bool", "writable": True},
-                        {"name": "contrast", "type": "int", "min": 0, "max": 255, "writable": True},
+                        {"name": "display_on", "label": "Display ON", "type": "bool", "writable": True,
+                         "section": "Display", "description": "Enable or disable panel output."},
+                        {"name": "inverted", "label": "Invert", "type": "bool", "writable": True,
+                         "section": "Display", "description": "Invert pixel polarity (A6/A7 equivalent)."},
+                        {"name": "contrast", "label": "Contrast", "type": "int", "min": 0, "max": 255,
+                         "writable": True, "section": "Display", "description": "Panel contrast register (0x81)."},
                     ],
                 },
                 "transports": ["i2c"],
@@ -230,6 +249,10 @@ class Ssd1306Simulator:
             "scrolling_active": self.scrolling_active,
             "cursor": {"page": self.page, "column": self.column},
             "geometry": {"width": self.width, "height": self.height},
+            "panel_script": {
+                "note": "Device-owned rendering metadata is declared in get_capabilities.panel",
+                "pixel_source": "frame_update / buffer"
+            },
         }
         if include_buffer:
             state["buffer"] = {

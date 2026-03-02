@@ -477,6 +477,8 @@ CMakeFiles/gui_esp32s3_simulator.dir/gui_esp32s3_simulator_autogen/mocs_compilat
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/PeripheralsWidget.h \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_PinConnectionWidget.cpp \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/PinConnectionWidget.h \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_SchemaDevicePanel.cpp \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/SchemaDevicePanel.h \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_SensorPanel.cpp \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/SensorPanel.h \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_SerialConsoleWidget.cpp \

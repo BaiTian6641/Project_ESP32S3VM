@@ -19,7 +19,9 @@
 ### Peripherals Tab — Device Panel System
 The Peripherals tab uses a **per-device panel architecture**: each loaded
 peripheral device gets its own dedicated tab inside the Peripherals view.
-Panels are created dynamically by a factory based on device type.
+Panels are created dynamically by a factory based on device-declared
+capabilities (`get_capabilities.panel`), so each virtual device owns its
+subpanel definition.
 
 ```
 PeripheralsWidget
@@ -68,12 +70,51 @@ Every device panel includes a **PinConnectionWidget** at the top that shows:
 | `UartDevicePanel` | UART loopback, GPS, modem, any UART device | Traffic monitor, TX/RX display, send bar |
 | `GenericDevicePanel` | Any unrecognized type (fallback) | Raw JSON state/capabilities viewer |
 
+### Schema-driven panel contract (device-owned)
+Each simulator can define UI directly in `get_capabilities`:
+
+```json
+{
+   "panel": {
+      "kind": "sensor",
+      "title": "SHT21 Sensor",
+      "description": "Temperature and humidity source.",
+      "controls": [
+         {
+            "name": "temperature",
+            "label": "Temperature",
+            "type": "float",
+            "unit": "°C",
+            "min": -40,
+            "max": 125,
+            "section": "Environment",
+            "description": "Injected ambient temperature.",
+            "writable": true
+         },
+         {
+            "name": "reset_counters",
+            "label": "Reset Counters",
+            "type": "action",
+            "rpc_method": "reset_counters",
+            "section": "Operations"
+         }
+      ]
+   }
+}
+```
+
+Supported control types in schema panel:
+- `bool`, `int`, `float`/`double`, `enum`, `string`, `action`
+- Optional keys: `label`, `description`, `section`, `unit`, `min`, `max`, `step`, `decimals`, `placeholder`, `writable`, `rpc_method`, `rpc_params`
+- Optional dynamic view blocks:
+   - `display` (state-key driven framebuffer render)
+   - `metrics` (live card values from `state_path`)
+   - `scripts` (read-only text/JSON panes from `state_path`)
+
 ### Device Panel Factory
-`DevicePanelFactory::createPanel()` selects the correct panel class by matching:
-1. Device `type` field (e.g. "ssd1306", "sht21")
-2. `compatible` array (e.g. ["solomon,ssd1306"])
-3. Bus kind (e.g. "uart" → UartDevicePanel)
-4. Falls back to `GenericDevicePanel`
+`DevicePanelFactory::createPanel()` now selects panels by device-owned capabilities:
+1. If `capabilities.panel` exists → `SchemaDevicePanel`
+2. Otherwise → `GenericDevicePanel` fallback
 
 ---
 

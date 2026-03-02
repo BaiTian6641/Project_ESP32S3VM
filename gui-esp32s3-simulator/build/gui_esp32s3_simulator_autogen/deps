@@ -27,6 +27,8 @@ gui_esp32s3_simulator_autogen/timestamp: \
 	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/PeripheralsWidget.h \
 	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/PinConnectionWidget.cpp \
 	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/PinConnectionWidget.h \
+	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SchemaDevicePanel.cpp \
+	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SchemaDevicePanel.h \
 	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SensorPanel.cpp \
 	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SensorPanel.h \
 	/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SerialConsoleWidget.cpp \

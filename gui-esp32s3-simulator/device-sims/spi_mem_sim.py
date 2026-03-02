@@ -118,11 +118,26 @@ class SpiFlashSimulator:
                 "device": {"type": "spi.flash", "id": params.get("id", "spiflash")},
                 "panel": {
                     "kind": "memory.spi",
+                    "title": "SPI Flash",
+                    "description": "NOR flash model controls and status indicators.",
+                    "metrics": [
+                        {"label": "Busy", "state_path": "busy", "true_text": "YES", "false_text": "NO"},
+                        {"label": "Power Down", "state_path": "power_down", "true_text": "YES", "false_text": "NO"},
+                        {"label": "Mode", "state_path": "last_mode"},
+                        {"label": "Clock", "state_path": "last_freq_hz", "unit": "Hz"}
+                    ],
+                    "scripts": [
+                        {"title": "Status Registers", "state_path": "status_registers", "min_height": 120}
+                    ],
                     "controls": [
-                        {"name": "erase_chip", "type": "action"},
-                        {"name": "write_enable_latch", "type": "bool", "writable": False},
-                        {"name": "busy", "type": "bool", "writable": False},
-                        {"name": "power_down", "type": "bool", "writable": False},
+                        {"name": "erase_chip", "label": "Erase Chip", "type": "action",
+                         "section": "Operations", "description": "Erase full flash content to 0xFF."},
+                        {"name": "write_enable_latch", "label": "WEL", "type": "bool", "writable": False,
+                         "section": "Status", "description": "Write Enable Latch status bit."},
+                        {"name": "busy", "label": "Busy", "type": "bool", "writable": False,
+                         "section": "Status", "description": "Write/erase in progress bit (WIP)."},
+                        {"name": "power_down", "label": "Power Down", "type": "bool", "writable": False,
+                         "section": "Status", "description": "Deep power-down status."},
                     ],
                 },
                 "transports": ["spi"],

@@ -11,16 +11,12 @@ class QWidget;
 class DevicePanelFactory
 {
 public:
-    /// Create a panel for the given device config. Returns a specialized panel
-    /// (DisplayPanel, SensorPanel, etc.) or a GenericDevicePanel as fallback.
+    /// Create a panel for the given device.
+    /// Selection is driven by device-declared capabilities (caps.panel.kind)
+    /// so virtual devices can self-register their panel behavior.
     static DevicePanelBase *createPanel(const QString &deviceId,
                                         const QString &deviceType,
                                         const QJsonObject &rawConfig,
+                                        const QJsonObject &capabilities,
                                         QWidget *parent = nullptr);
-
-private:
-    static bool isDisplayDevice(const QString &type, const QJsonObject &config);
-    static bool isSensorDevice(const QString &type, const QJsonObject &config);
-    static bool isSpiFlashDevice(const QString &type, const QJsonObject &config);
-    static bool isUartDevice(const QString &type, const QJsonObject &config);
 };

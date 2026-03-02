@@ -29,6 +29,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.o.d"
   "CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.o"
   "CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.o.d"
+  "CMakeFiles/gui_esp32s3_simulator.dir/src/SchemaDevicePanel.cpp.o"
+  "CMakeFiles/gui_esp32s3_simulator.dir/src/SchemaDevicePanel.cpp.o.d"
   "CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.o"
   "CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.o.d"
   "CMakeFiles/gui_esp32s3_simulator.dir/src/SerialConsoleWidget.cpp.o"

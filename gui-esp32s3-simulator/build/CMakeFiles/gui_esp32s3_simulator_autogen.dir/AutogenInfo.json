@@ -375,6 +375,12 @@
 			null
 		],
 		[
+			"/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SchemaDevicePanel.h",
+			"MU",
+			"UVLADIE3JM/moc_SchemaDevicePanel.cpp",
+			null
+		],
+		[
 			"/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SensorPanel.h",
 			"MU",
 			"UVLADIE3JM/moc_SensorPanel.cpp",
@@ -525,6 +531,11 @@
 		],
 		[
 			"/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/PinConnectionWidget.cpp",
+			"MU",
+			null
+		],
+		[
+			"/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SchemaDevicePanel.cpp",
 			"MU",
 			null
 		],

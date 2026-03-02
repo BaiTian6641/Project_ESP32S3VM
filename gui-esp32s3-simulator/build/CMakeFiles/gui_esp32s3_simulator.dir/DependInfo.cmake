@@ -21,6 +21,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/MainWindow.cpp" "CMakeFiles/gui_esp32s3_simulator.dir/src/MainWindow.cpp.o" "gcc" "CMakeFiles/gui_esp32s3_simulator.dir/src/MainWindow.cpp.o.d"
   "/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/PeripheralsWidget.cpp" "CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.o" "gcc" "CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.o.d"
   "/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/PinConnectionWidget.cpp" "CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.o" "gcc" "CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.o.d"
+  "/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SchemaDevicePanel.cpp" "CMakeFiles/gui_esp32s3_simulator.dir/src/SchemaDevicePanel.cpp.o" "gcc" "CMakeFiles/gui_esp32s3_simulator.dir/src/SchemaDevicePanel.cpp.o.d"
   "/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SensorPanel.cpp" "CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.o" "gcc" "CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.o.d"
   "/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SerialConsoleWidget.cpp" "CMakeFiles/gui_esp32s3_simulator.dir/src/SerialConsoleWidget.cpp.o" "gcc" "CMakeFiles/gui_esp32s3_simulator.dir/src/SerialConsoleWidget.cpp.o.d"
   "/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SpiFlashPanel.cpp" "CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.o" "gcc" "CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.o.d"

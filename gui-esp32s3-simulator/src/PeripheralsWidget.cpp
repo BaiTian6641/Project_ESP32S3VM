@@ -171,7 +171,20 @@ void PeripheralsWidget::onDevicesChanged()
         existingIds.insert(it.key());
     }
 
-    if (currentIds != existingIds) {
+    bool panelKindChanged = false;
+    if (currentIds == existingIds) {
+        for (const QJsonValue &v : lastSnapshot) {
+            const QJsonObject obj = v.toObject();
+            const QString id = obj.value("id").toString();
+            const QString kind = panelKindFromSnapshot(obj);
+            if (devicePanelKinds.value(id) != kind) {
+                panelKindChanged = true;
+                break;
+            }
+        }
+    }
+
+    if (currentIds != existingIds || panelKindChanged) {
         rebuildDevicePanels();
     } else {
         updateDevicePanels();
@@ -187,6 +200,7 @@ void PeripheralsWidget::rebuildDevicePanels()
         w->deleteLater();
     }
     devicePanels.clear();
+    devicePanelKinds.clear();
 
     if (lastSnapshot.isEmpty()) {
         deviceCountLabel->setText("No devices loaded");
@@ -202,9 +216,10 @@ void PeripheralsWidget::rebuildDevicePanels()
         const QString id = obj.value("id").toString();
         const QString type = obj.value("type").toString();
         const QJsonObject rawConfig = obj.value("raw").toObject();
+        const QJsonObject caps = obj.value("capabilities").toObject();
 
         DevicePanelBase *panel = DevicePanelFactory::createPanel(
-            id, type, rawConfig, this);
+            id, type, rawConfig, caps, this);
 
         // Wire up parameter changes
         connect(panel, &DevicePanelBase::parameterChangeRequested,
@@ -220,12 +235,12 @@ void PeripheralsWidget::rebuildDevicePanels()
         deviceTabWidget->addTab(scrollArea, tabLabel);
 
         devicePanels[id] = panel;
+        devicePanelKinds[id] = panelKindFromSnapshot(obj);
 
         // Push initial state
         panel->updateStatus(obj.value("status").toString(),
                             obj.value("last_error").toString());
 
-        const QJsonObject caps = obj.value("capabilities").toObject();
         if (!caps.isEmpty()) {
             panel->updateCapabilities(caps);
         }
@@ -235,6 +250,18 @@ void PeripheralsWidget::rebuildDevicePanels()
             panel->updateState(state);
         }
     }
+}
+
+QString PeripheralsWidget::panelKindFromSnapshot(const QJsonObject &obj) const
+{
+    return obj.value("capabilities")
+        .toObject()
+        .value("panel")
+        .toObject()
+        .value("kind")
+        .toString()
+        .trimmed()
+        .toLower();
 }
 
 void PeripheralsWidget::updateDevicePanels()

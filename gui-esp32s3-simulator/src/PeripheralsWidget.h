@@ -47,6 +47,7 @@ private slots:
 private:
     void rebuildDevicePanels();
     void updateDevicePanels();
+    QString panelKindFromSnapshot(const QJsonObject &obj) const;
     QString iconForDeviceType(const QString &type) const;
 
     PeripheralManager *peripheralManager = nullptr;
@@ -63,6 +64,7 @@ private:
     // Device panel tabs
     QTabWidget *deviceTabWidget = nullptr;
     QHash<QString, DevicePanelBase *> devicePanels;  // deviceId -> panel
+    QHash<QString, QString> devicePanelKinds;        // deviceId -> capabilities.panel.kind
 
     // Global log
     QTextEdit *logText = nullptr;

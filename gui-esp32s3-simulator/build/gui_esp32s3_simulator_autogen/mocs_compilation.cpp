@@ -10,6 +10,7 @@
 #include "UVLADIE3JM/moc_MainWindow.cpp"
 #include "UVLADIE3JM/moc_PeripheralsWidget.cpp"
 #include "UVLADIE3JM/moc_PinConnectionWidget.cpp"
+#include "UVLADIE3JM/moc_SchemaDevicePanel.cpp"
 #include "UVLADIE3JM/moc_SensorPanel.cpp"
 #include "UVLADIE3JM/moc_SerialConsoleWidget.cpp"
 #include "UVLADIE3JM/moc_SpiFlashPanel.cpp"
