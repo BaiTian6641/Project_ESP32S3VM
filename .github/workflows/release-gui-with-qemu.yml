@@ -448,6 +448,9 @@ jobs:
               "/d/msys64/mingw64/bin"
               "/d/msys64/ucrt64/bin"
               "/d/msys64/clang64/bin"
+              "/d/a/_temp/msys64/mingw64/bin"
+              "/d/a/_temp/msys64/ucrt64/bin"
+              "/d/a/_temp/msys64/clang64/bin"
               "${{ env.QEMU_DIR }}/build"
               "$PKG_ROOT/qemu"
             )
@@ -476,6 +479,15 @@ jobs:
                     break
                   fi
                 done
+              fi
+
+              if [[ -z "$found" ]]; then
+                # Fallback for runners where MSYS2 root is not mounted at expected paths.
+                winFound="$(cmd.exe //c "where $dep" 2>nul | tr -d '\r' | head -n 1 || true)"
+                if [[ -n "$winFound" ]]; then
+                  # Convert C:\foo\bar.dll -> /c/foo/bar.dll
+                  found="$(printf '%s' "$winFound" | sed -E 's#\\#/#g; s#^([A-Za-z]):#/\L\1#')"
+                fi
               fi
 
               printf '%s' "$found"
@@ -557,12 +569,54 @@ jobs:
               )
             done
 
+            # Deterministic fallback: ensure core runtime DLLs are bundled.
+            REQUIRED_DLLS=(
+              "libglib-2.0-0.dll"
+              "libgio-2.0-0.dll"
+              "libgmodule-2.0-0.dll"
+              "libgobject-2.0-0.dll"
+              "libslirp-0.dll"
+              "libpixman-1-0.dll"
+            )
+
+            for dep in "${REQUIRED_DLLS[@]}"; do
+              depLower="${dep,,}"
+              if [[ -f "$PKG_ROOT/qemu/$dep" || -f "$PKG_ROOT/qemu/$depLower" ]]; then
+                continue
+              fi
+
+              dllPath="$(resolve_dll_path "$dep")"
+              if [[ -z "$dllPath" || ! -f "$dllPath" ]]; then
+                echo "[Windows package] required runtime DLL not found: $dep"
+                continue
+              fi
+
+              base="$(basename "$dllPath")"
+              if [[ ! -f "$PKG_ROOT/qemu/$base" ]]; then
+                cp "$dllPath" "$PKG_ROOT/qemu/$base"
+              fi
+            done
+
+            MISSING_REQUIRED=0
+            for dep in "${REQUIRED_DLLS[@]}"; do
+              depLower="${dep,,}"
+              if [[ ! -f "$PKG_ROOT/qemu/$dep" && ! -f "$PKG_ROOT/qemu/$depLower" ]]; then
+                echo "[Windows package] still missing required DLL: $dep"
+                MISSING_REQUIRED=1
+              fi
+            done
+            if [[ "$MISSING_REQUIRED" -ne 0 ]]; then
+              echo "[Windows package] required QEMU runtime DLL set incomplete"
+              ls -1 "$PKG_ROOT/qemu"/*.dll 2>/dev/null | sed 's#^.*/##' | sort -u || true
+              exit 1
+            fi
+
             # Hard-fail if any direct QEMU deps are unresolved.
-            if ldd "$PKG_ROOT/qemu/qemu-system-xtensa.exe" \
+            if PATH="$PKG_ROOT/qemu:$PATH" ldd "$PKG_ROOT/qemu/qemu-system-xtensa.exe" \
               | grep -i 'not found' \
               | grep -viE 'api-ms-win-|ext-ms-win-' >/dev/null; then
               echo "[Windows package] unresolved DLL dependencies for qemu-system-xtensa.exe"
-              ldd "$PKG_ROOT/qemu/qemu-system-xtensa.exe" || true
+              PATH="$PKG_ROOT/qemu:$PATH" ldd "$PKG_ROOT/qemu/qemu-system-xtensa.exe" || true
               exit 1
             fi
 
@@ -682,9 +736,9 @@ jobs:
             test -f "$EXE"
             ls -l "$EXE"
             # Verify packaged Windows runtime is self-contained for QEMU.
-            if ldd "$EXE" | grep -i 'not found' | grep -viE 'api-ms-win-|ext-ms-win-' >/dev/null; then
+            if PATH="$PKG_ROOT/qemu:$PATH" ldd "$EXE" | grep -i 'not found' | grep -viE 'api-ms-win-|ext-ms-win-' >/dev/null; then
               echo "[verify] unresolved DLL dependencies after packaging"
-              ldd "$EXE" || true
+              PATH="$PKG_ROOT/qemu:$PATH" ldd "$EXE" || true
               exit 1
             fi
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
