@@ -106,6 +106,10 @@ class Ssd1306Simulator:
         self._pending_params: List[int] = []
         self._expected_params = 0
 
+        # -- Frame-update debounce (coalesce rapid partial writes) --
+        self._frame_dirty = False
+        self._dirty_since_ms = 0
+
     # -- JSON-RPC request handler --
     def handle(self, req: RpcRequest) -> Dict[str, Any]:
         method = req.method
@@ -169,7 +173,14 @@ class Ssd1306Simulator:
         raise ValueError(f"Unsupported method: {method}")
 
     def tick(self) -> None:
-        pass
+        """Called on every JSON-RPC event-loop cycle.  Flush a
+        deferred frame_update once the I2C burst quiets down (>= 16 ms
+        since the first dirty mark)."""
+        if self._frame_dirty:
+            elapsed = monotonic_ms() - self._dirty_since_ms
+            if elapsed >= 16:
+                self._frame_dirty = False
+                self._emit_frame_update()
 
     # -- I2C transfer (multi-op) --
     def _i2c_transfer(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -227,6 +238,13 @@ class Ssd1306Simulator:
                 "data": list(self.gddram),
             }
         return state
+
+    def _mark_frame_dirty(self) -> None:
+        """Record that the GDDRAM changed; actual frame_update will
+        be emitted from tick() after the debounce window elapses."""
+        if not self._frame_dirty:
+            self._dirty_since_ms = monotonic_ms()
+        self._frame_dirty = True
 
     def _emit_frame_update(self) -> None:
         server.notify(
@@ -293,7 +311,7 @@ class Ssd1306Simulator:
                     idx += 1
 
         if dirty:
-            self._emit_frame_update()
+            self._mark_frame_dirty()
 
     # -- Command byte processor (handles multi-byte param collection) --
     def _process_command_byte(self, data: List[int], idx: int) -> int:

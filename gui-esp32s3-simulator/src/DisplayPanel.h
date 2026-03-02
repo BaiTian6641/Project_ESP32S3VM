@@ -4,6 +4,7 @@
 
 #include <QImage>
 #include <QJsonObject>
+#include <QTimer>
 
 class QLabel;
 class QCheckBox;
@@ -32,6 +33,11 @@ private:
     void renderPageMajorMono(const QList<int> &data, int w, int h);
     QImage scaleForDisplay(const QImage &source) const;
 
+    /// Schedule a coalesced render (debounce rapid partial updates).
+    void scheduleRender(const QJsonObject &bufferObj);
+    /// Execute the deferred render.
+    void doCoalescedRender();
+
     // Display screen
     QLabel *m_screenLabel = nullptr;
     QImage m_screenImage;
@@ -47,4 +53,12 @@ private:
     int m_width = 128;
     int m_height = 64;
     int m_scaleFactor = 3;
+
+    // Render coalescing (avoid partial-frame tearing)
+    QTimer *m_renderTimer = nullptr;
+    QJsonObject m_pendingBufferData;
+    bool m_renderPending = false;
+
+    // SSD1306 flags for correct rendering
+    bool m_entireDisplayOn = false;
 };

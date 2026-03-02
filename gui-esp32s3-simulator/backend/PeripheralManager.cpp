@@ -912,7 +912,24 @@ void PeripheralManager::handleJsonMessage(DeviceRuntime *device, const QJsonObje
         }
 
         if (method == "get_state") {
+            /* Preserve live notification keys that arrive
+               asynchronously between get_state polls so the GUI
+               never reverts to stale buffer data. */
+            static const char *liveKeys[] = {
+                "frame_update", "telemetry", "uart_rx", "playback"
+            };
+            QJsonObject saved;
+            for (const char *key : liveKeys) {
+                if (device->state.contains(QLatin1String(key))) {
+                    saved[QLatin1String(key)] = device->state[QLatin1String(key)];
+                }
+            }
             device->state = obj.value("result").toObject();
+            for (auto it = saved.constBegin(); it != saved.constEnd(); ++it) {
+                if (!device->state.contains(it.key())) {
+                    device->state[it.key()] = it.value();
+                }
+            }
             emit devicesChanged();
             return;
         }

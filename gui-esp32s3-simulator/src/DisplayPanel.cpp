@@ -28,6 +28,14 @@ DisplayPanel::DisplayPanel(const QString &deviceId,
     }
 
     buildUI();
+
+    // Render coalescing: cap redraws at ~33 fps to avoid
+    // partial-frame tearing when I2C data arrives in chunks.
+    m_renderTimer = new QTimer(this);
+    m_renderTimer->setSingleShot(true);
+    m_renderTimer->setInterval(30);
+    connect(m_renderTimer, &QTimer::timeout,
+            this, &DisplayPanel::doCoalescedRender);
 }
 
 void DisplayPanel::buildUI()
@@ -145,6 +153,9 @@ void DisplayPanel::updateState(const QJsonObject &state)
             .arg(cursor.value("page").toInt())
             .arg(cursor.value("column").toInt()));
     }
+    if (state.contains("entire_display_on")) {
+        m_entireDisplayOn = state.value("entire_display_on").toBool();
+    }
     if (state.contains("geometry")) {
         const QJsonObject geo = state.value("geometry").toObject();
         m_width = geo.value("width").toInt(m_width);
@@ -154,14 +165,13 @@ void DisplayPanel::updateState(const QJsonObject &state)
                 .arg(m_width).arg(m_height));
     }
 
-    // Render framebuffer
-    if (state.contains("buffer")) {
-        renderFramebuffer(state.value("buffer").toObject());
-    }
-
-    // Handle frame_update notification (from live streaming)
+    // Render framebuffer -- prefer live frame_update over initial
+    // buffer snapshot; never render both (avoids stale-then-fresh
+    // flicker when get_state and frame_update overlap).
     if (state.contains("frame_update")) {
-        renderFramebuffer(state.value("frame_update").toObject());
+        scheduleRender(state.value("frame_update").toObject());
+    } else if (state.contains("buffer")) {
+        scheduleRender(state.value("buffer").toObject());
     }
 }
 
@@ -230,6 +240,9 @@ void DisplayPanel::renderPageMajorMono(const QList<int> &data, int w, int h)
     // If display is off, dim the whole image
     if (!m_displayOnCheck->isChecked()) {
         img.fill(QColor(5, 5, 8));
+    } else if (m_entireDisplayOn) {
+        // A5h: all pixels forced ON regardless of GDDRAM content
+        img.fill(onColor);
     }
 
     m_screenImage = img;
@@ -242,4 +255,20 @@ QImage DisplayPanel::scaleForDisplay(const QImage &source) const
                          source.height() * m_scaleFactor,
                          Qt::KeepAspectRatio,
                          Qt::FastTransformation);
+}
+
+void DisplayPanel::scheduleRender(const QJsonObject &bufferObj)
+{
+    m_pendingBufferData = bufferObj;
+    m_renderPending = true;
+    if (!m_renderTimer->isActive()) {
+        m_renderTimer->start();
+    }
+}
+
+void DisplayPanel::doCoalescedRender()
+{
+    if (!m_renderPending) return;
+    m_renderPending = false;
+    renderFramebuffer(m_pendingBufferData);
 }
