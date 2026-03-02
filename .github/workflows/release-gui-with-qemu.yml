@@ -57,6 +57,16 @@ jobs:
             git make ninja-build pkg-config python3 python3-pip \
             libglib2.0-dev libpixman-1-dev zlib1g-dev libgcrypt20-dev libslirp-dev libfdt-dev
 
+      - name: Install QEMU build dependencies (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew update
+          brew install \
+            git make ninja pkg-config python meson \
+            glib pixman libslirp libgcrypt dtc
+
       - name: Setup MSYS2 (Windows)
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
@@ -94,6 +104,20 @@ jobs:
       - name: Dependency preflight (Windows / MSYS2)
         if: runner.os == 'Windows'
         shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          ninja --version
+          pkg-config --modversion glib-2.0
+          pkg-config --modversion pixman-1
+          pkg-config --modversion zlib
+          pkg-config --modversion libgcrypt
+          pkg-config --modversion slirp
+          pkg-config --cflags slirp
+          pkg-config --libs slirp
+
+      - name: Dependency preflight (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
         run: |
           set -euo pipefail
           ninja --version
@@ -222,6 +246,63 @@ jobs:
           test -f ./build/qemu-system-xtensa.exe
           ls -l ./build/qemu-system-xtensa.exe
 
+      - name: Build ESP32S3 QEMU (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 -m pip install --upgrade pip
+          python3 -m pip install meson==1.5.0 pycotap==1.3.1
+
+          git clone --depth 1 --recurse-submodules --shallow-submodules "${{ env.QEMU_REPO }}" "${{ env.QEMU_DIR }}"
+          cd "${{ env.QEMU_DIR }}"
+          git submodule update --init --recursive
+
+          SLIRP_CFLAGS="$(pkg-config --cflags slirp)"
+          SLIRP_LIBS="$(pkg-config --libs slirp)"
+
+          ./configure \
+            --target-list=xtensa-softmmu \
+            --disable-werror \
+            --disable-xen \
+            --enable-slirp \
+            --disable-docs \
+            --disable-tools \
+            --disable-gtk \
+            --disable-sdl \
+            --disable-curses \
+            --disable-opengl \
+            --disable-cocoa \
+            --disable-guest-agent \
+            --extra-cflags="$SLIRP_CFLAGS" \
+            --extra-ldflags="$SLIRP_LIBS" \
+            -Dslirp=enabled \
+            -Dguest_agent=disabled || { cat build/meson-logs/meson-log.txt || true; exit 1; }
+          meson configure build -Dslirp=enabled -Dguest_agent=disabled
+
+          if grep -q '^#define CONFIG_SLIRP' build/config-host.h; then
+            echo '[configure] slirp is enabled on macOS build'
+            grep '^#define CONFIG_.*SLIRP' build/config-host.h || true
+          else
+            echo '[configure] slirp is NOT enabled on macOS build; forcing this build to fail early'
+            grep '^#define CONFIG_.*SLIRP' build/config-host.h || true
+            exit 1
+          fi
+
+          JOBS="$(sysctl -n hw.ncpu || echo 4)"
+          make -j"$JOBS" qemu-system-xtensa
+          test -x build/qemu-system-xtensa
+
+      - name: Verify ESP32S3 machine support (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${{ env.QEMU_DIR }}"
+          test -x ./build/qemu-system-xtensa
+          ./build/qemu-system-xtensa -machine help | grep -i esp32s3
+
       - name: Package runtime bundle
         id: package
         shell: bash
@@ -341,10 +422,21 @@ jobs:
               fi
             done
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
-            {
-              printf '%s\n' 'not_bundled=true'
-              printf '%s\n' 'note=QEMU macOS bundling is not configured in this workflow; set ESP32S3_QEMU_BIN manually.'
-            } > "$PKG_ROOT/qemu/README.txt"
+            cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa" "$PKG_ROOT/qemu/"
+            chmod +x "$PKG_ROOT/qemu/qemu-system-xtensa"
+
+            # Bundle non-system dylibs needed by qemu-system-xtensa.
+            mapfile -t DYLIBS < <(otool -L "$PKG_ROOT/qemu/qemu-system-xtensa" \
+              | awk 'NR>1 {print $1}' \
+              | grep -E '^(/opt/homebrew|/usr/local)/' \
+              | sort -u)
+
+            for dylib in "${DYLIBS[@]:-}"; do
+              if [[ -f "$dylib" ]]; then
+                cp "$dylib" "$PKG_ROOT/qemu/"
+                install_name_tool -change "$dylib" "@loader_path/$(basename "$dylib")" "$PKG_ROOT/qemu/qemu-system-xtensa" || true
+              fi
+            done
           else
             cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa" "$PKG_ROOT/qemu/"
             chmod +x "$PKG_ROOT/qemu/qemu-system-xtensa"
@@ -365,6 +457,10 @@ jobs:
               printf '%s\n' '#!/usr/bin/env bash'
               printf '%s\n' 'set -euo pipefail'
               printf '%s\n' 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"'
+              printf '%s\n' 'if [[ -x "$SCRIPT_DIR/qemu/qemu-system-xtensa" ]]; then'
+              printf '%s\n' '  export ESP32S3_QEMU_BIN="$SCRIPT_DIR/qemu/qemu-system-xtensa"'
+              printf '%s\n' '  echo "[launcher] Using bundled QEMU: $ESP32S3_QEMU_BIN"'
+              printf '%s\n' 'fi'
               printf '%s\n' 'exec open "$SCRIPT_DIR/gui_esp32s3_simulator.app"'
             } > "$PKG_ROOT/run-gui.command"
             chmod +x "$PKG_ROOT/run-gui.command"
@@ -406,6 +502,9 @@ jobs:
             APP="$PKG_ROOT/gui_esp32s3_simulator.app"
             test -d "$APP"
             test -d "$APP/Contents/Frameworks/QtCore.framework"
+            EXE="$PKG_ROOT/qemu/qemu-system-xtensa"
+            test -x "$EXE"
+            "$EXE" -machine help | grep -i esp32s3
           else
             EXE="$PKG_ROOT/qemu/qemu-system-xtensa"
             test -x "$EXE"
