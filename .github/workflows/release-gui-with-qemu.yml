@@ -384,18 +384,19 @@ jobs:
             cp "${{ env.GUI_BUILD_DIR }}/gui_esp32s3_simulator" "$PKG_ROOT/"
             chmod +x "$PKG_ROOT/gui_esp32s3_simulator"
 
-            mapfile -t QT_LIBS < <(ldd "$PKG_ROOT/gui_esp32s3_simulator" \
+            QT_FOUND=0
+            while IFS= read -r so; do
+              [[ -z "$so" ]] && continue
+              cp "$so" "$PKG_ROOT/"
+              QT_FOUND=1
+            done < <(ldd "$PKG_ROOT/gui_esp32s3_simulator" \
               | awk '/=>/ && /libQt6/ {print $3}' \
               | sed '/^$/d' \
               | sort -u)
-            if [[ ${#QT_LIBS[@]} -eq 0 ]]; then
+            if [[ "$QT_FOUND" -eq 0 ]]; then
               echo "No Qt runtime libraries found via ldd"
               exit 1
             fi
-
-            for so in "${QT_LIBS[@]}"; do
-              cp "$so" "$PKG_ROOT/"
-            done
 
             QT_PLUGIN_BASE="/usr/lib/x86_64-linux-gnu/qt6/plugins"
             mkdir -p "$PKG_ROOT/platforms"
@@ -431,32 +432,30 @@ jobs:
             cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa.exe" "$PKG_ROOT/qemu/"
 
             # Copy only required MinGW runtime DLL dependencies for qemu-system-xtensa.exe
-            mapfile -t DLLS < <(ldd "${{ env.QEMU_DIR }}/build/qemu-system-xtensa.exe" \
-              | awk '/=> \/mingw64\/bin\// {print $3}' \
-              | sed '/^$/d' \
-              | sort -u)
-
-            for dll in "${DLLS[@]:-}"; do
+            while IFS= read -r dll; do
+              [[ -z "$dll" ]] && continue
               if [[ -f "$dll" ]]; then
                 cp "$dll" "$PKG_ROOT/qemu/"
               fi
-            done
+            done < <(ldd "${{ env.QEMU_DIR }}/build/qemu-system-xtensa.exe" \
+              | awk '/=> \/mingw64\/bin\// {print $3}' \
+              | sed '/^$/d' \
+              | sort -u)
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa" "$PKG_ROOT/qemu/"
             chmod +x "$PKG_ROOT/qemu/qemu-system-xtensa"
 
             # Bundle non-system dylibs needed by qemu-system-xtensa.
-            mapfile -t DYLIBS < <(otool -L "$PKG_ROOT/qemu/qemu-system-xtensa" \
-              | awk 'NR>1 {print $1}' \
-              | grep -E '^(/opt/homebrew|/usr/local)/' \
-              | sort -u)
-
-            for dylib in "${DYLIBS[@]:-}"; do
+            while IFS= read -r dylib; do
+              [[ -z "$dylib" ]] && continue
               if [[ -f "$dylib" ]]; then
                 cp "$dylib" "$PKG_ROOT/qemu/"
                 install_name_tool -change "$dylib" "@loader_path/$(basename "$dylib")" "$PKG_ROOT/qemu/qemu-system-xtensa" || true
               fi
-            done
+            done < <(otool -L "$PKG_ROOT/qemu/qemu-system-xtensa" \
+              | awk 'NR>1 {print $1}' \
+              | grep -E '^(/opt/homebrew|/usr/local)/' \
+              | sort -u)
           else
             cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa" "$PKG_ROOT/qemu/"
             chmod +x "$PKG_ROOT/qemu/qemu-system-xtensa"
