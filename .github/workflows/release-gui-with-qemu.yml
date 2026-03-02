@@ -866,28 +866,43 @@ jobs:
               codesign --force --sign - "$lib"
             done
 
+            # Sign every Mach-O binary inside the app bundle bottom-up.
+            # macdeployqt copies Qt plugins (e.g. tls/libqsecuretransportbackend.dylib)
+            # that may have invalid or missing ad-hoc signatures.
+            # We sign ALL executable Mach-O files individually, then sign
+            # the bundle itself WITHOUT --deep (--deep is fragile and deprecated).
+            echo "[codesign] signing nested components inside app bundle..."
+            while IFS= read -r nested; do
+              echo "  signing: $(basename "$nested")"
+              codesign --force --sign - "$nested" || echo "::warning::failed to sign $nested"
+            done < <(find "$PKG_ROOT/gui_esp32s3_simulator.app" \
+              \( -name '*.dylib' -o -name '*.so' \) \
+              -type f 2>/dev/null | sort)
+
+            # Sign framework executables inside .framework bundles.
+            while IFS= read -r fwbin; do
+              echo "  signing framework binary: $(basename "$fwbin")"
+              codesign --force --sign - "$fwbin" || echo "::warning::failed to sign $fwbin"
+            done < <(find "$PKG_ROOT/gui_esp32s3_simulator.app/Contents/Frameworks" \
+              -type f -perm +0111 ! -name '*.plist' ! -name '*.h' ! -name '*.dylib' 2>/dev/null | sort)
+
+            # Sign each .framework bundle directory (must be after inner files).
+            while IFS= read -r fwdir; do
+              echo "  signing framework: $(basename "$fwdir")"
+              codesign --force --sign - "$fwdir" || echo "::warning::failed to sign $fwdir"
+            done < <(find "$PKG_ROOT/gui_esp32s3_simulator.app/Contents/Frameworks" \
+              -name '*.framework' -maxdepth 1 -type d 2>/dev/null | sort)
+
+            # Sign the main app binary.
             APP_BIN="$PKG_ROOT/gui_esp32s3_simulator.app/Contents/MacOS/gui_esp32s3_simulator"
             if [[ -x "$APP_BIN" ]]; then
+              echo "  signing main binary"
               codesign --force --sign - "$APP_BIN"
             fi
 
-            # Sign every nested dylib/framework binary inside the app bundle
-            # BEFORE the deep bundle sign.  macdeployqt copies Qt plugins
-            # (e.g. tls/libqsecuretransportbackend.dylib) that may have
-            # invalid or missing signatures; --deep fails if any sub-component
-            # is unsigned.
-            while IFS= read -r nested; do
-              codesign --force --sign - "$nested" 2>/dev/null || true
-            done < <(find "$PKG_ROOT/gui_esp32s3_simulator.app" \
-              \( -name '*.dylib' -o -name '*.so' -o -name '*.framework' \) \
-              -type f 2>/dev/null | sort)
-            # Also sign framework executables inside .framework bundles.
-            while IFS= read -r fwbin; do
-              codesign --force --sign - "$fwbin" 2>/dev/null || true
-            done < <(find "$PKG_ROOT/gui_esp32s3_simulator.app/Contents/Frameworks" \
-              -type f -perm +111 ! -name '*.plist' ! -name '*.h' 2>/dev/null | sort)
-
-            codesign --force --deep --sign - "$PKG_ROOT/gui_esp32s3_simulator.app"
+            # Finally sign the top-level .app bundle (no --deep).
+            echo "[codesign] signing app bundle..."
+            codesign --force --sign - "$PKG_ROOT/gui_esp32s3_simulator.app"
           else
             cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa" "$PKG_ROOT/qemu/"
             chmod +x "$PKG_ROOT/qemu/qemu-system-xtensa"
