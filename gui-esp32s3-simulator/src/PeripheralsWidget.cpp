@@ -1,24 +1,28 @@
 #include "PeripheralsWidget.h"
 
+#include "DevicePanelBase.h"
+#include "DevicePanelFactory.h"
 #include "PeripheralManager.h"
 
 #include <QFileDialog>
-#include <QHeaderView>
+#include <QHBoxLayout>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
-#include <QTableWidget>
-#include <QTableWidgetItem>
+#include <QScrollArea>
+#include <QSplitter>
+#include <QTabWidget>
 #include <QTextEdit>
 #include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QLabel>
 
 PeripheralsWidget::PeripheralsWidget(QWidget *parent)
     : QWidget(parent)
 {
     auto *rootLayout = new QVBoxLayout(this);
+
+    // === Config controls bar ===
     auto *controlsLayout = new QHBoxLayout();
 
     controlsLayout->addWidget(new QLabel("Config:", this));
@@ -41,43 +45,46 @@ PeripheralsWidget::PeripheralsWidget(QWidget *parent)
 
     rootLayout->addLayout(controlsLayout);
 
-    devicesTable = new QTableWidget(this);
-    devicesTable->setColumnCount(6);
-    devicesTable->setHorizontalHeaderLabels({"ID", "Type", "Bus", "Address", "Status", "Error"});
-    devicesTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    devicesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    devicesTable->setSelectionMode(QAbstractItemView::SingleSelection);
-    devicesTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    rootLayout->addWidget(devicesTable, 1);
+    // Device count status
+    auto *statusLayout = new QHBoxLayout();
+    deviceCountLabel = new QLabel("No devices loaded", this);
+    deviceCountLabel->setStyleSheet("color: #888; font-size: 11px;");
+    statusLayout->addWidget(deviceCountLabel);
+    statusLayout->addStretch();
+    rootLayout->addLayout(statusLayout);
 
-    auto *lowerLayout = new QHBoxLayout();
+    // === Main area: splitter with device tabs on top, global log on bottom ===
+    auto *splitter = new QSplitter(Qt::Vertical, this);
 
-    detailsText = new QTextEdit(this);
-    detailsText->setReadOnly(true);
-    detailsText->setPlaceholderText("Select a device to inspect raw config, capabilities, and state.");
+    // Device panel tabs
+    deviceTabWidget = new QTabWidget(this);
+    deviceTabWidget->setTabPosition(QTabWidget::North);
+    deviceTabWidget->setDocumentMode(true);
+    splitter->addWidget(deviceTabWidget);
 
+    // Global log
     logText = new QTextEdit(this);
     logText->setReadOnly(true);
-    logText->setPlaceholderText("Manager/device log output.");
+    logText->setMaximumHeight(150);
+    logText->setPlaceholderText("Manager / device log output...");
+    splitter->addWidget(logText);
 
-    lowerLayout->addWidget(detailsText, 1);
-    lowerLayout->addWidget(logText, 1);
-    rootLayout->addLayout(lowerLayout, 1);
+    splitter->setStretchFactor(0, 3);
+    splitter->setStretchFactor(1, 1);
 
+    rootLayout->addWidget(splitter, 1);
+
+    // Connections
     connect(browseButton, &QPushButton::clicked, this, &PeripheralsWidget::onBrowseConfig);
     connect(loadButton, &QPushButton::clicked, this, &PeripheralsWidget::onLoadConfig);
     connect(startButton, &QPushButton::clicked, this, &PeripheralsWidget::onStartAll);
     connect(stopButton, &QPushButton::clicked, this, &PeripheralsWidget::onStopAll);
     connect(refreshButton, &QPushButton::clicked, this, &PeripheralsWidget::onRefresh);
-    connect(devicesTable, &QTableWidget::itemSelectionChanged, this, &PeripheralsWidget::onTableSelectionChanged);
-
 }
 
 void PeripheralsWidget::setManager(PeripheralManager *manager)
 {
-    if (peripheralManager == manager) {
-        return;
-    }
+    if (peripheralManager == manager) return;
 
     if (peripheralManager) {
         disconnect(peripheralManager, nullptr, this, nullptr);
@@ -91,7 +98,7 @@ void PeripheralsWidget::setManager(PeripheralManager *manager)
         connect(peripheralManager, &PeripheralManager::deviceLogLine,
                 this, &PeripheralsWidget::onDeviceLogLine);
         connect(peripheralManager, &PeripheralManager::deviceTraceLine,
-            this, &PeripheralsWidget::onDeviceTraceLine);
+                this, &PeripheralsWidget::onDeviceTraceLine);
         connect(peripheralManager, &PeripheralManager::managerMessage,
                 this, &PeripheralsWidget::onManagerMessage);
 
@@ -113,11 +120,9 @@ void PeripheralsWidget::setManager(PeripheralManager *manager)
 void PeripheralsWidget::onBrowseConfig()
 {
     const QString path = QFileDialog::getOpenFileName(
-        this,
-        "Select peripheral config",
+        this, "Select peripheral config",
         configPathEdit->text(),
         "JSON files (*.json)");
-
     if (!path.isEmpty()) {
         configPathEdit->setText(path);
     }
@@ -125,37 +130,26 @@ void PeripheralsWidget::onBrowseConfig()
 
 void PeripheralsWidget::onLoadConfig()
 {
-    if (!peripheralManager) {
-        return;
-    }
-
+    if (!peripheralManager) return;
     const QString path = configPathEdit->text().trimmed();
-    if (path.isEmpty()) {
-        return;
+    if (!path.isEmpty()) {
+        peripheralManager->loadConfig(path);
     }
-
-    peripheralManager->loadConfig(path);
 }
 
 void PeripheralsWidget::onStartAll()
 {
-    if (peripheralManager) {
-        peripheralManager->startAll();
-    }
+    if (peripheralManager) peripheralManager->startAll();
 }
 
 void PeripheralsWidget::onStopAll()
 {
-    if (peripheralManager) {
-        peripheralManager->stopAll();
-    }
+    if (peripheralManager) peripheralManager->stopAll();
 }
 
 void PeripheralsWidget::onRefresh()
 {
-    if (peripheralManager) {
-        peripheralManager->refreshStates();
-    }
+    if (peripheralManager) peripheralManager->refreshStates();
 }
 
 void PeripheralsWidget::onDevicesChanged()
@@ -166,17 +160,123 @@ void PeripheralsWidget::onDevicesChanged()
         lastSnapshot = peripheralManager->devicesSnapshot();
     }
 
-    rebuildTable();
-    showSelectedDetails();
+    // Check if device set has changed (need to rebuild panels)
+    QSet<QString> currentIds;
+    for (const QJsonValue &v : lastSnapshot) {
+        currentIds.insert(v.toObject().value("id").toString());
+    }
+
+    QSet<QString> existingIds;
+    for (auto it = devicePanels.constBegin(); it != devicePanels.constEnd(); ++it) {
+        existingIds.insert(it.key());
+    }
+
+    if (currentIds != existingIds) {
+        rebuildDevicePanels();
+    } else {
+        updateDevicePanels();
+    }
+}
+
+void PeripheralsWidget::rebuildDevicePanels()
+{
+    // Remove old panels
+    while (deviceTabWidget->count() > 0) {
+        QWidget *w = deviceTabWidget->widget(0);
+        deviceTabWidget->removeTab(0);
+        w->deleteLater();
+    }
+    devicePanels.clear();
+
+    if (lastSnapshot.isEmpty()) {
+        deviceCountLabel->setText("No devices loaded");
+        return;
+    }
+
+    deviceCountLabel->setText(
+        QString("%1 device(s) loaded").arg(lastSnapshot.size()));
+
+    // Create a panel for each device
+    for (const QJsonValue &v : lastSnapshot) {
+        const QJsonObject obj = v.toObject();
+        const QString id = obj.value("id").toString();
+        const QString type = obj.value("type").toString();
+        const QJsonObject rawConfig = obj.value("raw").toObject();
+
+        DevicePanelBase *panel = DevicePanelFactory::createPanel(
+            id, type, rawConfig, this);
+
+        // Wire up parameter changes
+        connect(panel, &DevicePanelBase::parameterChangeRequested,
+                this, &PeripheralsWidget::onPanelParameterChange);
+
+        // Wrap panel in scroll area for large content
+        auto *scrollArea = new QScrollArea(this);
+        scrollArea->setWidgetResizable(true);
+        scrollArea->setWidget(panel);
+
+        // Add tab with icon indicator
+        QString tabLabel = QString("%1 %2").arg(iconForDeviceType(type), id);
+        deviceTabWidget->addTab(scrollArea, tabLabel);
+
+        devicePanels[id] = panel;
+
+        // Push initial state
+        panel->updateStatus(obj.value("status").toString(),
+                            obj.value("last_error").toString());
+
+        const QJsonObject caps = obj.value("capabilities").toObject();
+        if (!caps.isEmpty()) {
+            panel->updateCapabilities(caps);
+        }
+
+        const QJsonObject state = obj.value("state").toObject();
+        if (!state.isEmpty()) {
+            panel->updateState(state);
+        }
+    }
+}
+
+void PeripheralsWidget::updateDevicePanels()
+{
+    for (const QJsonValue &v : lastSnapshot) {
+        const QJsonObject obj = v.toObject();
+        const QString id = obj.value("id").toString();
+
+        DevicePanelBase *panel = devicePanels.value(id, nullptr);
+        if (!panel) continue;
+
+        panel->updateStatus(obj.value("status").toString(),
+                            obj.value("last_error").toString());
+
+        const QJsonObject caps = obj.value("capabilities").toObject();
+        if (!caps.isEmpty()) {
+            panel->updateCapabilities(caps);
+        }
+
+        const QJsonObject state = obj.value("state").toObject();
+        if (!state.isEmpty()) {
+            panel->updateState(state);
+        }
+    }
 }
 
 void PeripheralsWidget::onDeviceLogLine(const QString &deviceId, const QString &line)
 {
+    // Route to device-specific panel log
+    DevicePanelBase *panel = devicePanels.value(deviceId, nullptr);
+    if (panel) {
+        panel->appendLog(line);
+    }
     logText->append(QString("[%1] %2").arg(deviceId, line));
 }
 
 void PeripheralsWidget::onDeviceTraceLine(const QString &deviceId, const QString &line)
 {
+    DevicePanelBase *panel = devicePanels.value(deviceId, nullptr);
+    if (panel) {
+        panel->appendLog(QString("[trace] %1").arg(line));
+    }
     logText->append(QString("[%1][trace] %2").arg(deviceId, line));
 }
 
@@ -185,68 +285,43 @@ void PeripheralsWidget::onManagerMessage(const QString &line)
     logText->append(line);
 }
 
-void PeripheralsWidget::onTableSelectionChanged()
+void PeripheralsWidget::onPanelParameterChange(const QString &deviceId,
+                                                const QString &paramName,
+                                                const QVariant &value)
 {
-    showSelectedDetails();
-}
+    if (!peripheralManager) return;
 
-void PeripheralsWidget::rebuildTable()
-{
-    const int previousRow = devicesTable->currentRow();
-
-    devicesTable->setRowCount(lastSnapshot.size());
-    for (int i = 0; i < lastSnapshot.size(); ++i) {
-        const QJsonObject obj = lastSnapshot.at(i).toObject();
-
-        auto *idItem = new QTableWidgetItem(obj.value("id").toString());
-        auto *typeItem = new QTableWidgetItem(obj.value("type").toString());
-        auto *busItem = new QTableWidgetItem(obj.value("bus_kind").toString());
-        auto *addressItem = new QTableWidgetItem(obj.value("bus_address").toString());
-        auto *statusItem = new QTableWidgetItem(obj.value("status").toString());
-        auto *errorItem = new QTableWidgetItem(obj.value("last_error").toString());
-
-        devicesTable->setItem(i, 0, idItem);
-        devicesTable->setItem(i, 1, typeItem);
-        devicesTable->setItem(i, 2, busItem);
-        devicesTable->setItem(i, 3, addressItem);
-        devicesTable->setItem(i, 4, statusItem);
-        devicesTable->setItem(i, 5, errorItem);
-    }
-
-    if (lastSnapshot.isEmpty()) {
+    // Special RPC calls prefixed with "__rpc:"
+    if (paramName.startsWith("__rpc:")) {
+        const QString method = paramName.mid(6);  // strip "__rpc:"
+        QJsonObject params;
+        if (value.canConvert<QJsonObject>()) {
+            params = value.toJsonObject();
+        }
+        peripheralManager->sendDeviceRpc(deviceId, method, params);
         return;
     }
 
-    int restoreRow = previousRow;
-    if (restoreRow < 0 || restoreRow >= lastSnapshot.size()) {
-        restoreRow = 0;
-    }
-    devicesTable->selectRow(restoreRow);
+    // Normal parameter change
+    peripheralManager->setDeviceParameter(deviceId, paramName, value);
 }
 
-void PeripheralsWidget::showSelectedDetails()
+QString PeripheralsWidget::iconForDeviceType(const QString &type) const
 {
-    const int row = devicesTable->currentRow();
-    if (row < 0 || row >= lastSnapshot.size()) {
-        detailsText->clear();
-        return;
+    const QString lower = type.toLower();
+    if (lower.contains("ssd1306") || lower.contains("display") ||
+        lower.contains("oled") || lower.contains("lcd")) {
+        return "\U0001F4FA";  // TV/display
     }
-
-    const QJsonObject obj = lastSnapshot.at(row).toObject();
-
-    QJsonObject detail;
-    detail["id"] = obj.value("id").toString();
-    detail["type"] = obj.value("type").toString();
-    detail["status"] = obj.value("status").toString();
-    detail["bus"] = QJsonObject{
-        {"kind", obj.value("bus_kind").toString()},
-        {"controller", obj.value("bus_controller").toString()},
-        {"address", obj.value("bus_address").toString()}
-    };
-    detail["capabilities"] = obj.value("capabilities").toObject();
-    detail["state"] = obj.value("state").toObject();
-    detail["raw"] = obj.value("raw").toObject();
-
-    detailsText->setPlainText(QString::fromUtf8(
-        QJsonDocument(detail).toJson(QJsonDocument::Indented)));
+    if (lower.contains("sht") || lower.contains("bme") || lower.contains("sensor") ||
+        lower.contains("temp") || lower.contains("humidity")) {
+        return "\U0001F321";  // thermometer
+    }
+    if (lower.contains("flash") || lower.contains("eeprom") || lower.contains("spi")) {
+        return "\U0001F4BE";  // floppy disk
+    }
+    if (lower.contains("uart") || lower.contains("serial") || lower.contains("loopback")) {
+        return "\U0001F50C";  // plug
+    }
+    return "\U0001F527";  // wrench (generic)
 }

@@ -30,6 +30,13 @@ public:
     void dispatchSpiTransfer(const QJsonObject &request);
     void dispatchUartTx(const QJsonObject &request);
 
+    void sendDeviceRpc(const QString &deviceId,
+                       const QString &method,
+                       const QJsonObject &params = QJsonObject());
+    void setDeviceParameter(const QString &deviceId,
+                            const QString &paramName,
+                            const QVariant &value);
+
     QJsonArray devicesSnapshot() const;
     QString configPath() const;
 

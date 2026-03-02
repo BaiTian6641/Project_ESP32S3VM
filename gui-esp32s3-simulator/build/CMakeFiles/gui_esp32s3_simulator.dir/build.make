@@ -184,10 +184,122 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/PeripheralsWidget.cpp -o CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.s
 
+CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelBase.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/flags.make
+CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelBase.cpp.o: /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/DevicePanelBase.cpp
+CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelBase.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelBase.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelBase.cpp.o -MF CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelBase.cpp.o.d -o CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelBase.cpp.o -c /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/DevicePanelBase.cpp
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelBase.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelBase.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/DevicePanelBase.cpp > CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelBase.cpp.i
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelBase.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelBase.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/DevicePanelBase.cpp -o CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelBase.cpp.s
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelFactory.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/flags.make
+CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelFactory.cpp.o: /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/DevicePanelFactory.cpp
+CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelFactory.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelFactory.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelFactory.cpp.o -MF CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelFactory.cpp.o.d -o CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelFactory.cpp.o -c /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/DevicePanelFactory.cpp
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelFactory.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelFactory.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/DevicePanelFactory.cpp > CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelFactory.cpp.i
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelFactory.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelFactory.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/DevicePanelFactory.cpp -o CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelFactory.cpp.s
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/flags.make
+CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.o: /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/PinConnectionWidget.cpp
+CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.o -MF CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.o.d -o CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.o -c /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/PinConnectionWidget.cpp
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/PinConnectionWidget.cpp > CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.i
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/PinConnectionWidget.cpp -o CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.s
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/DisplayPanel.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/flags.make
+CMakeFiles/gui_esp32s3_simulator.dir/src/DisplayPanel.cpp.o: /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/DisplayPanel.cpp
+CMakeFiles/gui_esp32s3_simulator.dir/src/DisplayPanel.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/gui_esp32s3_simulator.dir/src/DisplayPanel.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gui_esp32s3_simulator.dir/src/DisplayPanel.cpp.o -MF CMakeFiles/gui_esp32s3_simulator.dir/src/DisplayPanel.cpp.o.d -o CMakeFiles/gui_esp32s3_simulator.dir/src/DisplayPanel.cpp.o -c /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/DisplayPanel.cpp
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/DisplayPanel.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/gui_esp32s3_simulator.dir/src/DisplayPanel.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/DisplayPanel.cpp > CMakeFiles/gui_esp32s3_simulator.dir/src/DisplayPanel.cpp.i
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/DisplayPanel.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gui_esp32s3_simulator.dir/src/DisplayPanel.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/DisplayPanel.cpp -o CMakeFiles/gui_esp32s3_simulator.dir/src/DisplayPanel.cpp.s
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/flags.make
+CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.o: /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SensorPanel.cpp
+CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.o -MF CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.o.d -o CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.o -c /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SensorPanel.cpp
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SensorPanel.cpp > CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.i
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SensorPanel.cpp -o CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.s
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/flags.make
+CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.o: /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SpiFlashPanel.cpp
+CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.o -MF CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.o.d -o CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.o -c /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SpiFlashPanel.cpp
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SpiFlashPanel.cpp > CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.i
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/SpiFlashPanel.cpp -o CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.s
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/UartDevicePanel.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/flags.make
+CMakeFiles/gui_esp32s3_simulator.dir/src/UartDevicePanel.cpp.o: /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/UartDevicePanel.cpp
+CMakeFiles/gui_esp32s3_simulator.dir/src/UartDevicePanel.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/gui_esp32s3_simulator.dir/src/UartDevicePanel.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gui_esp32s3_simulator.dir/src/UartDevicePanel.cpp.o -MF CMakeFiles/gui_esp32s3_simulator.dir/src/UartDevicePanel.cpp.o.d -o CMakeFiles/gui_esp32s3_simulator.dir/src/UartDevicePanel.cpp.o -c /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/UartDevicePanel.cpp
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/UartDevicePanel.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/gui_esp32s3_simulator.dir/src/UartDevicePanel.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/UartDevicePanel.cpp > CMakeFiles/gui_esp32s3_simulator.dir/src/UartDevicePanel.cpp.i
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/UartDevicePanel.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gui_esp32s3_simulator.dir/src/UartDevicePanel.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/UartDevicePanel.cpp -o CMakeFiles/gui_esp32s3_simulator.dir/src/UartDevicePanel.cpp.s
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/GenericDevicePanel.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/flags.make
+CMakeFiles/gui_esp32s3_simulator.dir/src/GenericDevicePanel.cpp.o: /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/GenericDevicePanel.cpp
+CMakeFiles/gui_esp32s3_simulator.dir/src/GenericDevicePanel.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/gui_esp32s3_simulator.dir/src/GenericDevicePanel.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gui_esp32s3_simulator.dir/src/GenericDevicePanel.cpp.o -MF CMakeFiles/gui_esp32s3_simulator.dir/src/GenericDevicePanel.cpp.o.d -o CMakeFiles/gui_esp32s3_simulator.dir/src/GenericDevicePanel.cpp.o -c /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/GenericDevicePanel.cpp
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/GenericDevicePanel.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/gui_esp32s3_simulator.dir/src/GenericDevicePanel.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/GenericDevicePanel.cpp > CMakeFiles/gui_esp32s3_simulator.dir/src/GenericDevicePanel.cpp.i
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/GenericDevicePanel.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/gui_esp32s3_simulator.dir/src/GenericDevicePanel.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/src/GenericDevicePanel.cpp -o CMakeFiles/gui_esp32s3_simulator.dir/src/GenericDevicePanel.cpp.s
+
 CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/flags.make
 CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o: /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/backend/QemuController.cpp
 CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o -MF CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o.d -o CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o -c /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/backend/QemuController.cpp
 
 CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.i: cmake_force
@@ -201,7 +313,7 @@ CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.s: cmake_force
 CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/flags.make
 CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.o: /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/backend/PeripheralManager.cpp
 CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.o: CMakeFiles/gui_esp32s3_simulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.o -MF CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.o.d -o CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.o -c /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/backend/PeripheralManager.cpp
 
 CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.i: cmake_force
@@ -222,6 +334,14 @@ gui_esp32s3_simulator_OBJECTS = \
 "CMakeFiles/gui_esp32s3_simulator.dir/src/ControlPanelWidget.cpp.o" \
 "CMakeFiles/gui_esp32s3_simulator.dir/src/DebugWidget.cpp.o" \
 "CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.o" \
+"CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelBase.cpp.o" \
+"CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelFactory.cpp.o" \
+"CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.o" \
+"CMakeFiles/gui_esp32s3_simulator.dir/src/DisplayPanel.cpp.o" \
+"CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.o" \
+"CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.o" \
+"CMakeFiles/gui_esp32s3_simulator.dir/src/UartDevicePanel.cpp.o" \
+"CMakeFiles/gui_esp32s3_simulator.dir/src/GenericDevicePanel.cpp.o" \
 "CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o" \
 "CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.o"
 
@@ -236,6 +356,14 @@ gui_esp32s3_simulator: CMakeFiles/gui_esp32s3_simulator.dir/src/CpuStatusWidget.
 gui_esp32s3_simulator: CMakeFiles/gui_esp32s3_simulator.dir/src/ControlPanelWidget.cpp.o
 gui_esp32s3_simulator: CMakeFiles/gui_esp32s3_simulator.dir/src/DebugWidget.cpp.o
 gui_esp32s3_simulator: CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.o
+gui_esp32s3_simulator: CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelBase.cpp.o
+gui_esp32s3_simulator: CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelFactory.cpp.o
+gui_esp32s3_simulator: CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.o
+gui_esp32s3_simulator: CMakeFiles/gui_esp32s3_simulator.dir/src/DisplayPanel.cpp.o
+gui_esp32s3_simulator: CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.o
+gui_esp32s3_simulator: CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.o
+gui_esp32s3_simulator: CMakeFiles/gui_esp32s3_simulator.dir/src/UartDevicePanel.cpp.o
+gui_esp32s3_simulator: CMakeFiles/gui_esp32s3_simulator.dir/src/GenericDevicePanel.cpp.o
 gui_esp32s3_simulator: CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o
 gui_esp32s3_simulator: CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.o
 gui_esp32s3_simulator: CMakeFiles/gui_esp32s3_simulator.dir/build.make
@@ -247,7 +375,7 @@ gui_esp32s3_simulator: /usr/lib/x86_64-linux-gnu/libGLX.so
 gui_esp32s3_simulator: /usr/lib/x86_64-linux-gnu/libOpenGL.so
 gui_esp32s3_simulator: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.9.2
 gui_esp32s3_simulator: CMakeFiles/gui_esp32s3_simulator.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Linking CXX executable gui_esp32s3_simulator"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Linking CXX executable gui_esp32s3_simulator"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/gui_esp32s3_simulator.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

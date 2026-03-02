@@ -51,7 +51,10 @@ template <> constexpr inline auto PeripheralsWidget::qt_create_metaobjectdata<qt
         "line",
         "onDeviceTraceLine",
         "onManagerMessage",
-        "onTableSelectionChanged"
+        "onPanelParameterChange",
+        "paramName",
+        "QVariant",
+        "value"
     };
 
     QtMocHelpers::UintData qt_methods {
@@ -79,8 +82,10 @@ template <> constexpr inline auto PeripheralsWidget::qt_create_metaobjectdata<qt
         QtMocHelpers::SlotData<void(const QString &)>(12, 2, QMC::AccessPrivate, QMetaType::Void, {{
             { QMetaType::QString, 10 },
         }}),
-        // Slot 'onTableSelectionChanged'
-        QtMocHelpers::SlotData<void()>(13, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'onPanelParameterChange'
+        QtMocHelpers::SlotData<void(const QString &, const QString &, const QVariant &)>(13, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::QString, 9 }, { QMetaType::QString, 14 }, { 0x80000000 | 15, 16 },
+        }}),
     };
     QtMocHelpers::UintData qt_properties {
     };
@@ -113,7 +118,7 @@ void PeripheralsWidget::qt_static_metacall(QObject *_o, QMetaObject::Call _c, in
         case 6: _t->onDeviceLogLine((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
         case 7: _t->onDeviceTraceLine((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
         case 8: _t->onManagerMessage((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 9: _t->onTableSelectionChanged(); break;
+        case 9: _t->onPanelParameterChange((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QVariant>>(_a[3]))); break;
         default: ;
         }
     }

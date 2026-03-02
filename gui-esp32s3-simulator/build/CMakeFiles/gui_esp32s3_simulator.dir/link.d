@@ -10,6 +10,14 @@ gui_esp32s3_simulator: \
   CMakeFiles/gui_esp32s3_simulator.dir/src/ControlPanelWidget.cpp.o \
   CMakeFiles/gui_esp32s3_simulator.dir/src/DebugWidget.cpp.o \
   CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.o \
+  CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelBase.cpp.o \
+  CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelFactory.cpp.o \
+  CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.o \
+  CMakeFiles/gui_esp32s3_simulator.dir/src/DisplayPanel.cpp.o \
+  CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.o \
+  CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.o \
+  CMakeFiles/gui_esp32s3_simulator.dir/src/UartDevicePanel.cpp.o \
+  CMakeFiles/gui_esp32s3_simulator.dir/src/GenericDevicePanel.cpp.o \
   CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o \
   CMakeFiles/gui_esp32s3_simulator.dir/backend/PeripheralManager.cpp.o \
   /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.9.2 \
@@ -200,6 +208,22 @@ CMakeFiles/gui_esp32s3_simulator.dir/src/ControlPanelWidget.cpp.o:
 CMakeFiles/gui_esp32s3_simulator.dir/src/DebugWidget.cpp.o:
 
 CMakeFiles/gui_esp32s3_simulator.dir/src/PeripheralsWidget.cpp.o:
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelBase.cpp.o:
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/DevicePanelFactory.cpp.o:
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/PinConnectionWidget.cpp.o:
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/DisplayPanel.cpp.o:
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/SensorPanel.cpp.o:
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/SpiFlashPanel.cpp.o:
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/UartDevicePanel.cpp.o:
+
+CMakeFiles/gui_esp32s3_simulator.dir/src/GenericDevicePanel.cpp.o:
 
 CMakeFiles/gui_esp32s3_simulator.dir/backend/QemuController.cpp.o:
 

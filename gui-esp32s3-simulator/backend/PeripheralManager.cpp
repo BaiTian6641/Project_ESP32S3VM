@@ -343,6 +343,42 @@ void PeripheralManager::refreshStates()
     }
 }
 
+void PeripheralManager::sendDeviceRpc(const QString &deviceId,
+                                      const QString &method,
+                                      const QJsonObject &params)
+{
+    for (DeviceRuntime *device : devices) {
+        if (device->id == deviceId) {
+            if (device->process && device->process->state() == QProcess::Running) {
+                sendRpc(device, method, params, true);
+            } else {
+                emit managerMessage(QString("[Peripherals] %1 not running, cannot call %2")
+                                    .arg(deviceId, method));
+            }
+            return;
+        }
+    }
+    emit managerMessage(QString("[Peripherals] device not found: %1").arg(deviceId));
+}
+
+void PeripheralManager::setDeviceParameter(const QString &deviceId,
+                                           const QString &paramName,
+                                           const QVariant &value)
+{
+    QJsonObject params;
+    params["name"] = paramName;
+    if (value.typeId() == QMetaType::Bool) {
+        params["value"] = value.toBool();
+    } else if (value.typeId() == QMetaType::Double || value.typeId() == QMetaType::Float) {
+        params["value"] = value.toDouble();
+    } else if (value.typeId() == QMetaType::Int || value.typeId() == QMetaType::LongLong) {
+        params["value"] = value.toInt();
+    } else {
+        params["value"] = value.toString();
+    }
+    sendDeviceRpc(deviceId, "set_parameter", params);
+}
+
 QJsonArray PeripheralManager::devicesSnapshot() const
 {
     QJsonArray out;

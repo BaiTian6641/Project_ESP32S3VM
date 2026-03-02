@@ -448,6 +448,14 @@ CMakeFiles/gui_esp32s3_simulator.dir/gui_esp32s3_simulator_autogen/mocs_compilat
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/CpuStatusWidget.h \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_DebugWidget.cpp \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/DebugWidget.h \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_DevicePanelBase.cpp \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/DevicePanelBase.h \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_DisplayPanel.cpp \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/DisplayPanel.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QImage \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qimage.h \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_GenericDevicePanel.cpp \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/GenericDevicePanel.h \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_MainWindow.cpp \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/MainWindow.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QMainWindow \
@@ -456,5 +464,13 @@ CMakeFiles/gui_esp32s3_simulator.dir/gui_esp32s3_simulator_autogen/mocs_compilat
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtabwidget.h \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_PeripheralsWidget.cpp \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/PeripheralsWidget.h \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_PinConnectionWidget.cpp \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/PinConnectionWidget.h \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_SensorPanel.cpp \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/SensorPanel.h \
  /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_SerialConsoleWidget.cpp \
- /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/SerialConsoleWidget.h
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/SerialConsoleWidget.h \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_SpiFlashPanel.cpp \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/SpiFlashPanel.h \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/moc_UartDevicePanel.cpp \
+ /home/polar/Project_ESP32S3VM/gui-esp32s3-simulator/build/gui_esp32s3_simulator_autogen/UVLADIE3JM/../../../src/UartDevicePanel.h

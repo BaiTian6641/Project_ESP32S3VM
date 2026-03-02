@@ -1,58 +1,161 @@
-# GUI ESP32-S3 Simulator Architecture (Simple MVP)
+# GUI ESP32-S3 Simulator Architecture
 
 ## Target stack
-- Linux
+- Linux / Windows
 - Qt6 Widgets frontend
 - QEMU ESP32-S3 backend runtime
 
-## MVP UI requirements implemented
-1. Basic Serial panel (default UART0)
-2. Processor Status panel
-   - PC
-   - Scalar registers
-   - Vector registers
-   - Memory inspect table
-   - Live refresh mode
-   - Pause / Continue / Step PC
-   - Breakpoint add / clear
-3. Basic Control panel
-   - Reset
-   - Boot mode
-   - Firmware file loading
-4. Dedicated Debug panel
-   - GDB enable/disable
-   - GDB port and wait-for-attach
-   - Pause / Continue / Step PC
-   - Breakpoint add / clear
+---
+
+## UI Architecture
+
+### Main Window Tabs
+1. **Serial** — UART0 console with full serial-port settings
+2. **Processor Status** — PC, registers, memory inspect, live/step/breakpoint controls
+3. **Control** — Reset, boot mode, firmware loading, SPI flash, PSRAM, MAC, chip revision
+4. **Debug** — GDB enable/disable, port, wait-for-attach, one-click launch
+5. **Peripherals** — Dynamic per-device panel tabs with pin wiring diagrams
+
+### Peripherals Tab — Device Panel System
+The Peripherals tab uses a **per-device panel architecture**: each loaded
+peripheral device gets its own dedicated tab inside the Peripherals view.
+Panels are created dynamically by a factory based on device type.
+
+```
+PeripheralsWidget
+├── Config toolbar (Browse / Load / Start all / Stop all / Refresh)
+├── Device count label
+├── QTabWidget (one tab per device)
+│   ├── [📺 screen0] → DisplayPanel (ScrollArea)
+│   │   ├── PinConnectionWidget (I²C bus, GPIO8-SDA ↔ SSD1306, GPIO9-SCL ↔ SSD1306)
+│   │   ├── Screen Output (live framebuffer rendering, zoom 1-8x)
+│   │   ├── Display Controls (on/off, invert, contrast slider)
+│   │   └── Device Log
+│   ├── [🌡 temp0] → SensorPanel (ScrollArea)
+│   │   ├── PinConnectionWidget (I²C bus, GPIO8-SDA ↔ SHT21, GPIO9-SCL ↔ SHT21)
+│   │   ├── Live Telemetry (large font: temperature °C, humidity %RH)
+│   │   ├── Sensor Controls (spin boxes, progress bars, mode selector)
+│   │   ├── CSV Playback (start/pause/stop, index counter)
+│   │   └── Device Log
+│   ├── [💾 spiflash0] → SpiFlashPanel (ScrollArea)
+│   │   ├── PinConnectionWidget (SPI bus, GPIO10-CS → W25Q, GPIO11-MOSI → ...)
+│   │   ├── Flash Info (size, R/W/erase stats)
+│   │   ├── Memory Contents (hex viewer with address navigation)
+│   │   └── Device Log
+│   └── [🔌 uart-loop0] → UartDevicePanel (ScrollArea)
+│       ├── PinConnectionWidget (UART bus, GPIO17-TX → LOOPBACK, GPIO18-RX ← LOOPBACK)
+│       ├── UART Configuration (115200 8N1)
+│       ├── Traffic Monitor (scrolling TX/RX log with send bar)
+│       └── Device Log
+└── Global log (manager messages + all device output)
+```
+
+### Pin Connection Widget
+Every device panel includes a **PinConnectionWidget** at the top that shows:
+- Bus type and controller (e.g. "I²C bus I2C0 addr: 0x3c")
+- Each signal's GPIO wiring: `ESP32-S3 │ GPIO8 │ ↔ │ SDA │ SSD1306`
+- Direction arrows: → (output from ESP32), ← (input to ESP32), ↔ (bidirectional)
+- Electrical info: VIO voltage, pull-up resistance
+- Bus speed: clock frequency, baud rate, SPI mode
+
+### Device Panel Types
+
+| Panel Class | Device Types | Key Features |
+|-------------|-------------|--------------|
+| `DisplayPanel` | SSD1306, SH1106, ST7789, ILI9341, any OLED/LCD | Live screen rendering from framebuffer data, contrast/invert controls, zoom |
+| `SensorPanel` | SHT21, BME280, DHT22, MPU6050, any sensor | Real-time telemetry display, manual value injection, CSV playback |
+| `SpiFlashPanel` | W25Q, AT25, any SPI NOR flash, EEPROM | Hex viewer, read/write stats, address navigation |
+| `UartDevicePanel` | UART loopback, GPS, modem, any UART device | Traffic monitor, TX/RX display, send bar |
+| `GenericDevicePanel` | Any unrecognized type (fallback) | Raw JSON state/capabilities viewer |
+
+### Device Panel Factory
+`DevicePanelFactory::createPanel()` selects the correct panel class by matching:
+1. Device `type` field (e.g. "ssd1306", "sht21")
+2. `compatible` array (e.g. ["solomon,ssd1306"])
+3. Bus kind (e.g. "uart" → UartDevicePanel)
+4. Falls back to `GenericDevicePanel`
+
+---
 
 ## Runtime split
-- Frontend (Qt): view and user interaction
-- Backend controller: QEMU process control + QMP/monitor integration point
-- Peripheral hooks: external device simulators described by JSON config
+- **Frontend (Qt)**: view and user interaction — all widgets
+- **Backend controller**: QEMU process control + QMP/monitor integration
+- **Peripheral Manager**: JSON config loading, process lifecycle, JSON-RPC bridge
+- **Device Simulators**: external Python processes (SSD1306, SHT21, SPI flash, UART loopback)
 
-## GDB support review status
-- Codebase support is present for Xtensa/ESP32-S3 gdbstub:
-   - Xtensa target includes gdbstub source and hooks for read/write registers.
-   - ESP32-S3 core includes a dedicated gdb register map configuration.
-   - Built qemu-system-xtensa exposes runtime options: -s, -S, -gdb.
-- Practical note from local smoke run:
-   - Launching esp32s3 without a full firmware/flash setup currently segfaults in this environment.
-   - This crash reproduces both with and without -gdb flags, so it is not a gdbstub-specific failure.
+## Peripheral Simulator Protocol
+- Transport: JSON-RPC 2.0 over stdio (one JSON object per line)
+- Core methods: `get_capabilities`, `get_state`, `set_parameter`, `ping`
+- Bus methods: `i2c_transfer`, `spi_transfer`, `uart_tx`, `uart_set_line`
+- Notifications (sim → GUI): `telemetry`, `frame_update`, `uart_rx`, `playback_finished`
+- Parameter changes from panel UI → `set_parameter` RPC → simulator process
 
-## GUI GDB integration status
-- Implemented in backend launch path:
-   - Optional `-gdb tcp::<port>`
-   - Optional `-S` for wait mode
-- Exposed in Debug tab for user configuration at runtime.
-- One-click flow available:
-   - Pick firmware in Debug tab
-   - Start QEMU with gdbstub enabled
-   - Show exact attach command string to user
+## GDB support
+- Codebase includes Xtensa/ESP32-S3 gdbstub
+- Runtime options: `-s`, `-S`, `-gdb tcp::<port>`
+- Debug tab provides one-click workflow with attach command
 
-## Next integration steps
-- Serial panel is wired to QEMU stdio (UART0 simple path)
-- Harden QMP snapshot polling and command error handling
-- Improve register parser fidelity for Xtensa vector naming/format
-- Implement real strap-level boot mode wiring
-- Parse peripherals.example.json and spawn simulator processes
-- Route bus transactions between QEMU and external simulators
+## Data flow: Panel ↔ Simulator
+
+```
+User adjusts slider in SensorPanel
+  └→ parameterChangeRequested signal
+     └→ PeripheralsWidget::onPanelParameterChange
+        └→ PeripheralManager::setDeviceParameter
+           └→ sendRpc("set_parameter", {"name":"temperature_c","value":30.0})
+              └→ Python simulator process (stdin)
+                 └→ Process returns JSON result (stdout)
+                    └→ PeripheralManager::handleJsonMessage
+                       └→ devicesChanged signal
+                          └→ PeripheralsWidget::updateDevicePanels
+                             └→ SensorPanel::updateState (UI refreshes)
+
+Simulator periodically emits telemetry notification:
+  └→ {"jsonrpc":"2.0","method":"telemetry","params":{"temperature_c":27.5}}
+     └→ PeripheralManager::handleJsonMessage
+        └→ device->state["telemetry"] = params
+        └→ devicesChanged signal
+           └→ SensorPanel::updateState (telemetry label updates)
+```
+
+## File structure (new panel system)
+
+```
+src/
+├── MainWindow.h/cpp           # Main window with tab widget
+├── SerialConsoleWidget.h/cpp  # UART0 serial console
+├── CpuStatusWidget.h/cpp     # Processor status + debug controls
+├── ControlPanelWidget.h/cpp   # Firmware/boot/flash/PSRAM controls
+├── DebugWidget.h/cpp          # GDB integration tab
+├── PeripheralsWidget.h/cpp    # Peripheral management + device tab container
+├── DevicePanelBase.h/cpp      # Abstract base for all device panels
+├── DevicePanelFactory.h/cpp   # Creates correct panel type from device config
+├── PinConnectionWidget.h/cpp  # GPIO pin wiring diagram widget
+├── DisplayPanel.h/cpp         # OLED/LCD screen panel (framebuffer renderer)
+├── SensorPanel.h/cpp          # Sensor telemetry panel (temp, humidity, etc.)
+├── SpiFlashPanel.h/cpp        # SPI flash hex viewer panel
+├── UartDevicePanel.h/cpp      # UART device traffic panel
+└── GenericDevicePanel.h/cpp   # Fallback raw-JSON panel
+
+backend/
+├── QemuController.h/cpp       # QEMU process + QMP + UART PTY
+└── PeripheralManager.h/cpp    # Device process lifecycle + JSON-RPC bridge
+
+device-sims/
+├── jsonrpc_stdio.py           # JSON-RPC base server
+├── ssd1306_sim.py             # SSD1306 OLED display simulator
+├── sht21_sim.py               # SHT21 temp/humidity sensor simulator
+├── spi_mem_sim.py             # SPI NOR flash simulator
+└── uart_loopback_sim.py       # UART loopback simulator
+
+peripherals/
+├── peripherals.schema.json    # JSON schema for device config
+└── peripherals.example.json   # Example config with 4 devices
+```
+
+## Next steps
+- Route bus transactions between QEMU and external simulators via bridge signals
+- Add color LCD panel support (RGB565, RGB888 pixel formats)
+- Add accelerometer / IMU panel with 3D orientation visualization
+- Add GPIO panel for bare pin toggling and LED simulation
+- Support hot-plugging devices while QEMU is running

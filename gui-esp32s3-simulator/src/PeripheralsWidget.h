@@ -1,15 +1,24 @@
 #pragma once
 
+#include <QHash>
 #include <QJsonArray>
 #include <QWidget>
 
+class DevicePanelBase;
 class PeripheralManager;
+class QLabel;
 class QLineEdit;
 class QPushButton;
-class QTableWidget;
+class QScrollArea;
+class QSplitter;
+class QTabWidget;
 class QTextEdit;
-class QTableWidgetItem;
+class QVBoxLayout;
 
+/// Peripherals tab: shows a config toolbar at the top, then a tabbed area
+/// where each loaded device gets its own dedicated panel (display screen,
+/// sensor gauges, SPI hex view, UART terminal, etc.) with pin-connection
+/// wiring diagrams.
 class PeripheralsWidget : public QWidget
 {
     Q_OBJECT
@@ -30,15 +39,20 @@ private slots:
     void onDeviceLogLine(const QString &deviceId, const QString &line);
     void onDeviceTraceLine(const QString &deviceId, const QString &line);
     void onManagerMessage(const QString &line);
-    void onTableSelectionChanged();
+
+    void onPanelParameterChange(const QString &deviceId,
+                                const QString &paramName,
+                                const QVariant &value);
 
 private:
-    void rebuildTable();
-    void showSelectedDetails();
+    void rebuildDevicePanels();
+    void updateDevicePanels();
+    QString iconForDeviceType(const QString &type) const;
 
     PeripheralManager *peripheralManager = nullptr;
     QJsonArray lastSnapshot;
 
+    // Controls bar
     QLineEdit *configPathEdit = nullptr;
     QPushButton *browseButton = nullptr;
     QPushButton *loadButton = nullptr;
@@ -46,7 +60,11 @@ private:
     QPushButton *stopButton = nullptr;
     QPushButton *refreshButton = nullptr;
 
-    QTableWidget *devicesTable = nullptr;
-    QTextEdit *detailsText = nullptr;
+    // Device panel tabs
+    QTabWidget *deviceTabWidget = nullptr;
+    QHash<QString, DevicePanelBase *> devicePanels;  // deviceId -> panel
+
+    // Global log
     QTextEdit *logText = nullptr;
+    QLabel *deviceCountLabel = nullptr;
 };

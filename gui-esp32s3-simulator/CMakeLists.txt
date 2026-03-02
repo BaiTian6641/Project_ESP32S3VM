@@ -23,6 +23,22 @@ add_executable(gui_esp32s3_simulator
     src/DebugWidget.cpp
     src/PeripheralsWidget.h
     src/PeripheralsWidget.cpp
+    src/DevicePanelBase.h
+    src/DevicePanelBase.cpp
+    src/DevicePanelFactory.h
+    src/DevicePanelFactory.cpp
+    src/PinConnectionWidget.h
+    src/PinConnectionWidget.cpp
+    src/DisplayPanel.h
+    src/DisplayPanel.cpp
+    src/SensorPanel.h
+    src/SensorPanel.cpp
+    src/SpiFlashPanel.h
+    src/SpiFlashPanel.cpp
+    src/UartDevicePanel.h
+    src/UartDevicePanel.cpp
+    src/GenericDevicePanel.h
+    src/GenericDevicePanel.cpp
     backend/QemuController.h
     backend/QemuController.cpp
     backend/PeripheralManager.h
