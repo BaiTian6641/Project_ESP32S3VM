@@ -442,6 +442,12 @@ jobs:
               "/mingw64/bin"
               "/ucrt64/bin"
               "/clang64/bin"
+              "/c/msys64/mingw64/bin"
+              "/c/msys64/ucrt64/bin"
+              "/c/msys64/clang64/bin"
+              "/d/msys64/mingw64/bin"
+              "/d/msys64/ucrt64/bin"
+              "/d/msys64/clang64/bin"
               "${{ env.QEMU_DIR }}/build"
               "$PKG_ROOT/qemu"
             )
@@ -461,6 +467,16 @@ jobs:
                   break
                 fi
               done
+
+              if [[ -z "$found" ]]; then
+                for root in "/c/msys64" "/d/msys64"; do
+                  [[ -d "$root" ]] || continue
+                  found="$(find "$root" -type f -iname "$dep" -print -quit 2>/dev/null || true)"
+                  if [[ -n "$found" ]]; then
+                    break
+                  fi
+                done
+              fi
 
               printf '%s' "$found"
             }
@@ -511,6 +527,8 @@ jobs:
               # Resolve missing deps reported as "name.dll => not found".
               while IFS= read -r dep; do
                 [[ -z "$dep" ]] && continue
+                dep="${dep//$'\r'/}"
+                dep="${dep//$'\n'/}"
                 case "$dep" in
                   api-ms-win-*|ext-ms-win-*)
                     # Windows API-set pseudo DLLs are forwarded by the loader.
@@ -549,6 +567,10 @@ jobs:
             fi
 
             # Helpful visibility in CI logs.
+            echo "[Windows package] msys runtime search roots:" 
+            for d in "${SEARCH_DIRS[@]}"; do
+              [[ -d "$d" ]] && echo "  - $d"
+            done
             ls -1 "$PKG_ROOT/qemu"/*.dll 2>/dev/null | sed 's#^.*/##' | sort -u || true
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             cp "${{ env.QEMU_DIR }}/build/qemu-system-xtensa" "$PKG_ROOT/qemu/"
