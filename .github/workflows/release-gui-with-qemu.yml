@@ -580,6 +580,23 @@ jobs:
           cp gui-esp32s3-simulator/README.md "$PKG_ROOT/README.gui.md"
 
           mkdir -p "$PKG_ROOT/qemu"
+
+          # Bundle QEMU data files (ROM binaries) so the machine model can find them.
+          # The GUI launcher passes -L <datadir> pointing to qemu/share/qemu/.
+          mkdir -p "$PKG_ROOT/qemu/share/qemu"
+          if [[ -f "${{ env.QEMU_DIR }}/pc-bios/esp32s3_rev0_rom.bin" ]]; then
+            cp "${{ env.QEMU_DIR }}/pc-bios/esp32s3_rev0_rom.bin" "$PKG_ROOT/qemu/share/qemu/"
+            echo "[package] bundled esp32s3_rev0_rom.bin from pc-bios"
+          elif [[ -f "${{ env.QEMU_DIR }}/build/pc-bios/esp32s3_rev0_rom.bin" ]]; then
+            cp "${{ env.QEMU_DIR }}/build/pc-bios/esp32s3_rev0_rom.bin" "$PKG_ROOT/qemu/share/qemu/"
+            echo "[package] bundled esp32s3_rev0_rom.bin from build/pc-bios"
+          elif [[ -f "${{ env.QEMU_DIR }}/build/share/qemu/esp32s3_rev0_rom.bin" ]]; then
+            cp "${{ env.QEMU_DIR }}/build/share/qemu/esp32s3_rev0_rom.bin" "$PKG_ROOT/qemu/share/qemu/"
+            echo "[package] bundled esp32s3_rev0_rom.bin from build/share/qemu"
+          else
+            echo "::warning::esp32s3_rev0_rom.bin not found; .bin firmware loading will fail"
+          fi
+
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             # Prefer QEMU + DLLs pre-staged by the MSYS2 step (correct MINGW64 context).
             if [[ -d "qemu-dll-staging" ]]; then

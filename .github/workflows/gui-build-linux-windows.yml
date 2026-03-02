@@ -155,10 +155,30 @@ jobs:
           cp gui-esp32s3-simulator/README.md "$PKG_ROOT/README.gui.md"
 
           QEMU_STATUS_FILE="$PKG_ROOT/qemu-binary-status.txt"
+
+          # Bundle QEMU ROM data files when the QEMU binary is available.
+          bundle_qemu_rom() {
+            local qemu_dir="$1"
+            local dest="$2"
+            mkdir -p "$dest/share/qemu"
+            for src in "$qemu_dir/pc-bios/esp32s3_rev0_rom.bin" \
+                       "$qemu_dir/build/pc-bios/esp32s3_rev0_rom.bin" \
+                       "$qemu_dir/build/share/qemu/esp32s3_rev0_rom.bin"; do
+              if [[ -f "$src" ]]; then
+                cp "$src" "$dest/share/qemu/"
+                echo "[package] bundled esp32s3_rev0_rom.bin"
+                return 0
+              fi
+            done
+            echo "::warning::esp32s3_rev0_rom.bin not found"
+            return 1
+          }
+
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             if [[ -f "qemu/build/qemu-system-xtensa.exe" ]]; then
               mkdir -p "$PKG_ROOT/qemu"
               cp "qemu/build/qemu-system-xtensa.exe" "$PKG_ROOT/qemu/"
+              bundle_qemu_rom "qemu" "$PKG_ROOT/qemu"
               echo "included=qemu/build/qemu-system-xtensa.exe" > "$QEMU_STATUS_FILE"
             else
               echo "included=none" > "$QEMU_STATUS_FILE"
@@ -194,6 +214,7 @@ jobs:
               mkdir -p "$PKG_ROOT/qemu"
               cp "qemu/build/qemu-system-xtensa" "$PKG_ROOT/qemu/"
               chmod +x "$PKG_ROOT/qemu/qemu-system-xtensa"
+              bundle_qemu_rom "qemu" "$PKG_ROOT/qemu"
               echo "included=qemu/build/qemu-system-xtensa" > "$QEMU_STATUS_FILE"
             else
               echo "included=none" > "$QEMU_STATUS_FILE"

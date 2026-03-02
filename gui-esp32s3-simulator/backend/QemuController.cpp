@@ -7,7 +7,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QLocalSocket>
+#include <QTcpSocket>
 #include <QProcess>
 #include <QRegularExpression>
 #include <QSocketNotifier>
@@ -80,8 +80,9 @@ static speed_t baudToSpeed(int baud)
 QemuController::QemuController(QObject *parent)
     : QObject(parent),
       qemuProcess(new QProcess(this)),
-            qmpSocket(new QLocalSocket(this)),
+            qmpTcpSocket(new QTcpSocket(this)),
             liveTimer(new QTimer(this)),
+            qmpPort(0),
             bootMode(0),
             memoryInspectBase("0x3FC80000"),
             qmpReady(false),
@@ -179,12 +180,12 @@ QemuController::QemuController(QObject *parent)
                 emit qemuStopped();
             });
 
-    connect(qmpSocket, &QLocalSocket::connected, this, [this]() {
+    connect(qmpTcpSocket, &QTcpSocket::connected, this, [this]() {
         emit debugMessageReceived("[QMP] connected");
     });
 
-    connect(qmpSocket, &QLocalSocket::readyRead, this, [this]() {
-        const QByteArray bytes = qmpSocket->readAll();
+    connect(qmpTcpSocket, &QTcpSocket::readyRead, this, [this]() {
+        const QByteArray bytes = qmpTcpSocket->readAll();
         if (bytes.isEmpty()) {
             return;
         }
@@ -192,7 +193,7 @@ QemuController::QemuController(QObject *parent)
         processQmpBuffer();
     });
 
-    connect(qmpSocket, &QLocalSocket::errorOccurred, this, [this](QLocalSocket::LocalSocketError e) {
+    connect(qmpTcpSocket, &QTcpSocket::errorOccurred, this, [this](QAbstractSocket::SocketError e) {
         emit debugMessageReceived(QString("[QMP] socket error: %1").arg(static_cast<int>(e)));
     });
 
@@ -646,14 +647,20 @@ void QemuController::startQemuWithFirmware(const QString &firmwarePath)
             << "-serial" << "stdio"
          ;
 
-#if !defined(Q_OS_WIN)
-    QFile::remove(qmpSocketPath());
-    args << "-qmp" << QString("unix:%1,server=on,wait=off").arg(qmpSocketPath());
-#else
-    emit debugMessageReceived("[QMP] disabled on Windows in this build; CPU debug controls are unavailable");
-#endif
+    /* QMP over TCP — works on all platforms (replaces Unix-only local socket). */
+    qmpPort = static_cast<quint16>(45454 + (QCoreApplication::applicationPid() % 10000));
+    args << "-qmp" << QString("tcp:127.0.0.1:%1,server=on,wait=off").arg(qmpPort);
 
     args[1] = machineArg;
+
+    /* Resolve QEMU data directory so the machine model can find esp32s3_rev0_rom.bin. */
+    const QString dataDir = resolveQemuDataDir();
+    if (!dataDir.isEmpty()) {
+        args << "-L" << dataDir;
+        emit debugMessageReceived(QString("[QEMU] data dir: %1").arg(dataDir));
+    } else {
+        emit debugMessageReceived("[QEMU] warning: QEMU data directory not found; .bin firmware may fail with 'missing -bios'");
+    }
 
     if (psramEnabled) {
         args << "-m" << QString("%1M").arg(psramSizeMB);
@@ -1093,28 +1100,24 @@ bool QemuController::ingestBridgeEventLine(const QString &line)
 
 void QemuController::connectQmp()
 {
-#if defined(Q_OS_WIN)
-    return;
-#endif
-
     if (qemuProcess->state() != QProcess::Running) {
         return;
     }
-    if (qmpSocket->state() == QLocalSocket::ConnectedState) {
+    if (qmpTcpSocket->state() == QAbstractSocket::ConnectedState) {
         return;
     }
 
     qmpBuffer.clear();
     qmpReady = false;
-    qmpSocket->abort();
-    qmpSocket->connectToServer(qmpSocketPath());
+    qmpTcpSocket->abort();
+    qmpTcpSocket->connectToHost(QStringLiteral("127.0.0.1"), qmpPort);
 }
 
 void QemuController::disconnectQmp()
 {
     qmpReady = false;
     liveTimer->stop();
-    qmpSocket->abort();
+    qmpTcpSocket->abort();
     qmpBuffer.clear();
     pendingSnapshotCb = -1;
     pendingRegsCb = -1;
@@ -1197,7 +1200,7 @@ void QemuController::sendQmpCommand(const QString &execute,
                                     const QJsonObject &arguments,
                                     int callbackId)
 {
-    if (qmpSocket->state() != QLocalSocket::ConnectedState) {
+    if (qmpTcpSocket->state() != QAbstractSocket::ConnectedState) {
         return;
     }
 
@@ -1211,8 +1214,8 @@ void QemuController::sendQmpCommand(const QString &execute,
     }
 
     const QByteArray data = QJsonDocument(obj).toJson(QJsonDocument::Compact) + "\n";
-    qmpSocket->write(data);
-    qmpSocket->flush();
+    qmpTcpSocket->write(data);
+    qmpTcpSocket->flush();
 }
 
 void QemuController::pollLiveState()
@@ -1220,9 +1223,49 @@ void QemuController::pollLiveState()
     requestCpuSnapshot();
 }
 
-QString QemuController::qmpSocketPath() const
+QString QemuController::resolveQemuDataDir() const
 {
-    return QDir::tempPath() + QString("/esp32s3_gui_qmp_%1.sock").arg(QCoreApplication::applicationPid());
+    if (qemuBinaryPath.isEmpty()) {
+        return QString();
+    }
+
+    const QString binDir = QFileInfo(qemuBinaryPath).absolutePath();
+    const QString romName = QStringLiteral("esp32s3_rev0_rom.bin");
+
+    /* Search candidate directories where the ROM binary might live.
+       Covers: packaged layout, standard QEMU install, and source build tree. */
+    const QStringList candidates = {
+        QDir::cleanPath(binDir + "/share/qemu"),
+        QDir::cleanPath(binDir + "/../share/qemu"),
+        QDir::cleanPath(binDir + "/../pc-bios"),
+        QDir::cleanPath(binDir + "/../../pc-bios"),
+        binDir,
+    };
+
+    for (const QString &dir : candidates) {
+        if (QFileInfo::exists(QDir::cleanPath(dir + "/" + romName))) {
+            return QFileInfo(dir).absoluteFilePath();
+        }
+    }
+
+    /* Fall back to app directory based search (similar to resolveQemuBinary). */
+    const QString appDir = QCoreApplication::applicationDirPath();
+    const QStringList appCandidates = {
+        QDir::cleanPath(appDir + "/qemu/share/qemu"),
+        QDir::cleanPath(appDir + "/../qemu/share/qemu"),
+        QDir::cleanPath(appDir + "/../../qemu/pc-bios"),
+        QDir::cleanPath(appDir + "/../../../qemu/pc-bios"),
+        QDir::cleanPath(QDir::currentPath() + "/../qemu/pc-bios"),
+        QDir::cleanPath(QDir::currentPath() + "/../../qemu/pc-bios"),
+    };
+
+    for (const QString &dir : appCandidates) {
+        if (QFileInfo::exists(QDir::cleanPath(dir + "/" + romName))) {
+            return QFileInfo(dir).absoluteFilePath();
+        }
+    }
+
+    return QString();
 }
 
 void QemuController::parseRegisterDump(const QString &dump,

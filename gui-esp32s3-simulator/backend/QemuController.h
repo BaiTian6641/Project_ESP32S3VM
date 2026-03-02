@@ -8,7 +8,7 @@
 #include <QSet>
 
 class QProcess;
-class QLocalSocket;
+class QTcpSocket;
 class QTimer;
 class QSocketNotifier;
 
@@ -93,7 +93,7 @@ private:
     void pushI2cBridgeAddresses(int busIndex);
     void pushAllI2cBridgeAddresses();
     void pollLiveState();
-    QString qmpSocketPath() const;
+    QString resolveQemuDataDir() const;
     void parseRegisterDump(const QString &dump,
                            QString &pcText,
                            QStringList &scalars,
@@ -101,8 +101,9 @@ private:
     QStringList parseMemoryDump(const QString &dump) const;
 
     QProcess *qemuProcess;
-    QLocalSocket *qmpSocket;
+    QTcpSocket *qmpTcpSocket;
     QTimer *liveTimer;
+    quint16 qmpPort;
     int bootMode;
     QString pendingFirmware;
     QString serialBuffer;
