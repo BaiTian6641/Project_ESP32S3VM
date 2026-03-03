@@ -597,7 +597,7 @@ void PeripheralManager::dispatchSpiTransfer(const QJsonObject &request)
 
         /* Accumulate into the per-device batch, merging consecutive same-DC entries */
         auto &queue = spiAccum[device];
-        if (!queue.isEmpty() && queue.last().dc == dc) {
+        if (dc >= 0 && !queue.isEmpty() && queue.last().dc == dc) {
             /* Merge into previous entry */
             QJsonArray &prev = queue.last().tx;
             for (const QJsonValue &v : tx) {
