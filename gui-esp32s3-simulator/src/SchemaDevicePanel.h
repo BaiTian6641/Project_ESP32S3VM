@@ -4,6 +4,7 @@
 
 #include <QHash>
 #include <QImage>
+#include <QTimer>
 
 class QFormLayout;
 class QLabel;
@@ -55,6 +56,8 @@ private:
 
     void rebuildDisplayView(const QJsonObject &panelObj);
     void updateDisplayView(const QJsonObject &state);
+    void scheduleRender();
+    void doCoalescedRender();
     void renderDisplayBuffer(const QJsonObject &bufferObj);
     void renderPageMajorMono(const QList<int> &data, int w, int h);
     QImage scaleForDisplay(const QImage &source) const;
@@ -99,6 +102,10 @@ private:
     QString m_scriptRuntimeStateKey = "panel_runtime";
     bool m_scriptFallbackToSetParameter = true;
     QByteArray m_lastScriptStatePayload;
+    QByteArray m_lastStateHash;             // avoid redundant QTextEdit updates
+
+    QTimer m_renderTimer;                    // coalesce rapid display updates
+    bool m_renderPending = false;
 
     QHash<QString, ControlBinding> m_bindings;
     QHash<QString, QFormLayout *> m_sectionLayouts;

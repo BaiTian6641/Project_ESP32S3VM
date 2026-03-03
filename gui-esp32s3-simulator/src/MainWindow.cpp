@@ -88,8 +88,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(peripheralManager, &PeripheralManager::bridgeResponseReady,
             controller, &QemuController::handleBridgeResponse);
 
-    /* When peripheral config changes (reload, etc.), re-sync bridge addresses */
-    connect(peripheralManager, &PeripheralManager::devicesChanged,
+    /* When peripheral config changes (reload, start, stop), re-sync bridge addresses.
+     * Use deviceSetChanged (not devicesChanged) to avoid re-pushing addresses
+     * on every 500ms state-poll cycle — a major performance bottleneck. */
+    connect(peripheralManager, &PeripheralManager::deviceSetChanged,
             this, &MainWindow::syncI2cBridgeAddresses);
 
         /* Ensure sims are up once wiring is complete */

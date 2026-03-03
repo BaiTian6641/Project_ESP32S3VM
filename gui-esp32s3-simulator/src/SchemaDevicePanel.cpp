@@ -44,6 +44,11 @@ SchemaDevicePanel::SchemaDevicePanel(const QString &deviceId,
     : DevicePanelBase(deviceId, deviceType, rawConfig, parent)
 {
     buildBaseUi();
+
+    // Coalesce rapid display updates — fires at most every 50ms
+    m_renderTimer.setSingleShot(true);
+    m_renderTimer.setInterval(50);
+    connect(&m_renderTimer, &QTimer::timeout, this, &SchemaDevicePanel::doCoalescedRender);
 }
 
 void SchemaDevicePanel::buildBaseUi()
@@ -248,12 +253,32 @@ void SchemaDevicePanel::updateDisplayView(const QJsonObject &state)
     const QVariant fallbackBuffer = valueFromPath(state, m_frameFallbackKey);
 
     if (primaryBuffer.isValid() && primaryBuffer.canConvert<QVariantMap>()) {
-        renderDisplayBuffer(QJsonObject::fromVariantMap(primaryBuffer.toMap()));
+        m_lastDisplayBuffer = QJsonObject::fromVariantMap(primaryBuffer.toMap());
+        scheduleRender();
     } else if (fallbackBuffer.isValid() && fallbackBuffer.canConvert<QVariantMap>()) {
-        renderDisplayBuffer(QJsonObject::fromVariantMap(fallbackBuffer.toMap()));
+        m_lastDisplayBuffer = QJsonObject::fromVariantMap(fallbackBuffer.toMap());
+        scheduleRender();
     } else if (visualStateChanged && !m_lastDisplayBuffer.isEmpty()) {
-        renderDisplayBuffer(m_lastDisplayBuffer);
+        scheduleRender();
     }
+}
+
+void SchemaDevicePanel::scheduleRender()
+{
+    m_renderPending = true;
+    if (!m_renderTimer.isActive()) {
+        m_renderTimer.start();
+    }
+}
+
+void SchemaDevicePanel::doCoalescedRender()
+{
+    if (!m_renderPending || m_lastDisplayBuffer.isEmpty()) {
+        m_renderPending = false;
+        return;
+    }
+    m_renderPending = false;
+    renderDisplayBuffer(m_lastDisplayBuffer);
 }
 
 void SchemaDevicePanel::renderDisplayBuffer(const QJsonObject &bufferObj)
@@ -294,12 +319,14 @@ void SchemaDevicePanel::renderPageMajorMono(const QList<int> &data, int w, int h
 
     const int pages = qMax(1, h / 8);
     const int bright = qBound(40, m_displayContrast, 255);
-    const QColor normalOn(bright, bright, qBound(0, bright + 30, 255));
-    const QColor normalOff(0, 0, 0);
-    const QColor invertedOn(0, 0, 0);
-    const QColor invertedOff(bright, bright, bright);
-    const QColor onColor = m_displayInverted ? invertedOn : normalOn;
-    const QColor offColor = m_displayInverted ? invertedOff : normalOff;
+
+    // Pre-compute ARGB pixel values for fast scanline writes
+    const QRgb onRgb = m_displayInverted
+        ? qRgb(0, 0, 0)
+        : qRgb(bright, bright, qBound(0, bright + 30, 255));
+    const QRgb offRgb = m_displayInverted
+        ? qRgb(bright, bright, bright)
+        : qRgb(0, 0, 0);
 
     for (int page = 0; page < pages && page * w < data.size(); ++page) {
         for (int col = 0; col < w && page * w + col < data.size(); ++col) {
@@ -310,7 +337,8 @@ void SchemaDevicePanel::renderPageMajorMono(const QList<int> &data, int w, int h
                     break;
                 }
                 const bool pixelOn = ((byte >> bit) & 0x01) != 0;
-                img.setPixelColor(col, y, pixelOn ? onColor : offColor);
+                // Direct scanline write — ~10x faster than setPixelColor()
+                reinterpret_cast<QRgb *>(img.scanLine(y))[col] = pixelOn ? onRgb : offRgb;
             }
         }
     }
@@ -318,7 +346,7 @@ void SchemaDevicePanel::renderPageMajorMono(const QList<int> &data, int w, int h
     if (!m_displayOn) {
         img.fill(QColor(5, 5, 8));
     } else if (m_displayEntireOn) {
-        img.fill(onColor);
+        img.fill(QColor(qRed(onRgb), qGreen(onRgb), qBlue(onRgb)));
     }
 
     m_displayImage = img;
@@ -750,8 +778,13 @@ void SchemaDevicePanel::updateCapabilities(const QJsonObject &caps)
 
 void SchemaDevicePanel::updateState(const QJsonObject &state)
 {
-    m_stateView->setPlainText(
-        QString::fromUtf8(QJsonDocument(state).toJson(QJsonDocument::Indented)));
+    // Only update the expensive JSON text view when state actually changes.
+    const QByteArray stateCompact = QJsonDocument(state).toJson(QJsonDocument::Compact);
+    if (stateCompact != m_lastStateHash) {
+        m_lastStateHash = stateCompact;
+        m_stateView->setPlainText(
+            QString::fromUtf8(QJsonDocument(state).toJson(QJsonDocument::Indented)));
+    }
 
     updateDisplayView(state);
     updateMetricsView(state);

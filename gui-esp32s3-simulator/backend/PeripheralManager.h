@@ -10,6 +10,7 @@
 #include <QString>
 #include <QStringList>
 #include <QTimer>
+#include <QtGlobal>
 
 class QProcess;
 
@@ -51,6 +52,7 @@ public:
 
 signals:
     void devicesChanged();
+    void deviceSetChanged();  // fired only when config loads/starts/stops (not on state polls)
     void deviceLogLine(const QString &deviceId, const QString &line);
     void deviceTraceLine(const QString &deviceId, const QString &line);
     void bridgeResponseReady(const QString &busKind, const QJsonObject &payload);
@@ -78,6 +80,8 @@ private:
         QByteArray stdoutBuffer;
         int rpcSeq = 1;
         QHash<int, QJsonObject> pendingMethods;
+        bool stateRequestInFlight = false;
+        qint64 lastStateRequestMs = 0;
     };
 
     QString resolvePathForConfig(const QString &raw) const;

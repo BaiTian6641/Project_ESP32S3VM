@@ -167,7 +167,8 @@ class Ssd1306Simulator:
             }
 
         if method == "get_state":
-            return self._state_payload(include_buffer=True)
+            include_buffer = bool(params.get("include_buffer", False))
+            return self._state_payload(include_buffer=include_buffer)
 
         if method == "set_parameter":
             name = params.get("name")

@@ -50,6 +50,7 @@ void DevicePanelBase::buildBaseLayout()
     m_logText->setReadOnly(true);
     m_logText->setMaximumHeight(120);
     m_logText->setPlaceholderText("Device log output...");
+    m_logText->document()->setMaximumBlockCount(1000);  // cap unbounded growth
     logLayout->addWidget(m_logText);
     root->addWidget(m_logGroup);
 }

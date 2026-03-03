@@ -21,9 +21,10 @@ BASIC_SKETCHES=(
   "uart_loopback_test"
 )
 
-# Sketches needing Adafruit SSD1306 + GFX
+# Sketches needing Adafruit display libraries
 OLED_SKETCHES=(
   "ssd1306_display_test"
+  "ssd1331_sht21_test"
   "combined_peripheral_test"
 )
 
@@ -52,11 +53,12 @@ echo "[build] ensuring esp32 core is installed"
 arduino-cli core install esp32:esp32
 
 # ----------------------------------------------------------------
-# Library install (for SSD1306/GFX sketches)
+# Library install (for display sketches)
 # ----------------------------------------------------------------
-echo "[build] installing Adafruit SSD1306 + GFX libraries"
+echo "[build] installing Adafruit SSD1306 + SSD1331 + GFX libraries"
 arduino-cli lib install "Adafruit SSD1306" >/dev/null 2>&1 || true
 arduino-cli lib install "Adafruit GFX Library" >/dev/null 2>&1 || true
+arduino-cli lib install "Adafruit SSD1331 OLED Driver Library for Arduino" >/dev/null 2>&1 || true
 
 # ----------------------------------------------------------------
 # Compile
@@ -82,6 +84,7 @@ compile_sketch() {
   echo "[build] ── compiling: $name ──"
   if arduino-cli compile \
     --fqbn "$FQBN" \
+    --build-property "compiler.c.elf.extra_flags=-Wl,--wrap=esp_core_dump_init" \
     --build-path "$out_dir" \
     "$sketch_dir"; then
     echo "[build] OK: $name"

@@ -13,6 +13,7 @@ simulator, and a combined sketch runs all tests in one pass.
 | `esp32s3_bridge_tester` | Bridge protocol | Serial | — |
 | `ssd1306_display_test` | SSD1306 128×64 OLED | I2C | Adafruit SSD1306, Adafruit GFX |
 | `sht21_sensor_test` | SHT21 Temp/Humidity | I2C | Wire (raw) |
+| `ssd1331_sht21_test` | SSD1331 96x64 OLED + SHT21 | SPI + I2C | Adafruit SSD1331, Adafruit GFX, Wire |
 | `spi_flash_test` | W25Q128JV NOR Flash | SPI | SPI (raw) |
 | `uart_loopback_test` | UART Loopback | UART1 | HardwareSerial |
 | `combined_peripheral_test` | All of the above | I2C+SPI+UART | All of the above |
@@ -106,6 +107,28 @@ Wiring: MOSI=GPIO11, MISO=GPIO13, SCLK=GPIO12, CS=GPIO10 (SPI2/HSPI at 20 MHz)
 
 ---
 
+## 4b. `ssd1331_sht21_test`
+
+Path: `ssd1331_sht21_test/ssd1331_sht21_test.ino`
+**Requires**: Adafruit SSD1331 OLED Driver Library for Arduino, Adafruit GFX Library, Wire
+
+Integration test for a 96x64 SSD1331 display plus SHT21 sensor:
+- SSD1331 init and rendering through Adafruit SSD1331 driver API
+- Full-frame color-bar rendering at 96x64
+- Dynamic dashboard bars/text from live SHT21 temperature/humidity values
+- Invert display check via library API
+- SHT21 CRC-verified hold-master measurements (`E3`, `E5`)
+
+Wiring:
+- I2C: SDA=GPIO8, SCL=GPIO9, SHT21 address `0x40`
+- SPI: MOSI=GPIO11, MISO=GPIO13, SCLK=GPIO12, CS=GPIO10
+- SSD1331 control pins: DC=GPIO4, RST=GPIO5
+
+Virtual hook-up config:
+- `gui-esp32s3-simulator/peripherals/peripherals.ssd1331_sht21.example.json`
+
+---
+
 ## 5. `uart_loopback_test`
 
 Path: `uart_loopback_test/uart_loopback_test.ino`
@@ -166,6 +189,11 @@ FQBN=esp32:esp32:esp32s3 arduino-cli compile \
   --fqbn esp32:esp32:esp32s3 \
   --libraries "Adafruit SSD1306,Adafruit GFX Library" \
   tests/arduino/ssd1306_display_test
+
+# SSD1331 + SHT21 test
+arduino-cli compile \
+  --fqbn esp32:esp32:esp32s3 \
+  tests/arduino/ssd1331_sht21_test
 ```
 
 ### Default board target
@@ -178,7 +206,8 @@ Override: `FQBN=esp32:esp32:esp32s3 bash tests/arduino/build_all_sketches.sh`
 ## Running in the Simulator
 
 1. Start the GUI simulator (`gui-esp32s3-simulator`).
-2. Load peripheral config from `peripherals/peripherals.example.json`.
+2. Load peripheral config from `peripherals/peripherals.example.json` or
+  `peripherals/peripherals.ssd1331_sht21.example.json`.
 3. Start the QEMU instance.
 4. Flash/upload the sketch `.bin` to the QEMU firmware image.
 5. Watch the Serial tab and Peripheral panels for test output.

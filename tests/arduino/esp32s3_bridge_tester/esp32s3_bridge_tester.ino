@@ -1,5 +1,9 @@
 #include <Arduino.h>
 
+/* Bypass ESP-IDF coredump flash check for QEMU compatibility.
+ * See ssd1331_sht21_test.ino for detailed explanation. */
+extern "C" void __wrap_esp_core_dump_init(void) { /* no-op */ }
+
 // ESP32-S3 Arduino bridge tester for GUI simulator peripheral bridge.
 // Emits bridge request lines:
 //   [PERIPH][I2C] {...}

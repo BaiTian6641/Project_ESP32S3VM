@@ -62,7 +62,7 @@ class JsonRpcStdioServer:
         self._reader_thread.start()
         self._selector = None
 
-    def serve_forever(self, handler, tick_interval: float = 0.1) -> None:
+    def serve_forever(self, handler, tick_interval: float = 0.05) -> None:
         if callable(handler):
             request_handler = handler
         elif hasattr(handler, "handle") and callable(getattr(handler, "handle")):
@@ -104,10 +104,28 @@ class JsonRpcStdioServer:
                     break  # EOF sentinel in thread mode
                 if not line:
                     break  # EOF
-                line = line.strip()
-                if line:
+                # Process first line and then drain any additional queued lines
+                # without blocking — crucial for I2C burst responses on Windows.
+                lines_to_process = [line.strip()]
+                if self._selector is None and self._stdin_queue is not None:
+                    while True:
+                        try:
+                            extra = self._stdin_queue.get_nowait()
+                        except queue.Empty:
+                            break
+                        if extra is None:
+                            self.running = False
+                            break
+                        if not extra:
+                            self.running = False
+                            break
+                        lines_to_process.append(extra.strip())
+
+                for raw_line in lines_to_process:
+                    if not raw_line:
+                        continue
                     try:
-                        obj = json.loads(line)
+                        obj = json.loads(raw_line)
                     except json.JSONDecodeError:
                         pass
                     else:

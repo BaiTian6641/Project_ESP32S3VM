@@ -24,6 +24,10 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+/* Bypass ESP-IDF coredump flash check for QEMU compatibility.
+ * See ssd1331_sht21_test.ino for detailed explanation. */
+extern "C" void __wrap_esp_core_dump_init(void) { /* no-op */ }
+
 // --- Configuration ---
 #define SHT21_ADDR       0x40
 #define SDA_PIN          8

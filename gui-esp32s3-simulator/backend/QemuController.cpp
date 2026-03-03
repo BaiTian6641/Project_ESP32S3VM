@@ -596,7 +596,17 @@ void QemuController::setBootMode(int modeIndex)
 
 void QemuController::loadFirmware(const QString &path)
 {
-    pendingFirmware = path;
+    QString resolvedPath = QFileInfo(path).absoluteFilePath();
+
+    if (resolvedPath.endsWith(".ino.bin", Qt::CaseInsensitive)) {
+        const QString mergedPath = resolvedPath.left(resolvedPath.size() - 4) + ".merged.bin";
+        if (QFileInfo::exists(mergedPath)) {
+            emit debugMessageReceived(QString("[Control] auto-selected merged firmware image: %1").arg(mergedPath));
+            resolvedPath = mergedPath;
+        }
+    }
+
+    pendingFirmware = resolvedPath;
     emit debugMessageReceived(QString("[Control] Firmware selected: %1").arg(pendingFirmware));
     startQemuWithFirmware(pendingFirmware);
 }
@@ -919,6 +929,19 @@ void QemuController::teardownUartPty()
 
 bool QemuController::prepareSpiFlashImage(const QString &firmwarePath, QString &flashPathOut)
 {
+    auto hasPartitionTableAt0x8000 = [](const QByteArray &image) -> bool {
+        static constexpr int kPartitionTableOffset = 0x8000;
+        static constexpr int kEntryMagicOffset = kPartitionTableOffset;
+        if (image.size() < (kEntryMagicOffset + 2)) {
+            return false;
+        }
+
+        const quint8 b0 = static_cast<quint8>(image.at(kEntryMagicOffset));
+        const quint8 b1 = static_cast<quint8>(image.at(kEntryMagicOffset + 1));
+        const quint16 magic = static_cast<quint16>(b0) | (static_cast<quint16>(b1) << 8);
+        return magic == 0x50AA;
+    };
+
     QFile fwFile(firmwarePath);
     if (!fwFile.open(QIODevice::ReadOnly)) {
         emit debugMessageReceived(QString("[SPI Flash] failed to open firmware: %1").arg(firmwarePath));
@@ -927,6 +950,39 @@ bool QemuController::prepareSpiFlashImage(const QString &firmwarePath, QString &
 
     const QByteArray fwData = fwFile.readAll();
     fwFile.close();
+
+    QByteArray bootloaderData;
+    QByteArray partitionData;
+    QByteArray appData;
+
+    const bool looksMerged = hasPartitionTableAt0x8000(fwData);
+    bool composeFromArtifacts = false;
+
+    if (!looksMerged && firmwarePath.endsWith(".bin", Qt::CaseInsensitive)
+        && !firmwarePath.endsWith(".merged.bin", Qt::CaseInsensitive)
+        && !firmwarePath.endsWith(".bootloader.bin", Qt::CaseInsensitive)
+        && !firmwarePath.endsWith(".partitions.bin", Qt::CaseInsensitive)) {
+        appData = fwData;
+
+        const QString baseNoExt = firmwarePath.left(firmwarePath.size() - 4);
+        const QString bootloaderPath = baseNoExt + ".bootloader.bin";
+        const QString partitionsPath = baseNoExt + ".partitions.bin";
+
+        QFile bootFile(bootloaderPath);
+        QFile partFile(partitionsPath);
+        if (bootFile.open(QIODevice::ReadOnly) && partFile.open(QIODevice::ReadOnly)) {
+            bootloaderData = bootFile.readAll();
+            partitionData = partFile.readAll();
+            bootFile.close();
+            partFile.close();
+
+            if (!bootloaderData.isEmpty() && !partitionData.isEmpty()) {
+                composeFromArtifacts = true;
+                emit debugMessageReceived(QString("[SPI Flash] detected app-only binary; composing flash image from artifacts near: %1")
+                                        .arg(QFileInfo(firmwarePath).absolutePath()));
+            }
+        }
+    }
 
     if (fwData.size() >= 4) {
         const quint8 magic = static_cast<quint8>(fwData.at(0));
@@ -962,9 +1018,12 @@ bool QemuController::prepareSpiFlashImage(const QString &firmwarePath, QString &
         return false;
     }
 
-    spiFlashImagePath = QDir::tempPath() + QString("/esp32s3_gui_flash_%1.bin").arg(QCoreApplication::applicationPid());
+    const QFileInfo fwInfo(firmwarePath);
+    const QString fwBase = fwInfo.completeBaseName();
+    spiFlashImagePath = QDir(fwInfo.absolutePath()).filePath(
+        QString("%1.qemu_flash_%2MB.bin").arg(fwBase).arg(spiFlashSizeMB));
     QFile flashFile(spiFlashImagePath);
-    if (!flashFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    if (!flashFile.open(QIODevice::ReadWrite | QIODevice::Truncate)) {
         emit debugMessageReceived(QString("[SPI Flash] failed to create flash image: %1").arg(spiFlashImagePath));
         return false;
     }
@@ -979,17 +1038,44 @@ bool QemuController::prepareSpiFlashImage(const QString &firmwarePath, QString &
         }
     }
 
-    if (!flashFile.seek(0)) {
-        emit debugMessageReceived("[SPI Flash] failed to seek flash image");
-        flashFile.close();
-        return false;
+    auto writeBlob = [this, &flashFile](qint64 offset, const QByteArray &blob, const QString &label) -> bool {
+        if (blob.isEmpty()) {
+            return true;
+        }
+        if (!flashFile.seek(offset)) {
+            emit debugMessageReceived(QString("[SPI Flash] failed to seek for %1 write").arg(label));
+            return false;
+        }
+        if (flashFile.write(blob) != blob.size()) {
+            emit debugMessageReceived(QString("[SPI Flash] failed writing %1").arg(label));
+            return false;
+        }
+        return true;
+    };
+
+    if (composeFromArtifacts) {
+        if (!writeBlob(0x0000, bootloaderData, QStringLiteral("bootloader"))
+            || !writeBlob(0x8000, partitionData, QStringLiteral("partition table"))
+            || !writeBlob(0x10000, appData, QStringLiteral("app image"))) {
+            flashFile.close();
+            return false;
+        }
+    } else {
+        if (!writeBlob(0x0000, fwData, QStringLiteral("firmware image"))) {
+            flashFile.close();
+            return false;
+        }
     }
 
-    if (flashFile.write(fwData) != fwData.size()) {
-        emit debugMessageReceived("[SPI Flash] failed writing firmware into flash image");
-        flashFile.close();
-        return false;
-    }
+    /* The entire flash image has already been filled with 0xFF above,
+       which matches real erased-flash state.  The coredump partition
+       (type=0x01, subtype=0x03) therefore contains 0xFF…FF, which
+       ESP-IDF interprets as "blank – no dump saved".
+
+       Additionally, our QEMU-targeted Arduino sketches use the linker
+       --wrap=esp_core_dump_init mechanism to completely bypass the
+       coredump flash check at boot, so no special partition content
+       is required. */
 
     flashFile.close();
     flashPathOut = spiFlashImagePath;

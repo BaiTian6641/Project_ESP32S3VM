@@ -15,6 +15,7 @@
 #include <QSplitter>
 #include <QTabWidget>
 #include <QTextEdit>
+#include <QTimer>
 #include <QVBoxLayout>
 
 PeripheralsWidget::PeripheralsWidget(QWidget *parent)
@@ -73,6 +74,15 @@ PeripheralsWidget::PeripheralsWidget(QWidget *parent)
     splitter->setStretchFactor(1, 1);
 
     rootLayout->addWidget(splitter, 1);
+
+    // Coalesce rapid devicesChanged signals into a single deferred update
+    updateCoalesceTimer = new QTimer(this);
+    updateCoalesceTimer->setSingleShot(true);
+    updateCoalesceTimer->setInterval(200);
+    connect(updateCoalesceTimer, &QTimer::timeout, this, &PeripheralsWidget::performDeferredUpdate);
+
+    // Cap global log at 2000 blocks to avoid unbounded growth
+    logText->document()->setMaximumBlockCount(2000);
 
     // Connections
     connect(browseButton, &QPushButton::clicked, this, &PeripheralsWidget::onBrowseConfig);
@@ -153,6 +163,14 @@ void PeripheralsWidget::onRefresh()
 }
 
 void PeripheralsWidget::onDevicesChanged()
+{
+    // Coalesce rapid-fire devicesChanged signals; actual work in performDeferredUpdate()
+    if (!updateCoalesceTimer->isActive()) {
+        updateCoalesceTimer->start();
+    }
+}
+
+void PeripheralsWidget::performDeferredUpdate()
 {
     if (!peripheralManager) {
         lastSnapshot = QJsonArray();
@@ -266,15 +284,22 @@ QString PeripheralsWidget::panelKindFromSnapshot(const QJsonObject &obj) const
 
 void PeripheralsWidget::updateDevicePanels()
 {
-    for (const QJsonValue &v : lastSnapshot) {
-        const QJsonObject obj = v.toObject();
+    // Only update the currently visible tab to avoid wasting CPU on hidden panels
+    const int activeTabIdx = deviceTabWidget->currentIndex();
+
+    for (int i = 0; i < lastSnapshot.size(); ++i) {
+        const QJsonObject obj = lastSnapshot[i].toObject();
         const QString id = obj.value("id").toString();
 
         DevicePanelBase *panel = devicePanels.value(id, nullptr);
         if (!panel) continue;
 
+        // Always update status (cheap text label change)
         panel->updateStatus(obj.value("status").toString(),
                             obj.value("last_error").toString());
+
+        // Only push expensive state/capabilities to the active tab
+        if (i != activeTabIdx) continue;
 
         const QJsonObject caps = obj.value("capabilities").toObject();
         if (!caps.isEmpty()) {

@@ -1,0 +1,122 @@
+{
+  "version": 2,
+  "board": {
+    "name": "esp32s3-devkitc-1",
+    "target": "esp32s3"
+  },
+  "buses": [
+    {
+      "id": "i2c0-main",
+      "kind": "i2c",
+      "controller": "i2c0",
+      "clock_hz": 400000,
+      "pins": {
+        "scl": 9,
+        "sda": 8
+      },
+      "electrical": {
+        "pullup_ohms": 4700,
+        "voltage": 3.3
+      }
+    },
+    {
+      "id": "spi2-main",
+      "kind": "spi",
+      "controller": "spi2",
+      "clock_hz": 8000000,
+      "spi_mode": "single",
+      "data_lines": 1,
+      "pins": {
+        "mosi": 11,
+        "miso": 13,
+        "sclk": 12,
+        "cs": 10
+      },
+      "electrical": {
+        "voltage": 3.3
+      }
+    }
+  ],
+  "devices": [
+    {
+      "id": "oled1331",
+      "type": "ssd1331",
+      "compatible": [
+        "solomon,ssd1331"
+      ],
+      "status": "okay",
+      "bus_ref": "spi2-main",
+      "reg": 0,
+      "bus": {
+        "kind": "spi",
+        "controller": "spi2",
+        "chip_select": 0,
+        "clock_hz": 8000000,
+        "spi_mode": "single",
+        "data_lines": 1,
+        "pins": {
+          "mosi": 11,
+          "miso": 13,
+          "sclk": 12,
+          "cs": 10,
+          "dc": 4,
+          "reset": 5
+        }
+      },
+      "simulator": {
+        "exec": "./device-sims/ssd1331_sim.py",
+        "args": [
+          "--width",
+          "96",
+          "--height",
+          "64"
+        ],
+        "transport": "stdio",
+        "protocol": "jsonrpc-spi-v1"
+      },
+      "properties": {
+        "width": 96,
+        "height": 64,
+        "pixel_format": "rgb565",
+        "virtual_protocol": "inband-command-stream"
+      }
+    },
+    {
+      "id": "temp0",
+      "type": "sht21",
+      "compatible": [
+        "sensirion,sht21"
+      ],
+      "status": "okay",
+      "bus_ref": "i2c0-main",
+      "reg": "0x40",
+      "bus": {
+        "kind": "i2c",
+        "controller": "i2c0",
+        "address": "0x40",
+        "clock_hz": 100000,
+        "pins": {
+          "scl": 9,
+          "sda": 8
+        },
+        "electrical": {
+          "pullup_ohms": 4700,
+          "voltage": 3.3
+        }
+      },
+      "simulator": {
+        "exec": "./device-sims/sht21_sim.py",
+        "args": [
+          "--address",
+          "0x40"
+        ],
+        "transport": "stdio",
+        "protocol": "jsonrpc-i2c-v1"
+      },
+      "properties": {
+        "initial_celsius": 24.0,
+        "csv_example": "./device-sims/sht21_sample.csv"
+      }
+    }
+  ]
+}

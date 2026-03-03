@@ -10,12 +10,13 @@
 #include <QSet>
 #include <QStandardPaths>
 #include <QTimer>
+#include <QDateTime>
 
 PeripheralManager::PeripheralManager(QObject *parent)
     : QObject(parent)
 {
     autoRefreshTimer = new QTimer(this);
-    autoRefreshTimer->setInterval(500);
+    autoRefreshTimer->setInterval(1000);  // 1 s — balances responsiveness vs CPU load
     connect(autoRefreshTimer, &QTimer::timeout,
             this, &PeripheralManager::refreshStates);
     autoRefreshTimer->start();
@@ -35,9 +36,17 @@ void PeripheralManager::setWorkspaceRoot(const QString &path)
 
 bool PeripheralManager::loadConfig(const QString &path)
 {
+    // Force-unload previous runtime before reading the new config.
+    // This guarantees that selecting a new JSON always stops old processes first.
     stopAll();
     qDeleteAll(devices);
     devices.clear();
+    loadedConfigPath.clear();
+    configDir.clear();
+
+    emit managerMessage("[Peripherals] previous config unloaded");
+    emit devicesChanged();
+    emit deviceSetChanged();
 
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly)) {
@@ -121,6 +130,7 @@ bool PeripheralManager::loadConfig(const QString &path)
                         .arg(devices.size())
                         .arg(loadedConfigPath));
     emit devicesChanged();
+    emit deviceSetChanged();
 
     /* Auto-start all valid devices so they are ready before QEMU boots */
     startAll();
@@ -345,6 +355,7 @@ void PeripheralManager::startAll()
         startDevice(device);
     }
     emit devicesChanged();
+    emit deviceSetChanged();
 }
 
 void PeripheralManager::ensureAllRunning()
@@ -367,13 +378,25 @@ void PeripheralManager::stopAll()
         stopDevice(device);
     }
     emit devicesChanged();
+    emit deviceSetChanged();
 }
 
 void PeripheralManager::refreshStates()
 {
+    const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
     for (DeviceRuntime *device : devices) {
         if (device->process && device->process->state() == QProcess::Running) {
-            sendRpc(device, "get_state", QJsonObject(), true);
+            // Avoid piling up get_state RPCs when a previous one is still pending.
+            // Allow retry if request appears stale (> 2.5s), e.g. process hiccup.
+            if (device->stateRequestInFlight && (nowMs - device->lastStateRequestMs) < 2500) {
+                continue;
+            }
+
+            QJsonObject params;
+            params["include_buffer"] = false;
+            sendRpc(device, "get_state", params, true);
+            device->stateRequestInFlight = true;
+            device->lastStateRequestMs = nowMs;
         }
     }
 }
@@ -509,6 +532,17 @@ void PeripheralManager::dispatchSpiTransfer(const QJsonObject &request)
     const QString controller = request.value("controller").toString().trimmed();
     const QString controllerNorm = controller.toLower();
     const QString csText = request.value("chip_select").toVariant().toString().trimmed();
+    const QString mode = request.value("mode").toString("single");
+    const int txLen = request.value("tx").toArray().size();
+    const int rxLen = request.value("rx_len").toInt(0);
+
+    if (controllerNorm == "spi0" || controllerNorm == "spi1") {
+        emit managerMessage(QString("[Bridge][SPI] ignored internal controller=%1 cs=%2 mode=%3 tx=%4 rx=%5 (reserved for flash/psram)")
+                            .arg(controller, csText, mode)
+                            .arg(txLen)
+                            .arg(rxLen));
+        return;
+    }
 
     for (DeviceRuntime *device : devices) {
         if (!device || !device->process || device->process->state() != QProcess::Running) {
@@ -524,13 +558,21 @@ void PeripheralManager::dispatchSpiTransfer(const QJsonObject &request)
             continue;
         }
 
+        emit managerMessage(QString("[Bridge][SPI] routed controller=%1 cs=%2 mode=%3 tx=%4 rx=%5 -> device=%6 (%7/%8)")
+                            .arg(controller, csText, mode)
+                            .arg(txLen)
+                            .arg(rxLen)
+                            .arg(device->id, device->busController, device->busAddress));
+
         sendRpc(device, "spi_transfer", request, true,
             QJsonObject{{"bridge_bus", "spi"}, {"request", request}});
         return;
     }
 
-    emit managerMessage(QString("[Bridge][SPI] no matching running device for controller=%1 cs=%2")
-                        .arg(controller, csText));
+    emit managerMessage(QString("[Bridge][SPI] no matching running device for controller=%1 cs=%2 mode=%3 tx=%4 rx=%5")
+                        .arg(controller, csText, mode)
+                        .arg(txLen)
+                        .arg(rxLen));
 }
 
 void PeripheralManager::dispatchUartTx(const QJsonObject &request)
@@ -699,6 +741,8 @@ void PeripheralManager::startDevice(DeviceRuntime *device)
     device->stdoutBuffer.clear();
     device->pendingMethods.clear();
     device->rpcSeq = 1;
+    device->stateRequestInFlight = false;
+    device->lastStateRequestMs = 0;
 
     QString execPath = resolvePathForConfig(device->simExec);
     QStringList args = device->simArgs;
@@ -764,8 +808,14 @@ void PeripheralManager::startDevice(DeviceRuntime *device)
         device->lastError.clear();
         emit managerMessage(QString("[Peripherals] %1 started").arg(device->id));
         sendRpc(device, "get_capabilities", QJsonObject(), true);
-        sendRpc(device, "get_state", QJsonObject(), true);
+        // Initial full snapshot (including large buffers) once at startup.
+        QJsonObject initialStateParams;
+        initialStateParams["include_buffer"] = true;
+        sendRpc(device, "get_state", initialStateParams, true);
+        device->stateRequestInFlight = true;
+        device->lastStateRequestMs = QDateTime::currentMSecsSinceEpoch();
         emit devicesChanged();
+        emit deviceSetChanged();
     });
 
     connect(process, qOverload<int, QProcess::ExitStatus>(&QProcess::finished),
@@ -779,6 +829,7 @@ void PeripheralManager::startDevice(DeviceRuntime *device)
                             .arg(code)
                             .arg(status == QProcess::NormalExit ? "normal" : "crash"));
         emit devicesChanged();
+        emit deviceSetChanged();
     });
 
     connect(process, &QProcess::errorOccurred, this, [this, device](QProcess::ProcessError e) {
@@ -788,6 +839,7 @@ void PeripheralManager::startDevice(DeviceRuntime *device)
                             .arg(device->id)
                             .arg(static_cast<int>(e)));
         emit devicesChanged();
+        emit deviceSetChanged();
     });
 
     process->start(finalExec, finalArgs);
@@ -799,18 +851,32 @@ void PeripheralManager::stopDevice(DeviceRuntime *device)
         return;
     }
 
-    if (device->process->state() != QProcess::NotRunning) {
-        device->process->terminate();
-        if (!device->process->waitForFinished(1000)) {
-            device->process->kill();
-            device->process->waitForFinished(1000);
-        }
-    }
-
-    device->process->deleteLater();
-    device->process = nullptr;
+    QProcess *proc = device->process;
+    // Break all process->this connections before detaching to avoid callbacks
+    // touching this runtime after it may have been deleted on config reload.
+    QObject::disconnect(proc, nullptr, this, nullptr);
+    device->process = nullptr;   // detach immediately so no more RPC goes to it
+    device->stateRequestInFlight = false;
+    device->lastStateRequestMs = 0;
     if (device->status != "invalid" && device->status != "disabled") {
         device->status = "stopped";
+    }
+
+    if (proc->state() != QProcess::NotRunning) {
+        // Async shutdown: terminate, then kill after 1.5 s if still alive.
+        // No waitForFinished() — avoids freezing the UI thread.
+        connect(proc, qOverload<int, QProcess::ExitStatus>(&QProcess::finished),
+                proc, &QObject::deleteLater);
+
+        QTimer::singleShot(1500, proc, [proc]() {
+            if (proc->state() != QProcess::NotRunning) {
+                proc->kill();
+            }
+        });
+
+        proc->terminate();
+    } else {
+        proc->deleteLater();
     }
 }
 
@@ -931,6 +997,8 @@ void PeripheralManager::handleJsonMessage(DeviceRuntime *device, const QJsonObje
         }
 
         if (method == "get_state") {
+            device->stateRequestInFlight = false;
+
             /* Preserve live notification keys that arrive
                asynchronously between get_state polls so the GUI
                never reverts to stale buffer data. */

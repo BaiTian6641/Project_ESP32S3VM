@@ -23,6 +23,10 @@
 #include <Arduino.h>
 #include <SPI.h>
 
+/* Bypass ESP-IDF coredump flash check for QEMU compatibility.
+ * See ssd1331_sht21_test.ino for detailed explanation. */
+extern "C" void __wrap_esp_core_dump_init(void) { /* no-op */ }
+
 // --- Pin Configuration ---
 #define SPI_MOSI  11
 #define SPI_MISO  13

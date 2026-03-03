@@ -13,6 +13,7 @@ class QScrollArea;
 class QSplitter;
 class QTabWidget;
 class QTextEdit;
+class QTimer;
 class QVBoxLayout;
 
 /// Peripherals tab: shows a config toolbar at the top, then a tabbed area
@@ -47,11 +48,13 @@ private slots:
 private:
     void rebuildDevicePanels();
     void updateDevicePanels();
+    void performDeferredUpdate();
     QString panelKindFromSnapshot(const QJsonObject &obj) const;
     QString iconForDeviceType(const QString &type) const;
 
     PeripheralManager *peripheralManager = nullptr;
     QJsonArray lastSnapshot;
+    QTimer *updateCoalesceTimer = nullptr;
 
     // Controls bar
     QLineEdit *configPathEdit = nullptr;

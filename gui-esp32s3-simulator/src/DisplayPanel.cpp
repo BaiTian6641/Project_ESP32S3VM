@@ -216,14 +216,14 @@ void DisplayPanel::renderPageMajorMono(const QList<int> &data, int w, int h)
 
     // Scale pixel brightness by contrast
     int bright = qBound(40, contrast, 255);
-    QColor onColor;
-    if (inverted) {
-        onColor = QColor(0, 0, 0);
-    } else {
-        // OLED-like blue-white glow
-        onColor = QColor(bright, bright, qBound(0, bright + 30, 255));
-    }
-    QColor offColor = inverted ? QColor(bright, bright, bright) : QColor(0, 0, 0);
+
+    // Pre-compute ARGB pixel values for fast scanline writes
+    const QRgb onRgb = inverted
+        ? qRgb(0, 0, 0)
+        : qRgb(bright, bright, qBound(0, bright + 30, 255));
+    const QRgb offRgb = inverted
+        ? qRgb(bright, bright, bright)
+        : qRgb(0, 0, 0);
 
     for (int page = 0; page < pages && page * w < data.size(); ++page) {
         for (int col = 0; col < w && page * w + col < data.size(); ++col) {
@@ -232,7 +232,8 @@ void DisplayPanel::renderPageMajorMono(const QList<int> &data, int w, int h)
                 int y = page * 8 + bit;
                 if (y >= h) break;
                 bool pixelOn = (byte >> bit) & 1;
-                img.setPixelColor(col, y, pixelOn ? onColor : offColor);
+                // Direct scanline write — ~10x faster than setPixelColor()
+                reinterpret_cast<QRgb *>(img.scanLine(y))[col] = pixelOn ? onRgb : offRgb;
             }
         }
     }
@@ -242,7 +243,7 @@ void DisplayPanel::renderPageMajorMono(const QList<int> &data, int w, int h)
         img.fill(QColor(5, 5, 8));
     } else if (m_entireDisplayOn) {
         // A5h: all pixels forced ON regardless of GDDRAM content
-        img.fill(onColor);
+        img.fill(QColor(qRed(onRgb), qGreen(onRgb), qBlue(onRgb)));
     }
 
     m_screenImage = img;
