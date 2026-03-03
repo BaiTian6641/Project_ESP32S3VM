@@ -55,8 +55,8 @@
         "spi_mode": "single",
         "data_lines": 1,
         "pins": {
-          "mosi": 11,
-          "miso": 13,
+          "mosi": 13,
+          "miso": 11,
           "sclk": 12,
           "cs": 10,
           "dc": 4,
