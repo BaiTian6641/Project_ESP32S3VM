@@ -1070,6 +1070,19 @@ void PeripheralManager::handleJsonMessage(DeviceRuntime *device, const QJsonObje
             device->capabilities = obj.value("result").toObject();
             emit devicesChanged();
 
+            /* For SPI devices with a DC (data/command) GPIO pin, push it
+               to the QEMU GP-SPI bridge so bridge events include DC state. */
+            if (device->busKind == "spi") {
+                const QJsonObject bus = device->rawConfig.value("bus").toObject();
+                const QJsonObject pins = bus.value("pins").toObject();
+                if (pins.contains("dc")) {
+                    const int dcPin = pins.value("dc").toInt(-1);
+                    if (dcPin >= 0 && dcPin <= 48) {
+                        emit spiDcGpioReady(device->busController, dcPin);
+                    }
+                }
+            }
+
             /* Immediately request initial state so the I2C response map
                is pushed to the QEMU bridge before the firmware boots far
                enough to perform its first read. */

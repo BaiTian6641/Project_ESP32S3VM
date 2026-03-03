@@ -57,6 +57,7 @@ signals:
     void deviceTraceLine(const QString &deviceId, const QString &line);
     void bridgeResponseReady(const QString &busKind, const QJsonObject &payload);
     void i2cResponseMapReady(int busIndex, const QString &mapStr);
+    void spiDcGpioReady(const QString &controller, int gpioNum);
     void managerMessage(const QString &line);
 
 private:

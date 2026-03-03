@@ -482,6 +482,36 @@ void QemuController::setI2cBridgeResponseMap(int busIndex, const QString &mapStr
     sendQmpCommand("qom-set", args);
 }
 
+void QemuController::setSpiDcGpio(const QString &controller, int gpioNum)
+{
+    if (!qmpReady) {
+        return;
+    }
+
+    /* Map controller name to GP-SPI index inside the SoC:
+     *   spi2 → gpspi2   (index 0 → child "gpspi2")
+     *   spi3 → gpspi3   (index 1 → child "gpspi3")
+     */
+    int idx = -1;
+    const QString ctrl = controller.trimmed().toLower();
+    if (ctrl == "spi2") {
+        idx = 2;
+    } else if (ctrl == "spi3") {
+        idx = 3;
+    }
+    if (idx < 0) {
+        return;
+    }
+
+    const QString path = QString("/machine/soc/gpspi%1").arg(idx);
+
+    QJsonObject args;
+    args["path"]     = path;
+    args["property"] = QStringLiteral("bridge-dc-gpio");
+    args["value"]    = QString::number(gpioNum);
+    sendQmpCommand("qom-set", args);
+}
+
 void QemuController::setGdbServerConfig(bool enabled, int port, bool waitForAttach)
 {
     gdbEnabled = enabled;

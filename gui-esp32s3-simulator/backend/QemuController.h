@@ -40,6 +40,9 @@ public:
     void clearAllI2cBridgeAddresses();
     void setI2cBridgeResponseMap(int busIndex, const QString &mapStr);
 
+    /* SPI bridge configuration */
+    void setSpiDcGpio(const QString &controller, int gpioNum);
+
     void pauseExecution();
     void continueExecution();
     void stepInstruction();

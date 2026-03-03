@@ -291,9 +291,6 @@ void SchemaDevicePanel::renderDisplayBuffer(const QJsonObject &bufferObj)
 
     const QString encoding = bufferObj.value("encoding").toString(m_frameEncoding).trimmed().toLower();
     const QString layout = bufferObj.value("layout").toString(m_frameLayout).trimmed().toLower();
-    if (encoding != "u8" || layout != "page-major") {
-        return;
-    }
 
     const QJsonArray dataArr = bufferObj.value("data").toArray();
     if (dataArr.isEmpty()) {
@@ -305,7 +302,12 @@ void SchemaDevicePanel::renderDisplayBuffer(const QJsonObject &bufferObj)
     for (const QJsonValue &value : dataArr) {
         data.append(value.toInt());
     }
-    renderPageMajorMono(data, m_displayWidth, m_displayHeight);
+
+    if (encoding == "rgb565" && layout == "scanline") {
+        renderScanlineRgb565(data, m_displayWidth, m_displayHeight);
+    } else if (encoding == "u8" && layout == "page-major") {
+        renderPageMajorMono(data, m_displayWidth, m_displayHeight);
+    }
 }
 
 void SchemaDevicePanel::renderPageMajorMono(const QList<int> &data, int w, int h)
@@ -347,6 +349,43 @@ void SchemaDevicePanel::renderPageMajorMono(const QList<int> &data, int w, int h
         img.fill(QColor(5, 5, 8));
     } else if (m_displayEntireOn) {
         img.fill(QColor(qRed(onRgb), qGreen(onRgb), qBlue(onRgb)));
+    }
+
+    m_displayImage = img;
+    if (m_displayLabel) {
+        m_displayLabel->setPixmap(QPixmap::fromImage(scaleForDisplay(img)));
+    }
+}
+
+void SchemaDevicePanel::renderScanlineRgb565(const QList<int> &data, int w, int h)
+{
+    if (w <= 0 || h <= 0) {
+        return;
+    }
+
+    QImage img(w, h, QImage::Format_RGB32);
+    img.fill(QColor(0, 0, 0));
+
+    const int total = w * h;
+    for (int i = 0; i < data.size() && i < total; ++i) {
+        const int pix565 = data.at(i) & 0xFFFF;
+        // RGB565 → RGB888
+        const int r5 = (pix565 >> 11) & 0x1F;
+        const int g6 = (pix565 >> 5)  & 0x3F;
+        const int b5 =  pix565        & 0x1F;
+        const int r8 = (r5 << 3) | (r5 >> 2);
+        const int g8 = (g6 << 2) | (g6 >> 4);
+        const int b8 = (b5 << 3) | (b5 >> 2);
+
+        const int y = i / w;
+        const int x = i % w;
+        reinterpret_cast<QRgb *>(img.scanLine(y))[x] = qRgb(r8, g8, b8);
+    }
+
+    if (!m_displayOn) {
+        img.fill(QColor(5, 5, 8));
+    } else if (m_displayEntireOn) {
+        img.fill(QColor(255, 255, 255));
     }
 
     m_displayImage = img;

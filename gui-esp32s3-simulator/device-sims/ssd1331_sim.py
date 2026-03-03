@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+"""
+SSD1331 SPI display simulator (JSON-RPC over stdio).
+
+Maintains an internal 96×64 RGB565 framebuffer.
+Accepts SPI transactions with a 'dc' field (0 = command, 1 = data)
+as emitted by the QEMU GP-SPI bridge.  Falls back to heuristic
+command/data detection when 'dc' is absent.
+
+Frame updates emit RGB565 pixels as 16-bit integers in scanline order
+so the GUI can render full 65K-colour output.
+"""
 import argparse
 from typing import Any, Dict, List, Optional
 
@@ -51,15 +62,15 @@ class Ssd1331Simulator:
                 "panel": {
                     "kind": "display",
                     "title": "SSD1331 OLED",
-                    "description": "96x64 RGB OLED (visualized as mono preview for simulator panel).",
+                    "description": "96\u00d764 65K-colour RGB OLED display.",
                     "width": self.width,
                     "height": self.height,
-                    "pixel_format": "mono1",
+                    "pixel_format": "rgb565",
                     "display": {
                         "state_key": "frame_update",
                         "fallback_state_key": "buffer",
-                        "layout": "page-major",
-                        "encoding": "u8",
+                        "layout": "scanline",
+                        "encoding": "rgb565",
                     },
                     "metrics": [
                         {"label": "Display", "state_path": "display_on", "true_text": "ON", "false_text": "OFF"},
@@ -129,9 +140,9 @@ class Ssd1331Simulator:
         }
         if include_buffer:
             state["buffer"] = {
-                "encoding": "u8",
-                "layout": "page-major",
-                "data": self._mono_page_major(),
+                "encoding": "rgb565",
+                "layout": "scanline",
+                "data": self._rgb565_scanline(),
             }
         return state
 
@@ -143,41 +154,33 @@ class Ssd1331Simulator:
             {
                 "width": self.width,
                 "height": self.height,
-                "encoding": "u8",
-                "layout": "page-major",
-                "data": self._mono_page_major(),
+                "encoding": "rgb565",
+                "layout": "scanline",
+                "data": self._rgb565_scanline(),
                 "ts_ms": monotonic_ms(),
             },
         )
 
-    def _mono_page_major(self) -> List[int]:
-        pages = (self.height + 7) // 8
-        out = [0] * (self.width * pages)
+    def _rgb565_scanline(self) -> List[int]:
+        """Return framebuffer as a flat list of 16-bit RGB565 values in
+        row-major (scanline) order, applying display_on / invert / all_on."""
+        total = self.width * self.height
+        out: List[int] = [0] * total
 
-        for x in range(self.width):
-            for page in range(pages):
-                b = 0
-                for bit in range(8):
-                    y = page * 8 + bit
-                    if y >= self.height:
-                        continue
-                    pix = self.fb[y * self.width + x]
-                    on = self.all_on or self._rgb565_luma_on(pix)
-                    if self.inverted:
-                        on = not on
-                    if on and self.display_on:
-                        b |= (1 << bit)
-                out[page * self.width + x] = b
+        if not self.display_on:
+            return out  # all black
+
+        for idx in range(total):
+            pix = 0xFFFF if self.all_on else self.fb[idx]
+            if self.inverted:
+                # Invert each colour component
+                r5 = (~(pix >> 11)) & 0x1F
+                g6 = (~(pix >> 5)) & 0x3F
+                b5 = (~pix) & 0x1F
+                pix = (r5 << 11) | (g6 << 5) | b5
+            out[idx] = pix
 
         return out
-
-    @staticmethod
-    def _rgb565_luma_on(pix: int) -> bool:
-        r5 = (pix >> 11) & 0x1F
-        g6 = (pix >> 5) & 0x3F
-        b5 = pix & 0x1F
-        luma = (r5 * 54 + g6 * 183 + b5 * 19)  # scaled integer luma
-        return luma >= 1600
 
     def _spi_transfer(self, params: Dict[str, Any]) -> Dict[str, Any]:
         raw_tx = params.get("tx", [])
@@ -188,7 +191,22 @@ class Ssd1331Simulator:
         rx_len = max(0, int(params.get("rx_len", 0)))
         rx = [0x00] * rx_len
 
-        self._ingest_spi_stream(tx)
+        # DC pin: 0 = command, 1 = data, absent = heuristic fallback
+        dc = params.get("dc")
+
+        if dc is not None:
+            dc = int(dc)
+            if dc == 1:
+                # Data phase — always pixel data
+                if tx:
+                    self._write_pixel_stream_rgb565(tx)
+                    self._mark_dirty()
+            else:
+                # Command phase — parse as commands
+                self._ingest_command_stream(tx)
+        else:
+            # Legacy fallback: heuristic detection (no DC pin info)
+            self._ingest_spi_stream(tx)
 
         return {
             "ok": True,
@@ -217,6 +235,51 @@ class Ssd1331Simulator:
         if arg_count < 0:
             return False
         return len(tx) <= max(1, arg_count + 1)
+
+    def _ingest_command_stream(self, tx: List[int]) -> None:
+        """Process bytes known to be on the command (DC=0) bus."""
+        if not tx:
+            return
+        changed = False
+        i = 0
+        while i < len(tx):
+            if self._pending_cmd is not None:
+                need = self._command_arg_count(self._pending_cmd) - len(self._pending_args)
+                take = min(need, len(tx) - i)
+                self._pending_args.extend(tx[i:i + take])
+                i += take
+                if len(self._pending_args) == self._command_arg_count(self._pending_cmd):
+                    if self._apply_command(self._pending_cmd, self._pending_args):
+                        changed = True
+                    self._pending_cmd = None
+                    self._pending_args = []
+                continue
+
+            cmd = tx[i]
+            i += 1
+            arg_count = self._command_arg_count(cmd)
+            if arg_count < 0:
+                continue
+
+            if arg_count == 0:
+                if self._apply_command(cmd, []):
+                    changed = True
+                continue
+
+            available = len(tx) - i
+            if available >= arg_count:
+                args = tx[i:i + arg_count]
+                i += arg_count
+                if self._apply_command(cmd, args):
+                    changed = True
+                continue
+
+            self._pending_cmd = cmd
+            self._pending_args = list(tx[i:])
+            i = len(tx)
+
+        if changed:
+            self._mark_dirty()
 
     def _apply_command(self, cmd: int, args: List[int]) -> bool:
         changed = False

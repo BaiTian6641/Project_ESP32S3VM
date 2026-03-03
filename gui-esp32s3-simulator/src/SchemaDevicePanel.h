@@ -60,6 +60,7 @@ private:
     void doCoalescedRender();
     void renderDisplayBuffer(const QJsonObject &bufferObj);
     void renderPageMajorMono(const QList<int> &data, int w, int h);
+    void renderScanlineRgb565(const QList<int> &data, int w, int h);
     QImage scaleForDisplay(const QImage &source) const;
 
     void rebuildMetricsView(const QJsonObject &panelObj);

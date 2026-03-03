@@ -89,6 +89,8 @@ MainWindow::MainWindow(QWidget *parent)
             controller, &QemuController::handleBridgeResponse);
     connect(peripheralManager, &PeripheralManager::i2cResponseMapReady,
             controller, &QemuController::setI2cBridgeResponseMap);
+    connect(peripheralManager, &PeripheralManager::spiDcGpioReady,
+            controller, &QemuController::setSpiDcGpio);
 
     /* When peripheral config changes (reload, start, stop), re-sync bridge addresses.
      * Use deviceSetChanged (not devicesChanged) to avoid re-pushing addresses
