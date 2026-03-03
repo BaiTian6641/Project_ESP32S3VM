@@ -467,6 +467,21 @@ void QemuController::pushAllI2cBridgeAddresses()
     }
 }
 
+void QemuController::setI2cBridgeResponseMap(int busIndex, const QString &mapStr)
+{
+    if (!qmpReady || busIndex < 0 || busIndex >= I2C_BUS_COUNT) {
+        return;
+    }
+
+    const QString path = QString("/machine/soc/i2c%1/i2c/child[0]").arg(busIndex);
+
+    QJsonObject args;
+    args["path"]     = path;
+    args["property"] = QStringLiteral("read-response-map");
+    args["value"]    = mapStr;
+    sendQmpCommand("qom-set", args);
+}
+
 void QemuController::setGdbServerConfig(bool enabled, int port, bool waitForAttach)
 {
     gdbEnabled = enabled;
@@ -628,6 +643,15 @@ void QemuController::startQemuWithFirmware(const QString &firmwarePath)
         emit debugMessageReceived("[QEMU] qemu-system-xtensa not found. Set ESP32S3_QEMU_BIN or build qemu/build/qemu-system-xtensa");
         return;
     }
+    {
+        const QFileInfo qemuInfo(qemuBinaryPath);
+        const QString qemuInfoLine = QString("[QEMU] binary: %1 (size=%2, mtime=%3)")
+                .arg(qemuInfo.absoluteFilePath())
+                .arg(qemuInfo.size())
+                .arg(qemuInfo.lastModified().toString(Qt::ISODate));
+        emit debugMessageReceived(qemuInfoLine);
+        emit serialLineReceived(QString("[SIMDBG] %1").arg(qemuInfoLine));
+    }
 
     if (uartMasterFd < 0 && !setupUartPty()) {
         emit debugMessageReceived("[Serial] PTY bridge unavailable, continuing with integrated GUI serial only");
@@ -735,7 +759,11 @@ void QemuController::startQemuWithFirmware(const QString &firmwarePath)
         emit debugMessageReceived("[Flash] UART sync auto-entry is enabled: esptool sync packet can auto-switch simulator to Download Boot mode");
     }
 
-    emit debugMessageReceived(QString("[QEMU] Launch: %1 %2").arg(qemuBinaryPath, args.join(' ')));
+    {
+        const QString launchLine = QString("[QEMU] Launch: %1 %2").arg(qemuBinaryPath, args.join(' '));
+        emit debugMessageReceived(launchLine);
+        emit serialLineReceived(QString("[SIMDBG] %1").arg(launchLine));
+    }
     if (gdbEnabled) {
         const QString endpoint = QString("127.0.0.1:%1").arg(gdbPort);
         const QString mode = gdbWaitForAttach ? "waiting for debugger" : "running";
@@ -929,19 +957,6 @@ void QemuController::teardownUartPty()
 
 bool QemuController::prepareSpiFlashImage(const QString &firmwarePath, QString &flashPathOut)
 {
-    auto hasPartitionTableAt0x8000 = [](const QByteArray &image) -> bool {
-        static constexpr int kPartitionTableOffset = 0x8000;
-        static constexpr int kEntryMagicOffset = kPartitionTableOffset;
-        if (image.size() < (kEntryMagicOffset + 2)) {
-            return false;
-        }
-
-        const quint8 b0 = static_cast<quint8>(image.at(kEntryMagicOffset));
-        const quint8 b1 = static_cast<quint8>(image.at(kEntryMagicOffset + 1));
-        const quint16 magic = static_cast<quint16>(b0) | (static_cast<quint16>(b1) << 8);
-        return magic == 0x50AA;
-    };
-
     QFile fwFile(firmwarePath);
     if (!fwFile.open(QIODevice::ReadOnly)) {
         emit debugMessageReceived(QString("[SPI Flash] failed to open firmware: %1").arg(firmwarePath));
@@ -951,133 +966,200 @@ bool QemuController::prepareSpiFlashImage(const QString &firmwarePath, QString &
     const QByteArray fwData = fwFile.readAll();
     fwFile.close();
 
-    QByteArray bootloaderData;
-    QByteArray partitionData;
-    QByteArray appData;
-
-    const bool looksMerged = hasPartitionTableAt0x8000(fwData);
-    bool composeFromArtifacts = false;
-
-    if (!looksMerged && firmwarePath.endsWith(".bin", Qt::CaseInsensitive)
-        && !firmwarePath.endsWith(".merged.bin", Qt::CaseInsensitive)
-        && !firmwarePath.endsWith(".bootloader.bin", Qt::CaseInsensitive)
-        && !firmwarePath.endsWith(".partitions.bin", Qt::CaseInsensitive)) {
-        appData = fwData;
-
-        const QString baseNoExt = firmwarePath.left(firmwarePath.size() - 4);
-        const QString bootloaderPath = baseNoExt + ".bootloader.bin";
-        const QString partitionsPath = baseNoExt + ".partitions.bin";
-
-        QFile bootFile(bootloaderPath);
-        QFile partFile(partitionsPath);
-        if (bootFile.open(QIODevice::ReadOnly) && partFile.open(QIODevice::ReadOnly)) {
-            bootloaderData = bootFile.readAll();
-            partitionData = partFile.readAll();
-            bootFile.close();
-            partFile.close();
-
-            if (!bootloaderData.isEmpty() && !partitionData.isEmpty()) {
-                composeFromArtifacts = true;
-                emit debugMessageReceived(QString("[SPI Flash] detected app-only binary; composing flash image from artifacts near: %1")
-                                        .arg(QFileInfo(firmwarePath).absolutePath()));
-            }
+    auto decodeFlashSizeFromHeader = [](const QByteArray &image) -> int {
+        if (image.size() < 4) {
+            return 0;
         }
+
+        const quint8 magic = static_cast<quint8>(image.at(0));
+        const quint8 flashCfg = static_cast<quint8>(image.at(3));
+        if (magic != 0xE9) {
+            return 0;
+        }
+
+        const quint8 sizeNibble = (flashCfg >> 4) & 0x0F;
+        switch (sizeNibble) {
+        case 0x0: return 1;
+        case 0x1: return 2;
+        case 0x2: return 4;
+        case 0x3: return 8;
+        case 0x4: return 16;
+        case 0x5: return 32;
+        case 0x6: return 64;
+        case 0x7: return 128;
+        default: return 0;
+        }
+    };
+
+    int effectiveFlashMB = spiFlashSizeMB;
+    const int firmwareFlashMB = decodeFlashSizeFromHeader(fwData);
+    if (firmwareFlashMB > 0 && firmwareFlashMB != effectiveFlashMB) {
+        emit debugMessageReceived(QString("[SPI Flash] firmware header declares %1MB, simulator hardware is %2MB; using simulator hardware size")
+                                .arg(firmwareFlashMB)
+                                .arg(effectiveFlashMB));
     }
 
-    if (fwData.size() >= 4) {
-        const quint8 magic = static_cast<quint8>(fwData.at(0));
-        const quint8 flashCfg = static_cast<quint8>(fwData.at(3));
-        if (magic == 0xE9) {
-            const quint8 sizeNibble = (flashCfg >> 4) & 0x0F;
-            int imageFlashSizeMB = 0;
-            switch (sizeNibble) {
-            case 0x0: imageFlashSizeMB = 1; break;
-            case 0x1: imageFlashSizeMB = 2; break;
-            case 0x2: imageFlashSizeMB = 4; break;
-            case 0x3: imageFlashSizeMB = 8; break;
-            case 0x4: imageFlashSizeMB = 16; break;
-            case 0x5: imageFlashSizeMB = 32; break;
-            case 0x6: imageFlashSizeMB = 64; break;
-            case 0x7: imageFlashSizeMB = 128; break;
-            default: break;
-            }
-
-            if (imageFlashSizeMB > 0 && spiFlashSizeMB < imageFlashSizeMB) {
-                emit debugMessageReceived(QString("[SPI Flash] warning: firmware header indicates %1MB flash, but current simulator flash is %2MB")
-                                        .arg(imageFlashSizeMB)
-                                        .arg(spiFlashSizeMB));
-            }
-        }
-    }
-
-    const qint64 flashSizeBytes = static_cast<qint64>(spiFlashSizeMB) * 1024 * 1024;
+    const qint64 flashSizeBytes = static_cast<qint64>(effectiveFlashMB) * 1024 * 1024;
     if (fwData.size() > flashSizeBytes) {
         emit debugMessageReceived(QString("[SPI Flash] firmware too large (%1 bytes) for %2MB flash")
                                 .arg(fwData.size())
-                                .arg(spiFlashSizeMB));
+                                .arg(effectiveFlashMB));
         return false;
     }
 
     const QFileInfo fwInfo(firmwarePath);
-    const QString fwBase = fwInfo.completeBaseName();
-    spiFlashImagePath = QDir(fwInfo.absolutePath()).filePath(
-        QString("%1.qemu_flash_%2MB.bin").arg(fwBase).arg(spiFlashSizeMB));
-    QFile flashFile(spiFlashImagePath);
-    if (!flashFile.open(QIODevice::ReadWrite | QIODevice::Truncate)) {
-        emit debugMessageReceived(QString("[SPI Flash] failed to create flash image: %1").arg(spiFlashImagePath));
-        return false;
+    QString imageBase = fwInfo.completeBaseName();
+    if (imageBase.endsWith(".merged", Qt::CaseInsensitive)) {
+        imageBase.chop(QStringLiteral(".merged").size());
     }
+    spiFlashImagePath = QDir(fwInfo.absolutePath()).filePath(
+        QString("%1.qemu_flash_%2MB.bin").arg(imageBase).arg(effectiveFlashMB));
 
-    QByteArray fillChunk(1024 * 1024, static_cast<char>(0xFF));
-    int remainingMB = spiFlashSizeMB;
-    while (remainingMB-- > 0) {
-        if (flashFile.write(fillChunk) != fillChunk.size()) {
-            emit debugMessageReceived("[SPI Flash] failed while initializing flash image");
+    const QFileInfo flashInfo(spiFlashImagePath);
+    const bool flashExists = flashInfo.exists();
+    const bool flashSizeOk = flashExists && flashInfo.size() == flashSizeBytes;
+    const bool sourceNewerThanFlash = flashExists && fwInfo.lastModified() > flashInfo.lastModified();
+    const bool shouldInitialize = !flashExists || !flashSizeOk || sourceNewerThanFlash;
+
+    if (shouldInitialize) {
+        QFile flashFile(spiFlashImagePath);
+        if (!flashFile.open(QIODevice::ReadWrite | QIODevice::Truncate)) {
+            emit debugMessageReceived(QString("[SPI Flash] failed to create flash image: %1").arg(spiFlashImagePath));
+            return false;
+        }
+
+        QByteArray fillChunk(1024 * 1024, static_cast<char>(0xFF));
+        int remainingMB = effectiveFlashMB;
+        while (remainingMB-- > 0) {
+            if (flashFile.write(fillChunk) != fillChunk.size()) {
+                emit debugMessageReceived("[SPI Flash] failed while initializing flash image");
+                flashFile.close();
+                return false;
+            }
+        }
+
+        if (!flashFile.seek(0)) {
+            emit debugMessageReceived("[SPI Flash] failed to seek flash image");
             flashFile.close();
             return false;
         }
+
+        if (flashFile.write(fwData) != fwData.size()) {
+            emit debugMessageReceived("[SPI Flash] failed writing merged firmware into flash image");
+            flashFile.close();
+            return false;
+        }
+
+        flashFile.flush();
+        flashFile.close();
+
+        const QString initReason = !flashExists
+            ? QStringLiteral("new image")
+            : (!flashSizeOk ? QStringLiteral("size changed") : QStringLiteral("firmware updated"));
+        emit debugMessageReceived(QString("[SPI Flash] initialized virtual flash (%1): %2")
+                                .arg(initReason, spiFlashImagePath));
+    } else {
+        emit debugMessageReceived(QString("[SPI Flash] reusing persistent virtual flash: %1")
+                                .arg(spiFlashImagePath));
     }
 
-    auto writeBlob = [this, &flashFile](qint64 offset, const QByteArray &blob, const QString &label) -> bool {
-        if (blob.isEmpty()) {
+    auto readLe32 = [](const QByteArray &data, int off) -> quint32 {
+        if (off < 0 || off + 4 > data.size()) {
+            return 0;
+        }
+        return static_cast<quint32>(static_cast<quint8>(data.at(off)))
+            | (static_cast<quint32>(static_cast<quint8>(data.at(off + 1))) << 8)
+            | (static_cast<quint32>(static_cast<quint8>(data.at(off + 2))) << 16)
+            | (static_cast<quint32>(static_cast<quint8>(data.at(off + 3))) << 24);
+    };
+
+    auto normalizeCoredumpHeader = [this, &readLe32, flashSizeBytes](const QString &flashPath) -> bool {
+        static constexpr int kPartitionTableOffset = 0x8000;
+        static constexpr int kPartitionEntrySize = 32;
+        static constexpr int kPartitionTableSpan = 0xC00;
+
+        QFile flashFile(flashPath);
+        if (!flashFile.open(QIODevice::ReadWrite)) {
+            emit debugMessageReceived(QString("[SPI Flash] failed to open virtual flash for coredump normalization: %1")
+                                    .arg(flashPath));
+            return false;
+        }
+
+        if (!flashFile.seek(kPartitionTableOffset)) {
+            flashFile.close();
+            return false;
+        }
+
+        const QByteArray part = flashFile.read(kPartitionTableSpan);
+        if (part.size() < kPartitionEntrySize) {
+            flashFile.close();
+            return false;
+        }
+
+        qint64 coredumpOffset = -1;
+        for (int entryOff = 0; entryOff + kPartitionEntrySize <= part.size(); entryOff += kPartitionEntrySize) {
+            const quint16 magic = static_cast<quint16>(static_cast<quint8>(part.at(entryOff)))
+                | (static_cast<quint16>(static_cast<quint8>(part.at(entryOff + 1))) << 8);
+            if (magic != 0x50AA) {
+                continue;
+            }
+
+            const quint8 type = static_cast<quint8>(part.at(entryOff + 2));
+            const quint8 subtype = static_cast<quint8>(part.at(entryOff + 3));
+            if (type == 0x01 && subtype == 0x03) {
+                const qint64 off = static_cast<qint64>(readLe32(part, entryOff + 4));
+                const qint64 size = static_cast<qint64>(readLe32(part, entryOff + 8));
+                if (off >= 0 && size >= 4 && (off + size) <= flashSizeBytes) {
+                    coredumpOffset = off;
+                }
+                break;
+            }
+        }
+
+        if (coredumpOffset < 0) {
+            flashFile.close();
             return true;
         }
-        if (!flashFile.seek(offset)) {
-            emit debugMessageReceived(QString("[SPI Flash] failed to seek for %1 write").arg(label));
+
+        if (!flashFile.seek(coredumpOffset)) {
+            flashFile.close();
             return false;
         }
-        if (flashFile.write(blob) != blob.size()) {
-            emit debugMessageReceived(QString("[SPI Flash] failed writing %1").arg(label));
+
+        const QByteArray before = flashFile.read(4);
+        if (!flashFile.seek(coredumpOffset)) {
+            flashFile.close();
             return false;
         }
+
+        const QByteArray blankHeader(4, static_cast<char>(0xFF));
+        if (flashFile.write(blankHeader) != blankHeader.size()) {
+            flashFile.close();
+            return false;
+        }
+
+        flashFile.flush();
+        flashFile.close();
+
+        if (before.size() == 4) {
+            const quint32 prev = static_cast<quint32>(static_cast<quint8>(before.at(0)))
+                               | (static_cast<quint32>(static_cast<quint8>(before.at(1))) << 8)
+                               | (static_cast<quint32>(static_cast<quint8>(before.at(2))) << 16)
+                               | (static_cast<quint32>(static_cast<quint8>(before.at(3))) << 24);
+            if (prev != 0xFFFFFFFFu) {
+                emit debugMessageReceived(QString("[SPI Flash] normalized coredump header at 0x%1 (prev=0x%2)")
+                                        .arg(QString::number(coredumpOffset, 16).toUpper())
+                                        .arg(QString::number(prev, 16).toUpper()));
+            }
+        }
+
         return true;
     };
 
-    if (composeFromArtifacts) {
-        if (!writeBlob(0x0000, bootloaderData, QStringLiteral("bootloader"))
-            || !writeBlob(0x8000, partitionData, QStringLiteral("partition table"))
-            || !writeBlob(0x10000, appData, QStringLiteral("app image"))) {
-            flashFile.close();
-            return false;
-        }
-    } else {
-        if (!writeBlob(0x0000, fwData, QStringLiteral("firmware image"))) {
-            flashFile.close();
-            return false;
-        }
+    if (!normalizeCoredumpHeader(spiFlashImagePath)) {
+        emit debugMessageReceived("[SPI Flash] warning: coredump header normalization failed");
     }
 
-    /* The entire flash image has already been filled with 0xFF above,
-       which matches real erased-flash state.  The coredump partition
-       (type=0x01, subtype=0x03) therefore contains 0xFF…FF, which
-       ESP-IDF interprets as "blank – no dump saved".
-
-       Additionally, our QEMU-targeted Arduino sketches use the linker
-       --wrap=esp_core_dump_init mechanism to completely bypass the
-       coredump flash check at boot, so no special partition content
-       is required. */
-
-    flashFile.close();
     flashPathOut = spiFlashImagePath;
     return true;
 }
@@ -1107,6 +1189,11 @@ QString QemuController::resolveQemuBinary() const
         QStringLiteral("qemu-system-xtensa");
 #endif
 
+    const QString envBin = qEnvironmentVariable("ESP32S3_QEMU_BIN");
+    if (!envBin.isEmpty() && QFileInfo::exists(envBin)) {
+        return QFileInfo(envBin).absoluteFilePath();
+    }
+
     const QStringList candidates = {
         QDir::cleanPath(appDir + "/qemu/" + exeName),
         QDir::cleanPath(appDir + "/../qemu/" + exeName),
@@ -1125,11 +1212,6 @@ QString QemuController::resolveQemuBinary() const
         if (QFileInfo::exists(candidate)) {
             return QFileInfo(candidate).absoluteFilePath();
         }
-    }
-
-    const QString envBin = qEnvironmentVariable("ESP32S3_QEMU_BIN");
-    if (!envBin.isEmpty() && QFileInfo::exists(envBin)) {
-        return QFileInfo(envBin).absoluteFilePath();
     }
 
     const QString fromPath = QStandardPaths::findExecutable(exeName);

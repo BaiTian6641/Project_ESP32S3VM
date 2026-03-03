@@ -56,6 +56,7 @@ signals:
     void deviceLogLine(const QString &deviceId, const QString &line);
     void deviceTraceLine(const QString &deviceId, const QString &line);
     void bridgeResponseReady(const QString &busKind, const QJsonObject &payload);
+    void i2cResponseMapReady(int busIndex, const QString &mapStr);
     void managerMessage(const QString &line);
 
 private:
@@ -90,6 +91,7 @@ private:
     bool validateConfigDocument(const QJsonObject &root, QStringList &errors, QStringList &warnings) const;
     bool busKindMatchesProtocol(const QString &busKind, const QString &protocol) const;
     QString normalizeAddressText(const QString &value) const;
+    bool shouldEmitBridgeLog(const QString &key, qint64 minIntervalMs);
     void emitTrace(DeviceRuntime *device, const QString &dir, const QJsonObject &obj);
     void startDevice(DeviceRuntime *device);
     void stopDevice(DeviceRuntime *device);
@@ -103,10 +105,12 @@ private:
     void parseStdout(DeviceRuntime *device, const QByteArray &bytes);
     void parseStderr(DeviceRuntime *device, const QByteArray &bytes);
     void handleJsonMessage(DeviceRuntime *device, const QJsonObject &obj);
+    void emitI2cResponseMap(DeviceRuntime *device, const QJsonObject &responseMap);
 
     QList<DeviceRuntime *> devices;
     QTimer *autoRefreshTimer = nullptr;
     QString loadedConfigPath;
     QString configDir;
     QString workspaceRoot;
+    QHash<QString, qint64> bridgeLogLastMs;
 };

@@ -291,7 +291,12 @@ class Sht21Simulator:
             "clock_hz": clock_hz,
             "repeated_start": bool(params.get("repeated_start", False)),
         }
-        return {"ack": True, "ops": out_ops, "timing": timing}
+        return {
+            "ack": True,
+            "ops": out_ops,
+            "timing": timing,
+            "i2c_response_map": self._build_response_map(),
+        }
 
     # -- Command processing --
     def _process_command(self, data: List[int]) -> None:
@@ -460,7 +465,45 @@ class Sht21Simulator:
             "end_of_battery": self.end_of_battery,
             "noise": self._noise,
             "pending_measurement": self._pending_measurement,
+            "i2c_response_map": self._build_response_map(),
         }
+
+    def _build_response_map(self) -> Dict[str, list]:
+        """Pre-compute all I2C command → response-byte mappings.
+
+        Keyed by hex command byte (e.g. "e3"), value is list of ints.
+        The GUI injects these into the QEMU bridge's read-response-map
+        QOM property so that I2C reads return correct data immediately.
+        """
+        rmap: Dict[str, list] = {}
+
+        # 0xE7 – Read User Register: [register_value, CRC]
+        crc_ur = _crc8_sht21([self.user_reg])
+        rmap["e7"] = [self.user_reg, crc_ur]
+
+        # 0xE3 – Temperature Hold-master: [MSB, LSB, CRC]
+        t_val = self._sampled_temperature()
+        raw_t = _encode_temp_raw(t_val, self._temp_bits)
+        msb_t = (raw_t >> 8) & 0xFF
+        lsb_t = raw_t & 0xFF
+        crc_t = _crc8_sht21([msb_t, lsb_t])
+        rmap["e3"] = [msb_t, lsb_t, crc_t]
+
+        # 0xF3 – Temperature No-hold: same encoding
+        rmap["f3"] = rmap["e3"]
+
+        # 0xE5 – Humidity Hold-master: [MSB, LSB, CRC]
+        h_val = self._sampled_humidity()
+        raw_h = _encode_rh_raw(h_val, self._rh_bits)
+        msb_h = (raw_h >> 8) & 0xFF
+        lsb_h = raw_h & 0xFF
+        crc_h = _crc8_sht21([msb_h, lsb_h])
+        rmap["e5"] = [msb_h, lsb_h, crc_h]
+
+        # 0xF5 – Humidity No-hold: same encoding
+        rmap["f5"] = rmap["e5"]
+
+        return rmap
 
     @staticmethod
     def _parse_addr(value: Any) -> int:

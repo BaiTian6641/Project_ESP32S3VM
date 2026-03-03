@@ -1,6 +1,7 @@
 #include "PeripheralManager.h"
 
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -102,9 +103,9 @@ bool PeripheralManager::loadConfig(const QString &path)
         runtime->status = obj.value("status").toString("loaded");
 
         const QJsonObject bus = obj.value("bus").toObject();
-        runtime->busKind = bus.value("kind").toString();
-        runtime->busController = bus.value("controller").toString();
-        runtime->busAddress = bus.value("address").toString(obj.value("reg").toString());
+        runtime->busKind = bus.value("kind").toString().trimmed().toLower();
+        runtime->busController = bus.value("controller").toString().trimmed().toLower();
+        runtime->busAddress = bus.value("address").toString(obj.value("reg").toString()).trimmed();
 
         const QJsonObject sim = obj.value("simulator").toObject();
         runtime->simExec = sim.value("exec").toString();
@@ -202,12 +203,25 @@ bool PeripheralManager::validateConfigDocument(const QJsonObject &root,
 
         const QJsonObject bus = dev.value("bus").toObject();
         const QString busKind = bus.value("kind").toString().trimmed().toLower();
-        const QString controller = bus.value("controller").toString().trimmed();
+        const QString controller = bus.value("controller").toString().trimmed().toLower();
         if (busKind.isEmpty()) {
             errors.append(QString("devices[%1].bus.kind is required").arg(i));
         }
         if (controller.isEmpty()) {
             errors.append(QString("devices[%1].bus.controller is required").arg(i));
+        }
+
+        if (busKind == "spi") {
+            if (controller == "spi0" || controller == "spi1") {
+                errors.append(QString("devices[%1].bus.controller '%2' is reserved for internal flash/psram; use spi2/spi3 for external peripherals")
+                              .arg(i)
+                              .arg(controller));
+            } else if (controller != "spi2" && controller != "spi3"
+                       && controller != "gpspi2" && controller != "gpspi3") {
+                warnings.append(QString("devices[%1].bus.controller '%2' is unusual for ESP32-S3 external peripherals (expected spi2/spi3)")
+                                .arg(i)
+                                .arg(controller));
+            }
         }
 
         const QString busRef = dev.value("bus_ref").toString().trimmed();
@@ -273,6 +287,17 @@ QString PeripheralManager::normalizeAddressText(const QString &value) const
         return text;
     }
     return QString("0x%1").arg(num, 0, 16);
+}
+
+bool PeripheralManager::shouldEmitBridgeLog(const QString &key, qint64 minIntervalMs)
+{
+    const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+    const qint64 lastMs = bridgeLogLastMs.value(key, 0);
+    if (lastMs > 0 && (nowMs - lastMs) < minIntervalMs) {
+        return false;
+    }
+    bridgeLogLastMs.insert(key, nowMs);
+    return true;
 }
 
 void PeripheralManager::emitTrace(DeviceRuntime *device,
@@ -523,8 +548,10 @@ void PeripheralManager::dispatchI2cTransfer(const QJsonObject &request)
         return;
     }
 
-    emit managerMessage(QString("[Bridge][I2C] no matching running device for controller=%1 address=%2")
-                        .arg(controller, address));
+    if (shouldEmitBridgeLog(QString("i2c_nomatch_%1_%2").arg(controllerNorm, address), 5000)) {
+        emit managerMessage(QString("[Bridge][I2C] no matching running device for controller=%1 address=%2")
+                            .arg(controller, address));
+    }
 }
 
 void PeripheralManager::dispatchSpiTransfer(const QJsonObject &request)
@@ -537,10 +564,10 @@ void PeripheralManager::dispatchSpiTransfer(const QJsonObject &request)
     const int rxLen = request.value("rx_len").toInt(0);
 
     if (controllerNorm == "spi0" || controllerNorm == "spi1") {
-        emit managerMessage(QString("[Bridge][SPI] ignored internal controller=%1 cs=%2 mode=%3 tx=%4 rx=%5 (reserved for flash/psram)")
-                            .arg(controller, csText, mode)
-                            .arg(txLen)
-                            .arg(rxLen));
+        if (shouldEmitBridgeLog(QString("spi_internal_%1").arg(controllerNorm), 5000)) {
+            emit managerMessage(QString("[Bridge][SPI] ignored internal controller=%1 (reserved for flash/psram)")
+                                .arg(controller));
+        }
         return;
     }
 
@@ -558,21 +585,17 @@ void PeripheralManager::dispatchSpiTransfer(const QJsonObject &request)
             continue;
         }
 
-        emit managerMessage(QString("[Bridge][SPI] routed controller=%1 cs=%2 mode=%3 tx=%4 rx=%5 -> device=%6 (%7/%8)")
-                            .arg(controller, csText, mode)
-                            .arg(txLen)
-                            .arg(rxLen)
-                            .arg(device->id, device->busController, device->busAddress));
-
         sendRpc(device, "spi_transfer", request, true,
             QJsonObject{{"bridge_bus", "spi"}, {"request", request}});
         return;
     }
 
-    emit managerMessage(QString("[Bridge][SPI] no matching running device for controller=%1 cs=%2 mode=%3 tx=%4 rx=%5")
-                        .arg(controller, csText, mode)
-                        .arg(txLen)
-                        .arg(rxLen));
+    if (shouldEmitBridgeLog(QString("spi_nomatch_%1_%2").arg(controllerNorm, csText), 5000)) {
+        emit managerMessage(QString("[Bridge][SPI] no matching running device for controller=%1 cs=%2 mode=%3 tx=%4 rx=%5")
+                            .arg(controller, csText, mode)
+                            .arg(txLen)
+                            .arg(rxLen));
+    }
 }
 
 void PeripheralManager::dispatchUartTx(const QJsonObject &request)
@@ -621,8 +644,10 @@ void PeripheralManager::dispatchUartTx(const QJsonObject &request)
         return;
     }
 
-    emit managerMessage(QString("[Bridge][UART] no matching running device for controller=%1 unit=%2")
-                        .arg(controller, unitText));
+    if (shouldEmitBridgeLog(QString("uart_nomatch_%1_%2").arg(controllerNorm, unitText), 5000)) {
+        emit managerMessage(QString("[Bridge][UART] no matching running device for controller=%1 unit=%2")
+                            .arg(controller, unitText));
+    }
 }
 
 QString PeripheralManager::resolvePathForConfig(const QString &raw) const
@@ -951,6 +976,51 @@ void PeripheralManager::parseStderr(DeviceRuntime *device, const QByteArray &byt
     }
 }
 
+void PeripheralManager::emitI2cResponseMap(DeviceRuntime *device, const QJsonObject &responseMap)
+{
+    if (!device || responseMap.isEmpty() || device->busKind != "i2c") {
+        return;
+    }
+
+    /* Extract bus index from controller name (e.g. "i2c0" → 0) */
+    const QString ctrl = device->busController.trimmed().toLower();
+    int busIndex = -1;
+    if (ctrl.startsWith("i2c") && ctrl.size() > 3) {
+        bool ok = false;
+        busIndex = ctrl.mid(3).toInt(&ok);
+        if (!ok) busIndex = -1;
+    }
+    if (busIndex < 0) return;
+
+    /* Normalise device address (strip "0x", pad to 2 hex digits) */
+    QString addrHex = device->busAddress.trimmed().toLower();
+    if (addrHex.startsWith("0x")) addrHex = addrHex.mid(2);
+    if (addrHex.isEmpty()) return;
+    while (addrHex.size() < 2) addrHex.prepend(QLatin1Char('0'));
+
+    /* Build bridge map string: "addr.cmd:hexdata;addr.cmd:hexdata;..." */
+    QStringList entries;
+    for (auto it = responseMap.constBegin(); it != responseMap.constEnd(); ++it) {
+        QString cmdHex = it.key().trimmed().toLower();
+        while (cmdHex.size() < 2) cmdHex.prepend(QLatin1Char('0'));
+
+        const QJsonArray dataArr = it.value().toArray();
+        if (dataArr.isEmpty()) continue;
+
+        QString dataHex;
+        for (const QJsonValue &v : dataArr) {
+            dataHex += QString("%1").arg(v.toInt() & 0xFF, 2, 16, QChar('0'));
+        }
+
+        entries.append(QString("%1.%2:%3").arg(addrHex, cmdHex, dataHex));
+    }
+
+    if (!entries.isEmpty()) {
+        entries.sort();
+        emit i2cResponseMapReady(busIndex, entries.join(QLatin1Char(';')));
+    }
+}
+
 void PeripheralManager::handleJsonMessage(DeviceRuntime *device, const QJsonObject &obj)
 {
     if (!device) {
@@ -988,11 +1058,28 @@ void PeripheralManager::handleJsonMessage(DeviceRuntime *device, const QJsonObje
             payload["request"] = pending.value("request").toObject();
             payload["result"] = obj.value("result").toObject();
             emit bridgeResponseReady(bridgeBus, payload);
+
+            /* Push updated I2C response map to QEMU bridge if present */
+            const QJsonObject result = obj.value("result").toObject();
+            if (result.contains("i2c_response_map")) {
+                emitI2cResponseMap(device, result.value("i2c_response_map").toObject());
+            }
         }
 
         if (method == "get_capabilities") {
             device->capabilities = obj.value("result").toObject();
             emit devicesChanged();
+
+            /* Immediately request initial state so the I2C response map
+               is pushed to the QEMU bridge before the firmware boots far
+               enough to perform its first read. */
+            if (device->process && device->process->state() == QProcess::Running) {
+                QJsonObject stateParams;
+                stateParams["include_buffer"] = false;
+                sendRpc(device, "get_state", stateParams, true);
+                device->stateRequestInFlight = true;
+                device->lastStateRequestMs = QDateTime::currentMSecsSinceEpoch();
+            }
             return;
         }
 
@@ -1017,6 +1104,13 @@ void PeripheralManager::handleJsonMessage(DeviceRuntime *device, const QJsonObje
                     device->state[it.key()] = it.value();
                 }
             }
+
+            /* Push I2C response map on every state poll so the bridge
+               always has up-to-date read data (e.g. after GUI parameter change). */
+            if (device->state.contains("i2c_response_map")) {
+                emitI2cResponseMap(device, device->state.value("i2c_response_map").toObject());
+            }
+
             emit devicesChanged();
             return;
         }
