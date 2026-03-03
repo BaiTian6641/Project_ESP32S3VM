@@ -21,6 +21,12 @@ PeripheralManager::PeripheralManager(QObject *parent)
     connect(autoRefreshTimer, &QTimer::timeout,
             this, &PeripheralManager::refreshStates);
     autoRefreshTimer->start();
+
+    /* SPI batching timer — flushes accumulated transfers at ~30 fps */
+    spiBatchTimer = new QTimer(this);
+    spiBatchTimer->setInterval(SPI_BATCH_INTERVAL_MS);
+    connect(spiBatchTimer, &QTimer::timeout,
+            this, &PeripheralManager::flushSpiBatches);
 }
 
 PeripheralManager::~PeripheralManager()
@@ -399,9 +405,14 @@ void PeripheralManager::ensureAllRunning()
 
 void PeripheralManager::stopAll()
 {
+    /* Flush any pending SPI batches before stopping devices */
+    flushSpiBatches();
+    spiBatchTimer->stop();
+
     for (DeviceRuntime *device : devices) {
         stopDevice(device);
     }
+    spiAccum.clear();
     emit devicesChanged();
     emit deviceSetChanged();
 }
@@ -559,16 +570,15 @@ void PeripheralManager::dispatchSpiTransfer(const QJsonObject &request)
     const QString controller = request.value("controller").toString().trimmed();
     const QString controllerNorm = controller.toLower();
     const QString csText = request.value("chip_select").toVariant().toString().trimmed();
-    const QString mode = request.value("mode").toString("single");
-    const int txLen = request.value("tx").toArray().size();
-    const int rxLen = request.value("rx_len").toInt(0);
 
     if (controllerNorm == "spi0" || controllerNorm == "spi1") {
-        if (shouldEmitBridgeLog(QString("spi_internal_%1").arg(controllerNorm), 5000)) {
-            emit managerMessage(QString("[Bridge][SPI] ignored internal controller=%1 (reserved for flash/psram)")
-                                .arg(controller));
-        }
-        return;
+        return;   // internal flash/psram — drop silently
+    }
+
+    const int dc = request.contains("dc") ? request.value("dc").toInt(-1) : -1;
+    const QJsonArray tx = request.value("tx").toArray();
+    if (tx.isEmpty()) {
+        return;   // nothing to accumulate
     }
 
     for (DeviceRuntime *device : devices) {
@@ -585,16 +595,77 @@ void PeripheralManager::dispatchSpiTransfer(const QJsonObject &request)
             continue;
         }
 
-        sendRpc(device, "spi_transfer", request, true,
-            QJsonObject{{"bridge_bus", "spi"}, {"request", request}});
+        /* Accumulate into the per-device batch, merging consecutive same-DC entries */
+        auto &queue = spiAccum[device];
+        if (!queue.isEmpty() && queue.last().dc == dc) {
+            /* Merge into previous entry */
+            QJsonArray &prev = queue.last().tx;
+            for (const QJsonValue &v : tx) {
+                prev.append(v);
+            }
+        } else {
+            queue.append(SpiBatchEntry{dc, tx});
+        }
+
+        /* Start the batch timer if not already running */
+        if (!spiBatchTimer->isActive()) {
+            spiBatchTimer->start();
+        }
         return;
     }
 
+    /* No device matched */
     if (shouldEmitBridgeLog(QString("spi_nomatch_%1_%2").arg(controllerNorm, csText), 5000)) {
-        emit managerMessage(QString("[Bridge][SPI] no matching running device for controller=%1 cs=%2 mode=%3 tx=%4 rx=%5")
-                            .arg(controller, csText, mode)
-                            .arg(txLen)
-                            .arg(rxLen));
+        emit managerMessage(QString("[Bridge][SPI] no matching running device for controller=%1 cs=%2")
+                            .arg(controller, csText));
+    }
+}
+
+void PeripheralManager::flushSpiBatches()
+{
+    if (spiAccum.isEmpty()) {
+        spiBatchTimer->stop();
+        return;
+    }
+
+    for (auto it = spiAccum.begin(); it != spiAccum.end(); ++it) {
+        DeviceRuntime *device = it.key();
+        QList<SpiBatchEntry> &queue = it.value();
+        if (queue.isEmpty()) {
+            continue;
+        }
+        if (!device || !device->process || device->process->state() != QProcess::Running) {
+            queue.clear();
+            continue;
+        }
+
+        /* Build the batch payload */
+        QJsonArray transfers;
+        for (const SpiBatchEntry &entry : queue) {
+            QJsonObject t;
+            t["dc"] = entry.dc;
+            t["tx"] = entry.tx;
+            transfers.append(t);
+        }
+        queue.clear();
+
+        QJsonObject params;
+        params["transfers"] = transfers;
+
+        sendRpc(device, "spi_transfer_batch", params, true,
+            QJsonObject{{"bridge_bus", "spi"}, {"request", params}});
+    }
+
+    /* Remove empty entries */
+    for (auto it = spiAccum.begin(); it != spiAccum.end(); ) {
+        if (it.value().isEmpty()) {
+            it = spiAccum.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    if (spiAccum.isEmpty()) {
+        spiBatchTimer->stop();
     }
 }
 

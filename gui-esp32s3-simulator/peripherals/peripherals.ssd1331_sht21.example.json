@@ -20,9 +20,9 @@
       }
     },
     {
-      "id": "spi2-main",
+      "id": "spi3-main",
       "kind": "spi",
-      "controller": "spi2",
+      "controller": "spi3",
       "clock_hz": 8000000,
       "spi_mode": "single",
       "data_lines": 1,
@@ -45,11 +45,11 @@
         "solomon,ssd1331"
       ],
       "status": "okay",
-      "bus_ref": "spi2-main",
+      "bus_ref": "spi3-main",
       "reg": 0,
       "bus": {
         "kind": "spi",
-        "controller": "spi2",
+        "controller": "spi3",
         "chip_select": 0,
         "clock_hz": 8000000,
         "spi_mode": "single",

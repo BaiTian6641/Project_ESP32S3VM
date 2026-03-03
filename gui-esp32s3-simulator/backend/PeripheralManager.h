@@ -35,6 +35,9 @@ public:
     void dispatchSpiTransfer(const QJsonObject &request);
     void dispatchUartTx(const QJsonObject &request);
 
+    /** Flush any accumulated SPI batches immediately (called on stop). */
+    void flushSpiBatches();
+
     void sendDeviceRpc(const QString &deviceId,
                        const QString &method,
                        const QJsonObject &params = QJsonObject());
@@ -114,4 +117,17 @@ private:
     QString configDir;
     QString workspaceRoot;
     QHash<QString, qint64> bridgeLogLastMs;
+
+    /* ---------- SPI batching ---------- */
+    /** One (dc, tx-bytes) segment accumulated for later flush. */
+    struct SpiBatchEntry {
+        int dc;           // 0 = command, 1 = data, -1 = unknown
+        QJsonArray tx;
+    };
+    /** Per-device accumulator: list of merged segments. */
+    QHash<DeviceRuntime *, QList<SpiBatchEntry>> spiAccum;
+
+    /** Timer that fires at ~30 fps to flush accumulated SPI batches. */
+    QTimer *spiBatchTimer = nullptr;
+    static constexpr int SPI_BATCH_INTERVAL_MS = 33;  // ~30 fps
 };

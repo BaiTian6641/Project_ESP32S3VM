@@ -108,6 +108,9 @@ class Ssd1331Simulator:
         if method == "spi_transfer":
             return self._spi_transfer(params)
 
+        if method == "spi_transfer_batch":
+            return self._spi_transfer_batch(params)
+
         raise ValueError(f"Unsupported method: {method}")
 
     def tick(self) -> None:
@@ -202,8 +205,14 @@ class Ssd1331Simulator:
                     self._write_pixel_stream_rgb565(tx)
                     self._mark_dirty()
             else:
-                # Command phase — parse as commands
-                self._ingest_command_stream(tx)
+                # Command phase — parse as commands, but tolerate DC glitches:
+                # if we're already in RAM-write mode and this packet does not
+                # look command-like, treat it as pixel data.
+                if self._write_ram_mode and not self._looks_like_command_packet(tx):
+                    self._write_pixel_stream_rgb565(tx)
+                    self._mark_dirty()
+                else:
+                    self._ingest_command_stream(tx)
         else:
             # Legacy fallback: heuristic detection (no DC pin info)
             self._ingest_spi_stream(tx)
@@ -216,6 +225,46 @@ class Ssd1331Simulator:
                 "frequency_hz": int(params.get("frequency_hz", 8_000_000)),
             },
         }
+
+    def _spi_transfer_batch(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Process a batch of SPI transfers in one shot.
+
+        params["transfers"] is a list of {dc, tx} objects, where consecutive
+        same-dc entries have already been merged by the GUI.  This dramatically
+        reduces JSON-RPC overhead for high-throughput SPI devices like displays.
+        """
+        transfers = params.get("transfers", [])
+        if not isinstance(transfers, list):
+            return {"ok": False, "error": "invalid_transfers"}
+
+        for entry in transfers:
+            dc = entry.get("dc")
+            raw_tx = entry.get("tx", [])
+            if not isinstance(raw_tx, list) or not raw_tx:
+                continue
+
+            tx = [int(x) & 0xFF for x in raw_tx]
+
+            if dc is not None:
+                dc = int(dc)
+                if dc == 1:
+                    self._write_pixel_stream_rgb565(tx)
+                    self._mark_dirty()
+                else:
+                    if self._write_ram_mode and not self._looks_like_command_packet(tx):
+                        self._write_pixel_stream_rgb565(tx)
+                        self._mark_dirty()
+                    else:
+                        self._ingest_command_stream(tx)
+            else:
+                self._ingest_spi_stream(tx)
+
+        # Force a frame update after the batch if dirty
+        if self._frame_dirty:
+            self._frame_dirty = False
+            self._emit_frame_update()
+
+        return {"ok": True, "count": len(transfers)}
 
     def _command_arg_count(self, cmd: int) -> int:
         if cmd in (0x15, 0x75):
