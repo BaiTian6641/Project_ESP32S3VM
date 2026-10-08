@@ -679,6 +679,49 @@ static void rx_cb(void *opaque)
     timer_mod_ns(&s->rx_timer, after_bits(s, s->rx_origin, s->rx_next_half));
 }
 
+static void rx_start_frame(ESP32S3UARTState *s, uint64_t now, bool irda)
+{
+    timer_del(&s->at_timer);
+    timer_del(&s->idle_timer);
+    s->remaining[5] = 0;
+    s->idle_waiting = false;
+    s->at_pending = false;
+    s->rx_active = true;
+    s->rx_origin = now;
+    s->frame_rx_start = now;
+    s->rx_step = s->rx_byte = 0;
+    s->rx_error = false;
+    s->rx_all_low = true;
+    s->rx_data_bits = 5 + ((CONF(s) >> 2) & 3);
+    s->rx_parity = CONF(s) & B(1);
+    s->rx_stop_half = stop_half(CONF(s));
+    s->rx_irda = irda;
+    timer_mod_ns(&s->rx_timer, after_bits(s, now, 1));
+    s->rx_next_half = 1;
+}
+
+static uint32_t rx_route_signature(ESP32S3UARTState *s)
+{
+    /* Any routing change invalidates the level history: a stale baseline
+     * sampled from the previous pad otherwise swallows the first start bit
+     * on the new pad (level == rx_level, so no falling edge is seen). */
+    if (!s->gpio) {
+        return 0;
+    }
+    unsigned cfg = s->gpio->func_in_sel_cfg[rx_signal[s->index]];
+    uint32_t sig = cfg ^ ((uint32_t)rx_signal[s->index] << 16);
+    if (!(cfg & B(7))) {
+        static const int rx_pad[3] = {44, 18, -1};
+        int pad = rx_pad[s->index];
+        if (pad >= 0) {
+            ESP32S3GpioDriveSnapshot snap;
+            esp32s3_gpio_get_drive_snapshot(s->gpio, pad, &snap);
+            sig ^= (snap.ie ? 0x100u : 0) | ((uint32_t)snap.mcu_sel << 9);
+        }
+    }
+    return sig;
+}
+
 void esp32s3_uart_net_changed(void *opaque)
 {
     ESP32S3UARTState *s = opaque;
@@ -695,7 +738,17 @@ void esp32s3_uart_net_changed(void *opaque)
             s->irda_zero = true;
         }
     }
+    uint32_t route = rx_route_signature(s);
+    bool rerouted = route != s->rx_route;
+    s->rx_route = route;
     uint64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+    if (valid && !level && !s->rx_active && (rerouted || !s->rx_valid)) {
+        /* First valid sample on a (re)routed input that is already low:
+         * hardware samples the line as it finds it, so a low line is a start
+         * condition. The stale baseline must not swallow this falling edge;
+         * no edge is recorded because no transition was observed. */
+        rx_start_frame(s, now, irda);
+    }
     if (valid && s->rx_valid && level != s->rx_level) {
         uint64_t previous = level ? s->rise_ns : s->fall_ns;
         observe_edge(s, s->rx_level, level, now - s->edge_ns,
@@ -707,23 +760,7 @@ void esp32s3_uart_net_changed(void *opaque)
             s->fall_ns = now;
         }
         if (!level && !s->rx_active) {
-            timer_del(&s->at_timer);
-            timer_del(&s->idle_timer);
-            s->remaining[5] = 0;
-            s->idle_waiting = false;
-            s->at_pending = false;
-            s->rx_active = true;
-            s->rx_origin = now;
-            s->frame_rx_start = now;
-            s->rx_step = s->rx_byte = 0;
-            s->rx_error = false;
-            s->rx_all_low = true;
-            s->rx_data_bits = 5 + ((CONF(s) >> 2) & 3);
-            s->rx_parity = CONF(s) & B(1);
-            s->rx_stop_half = stop_half(CONF(s));
-            s->rx_irda = irda;
-            timer_mod_ns(&s->rx_timer, after_bits(s, now, 1));
-            s->rx_next_half = 1;
+            rx_start_frame(s, now, irda);
         }
     }
     s->rx_valid = valid;

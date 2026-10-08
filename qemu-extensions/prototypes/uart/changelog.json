@@ -115,5 +115,19 @@
    "Rejected the clamp-based RX patch after verification: absent row unchanged, connected-mode rows regressed; lane copy reverted byte-exact (git apply -R) and vectors re-verified.",
    "tests/firmware/uart_native/arduino: added esp_netif to REQUIRES (IDF diagnostic); the Arduino3.3.12/IDF5.5.5 fixture now builds and freezes. New open gate at run time: 'Pinned Arduino3.3.12/IDF5.5.5 boot identity missing' \u2014 the sketch does not emit the runner's pinned boot identity."
   ]
+ },
+ {
+  "date": "2026-10-08",
+  "packages": [
+   "UART-01",
+   "UART-02"
+  ],
+  "qualification": "uart0_physical_loopback513 fixed and verified in the fixture (absent mode failures=0, row PASS); vectors 60/60 + 17/17; absent/disconnected/wrong firmware all report failures=0.",
+  "changes": [
+   "RX edge-detection rebaseline: an RX input routing signature (func_in_sel_cfg + direct-pad IO_MUX state) invalidates the stale level baseline on re-route, and the first valid low sample on a (re)routed input arms the frame (hardware-faithful). Root cause proven by trace: the loopback row's start-bit falling edge was swallowed by the stale baseline from the console pad, so frames assembled misaligned from data edges and err_wr_mask discarded them (4/513).",
+   "Fixture runners adopt the documented deterministic profile (tcg,thread=single; icount shift=0,align=off,sleep=off); under wall-clock TCG the RX sampler fast-forwards under the console-port MMIO storm.",
+   "Runner completion detection fixed twice over: the token regex matched partially flushed DONE lines (killing QEMU mid-print so zero-failure validation could never match), and uhci mode watched UART_NATIVE_DONE instead of UHCI_NATIVE_DONE (guaranteed watchdog).",
+   "Console-mirror gate attempted and reverted: the loopback payload is physically present on pad43 (IO_MUX keeps U0TXD), so gating was either ineffective (pad43 mcu_sel stays 0) or harmful (stale matrix out_sel suppressed post-restore output). Evidence-text pollution recorded as a fixture/runner design residual in source-map blocked_by."
+  ]
  }
 ]

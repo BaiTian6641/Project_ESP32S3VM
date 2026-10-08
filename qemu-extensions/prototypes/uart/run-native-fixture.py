@@ -388,6 +388,8 @@ def run(args):
         with tempfile.TemporaryDirectory(prefix="uart-qmp-") as transport:
             path = pathlib.Path(transport) / "qmp.sock"
             command = [str(args.qemu.resolve()), "-machine", "esp32s3", "-nographic", "-S", "-monitor", "none",
+                       "-accel", "tcg,thread=single",
+                       "-icount", "shift=0,align=off,sleep=off",
                        "-serial", f"file:{uart}", "-drive", f"file={(args.frozen / 'flash.bin').resolve()},if=mtd,format=raw,snapshot=on",
                        "-qmp", f"unix:{path},server=on,wait=off"]
             dump(evidence / "command.json", command)
@@ -413,8 +415,13 @@ def run(args):
                         result["snapshots"].append(dict(phase="physical_gate_released_vm_stopped", graph=qmp.snapshot()))
                         qmp.call("cont")
                         result["host_stop"] = True
-                    completion = "ARDUINO_UART_DONE" if mode == "arduino" else "UART_NATIVE_DONE"
-                    if re.search(rf"^{completion} .*$", text, re.MULTILINE):
+                    completion = {"arduino": "ARDUINO_UART_DONE",
+                                  "uhci": "UHCI_NATIVE_DONE"}.get(mode, "UART_NATIVE_DONE")
+                    # Match only a complete line: the bare token followed by
+                    # anything matches a partially flushed print and kills
+                    # QEMU mid-line, so validation then never sees the result.
+                    if re.search(rf"^{completion} (?:profile=\S+ )?failures=\d+ result=(?:PASS|FAIL)$",
+                                 text, re.MULTILINE):
                         break
                     require(process.poll() is None, "QEMU exited before ordinary firmware completion; see stderr.log")
                     require(time.monotonic() < deadline, "Host watchdog expired: firmware outcome remains unqualified")

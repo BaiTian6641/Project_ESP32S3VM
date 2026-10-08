@@ -276,6 +276,8 @@ def run(args):
         with tempfile.TemporaryDirectory(prefix="rom-qmp-") as transport:
             qmp_path = pathlib.Path(transport) / "qmp.sock"
             command = [str(args.qemu.resolve()), "-machine", "esp32s3", "-nographic", "-S", "-monitor", "none",
+                       "-accel", "tcg,thread=single",
+                       "-icount", "shift=0,align=off,sleep=off",
                        "-global", "driver=esp32s3.gpio,property=strap_mode,value=0",
                        "-chardev", f"socket,id=romuart0,host=127.0.0.1,port={qemu_listener.getsockname()[1]},server=off",
                        "-serial", "chardev:romuart0", "-drive", f"file={evidence / 'flash-working.bin'},if=mtd,format=raw",

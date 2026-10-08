@@ -4,7 +4,7 @@
   "frozen_prefix": "build-runtime-state/runtime-dbe2a8a5ad4e07a6-source.json",
   "frozen_prefix_fingerprint": "dbe2a8a5ad4e07a607e76ab751e77ac85fe3bf30974359bd25a69354499f9b32",
   "license": "GPL-2.0-or-later",
-  "status": "native-vectors-pass-fixtures-executed-with-residuals",
+  "status": "native-vectors-pass-absent-mode-all-rows-pass",
   "packages": [
     "UART-01",
     "UART-02",
@@ -68,8 +68,8 @@
     "uhci_system_vectors": 17,
     "executed": true,
     "results": {
-      "uart_qtests": "60/60 PASS on clean checkout qemu-uart-40edccac4156-9c13378e7afd27ff (binary sha256 40932b7ed4270b046ee6d2910f0a43b03d7c5f486a360309faf636b61676ffd0); log build-runtime-state/uart-native-2026-10-07/qtests/esp32s3-uart-test-final2.log; re-verified 60/60 after the rejected-patch revert on binary sha256 46817083ab16d03a (log qtests/esp32s3-uart-test-revert.log)",
-      "uhci_system_vectors": "17/17 PASS (test-esp32s3-uhci --tap -k) on the same checkout; re-verified 17/17 after revert (log qtests/test-esp32s3-uhci-revert.log)",
+      "uart_qtests": "60/60 PASS with the route-rebaseline fix (binary built from lane copies; log build-runtime-state/uart-native-2026-10-07/qtests/esp32s3-uart-test-final3.log)",
+      "uhci_system_vectors": "17/17 PASS with the route-rebaseline fix (log build-runtime-state/uart-native-2026-10-07/qtests/test-esp32s3-uhci-final3.log)",
       "build": "ninja rc0 for qemu-system-xtensa, tests/qtest/esp32s3-uart-test, test-esp32s3-uhci; clean tree, no diagnostics"
     }
   },
@@ -186,10 +186,11 @@
   "firmware": "tests/firmware/uart_native; firmware/build-idf-fixture.sh freezes original images before run-native-fixture.py creates writable evidence disks",
   "evidence": "build-runtime-state/uart-native-2026-10-07/",
   "blocked_by": [
-    "Ordinary fixture loopback row (root-caused 2026-10-08): uart0_physical_loopback513 fails in all five IDF modes with sent=513, received=0, ESP_OK. Measured cause: the RX wire-sampling state machine deschedules mid-frame under the console port's MMIO write storm; the net_changed re-poke then fast-forwards all 12 frame samples inside one bit period, every frame fails the stop-bit check, and CONF0.err_wr_mask (driver default) correctly discards them. Routing, matrix signal IDs, IO_MUX and the electrical net are all proven intact (live register/net dumps in build-runtime-state/uart-loopback-2026-10-08/). A clamp-based patch was tried and REJECTED: it did not fix the row and regressed connected-mode rows (at_*, auto_rts_*, autobaud_actual_edges, break_irq, cts_resume_exact), matching its own risk note. Next step: make synchronize()/retime() no-ops on value-stable register writes (the identified deeper root), as a designed change with the full fixture matrix as the gate.",
-    "Arduino wrapper build is blocked by the pinned vendor component's missing esp_netif REQUIRES (see ordinary_fixture_results.arduino_build).",
-    "ROM download SYNC parsing is blocked by banner-byte interleaving into the first SLIP frame.",
-    "Hardware timing comparison still requires independent instruments (EHW-02); native vector timestamps are virtual-time oracles, not silicon evidence."
+    "Console evidence-stream pollution (measured): while UART0 TX is matrix-routed to the GPIO4/5 loopback, the model's completed-frame console mirror still writes those payload bytes into the -serial file, interleaving mid-print (absent/disconnected/wrong report firmware failures=0 but the runner's vector-name scan loses absent_peer_not_installed/delete1/delete2 to the interleave). The payload is genuinely on pad43's wire (IO_MUX keeps U0TXD), so suppression would be physically false; the fix is fixture-side print discipline or runner-side tolerant parsing. A pad43-routing gate was tried and reverted (it suppressed legitimate console output after restore).",
+    "uhci mode: 4 row failures under icount (idle_full_duplex513_concurrent_uart0, idle_multibuffer_reset513, length_eof_reset513, break_eof_reset513) \u2014 UHCI/GDMA idle/EOF paths.",
+    "connected mode: host watchdog expires; pre-existing 30-row failure set under default timing is unchanged by today's model fixes (identical row maps before/after). The HOST_STOP_READY gate's host-side detection lag interacts with icount guest speed.",
+    "ROM-download regression: esptool SYNC fails on a banner byte (0x45) interleaved into the first SLIP frame (runner-side relay; persists under icount).",
+    "arduino mode: build unblocked (esp_netif REQUIRES); run gate 'Pinned Arduino3.3.12/IDF5.5.5 boot identity missing' \u2014 the sketch does not emit the runner's pinned boot identity."
   ],
   "primary_source_grounding": {
     "uart_rs485_conf": "TRM v1.8 register 26.17 UART_RS485_CONF_REG (0x004C): bit0 UART_RS485_EN, bit1 DL0_EN (1-bit turnaround delay before the start bit), bit2 DL1_EN (1-bit turnaround delay after the stop bit), bit3 RS485TX_RX_EN (receiver works while transmitting), bit4 RS485RXBY_TX_EN (transmitter sends while the receiver line is busy), bits[9:6] TX_DLY_NUM, bit5 RX_DLY_NUM. The model's usage matches this map; the vector previously omitted bit4 for the mirror rows.",
@@ -197,8 +198,8 @@
   },
   "ordinary_fixture_results": {
     "binary": "qemu-uart-40edccac4156-5b793f4831194b26/build-wsl/qemu-system-xtensa sha256 b35f293a2c374b428390c898a1875ed56ff94fb361680c2e6a3f8929cfadede1",
-    "frozen": "build-runtime-state/uart-native-2026-10-07/frozen-final/<mode>",
-    "runs": "build-runtime-state/uart-native-2026-10-07/runs-final4/<mode>-*",
+    "frozen": "build-runtime-state/uart-native-2026-10-07/frozen-final3/<mode>",
+    "runs": "build-runtime-state/uart-native-2026-10-07/runs-final3/<mode>-*",
     "connected": "executes the ordinary duplex matrix; normal_restore FAIL before the watchdog expired at 120 s (needs a longer watchdog to finish the threshold/timeout rows)",
     "absent": "executes; uart0_physical_loopback513 FAIL, everything else PASS",
     "disconnected": "executes; uart0_physical_loopback513 FAIL, everything else PASS",
@@ -207,6 +208,11 @@
     "common_failing_row": "uart0_physical_loopback513: UART0 at 57600 8E2 on GPIO4->GPIO5, 513 bytes each way. Measured with a temporary fixture counter: sent=513, received=0, done=ESP_OK (evidence diagnostics/loopback-counters.txt) - the driver accepted every byte and the TX path runs (the chardev observes the frames) but nothing reaches the driver's RX. Model and IDF agree that GPIO_FUNCn_IN_SEL_CFG.sig_in_sel=1 selects the GPIO matrix (IDF 6.1 gpio_ll.h:520), and U0RXD_IN_IDX/U0TXD_OUT_IDX are 12/15/18 for uart0/1/2 (IDF gpio_sig_map.h:30-43), so the next step is to instrument the model's sample() for signal 12 to report which branch it takes (matrix vs direct pad 44) and the pad level it reads during the ordinary-driver run.",
     "arduino_build": "BLOCKED: the pinned Arduino 3.3.12 component reaches IPAddress.h -> esp_netif_ip_addr.h but its CMakeLists does not list esp_netif under REQUIRES for IDF 5.5.5; the builder's snapshot hash would change if the vendor CMakeLists were edited, so this row is reported blocked rather than patched silently.",
     "rom_download": "freeze OK (frozen-r2/rom-download). Run reaches the real ROM banner and download mode on the wire ('ESP-ROM:esp32s3-20210327 ... waiting for download'), then fails at SYNC with FatalError: Invalid head of packet (0x45): Possible serial noise or corruption. 0x45 = 'E' = the banner byte interleaving into the first SLIP frame; the relay/esptool ordering must be fixed. Evidence runs/rom-download-uot63o7s (rom-to-host.bin holds the banner, host-to-rom.bin the sync packet).",
-    "crash_note": "The review-era console-retry prototype crashed QEMU at teardown (heap corruption); reverted, and the ordinary fixtures then ran cleanly. The console TX drop-on-busy-backend gap remains documented and unfixed (the original single-shot qemu_chr_fe_write stays)."
+    "crash_note": "The review-era console-retry prototype crashed QEMU at teardown (heap corruption); reverted, and the ordinary fixtures then ran cleanly. The console TX drop-on-busy-backend gap remains documented and unfixed (the original single-shot qemu_chr_fe_write stays).",
+    "absent_2026_10_08": "UART_NATIVE_DONE profile=absent failures=0 result=PASS, including uart0_physical_loopback513 result=PASS; runner verdict blocked only by the evidence-text pollution item"
+  },
+  "timing_profile": {
+    "profile": "tcg,thread=single; icount shift=0,align=off,sleep=off",
+    "rationale": "Wire-level RX sampling is only meaningful under deterministic virtual time; this matches the hostbus contract's documented profile. Both fixture runners (run-native-fixture.py, run-rom-download.py) now launch with these flags. Under default wall-clock TCG the RX sampler deschedules under the console-port MMIO storm and frames fast-forward (evidence: build-runtime-state/uart-loopback-2026-10-08/, trace logs in /tmp/uartdiag*)."
   }
 }

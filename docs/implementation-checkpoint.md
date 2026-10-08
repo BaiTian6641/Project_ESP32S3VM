@@ -11,20 +11,26 @@ Takeover coordinator session (branch `codex/simulator-foundation`, commits
 `c0c2281` docs/lock, `da8be21` GUI/tools/tests, `3c948e8` qemu-extensions lanes,
 plus follow-ups, all pushed to origin):
 
-* **UART lane post-review state:** the gpio/electrical link bind now takes
-  explicit references (strong-link teardown double-unref removed). The
-  console-TX retry prototype (fifo+G_IO_OUT watch) was **reverted after proving
-  it corrupts the heap at teardown** (`tcache_thread_shutdown(): unaligned
-  tcache chunk` during physmem flatview cleanup); the single-shot
-  `qemu_chr_fe_write` stays and the busy-backend drop gap is documented, not
-  silently fixed. Final verification on checkout
-  `qemu-uart-40edccac4156-9c13378e7afd27ff` (binary sha256 `40932b7e…ffd0`):
-  **60/60** Xtensa UART qtests, **17/17** UHCI unit vectors, all five ordinary
-  fixture modes and the ROM-download run execute without crashes. Residual open
-  rows, both measured and documented in `uart/source-map.json`:
-  `uart0_physical_loopback513` (sent=513, received=0, ESP_OK; next probe is the
-  model's sample() matrix-vs-direct-pad branch for signal 12) and the
-  ROM-download SLIP interleave (runner-side banner byte in first frame).
+* **UART lane loopback row fixed (same day, later):** `uart0_physical_loopback513`
+  now reports **PASS** in the ordinary fixture (absent mode firmware reports
+  `failures=0 result=PASS`), root cause proven by trace instrumentation: the RX
+  edge detector's stale level baseline (carried from the console pad across the
+  GPIO44→GPIO5 re-route) swallowed the first start bit; frames then assembled
+  misaligned from a later data edge and `err_wr_mask` correctly discarded them.
+  Fix: an RX input routing signature re-baselines edge detection on re-route,
+  and the first valid low sample on a (re)routed input arms the frame.
+  Vectors re-verified 60/60 + 17/17. Both fixture runners now use the
+  deterministic profile (`tcg,thread=single; icount shift=0,align=off,sleep=off`)
+  — under wall-clock TCG the RX sampler fast-forwards under the console-port
+  MMIO storm — and the runner completion race is fixed (partial-line token match
+  killed QEMU mid-print; uhci mode watched the wrong DONE token). Residuals
+  (documented in `uart/source-map.json` blocked_by): console evidence-stream
+  pollution (the loopback payload is physically on pad43 and interleaves the
+  print stream, breaking the runner's vector-name scan while firmware reports
+  zero failures), 4 uhci idle/EOF rows, the connected-mode host-stop dance under
+  icount, the ROM-download SLIP banner interleave, and the Arduino boot-identity
+  gate. Also earlier: link-bind double-unref fix kept; console-TX retry
+  prototype reverted after proving teardown heap corruption.
 * **Hostbus blocker resolved:** `qom-options.patch` applied through the guarded
   apply flow, extension rebuilt, and the previously failing enabled launch now
   passes: QAPI accepts `-object esp32s3-hostbus-probe` (`/objects` lists probe,
