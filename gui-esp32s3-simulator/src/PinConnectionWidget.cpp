@@ -115,7 +115,7 @@ void PinConnectionWidget::rebuild()
     const QList<PinEntry> pins = extractPins(m_config);
     if (pins.isEmpty()) {
         auto *noPin = new QLabel("<i>No pin connections defined</i>", this);
-        noPin->setStyleSheet("color: gray;");
+        noPin->setProperty("tone", "helper");
         m_grid->addWidget(noPin, 0, 0, 1, 5);
         return;
     }
@@ -133,15 +133,14 @@ void PinConnectionWidget::rebuild()
         headerText += QString("  addr: <b>%1</b>").arg(address);
     }
     auto *headerLabel = new QLabel(headerText, this);
-    headerLabel->setStyleSheet(
-        "background: #2d2d3d; color: #a0c0ff; padding: 3px 6px; "
-        "border-radius: 3px; font-size: 11px;");
+    headerLabel->setProperty("role", "pinHeader");
     m_grid->addWidget(headerLabel, 0, 0, 1, 5);
 
     // Column headers
     auto makeHeaderLabel = [this](const QString &text) {
         auto *lbl = new QLabel(text, this);
-        lbl->setStyleSheet("font-weight: bold; font-size: 10px; color: #888;");
+        lbl->setProperty("tone", "helper");
+        lbl->setStyleSheet("font-weight: bold; font-size: 10px;");
         lbl->setAlignment(Qt::AlignCenter);
         return lbl;
     };
@@ -162,9 +161,8 @@ void PinConnectionWidget::rebuild()
         // ESP32-S3 chip side
         auto *chipLabel = new QLabel("ESP32-S3", this);
         chipLabel->setAlignment(Qt::AlignCenter);
-        chipLabel->setStyleSheet(
-            "background: #1a3a1a; color: #80ff80; padding: 2px 4px; "
-            "border: 1px solid #408040; border-radius: 2px; font-size: 10px;");
+        chipLabel->setProperty("role", "pinBadge");
+        chipLabel->setProperty("tone", "info");
         m_grid->addWidget(chipLabel, row, 0);
 
         // GPIO number
@@ -172,9 +170,8 @@ void PinConnectionWidget::rebuild()
             ? QString("GPIO%1").arg(pin.gpioNum) : "N/A";
         auto *gpioLabel = new QLabel(gpioText, this);
         gpioLabel->setAlignment(Qt::AlignCenter);
-        gpioLabel->setStyleSheet(
-            "background: #2a2a2a; color: #ffcc00; padding: 2px 6px; "
-            "border: 1px solid #555; border-radius: 2px; font-family: monospace; font-size: 11px;");
+        gpioLabel->setProperty("role", "pinBadge");
+        gpioLabel->setProperty("tone", pin.gpioNum >= 0 ? "info" : "warning");
         m_grid->addWidget(gpioLabel, row, 1);
 
         // Direction arrow
@@ -184,23 +181,22 @@ void PinConnectionWidget::rebuild()
         else arrow = "\u2194";                                // ↔
         auto *arrowLabel = new QLabel(arrow, this);
         arrowLabel->setAlignment(Qt::AlignCenter);
-        arrowLabel->setStyleSheet("font-size: 14px; color: #80c0ff;");
+        arrowLabel->setProperty("tone", "info");
+        arrowLabel->setStyleSheet("font-size: 14px;");
+        arrowLabel->setAccessibleName("Signal direction: " + pin.direction);
         m_grid->addWidget(arrowLabel, row, 2);
 
         // Signal name
         auto *signalLabel = new QLabel(pin.signalName, this);
         signalLabel->setAlignment(Qt::AlignCenter);
-        signalLabel->setStyleSheet(
-            "background: #2a2a3a; color: #ff9060; padding: 2px 6px; "
-            "border: 1px solid #555; border-radius: 2px; font-weight: bold; font-size: 11px;");
+        signalLabel->setProperty("role", "pinBadge");
+        signalLabel->setStyleSheet("font-weight: bold;");
         m_grid->addWidget(signalLabel, row, 3);
 
         // Device side
         auto *devLabel = new QLabel(deviceType.toUpper(), this);
         devLabel->setAlignment(Qt::AlignCenter);
-        devLabel->setStyleSheet(
-            "background: #1a1a3a; color: #a0a0ff; padding: 2px 4px; "
-            "border: 1px solid #4040a0; border-radius: 2px; font-size: 10px;");
+        devLabel->setProperty("role", "pinBadge");
         m_grid->addWidget(devLabel, row, 4);
     }
 
@@ -219,7 +215,8 @@ void PinConnectionWidget::rebuild()
         }
         if (!elecText.isEmpty()) {
             auto *elecLabel = new QLabel(elecText, this);
-            elecLabel->setStyleSheet("color: #888; font-size: 10px; padding-left: 4px;");
+            elecLabel->setProperty("tone", "helper");
+            elecLabel->setStyleSheet("font-size: 10px; padding-left: 4px;");
             m_grid->addWidget(elecLabel, elecRow, 0, 1, 5);
         }
     }
@@ -242,7 +239,8 @@ void PinConnectionWidget::rebuild()
     }
     if (!speedText.isEmpty()) {
         auto *speedLabel = new QLabel(speedText, this);
-        speedLabel->setStyleSheet("color: #888; font-size: 10px; padding-left: 4px;");
+        speedLabel->setProperty("tone", "helper");
+        speedLabel->setStyleSheet("font-size: 10px; padding-left: 4px;");
         m_grid->addWidget(speedLabel, speedRow, 0, 1, 5);
     }
 }

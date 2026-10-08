@@ -35,8 +35,6 @@ void GenericDevicePanel::buildUI()
     m_stateView = new QTextEdit(this);
     m_stateView->setReadOnly(true);
     m_stateView->setFont(QFont("Courier New", 10));
-    m_stateView->setStyleSheet(
-        "background: #0a0a0a; color: #c0c0c0; border: 1px solid #333;");
     m_stateView->setPlaceholderText("Waiting for state...");
     stateLayout->addWidget(m_stateView);
     layout->addWidget(stateGroup, 1);

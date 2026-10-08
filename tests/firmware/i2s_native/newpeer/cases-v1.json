@@ -1,0 +1,892 @@
+{
+  "version": 1,
+  "fixture": "../peer_fixture",
+  "framesPerDescriptor": 96,
+  "rounds": 8,
+  "cases": [
+    {
+      "name": "philips-8-mcu-master-0",
+      "bootGraph": "graphs/philips-8-mcu-master-0.boot.json",
+      "peerGraph": "graphs/philips-8-mcu-master-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "philips",
+        "PEER_BITS": 8,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "philips-16-mcu-master-0",
+      "bootGraph": "graphs/philips-16-mcu-master-0.boot.json",
+      "peerGraph": "graphs/philips-16-mcu-master-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "philips",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "philips-24-mcu-master-0",
+      "bootGraph": "graphs/philips-24-mcu-master-0.boot.json",
+      "peerGraph": "graphs/philips-24-mcu-master-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "philips",
+        "PEER_BITS": 24,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "philips-32-mcu-master-0",
+      "bootGraph": "graphs/philips-32-mcu-master-0.boot.json",
+      "peerGraph": "graphs/philips-32-mcu-master-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "philips",
+        "PEER_BITS": 32,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "msb-8-mcu-master-0",
+      "bootGraph": "graphs/msb-8-mcu-master-0.boot.json",
+      "peerGraph": "graphs/msb-8-mcu-master-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "msb",
+        "PEER_BITS": 8,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "msb-16-mcu-master-0",
+      "bootGraph": "graphs/msb-16-mcu-master-0.boot.json",
+      "peerGraph": "graphs/msb-16-mcu-master-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "msb",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "msb-24-mcu-master-0",
+      "bootGraph": "graphs/msb-24-mcu-master-0.boot.json",
+      "peerGraph": "graphs/msb-24-mcu-master-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "msb",
+        "PEER_BITS": 24,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "msb-32-mcu-master-0",
+      "bootGraph": "graphs/msb-32-mcu-master-0.boot.json",
+      "peerGraph": "graphs/msb-32-mcu-master-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "msb",
+        "PEER_BITS": 32,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "pcm-8-mcu-master-0",
+      "bootGraph": "graphs/pcm-8-mcu-master-0.boot.json",
+      "peerGraph": "graphs/pcm-8-mcu-master-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "pcm",
+        "PEER_BITS": 8,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "pcm-16-mcu-master-0",
+      "bootGraph": "graphs/pcm-16-mcu-master-0.boot.json",
+      "peerGraph": "graphs/pcm-16-mcu-master-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "pcm",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "pcm-24-mcu-master-0",
+      "bootGraph": "graphs/pcm-24-mcu-master-0.boot.json",
+      "peerGraph": "graphs/pcm-24-mcu-master-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "pcm",
+        "PEER_BITS": 24,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "pcm-32-mcu-master-0",
+      "bootGraph": "graphs/pcm-32-mcu-master-0.boot.json",
+      "peerGraph": "graphs/pcm-32-mcu-master-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "pcm",
+        "PEER_BITS": 32,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "tdm-8-s16-m8181-mcu-master-0",
+      "bootGraph": "graphs/tdm-8-s16-m8181-mcu-master-0.boot.json",
+      "peerGraph": "graphs/tdm-8-s16-m8181-mcu-master-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "tdm",
+        "PEER_BITS": 8,
+        "PEER_SLOTS": 16,
+        "PEER_MASK": 33153,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "tdm-16-s8-ma5-mcu-master-0",
+      "bootGraph": "graphs/tdm-16-s8-ma5-mcu-master-0.boot.json",
+      "peerGraph": "graphs/tdm-16-s8-ma5-mcu-master-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "tdm",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 8,
+        "PEER_MASK": 165,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "tdm-24-s4-mb-mcu-master-0",
+      "bootGraph": "graphs/tdm-24-s4-mb-mcu-master-0.boot.json",
+      "peerGraph": "graphs/tdm-24-s4-mb-mcu-master-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "tdm",
+        "PEER_BITS": 24,
+        "PEER_SLOTS": 4,
+        "PEER_MASK": 11,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "tdm-32-s4-md-mcu-master-0",
+      "bootGraph": "graphs/tdm-32-s4-md-mcu-master-0.boot.json",
+      "peerGraph": "graphs/tdm-32-s4-md-mcu-master-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "tdm",
+        "PEER_BITS": 32,
+        "PEER_SLOTS": 4,
+        "PEER_MASK": 13,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "raw-pdm-16-mcu-master-0",
+      "bootGraph": "graphs/raw-pdm-16-mcu-master-0.boot.json",
+      "peerGraph": "graphs/raw-pdm-16-mcu-master-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "raw-pdm",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "philips-8-mcu-slave-0",
+      "bootGraph": "graphs/philips-8-mcu-slave-0.boot.json",
+      "peerGraph": "graphs/philips-8-mcu-slave-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "philips",
+        "PEER_BITS": 8,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "philips-16-mcu-slave-0",
+      "bootGraph": "graphs/philips-16-mcu-slave-0.boot.json",
+      "peerGraph": "graphs/philips-16-mcu-slave-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "philips",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "philips-24-mcu-slave-0",
+      "bootGraph": "graphs/philips-24-mcu-slave-0.boot.json",
+      "peerGraph": "graphs/philips-24-mcu-slave-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "philips",
+        "PEER_BITS": 24,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "philips-32-mcu-slave-0",
+      "bootGraph": "graphs/philips-32-mcu-slave-0.boot.json",
+      "peerGraph": "graphs/philips-32-mcu-slave-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "philips",
+        "PEER_BITS": 32,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "msb-8-mcu-slave-0",
+      "bootGraph": "graphs/msb-8-mcu-slave-0.boot.json",
+      "peerGraph": "graphs/msb-8-mcu-slave-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "msb",
+        "PEER_BITS": 8,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "msb-16-mcu-slave-0",
+      "bootGraph": "graphs/msb-16-mcu-slave-0.boot.json",
+      "peerGraph": "graphs/msb-16-mcu-slave-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "msb",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "msb-24-mcu-slave-0",
+      "bootGraph": "graphs/msb-24-mcu-slave-0.boot.json",
+      "peerGraph": "graphs/msb-24-mcu-slave-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "msb",
+        "PEER_BITS": 24,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "msb-32-mcu-slave-0",
+      "bootGraph": "graphs/msb-32-mcu-slave-0.boot.json",
+      "peerGraph": "graphs/msb-32-mcu-slave-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "msb",
+        "PEER_BITS": 32,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "pcm-8-mcu-slave-0",
+      "bootGraph": "graphs/pcm-8-mcu-slave-0.boot.json",
+      "peerGraph": "graphs/pcm-8-mcu-slave-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "pcm",
+        "PEER_BITS": 8,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "pcm-16-mcu-slave-0",
+      "bootGraph": "graphs/pcm-16-mcu-slave-0.boot.json",
+      "peerGraph": "graphs/pcm-16-mcu-slave-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "pcm",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "pcm-24-mcu-slave-0",
+      "bootGraph": "graphs/pcm-24-mcu-slave-0.boot.json",
+      "peerGraph": "graphs/pcm-24-mcu-slave-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "pcm",
+        "PEER_BITS": 24,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "pcm-32-mcu-slave-0",
+      "bootGraph": "graphs/pcm-32-mcu-slave-0.boot.json",
+      "peerGraph": "graphs/pcm-32-mcu-slave-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "pcm",
+        "PEER_BITS": 32,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "tdm-8-s16-m8181-mcu-slave-0",
+      "bootGraph": "graphs/tdm-8-s16-m8181-mcu-slave-0.boot.json",
+      "peerGraph": "graphs/tdm-8-s16-m8181-mcu-slave-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "tdm",
+        "PEER_BITS": 8,
+        "PEER_SLOTS": 16,
+        "PEER_MASK": 33153,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "tdm-16-s8-ma5-mcu-slave-0",
+      "bootGraph": "graphs/tdm-16-s8-ma5-mcu-slave-0.boot.json",
+      "peerGraph": "graphs/tdm-16-s8-ma5-mcu-slave-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "tdm",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 8,
+        "PEER_MASK": 165,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "tdm-24-s4-mb-mcu-slave-0",
+      "bootGraph": "graphs/tdm-24-s4-mb-mcu-slave-0.boot.json",
+      "peerGraph": "graphs/tdm-24-s4-mb-mcu-slave-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "tdm",
+        "PEER_BITS": 24,
+        "PEER_SLOTS": 4,
+        "PEER_MASK": 11,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "tdm-32-s4-md-mcu-slave-0",
+      "bootGraph": "graphs/tdm-32-s4-md-mcu-slave-0.boot.json",
+      "peerGraph": "graphs/tdm-32-s4-md-mcu-slave-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "tdm",
+        "PEER_BITS": 32,
+        "PEER_SLOTS": 4,
+        "PEER_MASK": 13,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "raw-pdm-16-mcu-slave-0",
+      "bootGraph": "graphs/raw-pdm-16-mcu-slave-0.boot.json",
+      "peerGraph": "graphs/raw-pdm-16-mcu-slave-0.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "raw-pdm",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 0
+      }
+    },
+    {
+      "name": "philips-8-mcu-master-1",
+      "bootGraph": "graphs/philips-8-mcu-master-1.boot.json",
+      "peerGraph": "graphs/philips-8-mcu-master-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "philips",
+        "PEER_BITS": 8,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "philips-16-mcu-master-1",
+      "bootGraph": "graphs/philips-16-mcu-master-1.boot.json",
+      "peerGraph": "graphs/philips-16-mcu-master-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "philips",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "philips-24-mcu-master-1",
+      "bootGraph": "graphs/philips-24-mcu-master-1.boot.json",
+      "peerGraph": "graphs/philips-24-mcu-master-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "philips",
+        "PEER_BITS": 24,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "philips-32-mcu-master-1",
+      "bootGraph": "graphs/philips-32-mcu-master-1.boot.json",
+      "peerGraph": "graphs/philips-32-mcu-master-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "philips",
+        "PEER_BITS": 32,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "msb-8-mcu-master-1",
+      "bootGraph": "graphs/msb-8-mcu-master-1.boot.json",
+      "peerGraph": "graphs/msb-8-mcu-master-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "msb",
+        "PEER_BITS": 8,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "msb-16-mcu-master-1",
+      "bootGraph": "graphs/msb-16-mcu-master-1.boot.json",
+      "peerGraph": "graphs/msb-16-mcu-master-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "msb",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "msb-24-mcu-master-1",
+      "bootGraph": "graphs/msb-24-mcu-master-1.boot.json",
+      "peerGraph": "graphs/msb-24-mcu-master-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "msb",
+        "PEER_BITS": 24,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "msb-32-mcu-master-1",
+      "bootGraph": "graphs/msb-32-mcu-master-1.boot.json",
+      "peerGraph": "graphs/msb-32-mcu-master-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "msb",
+        "PEER_BITS": 32,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "pcm-8-mcu-master-1",
+      "bootGraph": "graphs/pcm-8-mcu-master-1.boot.json",
+      "peerGraph": "graphs/pcm-8-mcu-master-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "pcm",
+        "PEER_BITS": 8,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "pcm-16-mcu-master-1",
+      "bootGraph": "graphs/pcm-16-mcu-master-1.boot.json",
+      "peerGraph": "graphs/pcm-16-mcu-master-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "pcm",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "pcm-24-mcu-master-1",
+      "bootGraph": "graphs/pcm-24-mcu-master-1.boot.json",
+      "peerGraph": "graphs/pcm-24-mcu-master-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "pcm",
+        "PEER_BITS": 24,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "pcm-32-mcu-master-1",
+      "bootGraph": "graphs/pcm-32-mcu-master-1.boot.json",
+      "peerGraph": "graphs/pcm-32-mcu-master-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "pcm",
+        "PEER_BITS": 32,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "tdm-8-s16-m8181-mcu-master-1",
+      "bootGraph": "graphs/tdm-8-s16-m8181-mcu-master-1.boot.json",
+      "peerGraph": "graphs/tdm-8-s16-m8181-mcu-master-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "tdm",
+        "PEER_BITS": 8,
+        "PEER_SLOTS": 16,
+        "PEER_MASK": 33153,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "tdm-16-s8-ma5-mcu-master-1",
+      "bootGraph": "graphs/tdm-16-s8-ma5-mcu-master-1.boot.json",
+      "peerGraph": "graphs/tdm-16-s8-ma5-mcu-master-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "tdm",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 8,
+        "PEER_MASK": 165,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "tdm-24-s4-mb-mcu-master-1",
+      "bootGraph": "graphs/tdm-24-s4-mb-mcu-master-1.boot.json",
+      "peerGraph": "graphs/tdm-24-s4-mb-mcu-master-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "tdm",
+        "PEER_BITS": 24,
+        "PEER_SLOTS": 4,
+        "PEER_MASK": 11,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "tdm-32-s4-md-mcu-master-1",
+      "bootGraph": "graphs/tdm-32-s4-md-mcu-master-1.boot.json",
+      "peerGraph": "graphs/tdm-32-s4-md-mcu-master-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "tdm",
+        "PEER_BITS": 32,
+        "PEER_SLOTS": 4,
+        "PEER_MASK": 13,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "raw-pdm-16-mcu-master-1",
+      "bootGraph": "graphs/raw-pdm-16-mcu-master-1.boot.json",
+      "peerGraph": "graphs/raw-pdm-16-mcu-master-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "raw-pdm",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 1,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "philips-8-mcu-slave-1",
+      "bootGraph": "graphs/philips-8-mcu-slave-1.boot.json",
+      "peerGraph": "graphs/philips-8-mcu-slave-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "philips",
+        "PEER_BITS": 8,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "philips-16-mcu-slave-1",
+      "bootGraph": "graphs/philips-16-mcu-slave-1.boot.json",
+      "peerGraph": "graphs/philips-16-mcu-slave-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "philips",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "philips-24-mcu-slave-1",
+      "bootGraph": "graphs/philips-24-mcu-slave-1.boot.json",
+      "peerGraph": "graphs/philips-24-mcu-slave-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "philips",
+        "PEER_BITS": 24,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "philips-32-mcu-slave-1",
+      "bootGraph": "graphs/philips-32-mcu-slave-1.boot.json",
+      "peerGraph": "graphs/philips-32-mcu-slave-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "philips",
+        "PEER_BITS": 32,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "msb-8-mcu-slave-1",
+      "bootGraph": "graphs/msb-8-mcu-slave-1.boot.json",
+      "peerGraph": "graphs/msb-8-mcu-slave-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "msb",
+        "PEER_BITS": 8,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "msb-16-mcu-slave-1",
+      "bootGraph": "graphs/msb-16-mcu-slave-1.boot.json",
+      "peerGraph": "graphs/msb-16-mcu-slave-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "msb",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "msb-24-mcu-slave-1",
+      "bootGraph": "graphs/msb-24-mcu-slave-1.boot.json",
+      "peerGraph": "graphs/msb-24-mcu-slave-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "msb",
+        "PEER_BITS": 24,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "msb-32-mcu-slave-1",
+      "bootGraph": "graphs/msb-32-mcu-slave-1.boot.json",
+      "peerGraph": "graphs/msb-32-mcu-slave-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "msb",
+        "PEER_BITS": 32,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "pcm-8-mcu-slave-1",
+      "bootGraph": "graphs/pcm-8-mcu-slave-1.boot.json",
+      "peerGraph": "graphs/pcm-8-mcu-slave-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "pcm",
+        "PEER_BITS": 8,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "pcm-16-mcu-slave-1",
+      "bootGraph": "graphs/pcm-16-mcu-slave-1.boot.json",
+      "peerGraph": "graphs/pcm-16-mcu-slave-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "pcm",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "pcm-24-mcu-slave-1",
+      "bootGraph": "graphs/pcm-24-mcu-slave-1.boot.json",
+      "peerGraph": "graphs/pcm-24-mcu-slave-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "pcm",
+        "PEER_BITS": 24,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "pcm-32-mcu-slave-1",
+      "bootGraph": "graphs/pcm-32-mcu-slave-1.boot.json",
+      "peerGraph": "graphs/pcm-32-mcu-slave-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "pcm",
+        "PEER_BITS": 32,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "tdm-8-s16-m8181-mcu-slave-1",
+      "bootGraph": "graphs/tdm-8-s16-m8181-mcu-slave-1.boot.json",
+      "peerGraph": "graphs/tdm-8-s16-m8181-mcu-slave-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "tdm",
+        "PEER_BITS": 8,
+        "PEER_SLOTS": 16,
+        "PEER_MASK": 33153,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "tdm-16-s8-ma5-mcu-slave-1",
+      "bootGraph": "graphs/tdm-16-s8-ma5-mcu-slave-1.boot.json",
+      "peerGraph": "graphs/tdm-16-s8-ma5-mcu-slave-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "tdm",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 8,
+        "PEER_MASK": 165,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "tdm-24-s4-mb-mcu-slave-1",
+      "bootGraph": "graphs/tdm-24-s4-mb-mcu-slave-1.boot.json",
+      "peerGraph": "graphs/tdm-24-s4-mb-mcu-slave-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "tdm",
+        "PEER_BITS": 24,
+        "PEER_SLOTS": 4,
+        "PEER_MASK": 11,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "tdm-32-s4-md-mcu-slave-1",
+      "bootGraph": "graphs/tdm-32-s4-md-mcu-slave-1.boot.json",
+      "peerGraph": "graphs/tdm-32-s4-md-mcu-slave-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "tdm",
+        "PEER_BITS": 32,
+        "PEER_SLOTS": 4,
+        "PEER_MASK": 13,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 1
+      }
+    },
+    {
+      "name": "raw-pdm-16-mcu-slave-1",
+      "bootGraph": "graphs/raw-pdm-16-mcu-slave-1.boot.json",
+      "peerGraph": "graphs/raw-pdm-16-mcu-slave-1.peer.json",
+      "cmake": {
+        "PEER_FORMAT": "raw-pdm",
+        "PEER_BITS": 16,
+        "PEER_SLOTS": 2,
+        "PEER_MASK": 3,
+        "PEER_MASTER": 0,
+        "PEER_CONTROLLER": 1
+      }
+    }
+  ]
+}

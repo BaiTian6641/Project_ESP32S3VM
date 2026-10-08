@@ -40,7 +40,7 @@ void UartDevicePanel::buildUI()
     cfgLayout->addWidget(m_configLabel);
 
     m_statsLabel = new QLabel("TX: 0  RX: 0", this);
-    m_statsLabel->setStyleSheet("color: #888;");
+    m_statsLabel->setProperty("tone", "helper");
     cfgLayout->addWidget(m_statsLabel, 1, Qt::AlignRight);
 
     layout->addWidget(cfgGroup);
@@ -52,8 +52,7 @@ void UartDevicePanel::buildUI()
     m_trafficView = new QTextEdit(this);
     m_trafficView->setReadOnly(true);
     m_trafficView->setFont(QFont("Courier New", 10));
-    m_trafficView->setStyleSheet(
-        "background: #0a0a0a; color: #00ff00; border: 1px solid #333;");
+    m_trafficView->document()->setMaximumBlockCount(2000);
     m_trafficView->setPlaceholderText("UART traffic will appear here...");
     trafficLayout->addWidget(m_trafficView, 1);
 
@@ -69,7 +68,7 @@ void UartDevicePanel::buildUI()
     connect(m_sendButton, &QPushButton::clicked, this, [this]() {
         const QString text = m_sendInput->text();
         if (text.isEmpty()) return;
-        m_trafficView->append(QString("<span style='color: #ffcc00;'>[TX] %1</span>").arg(text));
+        m_trafficView->append(QString("<b>[TX]</b> %1").arg(text.toHtmlEscaped()));
         m_txCount += text.size();
         m_statsLabel->setText(QString("TX: %1  RX: %2").arg(m_txCount).arg(m_rxCount));
         // Convert text to byte array for RPC
@@ -103,7 +102,7 @@ void UartDevicePanel::updateState(const QJsonObject &state)
             }
         }
         if (!text.isEmpty()) {
-            m_trafficView->append(QString("<span style='color: #80ff80;'>[RX] %1</span>").arg(text));
+            m_trafficView->append(QString("<b>[RX]</b> %1").arg(text.toHtmlEscaped()));
             m_rxCount += data.size();
             m_statsLabel->setText(QString("TX: %1  RX: %2").arg(m_txCount).arg(m_rxCount));
         }

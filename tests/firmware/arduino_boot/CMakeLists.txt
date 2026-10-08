@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.16)
+if(NOT DEFINED ENV{ESP32S3_ARDUINO_SOURCE})
+    message(FATAL_ERROR "Set ESP32S3_ARDUINO_SOURCE to the pinned unmodified Arduino component")
+endif()
+set(EXTRA_COMPONENT_DIRS "$ENV{ESP32S3_ARDUINO_SOURCE}")
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+idf_build_set_property(MINIMAL_BUILD ON)
+project(esp32s3_arduino_boot)

@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "launcher": "run_peer.py",
+  "scope": "Actual ordinary-IDF CASE-selected external peer collection with mandatory automatic independent finite qualification using the genuine native phase seam",
+  "invocation": "python3 tests/firmware/i2s_native/newpeer/run_peer.py --qemu <final-native-binary> --flash build-runtime-state/i2s-peer-idf61-2026-10-07/interactive/i2s-peer.merged.bin --elf build-runtime-state/i2s-peer-idf61-2026-10-07/interactive/i2s_external_peer.elf --build-manifest build-runtime-state/i2s-peer-idf61-2026-10-07/interactive/build-manifest.json --source-manifest <complete-authoritative-SOURCE_READY-manifest> --evidence <NEW-directory>",
+  "caseSelection": "Default all 68 stable manifest ids; --case may repeat to choose an explicit subset. One frozen ELF, no per-case firmware builds.",
+  "lifecycle": [
+    "Fresh writable flash copy and native process per case with -icount shift=0,align=off,sleep=off for deterministic 1ns virtual-clock granularity and no host-time drift through QMP/GDB pauses; preserve original flash SHA256",
+    "Connect bidirectional real UART plus public QMP; apply exact paired boot graph while stopped",
+    "cont; wait SELECT; send CASE id newline; require matching CASE echo and every READY geometry field",
+    "stop; public project-json Apply exact peer graph; record real factory status/config identity and electrical snapshot",
+    "Queue lifecycle G byte while stopped; cont; collect DONE or actual negative boundary",
+    "stop and confirm query-status.running false before closed DIN export",
+    "Public capture-request-json count1024 at contiguous DIN offsets; capture-json getter; preserve every actual startup DIN page and status, unchanged identity/total",
+    "Discover actual peer/controller transition retained ranges via status-json; page optional scoped transitions windows with absolute offsets and count<=1024. Preserve actual epochs, complete-source boundaries, total/first_sequence/lost/capacity; never guess a lost range or infer controller from geometry",
+    "Automatically require the unique fresh-VM FIFO LOAD source_word_id1, derive its origin epoch and actual controller/peer COMPLETE epoch lists, and run independent qualify_transition_inputs on this run's exact RX/DIN/transition bytes; no manual launcher attribution option",
+    "Preserve native record-directory controller RX files, all UART, QMP requests/replies/events, snapshots, command, hashes and actual failures"
+  ],
+  "profiles": {
+    "connected": "Require exact independent source1 guest bytehash, complete8 descriptors, DMA callbacks and ISR cadence, then automatically qualify actual source1 RX/source0 DIN using genuine native activation/source IDs and COMPLETE phases. Missing/lost/unusable phase seam or independent mismatch is failure, never an unattributed success.",
+    "power-unknown": "Only disconnect peer VDD into floating net; keep MCU3.3V. Require actual power_known false, powered false and zero DIN captures.",
+    "power-off": "Only tie peer VDD to real shared GND; keep MCU3.3V. Require actual known/unpowered rails and zero DIN captures.",
+    "exhaustion": "Set actual immutable peer repeat false; require actual exhausted status. No fabricated exhausted clock or completion expectation.",
+    "capture-overflow": "Set actual bounded peer captureCapacity32; require actual overflow status and32 retained real captures. No unbounded retention claim."
+  },
+  "attribution": {
+    "mode": "Mandatory automatic native phase attribution for connected runs; launcher --attribution/manual phase path removed. The standalone reference CLI may still accept an explicit independently authored finite manifest.",
+    "binding": "Inputs are this run's exact RX file, complete DIN page export and actual scoped transition pages, bound to the actual peer ID/config identity. No old or synthetic capture can qualify a new run.",
+    "reference": "peer_reference.py qualify_transition_inputs independently checks source1 RX and source0 DIN every sample/slot, sparseTDM physical spacing, raw16bit chronological words and actual rational bit/frame cadence within1ns; each range>=768frames.",
+    "prerequisite": "Require exactly one fresh-VM controller FIFO LOAD with source_word_id1; derive controller_origin_epoch from it and actual controller/peer COMPLETE epoch lists. Never scan matching prefixes, trim mismatches, use TXattempts/ISR callbacks/playback as physical input, or manufacture capture events.",
+    "fullPass": "All68 ordinary actual launch rows automatically qualify finite bidirectional samples against the native phase seam. A successful selected subset is not full68 qualification. Hardware and exact PCM converters remain explicitly unqualified."
+  },
+  "transitionExport": {
+    "contract": "contract-v1.json captureInterface and actual esp32s3_i2s_peer.h/esp32s3_i2s.h getter ABI",
+    "request": {"transitions": {"controllerId": "selected actual controller 0|1", "peerOffset": "absolute retained peer sequence", "controllerOffset": "absolute retained controller sequence", "count": "1..1024"}},
+    "response": "Existing DIN capture-json plus transitions={version:1,peer:actual peer window,controller:actual selected C controller window}. Status discovery has peers[].transitions summary and controllers[] summaries plus capture_enabled; disabled native capture is explicit, no fabricated range.",
+    "phase": "Peer COMPLETE is actual outgoing publication plus serial BCLK/physical raw WS boundary, not a DIN-success proxy; controller LOAD is never COMPLETE. Payload-free IDs/cursors/epochs/first-last emitted and boundary times attribute actual samples, which remain the sole data oracle.",
+    "retention": "count is retained total, not page length; records length<=1024; first_sequence=total-count=lost. Export every retained phase record and every actual DIN event, including startup idle. Any metadata loss is explicit and prevents claiming unavailable attribution.",
+    "proof": "Changed source hashes require a fresh whole native binary and positive ordinary peer run after the all-land freeze. Existing GDB diagnostic/helper/static evidence does not qualify the new native phase contract."
+  },
+  "exitCodes": {"0": "All68 automatic native-phase physical qualification, or requested genuine negative boundary profile passes", "1": "Actual failure, unavailable/unusable native phase seam or independent reference mismatch", "2": "Selected connected subset qualifies automatically but is not full68 physical qualification"},
+  "evidence": ["identity.json", "build-manifest.json", "source-manifest.json", "summary.json", "percase/result.json", "percase/uart.log", "percase/qmp.jsonl", "percase/qemu.log", "percase/boot.json", "percase/peer.json", "percase/*snapshot.json", "percase/din-pages.json", "percase/transition-pages.json", "percase/transition-attribution.json", "percase/physical-reference.json", "percase/rx/i2s0.rx.bin", "percase/rx/i2s1.rx.bin"],
+  "failureEvidence": "After an actual failure, stop and always preserve the actual electrical failure snapshot plus already collected UART/QMP/process evidence. Query optional peer status and export failure DIN/transition pages only after the peer graph was successfully Applied. A failure before peer Apply must not be rewritten as a nonexistent peer/factory/capture failure; preserve the real boot/source boundary without fabricated fallback state.",
+  "tests": "test_run_peer.py and test_peer_reference.py are SYNTHETIC parser/math only, never native runtime evidence.",
+  "standalonePdm": {
+    "invocation": "python3 tests/firmware/i2s_native/newpeer/standalone_pdm.py --evidence <NEW-directory>",
+    "scope": "Standalone MCU raw packing helper, generated independent240 vectors and seeded225288-edge mathematics, normal and ASan/UBSan. No integrated native VM, exact PCM converter or hardware qualification.",
+    "preservation": "Fresh output directory; previous evidence untouched; source hashes must remain unchanged across all checks."
+  },
+  "changelog": ["Adds complete68 ordinary interactive native launcher, real closed publicQMP paginated exporter, actual RX file retention, explicit electrical negative boundaries and fail-closed finite attribution binding.", "Extends existing capture/status QOM properties with actual scoped controller/peer phase windows and explicit metadata retention/loss; preserves all DIN fields/startup events and forbids payload echo or synthetic phase fallback.", "Cuts launcher over to mandatory automatic genuine native-phase qualification; removes manual launcher attribution path and preserves automatic transition/reference evidence.", "Preserves actual electrical failure snapshots even before peer Apply; optional peer evidence is queried only after successful peer Apply, retaining genuine boot failures instead of manufacturing absent-peer failures."]
+}

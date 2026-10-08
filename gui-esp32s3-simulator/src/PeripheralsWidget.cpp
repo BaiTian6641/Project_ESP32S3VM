@@ -49,7 +49,8 @@ PeripheralsWidget::PeripheralsWidget(QWidget *parent)
     // Device count status
     auto *statusLayout = new QHBoxLayout();
     deviceCountLabel = new QLabel("No devices loaded", this);
-    deviceCountLabel->setStyleSheet("color: #888; font-size: 11px;");
+    deviceCountLabel->setProperty("tone", "helper");
+    deviceCountLabel->setStyleSheet("font-size: 11px;");
     statusLayout->addWidget(deviceCountLabel);
     statusLayout->addStretch();
     rootLayout->addLayout(statusLayout);

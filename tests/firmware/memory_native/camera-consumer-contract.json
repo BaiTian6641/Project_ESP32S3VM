@@ -1,0 +1,177 @@
+{
+  "schema_version": 1,
+  "fixture": "lcd_cam_native external camera consumer",
+  "status": "SOURCE_READY_NOT_EXERCISED",
+  "build_authorized": false,
+  "runtime_qualified": false,
+  "firmware_source": "tests/firmware/lcd_cam_native/main/lcd_cam_native.c",
+  "ownership": "Only the CONFIG_LCD_CAM_NATIVE_CAMERA helpers/run_camera and the three new camera mode defaults are authored by this consumer worker. Includes, dependencies, Kconfig, common quad defaults, qualification and final combined firmware hash belong to the parent integration owner.",
+  "camera_component": {
+    "name": "espressif/esp32-camera",
+    "version": "2.1.3",
+    "commit": "b3c2aa273a88c7debf2b1683448933ca2b28aad9",
+    "source": "https://github.com/espressif/esp32-camera/tree/b3c2aa273a88c7debf2b1683448933ca2b28aad9",
+    "local_path": "tests/firmware/lcd_cam_native/components/esp32-camera",
+    "policy": "Existing locked official component is read-only; no private driver access, force flag, vendor changes or fabricated DMA payload.",
+    "public_api": ["esp_camera_init", "esp_camera_get_psram_mode", "esp_camera_fb_get", "esp_camera_fb_return", "esp_camera_deinit"],
+    "psram_mode": "CONFIG_CAMERA_PSRAM_DMA=y sets g_psram_dma_mode before ordinary initialization. cam_config copies it to the active PSRAM mode and allocates per-frame DMA descriptors pointing directly to the external payload. Public esp_camera_get_psram_mode is required before and after init. Public esp_camera_set_psram_mode exists but is unnecessary here: it sets the same flag and performs a real deinit/reinit; it is deliberately not called while buffers are held.",
+    "timeout": "Unmodified esp_camera_fb_get uses FB_GET_TIMEOUT=4000/portTICK_PERIOD_MS and cam_take tracks its remaining bounded timeout. Null gets log actual elapsed_us and abort the external consumer without an internal fallback. A host electrical pause is not a returned guest timeout."
+  },
+  "jpeg_component": {
+    "name": "espressif/esp_jpeg",
+    "required_exact_version": "1.3.1",
+    "camera_dependency_yaml": "esp_jpeg:\n  version: \"^1.3.1\"\n  public: true",
+    "registry": "https://components.espressif.com/components/espressif/esp_jpeg/versions/1.3.1/readme",
+    "archive_url": "https://components.espressif.com/api/downloads/?object_type=component&object_id=64a7c4fb-8c0e-4fdb-89b7-37759ff6ca27",
+    "archive_bytes": 150138,
+    "archive_sha256": "6c15edd7f3b74f37d02ab4e74f13276aff4bd0f63dd9b6031bf6ebba5e020c13",
+    "archive_evidence_path": "qemu-extensions/prototypes/memory/reference/esp_jpeg-1.3.1.zip",
+    "repository": "https://github.com/espressif/idf-extra-components/tree/746e83ddbea0db9c3d24993a87c4c737a60337ae/esp_jpeg",
+    "commit": "746e83ddbea0db9c3d24993a87c4c737a60337ae",
+    "archive_member_sha256": {
+      "esp_jpeg/idf_component.yml": "e0aee999ac891551353178542fe48607cd370f3fb52b88ffe90eb08ad15b9be0",
+      "esp_jpeg/include/jpeg_decoder.h": "e9e48c8644defe9037123797a72f4e3a029bdedd1eb487bb8542d3f04cab78eb",
+      "esp_jpeg/jpeg_decoder.c": "ea97dd2bedb8cebbc5afed2bbcb9f2d9239340b51eab4fabf3a9bccd5a23d949",
+      "esp_jpeg/Kconfig": "af77dfa3a532aa161a99cebb200b9aab7b511313d0328bfbde97ee6ba51a2641"
+    },
+    "activation_prerequisite": "Parent must make the actual pinned package discoverable and activate the existing public component dependency. The old IDF_COMPONENT_MANAGER=0 commands alone do not supply this dependency: locked camera CMakeLists REQUIRES only driver and relies on its idf_component.yml public edge. Use authorized pinned Component Manager resolution/lock, or parent-owned canonical SDK extra-component cache plus an explicit real public dependency edge, without editing the camera component. The actual registry archive is preserved at archive_evidence_path with the recorded SHA256; it was not installed or compiled by this worker.",
+    "decoder": "Ordinary camera fmt2rgb888 dispatches JPEG to jpg2rgb888 and actual esp_jpeg_decode. The new JPEG profile selects non-ROM TinyJPG software decoding, RGB888 and basic optimization; the existing wrapper supplies its real static3100-byte work area. No fake ROM hook, SOI/EOI-only decoder claim or precomputed decoded payload.",
+    "output_safety": "The official camera wrapper passes UINT32_MAX as outbuf_size. Before invoking it, cam_jpeg_shape performs bounded marker/segment traversal through SOS, accepts exactly one baseline SOF0 with eight-bit three-component160x120 shape, rejects other SOF types and inconsistent baseline scan shape, and requires terminal EOI. Only then is the real decoder called with an actual57600-byte internal CPU output allocation. The public esp_jpeg_get_image_info helper alone is not used as a malformed-input safety oracle: its pinned implementation reads segment headers before checking the next offset. Successful entropy decoding, not marker presence alone, is required.",
+    "uart": "CAM_DECODE records the actual compressed source FNV1a32, decoder=fmt2rgb888, baseline8_3component shape,160x120, output_type=RGB888,57600 bytes, actual decoder success and only on success the full decoded FNV1a32 plus first/last RGB triples. These are observed source-derived values, not hardcoded expected hashes. Independent capture/decode must bind them to the selected known color-bars source."
+  },
+  "supported_sdk_sources": {
+    "idf-5.5.5": "b774170ff46c393eeb5e495ea37936038d3f4f4f",
+    "idf-6.1": "fff9895c82d744c7237be8847347bdd1b07c6643"
+  },
+  "profiles": {
+    "lcd-camera-rgb565": {
+      "mode_defaults": "tests/firmware/memory_native/sdkconfig.lcd-camera-rgb565.defaults",
+      "camera_format": "PIXFORMAT_RGB565",
+      "width": 160,
+      "height": 120,
+      "requested_buffers": 2,
+      "raw_bytes_per_buffer": 38400,
+      "owned_trailing_DMA_guard_bytes": 7680,
+      "minimum_requested_allocation_bytes_per_buffer": 46096,
+      "ordinary_graph_scenario": "camera-rgb565"
+    },
+    "lcd-camera-yuv422": {
+      "mode_defaults": "tests/firmware/memory_native/sdkconfig.lcd-camera-yuv422.defaults",
+      "camera_format": "PIXFORMAT_YUV422",
+      "width": 160,
+      "height": 120,
+      "requested_buffers": 2,
+      "raw_bytes_per_buffer": 38400,
+      "owned_trailing_DMA_guard_bytes": 7680,
+      "minimum_requested_allocation_bytes_per_buffer": 46096,
+      "ordinary_graph_scenario": "camera-yuv422"
+    },
+    "lcd-camera-jpeg": {
+      "mode_defaults": "tests/firmware/memory_native/sdkconfig.lcd-camera-jpeg.defaults",
+      "camera_format": "PIXFORMAT_JPEG",
+      "width": 160,
+      "height": 120,
+      "requested_buffers": 2,
+      "payload_capacity_per_buffer": 278528,
+      "source_encoded_upper_bound_bytes": 270512,
+      "owned_trailing_DMA_guard_bytes": 1024,
+      "minimum_requested_allocation_bytes_per_buffer": 279568,
+      "actual_length": "Data-derived driver EOI length, greater than zero and no greater than278528; exact length/hash must match actual captured emission bytes. The custom capacity is not the asserted actual JPEG length.",
+      "decoder_output_bytes": 57600,
+      "ordinary_graph_scenario": "camera-jpeg"
+    }
+  },
+  "defaults_order": [
+    "tests/firmware/lcd_cam_native/sdkconfig.defaults",
+    "tests/firmware/memory_native/sdkconfig.lcd-camera-{rgb565|yuv422|jpeg}.defaults",
+    "tests/firmware/memory_native/sdkconfig.lcd-cam-quad.defaults"
+  ],
+  "external_memory_request": {
+    "initialized_capacity_bytes": 8388608,
+    "mode": "quad/QPI40MHz",
+    "actual_backing_requirement": "Actual SPI1 CS1 sole SSI8MiB backing with CPU MMU cached aliases and GDMA committed physical bytes; not merely a configured pointer range or copied internal framebuffer.",
+    "request_flag": "Existing CONFIG_LCD_CAM_NATIVE_PSRAM is a request only. requested_psram_ready must observe esp_psram_is_initialized and exact8MiB before external configuration/allocation; failure logs ERROR and has no fallback.",
+    "capability_semantics": "Locked cam_hal.c selects MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT for CAMERA_FB_IN_PSRAM. Both acquired payloads must pass esp_ptr_external_ram,16-byte address alignment, format/dimensions and bounded length. Stock per-frame descriptors use MALLOC_CAP_DMA/internal DRAM and point directly into those payloads; descriptor placement remains a required independent trace observation because the public camera handle does not expose descriptors.",
+    "startup": "Common native quad profile requests boot initialization, capability allocation and boot memory test, with no IGNORE_NOTFOUND, ECC, PSRAM instruction fetch or PSRAM rodata. Cache line is32 bytes.",
+    "hardware_octal": "Existing sdkconfig.camera-psram-hardware.defaults remains unchanged as hardware octal80MHz. Non-quad40 requests retain an explicit UNQUALIFIED hardware_PSRAM_fixture warning/native_external_requires_quad40_cache32_direct_DMA row and never qualify this native consumer. No hardware, octal, encryption or new physical-operation claim.",
+    "internal_regression_scope": "When the PSRAM request is disabled, existing one/two internal buffer, JPEG/raw, slow-consumer, truncation, reset and overflow flows remain unchanged. No external consumer success is inferred from those internal flows."
+  },
+  "safe_cache_extent": {
+    "cache_line_bytes": 32,
+    "driver_DMA_alignment": "Stock S3 ll_cam_get_dma_align returns16<<in_ext_mem_bk_size: real16/32/64-byte blocks. ll_cam_dma_reset selects peri5 IN; no private register force flag is added. Profile raw node size3840 and JPEG node size1024 are divisible by all three supported block sizes; descriptor receive length starts0 and is not a size-alignment requirement.",
+    "allocation_formula": "cam_hal.c alloc_size=max(fb_size,recv_size)+dma_half_buffer_size+dma_align; heap_caps_aligned_alloc(16,alloc_size,SPIRAM|8BIT); fb_offset=dma_align-(old_base&(dma_align-1)); public fb.buf=old_base+fb_offset. Because old_base is16-aligned and dma_align is16/32/64, fb_offset is at least16 and at most dma_align, including a full alignment when already aligned. Therefore at least16 owned bytes precede fb.buf and at least the whole DMA half-buffer guard follows payload capacity. Exact actual allocation depends on the observed block setting; listed allocation sizes are minima for block16, not measured allocation claims.",
+    "raw_DMA_geometry": "At160x120x2, stock CAMERA_DMA_BUFFER_SIZE_MAX=32768 produces node3840, half-buffer7680, full payload38400 and ten per-frame nodes. Converter is disabled. JPEG direct mode uses1024-byte nodes/half-buffer and capacity278528, i.e.272 nodes.",
+    "aligned_range": "Consumer msync start=fb.buf&~31; size=round_up(capacity+(fb.buf-start),32). A16-aligned pointer has cache32 remainder0 or16: at most16 bytes of owned prefix and16 bytes of owned trailing guard are touched. Full range endpoints must be external RAM. The range never extends into adjacent dirty allocator metadata or another allocation. It covers the full bounded capture capacity, not an unsafe arbitrary partial JPEG length rounded outside ownership.",
+    "cache_operations": "Real esp_cache_msync with DIR_M2C|INVALIDATE and an aligned owned range is checked before the first CPU payload/hash/header/decode read, again after the measured frame interval, on held-peer recovery checks, and immediately before each return/rearm. ESP_CACHE_MSYNC_FLAG_UNALIGNED is never used. The consumer never writes the input payload; no unnecessary C2M operation is fabricated for read-only input.",
+    "primary_sources": [
+      "https://github.com/espressif/esp32-camera/blob/b3c2aa273a88c7debf2b1683448933ca2b28aad9/driver/cam_hal.c#L437-L529",
+      "https://github.com/espressif/esp32-camera/blob/b3c2aa273a88c7debf2b1683448933ca2b28aad9/target/esp32s3/ll_cam.c#L68-L89",
+      "https://github.com/espressif/esp32-camera/blob/b3c2aa273a88c7debf2b1683448933ca2b28aad9/target/esp32s3/ll_cam.c#L435-L534",
+      "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/esp_mm/include/esp_cache.h"
+    ]
+  },
+  "jpeg_capacity_proof": {
+    "source": "qemu-extensions/prototypes/lcd-cam/copies/esp32s3_ov2640_service.c:240-244,360-363",
+    "role": "Native procedural sensor source implementation's allocation/encoded upper bound, not an expected JPEG byte oracle or a proprietary silicon compression claim.",
+    "formula": "300*3*ceil(width/8)*ceil(height/8)+512",
+    "QQVGA_bound": "300*3*20*15+512=270512 bytes",
+    "chosen_capacity": "278528=272*1024 exceeds270512 and matches real camera JPEG DMA node granularity; camera allocator additionally owns1024 trailing guard plus DMA alignment prefix. No tiny deliberately overflowing internal JPEG profile is reused for this consumer."
+  },
+  "ownership_and_rearm_sequence": [
+    "GET frame0, validate actual external handle/payload/bounds, M2C invalidate, hash full real length, and for JPEG perform actual bounded RGB888 decode; do not return.",
+    "GET frame1 while frame0 remains held, repeat actual checks, then require two distinct handles and non-overlapping owned payload capacities. CAM_TWO_HELD records requested2/actual2 and first_return_not_yet=1.",
+    "Compute positive actual frame-start interval from the two official camera_fb_t timestamps. There is no fabricated default cadence. Hold both for at least that measured interval (or configured longer slow_ms), measure actual elapsed_us, then M2C invalidate and recompute each original source hash. Check all original metadata remains unchanged. Independent physical capture must correlate the recorded interval to actual sensor VSYNC/frame timing.",
+    "Immediately before returning frame0, re-invalidate/re-hash, log CAM_RETURN_BEGIN, call ordinary esp_camera_fb_return, then log CAM_RETURN. Frame1 remains held.",
+    "GET recovery frame2 using the ordinary bounded driver get. Require exactly the returned frame0 handle/payload, a newer frame timestamp at or after the recorded return-begin time, normal raw/JPEG validation, M2C and decode as applicable. CAM_REARM logs actual producer resume; re-invalidate/re-hash still-held frame1.",
+    "Return frame1 with the same cache/log/API ordering while frame2 stays held, GET recovery frame3 and require the returned frame1 slot/new timestamp, then re-invalidate/re-hash still-held frame2.",
+    "Re-invalidate/re-hash and return frames2/3 in order, then ordinary camera deinit. Any error aborts the external sequence and deinitializes the real producer before freeing held slots; no unsafe return of an unvalidated allocation, fake recovery frame, retry layer or internal fallback."
+  ],
+  "acceptance_requires_actual_evidence": [
+    "Exact final firmware/source/defaults/package/SDK identities and canonical native ext4 build receipts for each SDK/profile; the shared literal app banner is not authoritative SDK provenance.",
+    "Actual PSRAM boot init/memory test/exact8MiB plus two genuinely allocated external camera payloads and stock internal DMA descriptors; inspect real peri5 IN descriptor addresses/sizes/lengths and actual committed SSI physical writes, not only allocation request flags.",
+    "Two frame GET->FRAME ownership acquisitions before any RETURN, full raw38400 byte count or bounded data-derived JPEG count, correct160x120 format and UART FNV/head/tail matching independently captured source emission.",
+    "Cache-assist observations prove each checked M2C invalidation reaches the real cached/committed memory model. Recomputed retention hashes occur after actual frame interval while both handles remain held; stale cached values are not evidence. Static color-bars hashes alone cannot prove the absence of identical-value physical writes: correlate real descriptor/producer ownership traces and captured intervals as well.",
+    "Actual software fmt2rgb888 success for JPEG, correctly typed160x120 RGB88857600-byte output and a full actual decoded hash; compare captured JPEG against independent host decode/known source, with explicit lossy tolerances. No hardcoded expected compressed/decoded hash and no marker-only PASS.",
+    "Recorded return/rearm ordering plus two actual bounded recovery gets/new timestamps from the returned slots while the other held slot remains physically unchanged. A completed=1 source UART summary is not by itself qualification."
+  ],
+  "commands_after_parent_authorization": [
+    "bash tools/prepare-idf-wsl.sh idf-5.5.5",
+    "source ~/.cache/esp32s3vm/idf/idf-5.5.5-b774170ff46c393eeb5e495ea37936038d3f4f4f/activate.sh",
+    "export IDF_COMPONENT_MANAGER=1",
+    "Prerequisite: parent-authorized immutable esp_jpeg1.3.1 package/lock activation with the archive SHA above; do not alter the camera vendor tree or use an unpinned replacement.",
+    "root=$PWD; P=$root/tests/firmware/lcd_cam_native; M=$root/tests/firmware/memory_native; for PROFILE in lcd-camera-rgb565 lcd-camera-yuv422 lcd-camera-jpeg; do B=$ESP32S3_IDF_BUILD_ROOT/$PROFILE; python $IDF_PATH/tools/idf.py -C \"$P\" -B \"$B\" -DIDF_TARGET=esp32s3 -DSDKCONFIG=\"$B/sdkconfig\" -DSDKCONFIG_DEFAULTS=\"$P/sdkconfig.defaults;$M/sdkconfig.$PROFILE.defaults;$M/sdkconfig.lcd-cam-quad.defaults\" build || break; done",
+    "For SDK6.1: bash tools/prepare-idf-wsl.sh idf-6.1, then source ~/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/activate.sh and repeat using its separate ext4 build root and exact pinned decoder package.",
+    "python tests/firmware/lcd_cam_native/graph_vectors.py camera-rgb565",
+    "python tests/firmware/lcd_cam_native/graph_vectors.py camera-yuv422",
+    "python tests/firmware/lcd_cam_native/graph_vectors.py camera-jpeg",
+    "Apply the matching ordinary version3 camera graph through public native-net Apply, bind the authorized final native-foundations runtime source/binary identities and actual8MiB memory setting before CPU release, then save actual UART, immutable sensor QOM bytes/timestamps and memory/cache/GDMA ownership evidence. No existing initial memory-only runtime proof is accepted as this camera consumer proof.",
+    "Use qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py sensor-qom on the real captured profile frame with its existing sensor-{rgb565|yuv422|jpeg}-frame1-expected.json contract and actual --uart log/--guest-frame/--guest-format; select the contract's actual matching sensor frame, not a fabricated capture. Independent JPEG decode requires that reference's real Pillow dependency."
+  ],
+  "native_unknowns_and_missing_receipts": [
+    "Actual esp_jpeg package activation/immutable dependency lock in both canonical native SDK environments has not been performed by this worker; the verified official package is reachable and handed to the parent, not a terminal source blocker.",
+    "No new profiles have been built, linted, formatted, run or hardware-tested. Neither SDK has a compiled-source/ELF/image receipt for this camera delta from this author.",
+    "Final native-foundations source-ready profile, final prepared source inventory and final QEMU executable receipt are parent-owned prerequisites; this consumer may not borrow the initial memory-only qualification/binary.",
+    "Actual CAM PSRAM DMA partial JPEG completion/EOI delivery, sensor cadence correlation, cache invalidation effects, held-buffer physical retention and producer resume remain unexercised until the integrated native candidate is qualified.",
+    "Octal80MHz hardware profiles and proprietary sensor compression/timing are not native quad40 qualification. No encryption or additional physical operation is introduced."
+  ],
+  "source_delivery_hashes": {
+    "camera_preprocessor_block_sha256": "b0903dcfcf42e5ab8cff72dadac442caf681abb3b4b2fece910434c68760c78f",
+    "camera_block_selection": "Verbatim bytes from #if CONFIG_LCD_CAM_NATIVE_CAMERA followed by newline through the closing #endif plus newline immediately before void app_main(void). This remains independent of sibling RGB edits. Parent records the final whole-file hash after all blocks land.",
+    "profile_sha256": {
+      "tests/firmware/memory_native/sdkconfig.lcd-camera-rgb565.defaults": "f22c25a517d4d0db93eda373475a3806a5803426fdf25a8826696ec1122dc8f5",
+      "tests/firmware/memory_native/sdkconfig.lcd-camera-yuv422.defaults": "671535b96c8f118f34a936b8789bfbf81aede7e9fc9b117c656341427d55e726",
+      "tests/firmware/memory_native/sdkconfig.lcd-camera-jpeg.defaults": "8f564e7f1eab17d68c6e8b3419ac3936cb655cb439da025005e695608e9bf8d1"
+    },
+    "locked_camera_semantics_sha256": {
+      "tests/firmware/lcd_cam_native/components/esp32-camera/driver/cam_hal.c": "062eece8d19bdbd3b29d2ce0dee8f44f8f5570a803b3d18a4754d74b4b5260ea",
+      "tests/firmware/lcd_cam_native/components/esp32-camera/target/esp32s3/ll_cam.c": "ee6cbbf58c69a89777769d3640ed7350b5f802fea17124c55b3c844a8f412c96",
+      "tests/firmware/lcd_cam_native/components/esp32-camera/conversions/to_bmp.c": "a07538f0abee82eff5e7ae7beb3dc8360f374d3d0e2ef31a0e9754159bdd20cd"
+    }
+  },
+  "changelog": [
+    {
+      "date": "2026-10-07",
+      "change": "Added conditional actual external CAM peri5 IN two-buffer raw/JPEG ownership, allocation-owned aligned M2C invalidation, measured-frame-interval fresh retention hashes, genuine bounded software JPEG RGB888 decode and returned-slot producer recovery. Added native quad40 mode defaults and provenance/evidence contract; internal flows and locked vendor/hardware octal defaults remain unchanged. Source/package hashes only; no execution qualification claimed."
+    }
+  ]
+}

@@ -14,7 +14,7 @@
 CpuStatusWidget::CpuStatusWidget(QWidget *parent)
     : QWidget(parent),
       controller(nullptr),
-            pcLabel(new QLabel("PC: 0x00000000", this)),
+            pcLabel(new QLabel("PC: unavailable", this)),
       scalarRegsTable(new QTableWidget(this)),
       vectorRegsTable(new QTableWidget(this)),
       memoryInspectTable(new QTableWidget(this)),
@@ -43,14 +43,14 @@ CpuStatusWidget::CpuStatusWidget(QWidget *parent)
     memoryInspectTable->setRowCount(8);
     for (int i = 0; i < 8; ++i) {
         memoryInspectTable->setItem(i, 0, new QTableWidgetItem(QString("0x3FC8%1").arg(i * 4, 4, 16, QLatin1Char('0')).toUpper()));
-        memoryInspectTable->setItem(i, 1, new QTableWidgetItem("0x00000000"));
+        memoryInspectTable->setItem(i, 1, new QTableWidgetItem("unavailable"));
     }
 
     auto *scalarBox = new QGroupBox("Scalar Registers", this);
     auto *scalarLayout = new QVBoxLayout(scalarBox);
     scalarLayout->addWidget(scalarRegsTable);
 
-    auto *vectorBox = new QGroupBox("Vector Registers", this);
+    auto *vectorBox = new QGroupBox("Floating point registers (F0-F7)", this);
     auto *vectorLayout = new QVBoxLayout(vectorBox);
     vectorLayout->addWidget(vectorRegsTable);
 
@@ -102,6 +102,33 @@ void CpuStatusWidget::setController(QemuController *ctrl)
 
     connect(controller, &QemuController::cpuSnapshotUpdated,
             this, &CpuStatusWidget::onSnapshotUpdated);
+    auto updateControls = [this]() {
+        bool snapshot = false, step = false, breakpoints = false;
+        for (const auto &capability : controller->runtimeCapabilities()) {
+            if (capability.id == "qmp.control") snapshot = capability.available;
+            if (capability.id == "debug.step") step = capability.available;
+            if (capability.id == "debug.breakpoints") breakpoints = capability.available;
+        }
+        const auto phase = controller->runtimeStatus().phase;
+        refreshButton->setEnabled(snapshot);
+        liveButton->setEnabled(snapshot);
+        pauseButton->setEnabled(phase == RuntimePhase::Running);
+        continueButton->setEnabled(phase == RuntimePhase::Paused || phase == RuntimePhase::WaitingForDebugger);
+        stepButton->setEnabled(step && phase == RuntimePhase::Paused);
+        addBreakpointButton->setEnabled(breakpoints);
+        clearBreakpointsButton->setEnabled(breakpoints);
+        breakpointLine->setEnabled(breakpoints);
+        stepButton->setToolTip(step ? "Single instruction step" : "A verified GDB stepping path is not available in this runtime.");
+        if (!snapshot) {
+            pcLabel->setText("PC: unavailable");
+            for (auto *table : {scalarRegsTable, vectorRegsTable, memoryInspectTable})
+                for (int row = 0; row < table->rowCount(); ++row)
+                    if (table->item(row, 1)) table->item(row, 1)->setText("unavailable");
+        }
+    };
+    connect(controller, &QemuController::runtimeStatusChanged, this, [updateControls](const RuntimeStatus &) { updateControls(); });
+    connect(controller, &QemuController::runtimeCapabilitiesChanged, this, [updateControls](const QList<RuntimeCapability> &) { updateControls(); });
+    updateControls();
 }
 
 void CpuStatusWidget::refreshStatus()
@@ -203,7 +230,7 @@ void CpuStatusWidget::setupScalarTable()
     scalarRegsTable->setRowCount(regCount);
     for (int i = 0; i < regCount; ++i) {
         scalarRegsTable->setItem(i, 0, new QTableWidgetItem(QString("A%1").arg(i)));
-        scalarRegsTable->setItem(i, 1, new QTableWidgetItem("0x00000000"));
+        scalarRegsTable->setItem(i, 1, new QTableWidgetItem("unavailable"));
     }
 }
 
@@ -217,6 +244,6 @@ void CpuStatusWidget::setupVectorTable()
     vectorRegsTable->setRowCount(vecCount);
     for (int i = 0; i < vecCount; ++i) {
         vectorRegsTable->setItem(i, 0, new QTableWidgetItem(QString("F%1").arg(i)));
-        vectorRegsTable->setItem(i, 1, new QTableWidgetItem("0x00000000"));
+        vectorRegsTable->setItem(i, 1, new QTableWidgetItem("unavailable"));
     }
 }

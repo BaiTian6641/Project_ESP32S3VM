@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QTextEdit>
 #include <QVBoxLayout>
+#include <QStyle>
 
 DevicePanelBase::DevicePanelBase(const QString &deviceId,
                                  const QString &deviceType,
@@ -29,7 +30,8 @@ void DevicePanelBase::buildBaseLayout()
     m_titleLabel = new QLabel(
         QString("<b>%1</b>  <i>(%2)</i>").arg(m_deviceId, m_deviceType), this);
     m_statusLabel = new QLabel("loaded", this);
-    m_statusLabel->setStyleSheet("color: gray; font-weight: bold;");
+    m_statusLabel->setProperty("tone", "helper");
+    m_statusLabel->setStyleSheet("font-weight: bold;");
     headerLayout->addWidget(m_titleLabel, 1);
     headerLayout->addWidget(m_statusLabel);
     root->addLayout(headerLayout);
@@ -67,17 +69,20 @@ void DevicePanelBase::updateCapabilities(const QJsonObject &caps)
 
 void DevicePanelBase::updateStatus(const QString &status, const QString &lastError)
 {
-    QString color = "gray";
-    if (status == "running") color = "green";
-    else if (status == "error") color = "red";
-    else if (status == "stopped") color = "orange";
+    QString tone = "helper";
+    if (status == "running") tone = "success";
+    else if (status == "error") tone = "error";
+    else if (status == "stopped") tone = "warning";
 
     QString text = status;
     if (!lastError.isEmpty()) {
         text += " — " + lastError;
     }
     m_statusLabel->setText(text);
-    m_statusLabel->setStyleSheet(QString("color: %1; font-weight: bold;").arg(color));
+    m_statusLabel->setProperty("tone", tone);
+    m_statusLabel->style()->unpolish(m_statusLabel);
+    m_statusLabel->style()->polish(m_statusLabel);
+    m_statusLabel->update();
 }
 
 void DevicePanelBase::appendLog(const QString &line)

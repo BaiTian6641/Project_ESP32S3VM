@@ -1,0 +1,40 @@
+menu "Native I2C fixture"
+choice I2C_NATIVE_PROFILE
+    prompt "Expected electrical graph profile (runner must configure graph independently)"
+    default I2C_NATIVE_PROFILE_CONNECTED
+config I2C_NATIVE_PROFILE_CONNECTED
+    bool "Connected SHT21 and EEPROM with external pull-ups"
+config I2C_NATIVE_PROFILE_WRONG
+    bool "Devices connected to other GPIO pads"
+config I2C_NATIVE_PROFILE_DISCONNECTED
+    bool "Devices disconnected from master nets"
+config I2C_NATIVE_PROFILE_POWER
+    bool "Devices unpowered while master nets remain pulled up"
+config I2C_NATIVE_PROFILE_NO_PULL
+    bool "No internal or external pull-ups"
+config I2C_NATIVE_PROFILE_STUCK
+    bool "SDA or SCL held low"
+endchoice
+config I2C_NATIVE_SPEED_HZ
+    int "Master SCL frequency (Hz)"
+    range 100000 400000
+    default 100000
+    help
+        Use 100000 or 400000 for standard-mode or fast-mode acceptance runs.
+config I2C_NATIVE_SDA0
+    int "Controller 0 SDA GPIO"
+    range 0 48
+    default 8
+config I2C_NATIVE_SCL0
+    int "Controller 0 SCL GPIO"
+    range 0 48
+    default 9
+config I2C_NATIVE_SDA1
+    int "Controller 1 SDA GPIO"
+    range 0 48
+    default 10
+config I2C_NATIVE_SCL1
+    int "Controller 1 SCL GPIO"
+    range 0 48
+    default 11
+endmenu

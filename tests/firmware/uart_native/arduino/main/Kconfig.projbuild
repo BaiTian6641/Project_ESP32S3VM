@@ -1,0 +1,3 @@
+config UART_NATIVE_PROFILE_ARDUINO
+    bool
+    default y

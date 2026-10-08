@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "fixture": "memory_native",
+  "status": "authored; not built or run by author; no qualification claimed",
+  "supported_sdk_sources": {
+    "idf-5.5.5": "b774170ff46c393eeb5e495ea37936038d3f4f4f",
+    "idf-6.1": "fff9895c82d744c7237be8847347bdd1b07c6643"
+  },
+  "profiles": {
+    "internal": {
+      "defaults": ["sdkconfig.defaults"],
+      "qemu_memory": "0M",
+      "qualification": "Internal DRAM payloads and internal descriptors plus private raw-flash/NVS persistence across QMP reset and process relaunch; never PSRAM qualification"
+    },
+    "psram": {
+      "defaults": ["sdkconfig.defaults", "sdkconfig.psram.defaults"],
+      "qemu_memory": "8M",
+      "supported_capacity_bytes": 8388608,
+      "mode": "quad/QPI",
+      "actual_ssi_wire_id": "0d5d420000000000",
+      "qualification": "Only observed passing consumer assertions and host-recomputed bytes qualify the leaf"
+    },
+    "octal-unsupported": {
+      "defaults": ["sdkconfig.defaults", "sdkconfig.octal-unsupported.defaults"],
+      "qualification": "Explicitly unsupported. Startup failure or UNSUPPORTED is not a passing memory leaf. Runner refuses this mode."
+    }
+  },
+  "covered_consumer_contract": [
+    "Ordinary IDF startup initializes and memory-tests PSRAM; no IGNORE_NOTFOUND or internal fallback",
+    "Public esp_psram_is_initialized/esp_psram_get_size and real SSI RDID, read with locked IDF quad command semantics under SDK cache guard",
+    "MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT payload allocation and explicit CPU alias checks; descriptors MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA|MALLOC_CAP_8BIT",
+    "Three real IN and OUT descriptors, owner writeback, received lengths and successful EOF plus raw GDMA completion",
+    "CPU dirty source remains new while GDMA observes previously committed bytes before esp_cache_msync C2M; GDMA observes new bytes after writeback",
+    "CPU cached destination remains old while GDMA sees newly written physical bytes before esp_cache_msync M2C; CPU observes new bytes after invalidation",
+    "Internal-to-external, external-to-internal and external-to-external transfers at block/burst 16,32,64",
+    "A heap-owned payload crosses an ordinary 64KiB MMU page boundary without modifying mappings",
+    "Real RX DSCR_ERR for external payload+1 at each supported block alignment",
+    "Real TX and RX DSCR_ERR for an MMU-table-verified unmapped alias only after esp_mmu_vaddr_to_paddr returns ESP_ERR_NOT_FOUND; the probe scans the real table and never uses the last DROM entry, which IDF image_process owns as a transient boot-partition map page (MMU_LL_END_DROM_ENTRY_ID)",
+    "Separate no-PSRAM internal M2M leaf",
+    "Actual running-app, NVS and private raw partition discovery; esp_partition_read and esp_flash_read must agree on the app header and high-byte raw payload",
+    "esp_flash reads the first flash header at address0; host binds both32-byte headers to the exact built merged image",
+    "769-byte asymmetric high-byte pattern written to private mem_raw partition and memory_fixture NVS namespace; nvs_commit then close/reopen phase and full blob readback",
+    "Fresh retained writable copy only, cache=writethrough and no snapshot=on; initial phase0->1, actual QMP system_reset phase1->2, orderly process termination/relaunch of the same file phase2->3",
+    "All existing internal CPU/GDMA and PSRAM CPU/cache/GDMA acceptance cases execute on each of the three boots; host validates complete consumer results each time",
+    "Disk SHA256 and raw/NVS partition hashes recorded before and after each boot and process close; raw bytes must match committed phase, NVS disk changes each phase, app immutable, original merged image unchanged",
+    "Host recomputes complete384-byte FNV32 and16-byte prefixes independently from consumer buffer observations"
+  ],
+  "qtest_owner_contract": {
+    "mmu_remap": "Map two aliases to actual SSI physical pages; dirty/writeback/invalidate one alias then remap64KiB entries and prove GDMA/CPU translation and physical data. Restore mappings; do not remap a firmware heap page.",
+    "capacity_end": "Map supported last physical page, exercise last valid bytes, then physical8MiB capacity-end/whole-span failure with DSCR_ERR, not fabricated ID/capacity or unmapped suppression.",
+    "reset_persistence": "Write actual physical bytes, perform ordinary documented reset, prove backing persistence independently from cache invalidation/reset. Firmware startup PSRAM_MEMTEST may overwrite heap and cannot imply persistence.",
+    "cache_instructions": "S3 has XCHAL_DCACHE_SIZE=0 and no dhwb/dhi/dhwbi ISA. Qualify real ROM EXTMEM cache-assist operations, including SyncSize=0 whole-cache behavior, in qtest; do not invent unsupported instructions. Firmware covers ordinary esp_cache_msync C2M/M2C ROM/register paths."
+  },
+  "cpu_unmapped_negative": {
+    "status": "not_qualified",
+    "reason": "An ordinary IDF CPU read of a proved-unmapped PSRAM alias is fatal; this consumer has no safe documented exception/resume profile. No successful CPU read is fabricated. Existing esp_mmu_vaddr_to_paddr plus real GDMA TX/RX DSCR_ERR remain distinct explicit negative coverage."
+  },
+  "flash_persistence_protocol": {
+    "partitions": "partitions.csv: NVS0x9000..0xefff; running factory app0x10000..0x20ffff; private mem_raw0x210000..0x210fff",
+    "namespace": "memory_fixture",
+    "keys": ["phase", "blob"],
+    "blob_bytes": 769,
+    "raw_offset": 37,
+    "pattern": "((i*73+(i>>3)*29+phase*53)^(0xa7+i*11))&255",
+    "boots": ["initial phase0->1", "QMP system_reset phase1->2", "same writable flash process relaunch phase2->3"],
+    "fresh_requirement": "Initial namespace phase and blob both absent, raw payload all0xff; no erase-on-nvs-init-error fallback",
+    "exclusions": "Flash/NVS persistence does not imply PSRAM backing reset retention. The latter remains qtest-owned."
+  },
+  "primary_semantics": [
+    "build-idf-5.5.5/components/esp_mm/include/esp_cache.h:53-62 C2M writeback and M2C invalidation",
+    "build-idf-5.5.5/components/esp_psram/device/esp_psram_impl_ap_quad.c:36-72,145-168 quad command/RDID semantics",
+    "build-idf-5.5.5/components/esp_psram/device/esp_psram_impl_ap_quad.c:354-394 ID decoding and8MiB density/non2T semantics",
+    "build-idf-5.5.5/components/hal/include/hal/dma_types.h:20-35 descriptor layout",
+    "build-idf-5.5.5/components/esp_hw_support/test_apps/dma/main/test_gdma.c:557-697 ordinary external M2M strategy/start/cache semantics",
+    "build-idf-5.5.5/components/hal/esp32s3/include/hal/gdma_ll.h:32-57 raw status and16/32/64 external blocks",
+    "build-idf-5.5.5/components/esp_mm/include/esp_mmu_map.h:125-137 mapping precondition API",
+    "build-idf-6.1/components/esp_driver_dma/include/esp_private/gdma.h:109-126 atomic TX/RX allocation changes",
+    "build-idf-6.1/components/esp_driver_dma/test_apps/dma/main/test_gdma.c:232-238 M2M trigger semantics"
+  ],
+  "source_build_gate": "Commands are source-ready only. Build/run only after parent READY for this exact source map and binary. No verification performed by author.",
+  "build_commands": [
+    "bash tools/prepare-idf-wsl.sh idf-6.1",
+    "source ~/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/activate.sh",
+    "root=$PWD; fixture=$root/tests/firmware/memory_native; build=$ESP32S3_IDF_BUILD_ROOT/memory_native-psram; python $IDF_PATH/tools/idf.py -C $fixture -B $build -DIDF_TARGET=esp32s3 -DSDKCONFIG=$build/sdkconfig -DSDKCONFIG_DEFAULTS=\"$fixture/sdkconfig.defaults;$fixture/sdkconfig.psram.defaults\" build",
+    "(cd $build && python -m esptool --chip esp32s3 merge_bin --fill-flash-size 4MB -o memory-native.merged.bin @flash_args)",
+    "For internal: use build=$ESP32S3_IDF_BUILD_ROOT/memory_native-internal and SDKCONFIG_DEFAULTS=$fixture/sdkconfig.defaults only; custom partitions.csv applies to both leaves.",
+    "For5.5.5: source ~/.cache/esp32s3vm/idf/idf-5.5.5-b774170ff46c393eeb5e495ea37936038d3f4f4f/activate.sh then use its separate native build root with identical commands."
+  ],
+  "run_command": "python3 qemu-extensions/prototypes/memory/run-native-fixture.py --qemu $QEMU --qemu-source $QEMU_SOURCE --flash $build/memory-native.merged.bin --build-dir $build --sdk-metadata $ESP32S3_IDF_METADATA --source-map qemu-extensions/prototypes/memory/source-map.json --idf-profile $ESP32S3_FIXTURE_PROFILE --mode psram --evidence $EVIDENCE_ROOT",
+  "run_matrix": "Run this command for each locked SDK and both internal/psram leaves (adjust build and --mode); no octal passing leaf.",
+  "evidence_policy": "Fresh retained directory per invocation with scratch writable-flash.bin; each process command, per-process UART/stdout/stderr, per-boot UART, full QMP send/receive/reset transcript, before/after whole-disk and partition SHA256, original unchanged evidence and failure result. Exact locked SDK metadata, project_description and sdkconfig, compiled source hashes, ELF SHA embedded app binding, merged-image built-input binding, QEMU source inventory and executable hash, approved initial source-map hash/pinned preparation inputs and copy-destination hashes. Required .esp32s3vm-memory-inputs/prepared-source.json must bind base/prefix/source-map hash, all immutable input snapshots and prepared target hashes; negative_without_spi1_fix is rejected for this positive runner. Host watchdog never fabricates firmware success. No qtest/provider/guest-state injection.",
+  "changelog": [
+    {
+      "date": "2026-10-07",
+      "change": "Added genuine ordinary app/flash-header and private raw-partition/NVS blob consumers, monotonically flash-derived phase across real QMP reset and same-disk relaunch, full memory leaf checks on every boot, immutable original evidence, and approved initial source-map runner binding. Authored only; no build/run claims."
+    },
+    {
+      "date": "2026-10-08",
+      "change": "Unmapped-alias probe now selects its page from the actual MMU table (skipping the last DROM entry, IDF's transient boot-partition map page) instead of assuming 0x3dff0000 is unmapped; the earlier assumption failed on ordinary IDF 6.1 startup, which legitimately maps that entry."
+    }
+  ]
+}

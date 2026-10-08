@@ -50,8 +50,7 @@ void DisplayPanel::buildUI()
     m_screenLabel->setAlignment(Qt::AlignCenter);
     m_screenLabel->setMinimumSize(m_width * m_scaleFactor + 8,
                                   m_height * m_scaleFactor + 8);
-    m_screenLabel->setStyleSheet(
-        "background: #000000; border: 2px solid #333; border-radius: 4px; padding: 4px;");
+    m_screenLabel->setProperty("role", "display");
 
     // Initialize with blank screen
     m_screenImage = QImage(m_width, m_height, QImage::Format_Mono);
@@ -63,12 +62,14 @@ void DisplayPanel::buildUI()
     m_geometryLabel = new QLabel(
         QString("Resolution: %1 x %2  |  Format: Monochrome 1bpp")
             .arg(m_width).arg(m_height), this);
-    m_geometryLabel->setStyleSheet("color: #888; font-size: 10px;");
+    m_geometryLabel->setProperty("tone", "helper");
+    m_geometryLabel->setStyleSheet("font-size: 10px;");
     m_geometryLabel->setAlignment(Qt::AlignCenter);
     screenLayout->addWidget(m_geometryLabel);
 
     m_cursorLabel = new QLabel("Cursor: page=0  col=0", this);
-    m_cursorLabel->setStyleSheet("color: #666; font-size: 10px;");
+    m_cursorLabel->setProperty("tone", "helper");
+    m_cursorLabel->setStyleSheet("font-size: 10px;");
     m_cursorLabel->setAlignment(Qt::AlignCenter);
     screenLayout->addWidget(m_cursorLabel);
 

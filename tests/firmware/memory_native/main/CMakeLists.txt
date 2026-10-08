@@ -1,0 +1,7 @@
+set(memory_requires esp_psram esp_mm esp_timer esp_hw_support spi_flash esp_partition app_update nvs_flash)
+if(IDF_VERSION_MAJOR GREATER_EQUAL 6)
+    list(APPEND memory_requires esp_driver_dma esp_hal_dma esp_hal_mspi)
+else()
+    list(APPEND memory_requires hal)
+endif()
+idf_component_register(SRCS "memory_native.c" INCLUDE_DIRS "." REQUIRES ${memory_requires})

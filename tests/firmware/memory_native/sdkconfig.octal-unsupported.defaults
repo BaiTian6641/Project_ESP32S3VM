@@ -1,0 +1,9 @@
+# Negative launch profile: native SSI octal support is not qualified.
+# Never report this profile as a passing PSRAM/cache/GDMA leaf.
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_OCT=y
+CONFIG_SPIRAM_TYPE_AUTO=y
+CONFIG_SPIRAM_SPEED_80M=y
+CONFIG_SPIRAM_BOOT_INIT=y
+CONFIG_SPIRAM_USE_CAPS_ALLOC=y
+# CONFIG_SPIRAM_IGNORE_NOTFOUND is not set

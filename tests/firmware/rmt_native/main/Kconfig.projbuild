@@ -1,0 +1,10 @@
+menu "Native RMT fixture"
+choice RMT_NATIVE_PROFILE
+    prompt "External v3 graph expectation"
+    default RMT_NATIVE_PROFILE_CONNECTED
+config RMT_NATIVE_PROFILE_CONNECTED
+    bool "GPIO4 to GPIO5 and GPIO6 to GPIO7 connected"
+config RMT_NATIVE_PROFILE_DISCONNECTED
+    bool "Both TX pads disconnected from RX pads"
+endchoice
+endmenu

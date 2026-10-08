@@ -4,6 +4,19 @@
   "type": "object",
   "required": ["board", "devices"],
   "properties": {
+    "ui_layout": {
+      "type": "object",
+      "description": "Circuit canvas locations keyed by device instance id",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["x", "y"],
+        "properties": {
+          "x": { "type": "number" },
+          "y": { "type": "number" }
+        },
+        "additionalProperties": false
+      }
+    },
     "version": {
       "type": "integer",
       "default": 2

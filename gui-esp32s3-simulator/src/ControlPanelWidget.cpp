@@ -11,6 +11,7 @@
 #include <QSpinBox>
 #include <QVBoxLayout>
 #include <QClipboard>
+#include <QLabel>
 
 #include "QemuController.h"
 
@@ -26,11 +27,6 @@ ControlPanelWidget::ControlPanelWidget(QWidget *parent)
     baseMacLine(new QLineEdit(this)),
     chipRevisionEnableCheck(new QCheckBox("Override Chip Revision", this)),
     chipRevisionSpin(new QSpinBox(this)),
-      firmwarePathLine(new QLineEdit(this)),
-      browseButton(new QPushButton("Browse", this)),
-      resetButton(new QPushButton("Reset", this)),
-      applyBootModeButton(new QPushButton("Apply Boot Mode", this)),
-    loadFirmwareButton(new QPushButton("Load Firmware", this)),
     copyEsptoolButton(new QPushButton("Copy esptool Command", this))
 {
     bootModeCombo->addItem("Normal Boot");
@@ -38,7 +34,7 @@ ControlPanelWidget::ControlPanelWidget(QWidget *parent)
 
         spiFlashEnableCheck->setChecked(true);
         spiFlashSizeCombo->addItems({"2", "4", "8", "16"});
-        spiFlashSizeCombo->setCurrentText("16");
+        spiFlashSizeCombo->setCurrentText("4");
 
     psramEnableCheck->setChecked(false);
     psramSizeCombo->addItems({"2", "4", "8", "16", "32"});
@@ -53,10 +49,6 @@ ControlPanelWidget::ControlPanelWidget(QWidget *parent)
     chipRevisionSpin->setValue(0);
     chipRevisionSpin->setEnabled(false);
 
-    auto *fwLayout = new QHBoxLayout();
-    fwLayout->addWidget(firmwarePathLine);
-    fwLayout->addWidget(browseButton);
-
     auto *formLayout = new QFormLayout();
     formLayout->addRow("Boot Mode", bootModeCombo);
         formLayout->addRow(spiFlashEnableCheck);
@@ -67,23 +59,19 @@ ControlPanelWidget::ControlPanelWidget(QWidget *parent)
     formLayout->addRow("Base MAC", baseMacLine);
     formLayout->addRow(chipRevisionEnableCheck);
     formLayout->addRow("Chip Revision", chipRevisionSpin);
-    formLayout->addRow("Firmware", fwLayout);
 
     auto *buttonLayout = new QHBoxLayout();
-    buttonLayout->addWidget(resetButton);
-    buttonLayout->addWidget(applyBootModeButton);
-    buttonLayout->addWidget(loadFirmwareButton);
     buttonLayout->addWidget(copyEsptoolButton);
 
     auto *layout = new QVBoxLayout(this);
+    auto *notice = new QLabel("Choose firmware and run it from the header. Boot mode, flash, PSRAM and chip settings apply on the next run.", this);
+    notice->setWordWrap(true);
+    notice->setObjectName("notice");
+    layout->addWidget(notice);
     layout->addLayout(formLayout);
     layout->addLayout(buttonLayout);
     layout->addStretch();
 
-    connect(browseButton, &QPushButton::clicked, this, &ControlPanelWidget::chooseFirmware);
-    connect(resetButton, &QPushButton::clicked, this, &ControlPanelWidget::doReset);
-    connect(applyBootModeButton, &QPushButton::clicked, this, &ControlPanelWidget::applyBootMode);
-    connect(loadFirmwareButton, &QPushButton::clicked, this, &ControlPanelWidget::loadFirmware);
     connect(copyEsptoolButton, &QPushButton::clicked, this, &ControlPanelWidget::copyEsptoolCommand);
     connect(chipRevisionEnableCheck, &QCheckBox::toggled, chipRevisionSpin, &QSpinBox::setEnabled);
     connect(psramEnableCheck, &QCheckBox::toggled, psramSizeCombo, &QComboBox::setEnabled);
@@ -99,30 +87,24 @@ void ControlPanelWidget::chooseFirmware()
 {
     const QString path = QFileDialog::getOpenFileName(this, "Select Firmware", QString(), "Binary Files (*.bin *.elf);;All Files (*)");
     if (!path.isEmpty()) {
-        firmwarePathLine->setText(path);
+        setFirmwarePath(path);
     }
 }
 
-void ControlPanelWidget::doReset()
+void ControlPanelWidget::setFirmwarePath(const QString &path)
 {
-    if (controller) {
-        controller->resetTarget();
-    }
-}
-
-void ControlPanelWidget::applyBootMode()
-{
-    if (!controller) {
-        return;
-    }
-    controller->setBootMode(bootModeCombo->currentIndex());
+    if (selectedFirmware == path) return;
+    selectedFirmware = path;
+    emit firmwareChanged(path);
 }
 
 void ControlPanelWidget::loadFirmware()
 {
-    if (!controller || firmwarePathLine->text().isEmpty()) {
+    if (!controller || selectedFirmware.isEmpty()) {
         return;
     }
+
+    controller->setBootMode(bootModeCombo->currentIndex());
 
     controller->setSpiFlashConfig(
         spiFlashEnableCheck->isChecked(),
@@ -138,7 +120,7 @@ void ControlPanelWidget::loadFirmware()
         chipRevisionEnableCheck->isChecked(),
         chipRevisionSpin->value());
 
-    controller->loadFirmware(firmwarePathLine->text());
+    controller->loadFirmware(selectedFirmware);
 }
 
 void ControlPanelWidget::copyEsptoolCommand()
@@ -147,6 +129,6 @@ void ControlPanelWidget::copyEsptoolCommand()
         return;
     }
 
-    const QString command = controller->recommendedEsptoolCommand(firmwarePathLine->text());
+    const QString command = controller->recommendedEsptoolCommand(selectedFirmware);
     QGuiApplication::clipboard()->setText(command);
 }

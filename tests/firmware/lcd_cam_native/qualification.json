@@ -1,0 +1,65 @@
+{
+  "status": "AUTHORED_NOT_EXERCISED",
+  "build_authorized": false,
+  "official_source": "https://github.com/espressif/esp32-camera/tree/b3c2aa273a88c7debf2b1683448933ca2b28aad9",
+  "idf_sources": {"idf-5.5.5": "b774170ff46c393eeb5e495ea37936038d3f4f4f", "idf-6.1": "fff9895c82d744c7237be8847347bdd1b07c6643"},
+  "build_environment": "Canonical activated native ext4 SDK/source/buildroots, immutable native fixture snapshot and real pinned esp_jpeg1.3.1 dependency; original vendor/frozen fixtures remain untouched.",
+  "commands_after_authorization": [
+    "source ~/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/activate.sh",
+    "export IDF_COMPONENT_MANAGER=1",
+    "Use the native LCD fixture and component paths published by the memory consumer dependency receipt, never the historical NTFS/manager0 recipe.",
+    "python \"$IDF_PATH/tools/idf.py\" -C \"$NATIVE_LCD_FIXTURE\" -B \"$ESP32S3_IDF_BUILD_ROOT/$PROFILE\" -DIDF_TARGET=esp32s3 -DSDKCONFIG=\"$ESP32S3_IDF_BUILD_ROOT/$PROFILE/sdkconfig\" -DEXTRA_COMPONENT_DIRS=\"$NATIVE_ESP_JPEG\" -DSDKCONFIG_DEFAULTS=\"$NATIVE_LCD_DEFAULTS;$NATIVE_MODE_DEFAULTS;$NATIVE_QUAD_DEFAULTS\" build",
+    "Repeat with exact idf-5.5.5 activation; generated SDKCONFIG, managed components, dependency locks and build output remain native.",
+    "python tests/firmware/lcd_cam_native/graph_vectors.py i80",
+    "python tests/firmware/lcd_cam_native/graph_vectors.py rgb-double",
+    "python tests/firmware/lcd_cam_native/graph_vectors.py camera-rgb565"
+  ],
+  "graph_delivery": "Apply generated version3 project through public native-net Apply before releasing CPU, then read immutable panel/sensor QOM capture through parent host runner; no device bytes injection.",
+  "timeouts": {"i80_completion_ms": 5000, "rgb_vsync_ms": 5000, "camera_get": "Unmodified official esp_camera_fb_get uses its own bounded FB_GET_TIMEOUT; UART records measured elapsed_us. Host strict electrical pause is distinct from a guest timeout and must not be called a returned ESP error."},
+  "rgb_profiles": {
+    "profiles": [
+      "rgb-double", "rgb-bounce", "rgb-demand",
+      "rgb-double-serial8-rgb332", "rgb-double-serial8-rgb565", "rgb-double-serial8-rgb888", "rgb-double-parallel16-rgb888",
+      "rgb-bounce-serial8-rgb332", "rgb-bounce-serial8-rgb565", "rgb-bounce-serial8-rgb888", "rgb-bounce-parallel16-rgb888",
+      "rgb-demand-serial8-rgb332", "rgb-demand-serial8-rgb565", "rgb-demand-serial8-rgb888", "rgb-demand-parallel16-rgb888"
+    ],
+    "modes": ["double", "bounce", "demand"],
+    "formats": {
+      "serial8-rgb332": {"bus_width": 8, "bits_per_pixel": 8, "memory_byte_profile": "rgb332"},
+      "serial8-rgb565": {"bus_width": 8, "bits_per_pixel": 16, "memory_byte_profile": "rgb565-le"},
+      "serial8-rgb888": {"bus_width": 8, "bits_per_pixel": 24, "memory_byte_profile": "rgb888-r-g-b"},
+      "parallel16-rgb888": {"bus_width": 16, "bits_per_pixel": 24, "memory_byte_profile": "rgb888-r-g-b"}
+    },
+    "profile_name": "rgb-{mode}-{format}; sdkconfig.{profile_name}.defaults; identical graph scenario",
+    "payload": "64x48, tightly packed stride=64*(bits_per_pixel/8); byte count=stride*48. RGB332 byte=(((x+3*f)&7)<<5)|(((3*y+f)&7)<<2)|((x^y^f)&3). RGB565 word=(((x+3*f)&31)<<11)|(((3*y+f)&63)<<5)|((x^y^f)&31), explicit low byte then high byte. RGB888 bytes=(x+3*f)&255,(3*y+f)&255,(x^y^f)&255, in R,G,B order. FNV1a32 starts2166136261, hashes actual payload bytes with multiply16777619 modulo2^32. These declarations describe this firmware memory only, not universal controller byte order.",
+    "uart": "RGB_PAYLOAD logs frame,bus_width,bits_per_pixel,width,height,stride,bytes,FNV,first/last3 bytes,time_us. Bounce supplies the same frame0 bytes directly to the actual ISR buffer.",
+    "command": "idf.py -C \"$P\" -B \"$BUILD_ROOT/$PROFILE\" -D SDKCONFIG=\"$BUILD_ROOT/sdkconfig.$PROFILE\" -D SDKCONFIG_DEFAULTS=\"$P/sdkconfig.defaults;$P/sdkconfig.$PROFILE.defaults\" build",
+    "timing": "Porches/pulses are physical wire cycles; active cycles per line=64*bits_per_pixel/bus_width, all profiles have whole cycles. RGB888 normalized captures contain3 bytes/pixel; source memory profile does not override LCD_CAM programmed word/byte ordering."
+  },
+  "acceptance_proposed": {
+    "i80": "Three separately owned 6144-byte internal DMA buffers, frames0/1/2. Driver callbacks are the only completion signal; callback_us must not precede model completion. Decode each captured 64x48 ST7789 write window. Memory hash is little-endian RGB565 FNV1a32; 8-bit I80 wire is big-endian due to swap_color_bytes. Pixel=((x+frame*3)&31)<<11 | ((y*3+frame)&63)<<5 | ((x^y^frame)&31).",
+    "rgb-double": "Decode 64x48 RGB565 16-bit frame0 then frame1. Timing at1MHz: hsync2 back4 active64 front4, vsync2 back2 active48 front2; actual VSYNC and framebuffer ownership ISR callbacks. Old fb0 is never overwritten while DMA owns it. Divider request500k and restart take effect at subsequent VSYNC, not API return. Inspect physical captures, not draw-copy callback as refresh completion.",
+    "rgb-bounce": "Four-line internal DMA bounce buffers populated by official ISR callback, fixed frame0 pattern, no fabricated PSRAM framebuffer. Verify all lines, sync and actual bounce/refill callbacks.",
+    "rgb-demand": "Three explicit refreshes frame0/1/2 each followed by actual VSYNC callback. Verify no unsolicited continuous frame refresh. Restart must return official ESP_ERR_INVALID_STATE.",
+    "camera": "Unmodified official v2.1.3 SCCB sensor probe/configuration, real LEDC20MHz XCLK. QQVGA160x120 RGB565/YUV422 raw length38400; JPEG data-derived exact length plus SOI/EOI. Compare UART FNV1a32 and first/last tags to independently captured source bytes; inspect official format/dims and GET->FRAME->RETURN order. Four requested frames with fb_count1 or2; slow consumer holds owned buffers500ms before return. No returned buffers reused while held.",
+    "camera-truncation": "Firmware physical PWDN assertion7ms after second GET_BEGIN, not fake CAM RX. Qualification requires capture proving assertion occurred inside active frame and invalid/truncated frame was not reported valid; delay can be selected in Kconfig against observed actual timing. Prior frame may already be queued and is not evidence of truncation.",
+    "camera-overflow": "Official custom JPEG framebuffer128 bytes deliberately too small. Must observe official FB overflow/drop and bounded null get, not a successful truncated JPEG or overrun; actual source JPEG size must be independently measured greater than128.",
+    "camera-reset": "Physical RESET low7ms after second GET_BEGIN; deinit, release reset, ordinary reinit and get/return recovery buffer. Validate reset capture and recovery hash/dimensions independently.",
+    "camera-disconnected-sccb": "Same camera-rgb565 firmware with generated disconnected SDA graph; probe error or explicit strict electrical pause, never mock detection.",
+    "camera-disconnected-pclk": "Same firmware with physical PCLK net disconnected; bounded guest timeout or explicit strict pause, never fake RX."
+  },
+  "psram": "sdkconfig.camera-psram-hardware.defaults is an actual hardware octal80MHz PSRAM configuration only; UNQUALIFIED for native emulation unless main independently qualifies an external memory path. No PSRAM claims from internal RAM fixtures.",
+  "native_external_consumers": {
+    "status": "AUTHORED_NOT_EXERCISED; no build/runtime/hardware acceptance",
+    "profiles": ["lcd-rgb-double", "lcd-rgb-bounce", "lcd-camera-rgb565", "lcd-camera-yuv422", "lcd-camera-jpeg"],
+    "profile_root": "tests/firmware/memory_native",
+    "mode": "Requested real8MiB QUAD/QPI40MHz initializedcapabilityheap, no IGNORE_NOTFOUND/internal fallback",
+    "contracts": ["tests/firmware/memory_native/rgb-consumer-contract.json", "tests/firmware/memory_native/camera-consumer-contract.json"],
+    "jpeg_dependency": {"version": "1.3.1", "source_commit": "746e83ddbea0db9c3d24993a87c4c737a60337ae", "archive_sha256": "6c15edd7f3b74f37d02ab4e74f13276aff4bd0f63dd9b6031bf6ebba5e020c13", "project_pin": "main/idf_component.yml", "component_manager": 1},
+    "proof_gate": "Actual memory SOURCE_READY candidate plus final parent native-foundations source/profile/compiled-binary receipt; standalone source/pointer checks do not qualify external captures",
+    "memory": "CPU C2M writeback before RGB actualperi5OUT; twoexternalframebuffers retainedimmutable through actual VSYNC/prefetch-limitedreuseevents; bounceISRCPUreads realPSRAM source into actualinternalDMAbuffers. CAM publicdirectPSRAMDMA uses tworealheldexternalQQVGAbuffers, ownedalignedM2C beforeCPUhash/actualJPEGdecode/returnrearm with producerrecovery.",
+    "preservation": "Internaldefault/all15RGBbus/bppformulas andhardwareoctalprofiles remain separate; lockedofficialcamera2.1.3 unchanged."
+  },
+  "reserved_gpio": [19,20,26,27,28,29,30,31,32,33,34,35,36,37,38,43,44],
+  "gpio_ownership": "LCD I80, RGB, and CAM are exclusive firmware modes and graphs; overlap across modes is intentional, never concurrent. UART console GPIO43/44 preserved, USB19/20 excluded."
+}

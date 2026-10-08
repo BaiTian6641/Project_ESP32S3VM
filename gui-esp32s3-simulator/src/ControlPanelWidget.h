@@ -16,12 +16,17 @@ class ControlPanelWidget : public QWidget
 public:
     explicit ControlPanelWidget(QWidget *parent = nullptr);
     void setController(QemuController *ctrl);
+    void setFirmwarePath(const QString &path);
+    QString firmwarePath() const { return selectedFirmware; }
+
+public slots:
+    void chooseFirmware();
+    void loadFirmware();
+
+signals:
+    void firmwareChanged(const QString &path);
 
 private slots:
-    void chooseFirmware();
-    void doReset();
-    void applyBootMode();
-    void loadFirmware();
     void copyEsptoolCommand();
 
 private:
@@ -35,10 +40,6 @@ private:
     QLineEdit *baseMacLine;
     QCheckBox *chipRevisionEnableCheck;
     QSpinBox *chipRevisionSpin;
-    QLineEdit *firmwarePathLine;
-    QPushButton *browseButton;
-    QPushButton *resetButton;
-    QPushButton *applyBootModeButton;
-    QPushButton *loadFirmwareButton;
+    QString selectedFirmware;
     QPushButton *copyEsptoolButton;
 };

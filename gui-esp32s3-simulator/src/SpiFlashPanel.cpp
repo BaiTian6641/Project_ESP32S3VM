@@ -47,7 +47,7 @@ void SpiFlashPanel::buildUI()
     infoLayout->addWidget(m_sizeLabel);
 
     m_statsLabel = new QLabel("Reads: 0  Writes: 0  Erases: 0", this);
-    m_statsLabel->setStyleSheet("color: #888;");
+    m_statsLabel->setProperty("tone", "helper");
     infoLayout->addWidget(m_statsLabel, 1);
 
     layout->addWidget(infoGroup);
@@ -70,8 +70,6 @@ void SpiFlashPanel::buildUI()
     m_hexView = new QTextEdit(this);
     m_hexView->setReadOnly(true);
     m_hexView->setFont(QFont("Courier New", 10));
-    m_hexView->setStyleSheet(
-        "background: #0a0a0a; color: #80ff80; border: 1px solid #333;");
     m_hexView->setPlaceholderText("Flash contents will appear here after read operations...");
     hexLayout->addWidget(m_hexView, 1);
 

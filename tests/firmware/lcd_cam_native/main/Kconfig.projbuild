@@ -1,0 +1,83 @@
+menu "Ordinary LCD CAM native qualification"
+choice LCD_CAM_NATIVE_MODE
+    prompt "Exclusive GPIO owner"
+    default LCD_CAM_NATIVE_I80
+config LCD_CAM_NATIVE_I80
+    bool "ST7789 I80 internal RAM queued transfers"
+config LCD_CAM_NATIVE_RGB
+    bool "RGB internal RAM timing and ownership"
+config LCD_CAM_NATIVE_CAMERA
+    bool "Official OV2640 component"
+endchoice
+choice LCD_CAM_NATIVE_RGB_MODE
+    prompt "RGB buffering mode"
+    depends on LCD_CAM_NATIVE_RGB
+    default LCD_CAM_NATIVE_RGB_DOUBLE
+config LCD_CAM_NATIVE_RGB_DOUBLE
+    bool "Two internal RAM frame buffers"
+config LCD_CAM_NATIVE_RGB_BOUNCE
+    bool "No framebuffer, ISR filled bounce buffers"
+config LCD_CAM_NATIVE_RGB_DEMAND
+    bool "On demand internal RAM framebuffer"
+endchoice
+choice LCD_CAM_NATIVE_RGB_BUS
+    prompt "RGB physical data bus width"
+    depends on LCD_CAM_NATIVE_RGB
+    default LCD_CAM_NATIVE_RGB_BUS16
+config LCD_CAM_NATIVE_RGB_BUS8
+    bool "8 data wires"
+config LCD_CAM_NATIVE_RGB_BUS16
+    bool "16 data wires"
+endchoice
+config LCD_CAM_NATIVE_RGB_BUS_WIDTH
+    int
+    default 8 if LCD_CAM_NATIVE_RGB_BUS8
+    default 16
+choice LCD_CAM_NATIVE_RGB_PIXEL_FORMAT
+    prompt "RGB framebuffer pixel format"
+    depends on LCD_CAM_NATIVE_RGB
+    default LCD_CAM_NATIVE_RGB_RGB565
+config LCD_CAM_NATIVE_RGB_RGB332
+    bool "8-bit RGB332 (8-wire bus only)"
+    depends on LCD_CAM_NATIVE_RGB_BUS_WIDTH = 8
+config LCD_CAM_NATIVE_RGB_RGB565
+    bool "16-bit RGB565 little-endian memory bytes"
+config LCD_CAM_NATIVE_RGB_RGB888
+    bool "24-bit RGB888 R,G,B memory bytes"
+endchoice
+config LCD_CAM_NATIVE_RGB_PIXEL_BITS
+    int
+    default 8 if LCD_CAM_NATIVE_RGB_RGB332
+    default 24 if LCD_CAM_NATIVE_RGB_RGB888
+    default 16
+choice LCD_CAM_NATIVE_CAM_FORMAT
+    prompt "Camera format"
+    depends on LCD_CAM_NATIVE_CAMERA
+    default LCD_CAM_NATIVE_CAM_RGB565
+config LCD_CAM_NATIVE_CAM_RGB565
+    bool "RGB565"
+config LCD_CAM_NATIVE_CAM_YUV422
+    bool "YUV422"
+config LCD_CAM_NATIVE_CAM_JPEG
+    bool "JPEG"
+endchoice
+config LCD_CAM_NATIVE_FB_COUNT
+    int "Camera frame buffers"
+    range 1 2
+    default 1
+config LCD_CAM_NATIVE_SLOW_MS
+    int "Hold each camera buffer before returning, milliseconds"
+    range 0 5000
+    default 0
+config LCD_CAM_NATIVE_FAULT
+    int "Camera fault: 0 none, 1 PWDN truncation, 2 reset then reinitialize"
+    range 0 2
+    default 0
+config LCD_CAM_NATIVE_FAULT_DELAY_MS
+    int "Delay after GET_BEGIN before physical PWDN/reset assertion"
+    range 1 1000
+    default 7
+config LCD_CAM_NATIVE_PSRAM
+    bool "Request initialized external PSRAM consumer buffers"
+    default n
+endmenu

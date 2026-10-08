@@ -1,5 +1,9 @@
 # GUI ESP32-S3 Simulator
 
+> Historical scaffold documentation. Start with the [current root README](../README.md)
+> and [verified capability status](../docs/current-status.md). Feature descriptions
+> below are not proof of normal firmware compatibility.
+
 Simple Qt-based GUI simulator with integrated QEMU launching.
 
 ## Goal

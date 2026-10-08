@@ -17,8 +17,6 @@ public:
     void setController(QemuController *ctrl);
 
 private slots:
-    void browseFirmware();
-    void startWithGdbClicked();
     void applyGdbConfig();
     void pauseClicked();
     void continueClicked();
@@ -35,9 +33,6 @@ private:
     QLineEdit *gdbPortLine;
     QCheckBox *waitForAttachCheck;
     QPushButton *applyGdbButton;
-    QLineEdit *firmwarePathLine;
-    QPushButton *browseFirmwareButton;
-    QPushButton *startWithGdbButton;
 
     QPushButton *pauseButton;
     QPushButton *continueButton;

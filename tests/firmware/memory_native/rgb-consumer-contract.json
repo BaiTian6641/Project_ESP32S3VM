@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "fixture": "lcd_cam_native external RGB consumers",
+  "status": "AUTHORED_SOURCE_ONLY",
+  "build_authorized": false,
+  "verification_performed": [],
+  "source_ready_inputs": {
+    "policy": "Exact authored source candidates only; parent review/authorization and independently bound compiled artifacts are still required. SHA256 is over raw file bytes, not build output.",
+    "file_sha256": {
+      "tests/firmware/lcd_cam_native/main/lcd_cam_native.c": "7d9d9fcdc87cb3929f5b3261b6f4bfcbdcb941574c291d8e11434b0046474073",
+      "tests/firmware/lcd_cam_native/main/CMakeLists.txt": "8546bddce5297ed2f818bd60050b84f1b340b9b9864f192b486c89872eb6d35c",
+      "tests/firmware/lcd_cam_native/main/Kconfig.projbuild": "c0bba815c48c6aa0ab40910e210dc43000de55e2d06fde09f6b4ac542221f086",
+      "tests/firmware/lcd_cam_native/sdkconfig.defaults": "2615001cb0a088d5db9c31e0200f6430acba3261f0b8e31e5264a55c2ea410eb",
+      "tests/firmware/lcd_cam_native/component-lock.json": "c6952b879c2fb40e80c2705cc61732b0320a2ffeee8fc2e10933aeb7c41cb502",
+      "tests/firmware/memory_native/sdkconfig.lcd-rgb-double.defaults": "a6db5cb20fb9275d2e75a0b6785c14b5976793c74517cbe5822d56053f678199",
+      "tests/firmware/memory_native/sdkconfig.lcd-rgb-bounce.defaults": "dd731de8c6461303e334a3ee0310f1e7265c6cd610e9d1d42034da5599bf214a",
+      "tests/firmware/memory_native/sdkconfig.lcd-cam-quad.defaults": "f5519a2f11625de35c3e906e75f4ce8ae27e58991159dbac8b07968fa0b187cc"
+    },
+    "owned_rgb_block": {
+      "file": "tests/firmware/lcd_cam_native/main/lcd_cam_native.c",
+      "first_line": 137,
+      "last_line": 488,
+      "selector": "Raw bytes from the standalone #if CONFIG_LCD_CAM_NATIVE_RGB line through the bytes immediately before the standalone #if CONFIG_LCD_CAM_NATIVE_CAMERA line; includes trailing blank separator lines.",
+      "sha256": "2939f953994bbe92564054e8abb5fdd23387dd4e3ae0a9b596ddd2df8d6f7b6c"
+    },
+    "shared_file_policy": "The whole C-file hash binds this authoring epoch, including parent/shared helper and camera sibling inputs. Any later sibling edit requires a parent-refreshed whole-file receipt; the owned RGB-block hash remains independently scoped."
+  },
+  "sdk_sources": {
+    "idf-5.5.5": "b774170ff46c393eeb5e495ea37936038d3f4f4f",
+    "idf-6.1": "fff9895c82d744c7237be8847347bdd1b07c6643"
+  },
+  "profiles": {
+    "lcd-rgb-double": {
+      "defaults": [
+        "tests/firmware/lcd_cam_native/sdkconfig.defaults",
+        "tests/firmware/memory_native/sdkconfig.lcd-rgb-double.defaults",
+        "tests/firmware/memory_native/sdkconfig.lcd-cam-quad.defaults"
+      ],
+      "graph_scenario": "rgb-double",
+      "request": "Two driver-owned 6144-byte external framebuffers; fb_in_psram=true. This mode selection is not an observed success or qualification flag."
+    },
+    "lcd-rgb-bounce": {
+      "defaults": [
+        "tests/firmware/lcd_cam_native/sdkconfig.defaults",
+        "tests/firmware/memory_native/sdkconfig.lcd-rgb-bounce.defaults",
+        "tests/firmware/memory_native/sdkconfig.lcd-cam-quad.defaults"
+      ],
+      "graph_scenario": "rgb-bounce",
+      "request": "Immutable aligned 6144-byte MALLOC_CAP_SPIRAM CPU source, copied by the official callback into the driver's two four-line internal DMA bounce buffers; no driver framebuffer. This mode selection is not an observed success or qualification flag."
+    }
+  },
+  "memory_request": {
+    "qemu_memory": "8M",
+    "required_capacity_bytes": 8388608,
+    "mode": "quad/QPI, STR, requested 40MHz",
+    "not_found_policy": "Fail initialization or the explicit initialized/exact-capacity/pointer checks; never ignore not-found or fall back to internal payload storage.",
+    "common_defaults": "QUAD40 boot hardware init, boot init, caps allocation, boot memory test; ECC, PSRAM XIP and IGNORE_NOTFOUND disabled.",
+    "native_backing_requirement": "Actual SPI1 CS1 sole SSI backing; SPI0/cache and GDMA must use the same committed physical bytes through their real MMU mappings. Firmware pointer checks cannot independently establish this model invariant."
+  },
+  "payload": {
+    "width": 64,
+    "height": 48,
+    "bus_width": 16,
+    "bits_per_pixel": 16,
+    "stride_bytes": 128,
+    "frame_bytes": 6144,
+    "pixel": "(((x+3*f)&31)<<11)|(((3*y+f)&63)<<5)|((x^y^f)&31)",
+    "memory_byte_order": "RGB565 low byte then high byte",
+    "hash": "FNV1a32 over actual bytes, seed2166136261, multiplier16777619 modulo2^32",
+    "double_frames": [
+      0,
+      1
+    ],
+    "bounce_frame": 0
+  },
+  "double_contract": [
+    "Call requested_psram_ready before external allocation/configuration, and require initialized exact8MiB.",
+    "Use ordinary esp_lcd_new_rgb_panel with num_fbs=2 and fb_in_psram=true. The official driver allocates MALLOC_CAP_SPIRAM|MALLOC_CAP_DMA|MALLOC_CAP_8BIT payloads and internal descriptors.",
+    "Get the two real framebuffer CPU aliases through esp_lcd_rgb_panel_get_frame_buffer; require non-null, distinct non-overlapping spans, esp_ptr_external_ram on both span ends, and heap_caps_get_allocated_size at least6144.",
+    "Fill frame0/frame1 with the unchanged ordinary RGB565 formula. Explicit esp_cache_msync C2M|TYPE_DATA after each fill, before panel init starts actual GDMA OUT; explicitly C2M fb1 again before draw visibility.",
+    "Keep fb0 immutable for the whole active driver lifetime. Retention logs compare every actual fb0 byte against an internal owned snapshot, recompute the actual FNV, and print head/tail tags after M2C|INVALIDATE readback.",
+    "Require actual new VSYNC and reusable callback observations around the swap, and log callback counts and callback timestamps. Draw-copy completion is not LCD refresh completion.",
+    "S3 official GDMA EOF reusable callbacks are subject to prefetch and do not identify a safely released particular framebuffer. No immediate fb0 overwrite/reallocation is justified by callback count alone. Both old and new framebuffers remain driver-owned until actual successful panel deletion.",
+    "Observe frame0 then frame1 in independent full physical RGB captures; confirm divider request500k and restart take effect at subsequent physical VSYNC, not API return."
+  ],
+  "bounce_contract": [
+    "Call requested_psram_ready before requesting an aligned64 MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT source; validate actual external span and capacity, never allocate an internal substitute.",
+    "Fill and log the ordinary complete frame0 bytes while CPU-owned; explicitly C2M write back, then M2C|INVALIDATE immediately before actual panel init/prefill. Do not re-read the source in the task between that invalidation and the official callback.",
+    "Use ordinary num_fbs=0/no_fb=true and bounce_buffer_size_px=64*4. The official SDK allocates exactly two MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA bounce buffers and internal DMA descriptors.",
+    "In the official callback copy bounded real volatile external source bytes by pixel position into the actual callback buffer. No allocation, logging, cache maintenance, blocking FreeRTOS wait, formula generation, or private cache/DMA shim on this external callback path.",
+    "Validate callback buffer internal/DMA span, record the two actual distinct buffer aliases, bounds errors, completed contiguous-frame FNV, total copy count, actual ISR copy count and external ISR bytes. Startup CPU prefill alone does not satisfy acceptance; ISR copies and full independent physical frame captures are required.",
+    "Keep source immutable and allocated until successful actual esp_lcd_panel_del stops/deletes the driver; free it only after that call returns ESP_OK. Delete failure retains source and callback state rather than freeing outstanding DMA storage.",
+    "When PSRAM is not requested, keep the original RGB332/RGB565/RGB888 formula-generated callback path separate and unchanged."
+  ],
+  "lifetime": "All run exit paths with a panel call actual ordinary panel_del before releasing consumer storage or semaphore; failed deletion intentionally retains them. Driver framebuffers are never manually freed. The old framebuffer is not rewritten during active OUT DMA.",
+  "internal_regression_scope": "Existing default internal RGB double/bounce/demand modes and all15 bus/bpp profile formulas, bytes, pins and timing requests stay intact; the common external profile is opt-in. Existing hardware octal profiles, frozen ELFs and locked camera2.1.3 component remain untouched.",
+  "host_evidence_required": [
+    "Exact source input hashes plus built SDK metadata, compiled source hashes, ELF and merged flash image hashes; the authored source-only receipt is not a build receipt.",
+    "Fresh independent native graph Apply before CPU release and immutable full panel captures; no guest byte injection and no payload reconstruction used as a substitute for captured output.",
+    "Captured full frame0 and frame1 hashes/tags, actual VSYNC and GDMA/reusable event ordering, distinct physical framebuffer payload ranges and observed C2M/cache operation against the shared SSI backing for double mode.",
+    "Captured full frame0 hashes/tags, two distinct internal bounce aliases, nonzero external ISR read/copy bytes, real GDMA OUT from internal bounce buffers, and source cache invalidation/read-through to actual committed PSRAM backing for bounce mode.",
+    "No runtime PASS from request config, API return, guest hash, callback count, or source-ready metadata alone."
+  ],
+  "commands_after_parent_authorization": {
+    "prepare": [
+      "bash tools/prepare-idf-wsl.sh idf-5.5.5",
+      "bash tools/prepare-idf-wsl.sh idf-6.1"
+    ],
+    "activate": {
+      "idf-5.5.5": "source ~/.cache/esp32s3vm/idf/idf-5.5.5-b774170ff46c393eeb5e495ea37936038d3f4f4f/activate.sh",
+      "idf-6.1": "source ~/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/activate.sh"
+    },
+    "build_each_profile": "P=$NATIVE_LCD_FIXTURE; M=$P/../memory_native; export IDF_COMPONENT_MANAGER=1; for PROFILE in lcd-rgb-double lcd-rgb-bounce; do B=$ESP32S3_IDF_BUILD_ROOT/lcd-cam-native-$PROFILE; python $IDF_PATH/tools/idf.py -C \"$P\" -B \"$B\" -DIDF_TARGET=esp32s3 -DSDKCONFIG=\"$B/sdkconfig\" -DEXTRA_COMPONENT_DIRS=\"$NATIVE_ESP_JPEG\" -DSDKCONFIG_DEFAULTS=\"$P/sdkconfig.defaults;$M/sdkconfig.$PROFILE.defaults;$M/sdkconfig.lcd-cam-quad.defaults\" build || break; done",
+    "merge_each_built_profile": "for PROFILE in lcd-rgb-double lcd-rgb-bounce; do B=$ESP32S3_IDF_BUILD_ROOT/lcd-cam-native-$PROFILE; (cd \"$B\" && python -m esptool --chip esp32s3 merge_bin --fill-flash-size 4MB -o lcd-cam-native.merged.bin @flash_args) || break; done",
+    "graph_source": [
+      "python tests/firmware/lcd_cam_native/graph_vectors.py rgb-double",
+      "python tests/firmware/lcd_cam_native/graph_vectors.py rgb-bounce"
+    ],
+    "execution_gate": "Only the parent may authorize compilation or native execution after review of the exact source map. Use activated canonical ext4 SDK/build roots, not NTFS SDK checkouts or a borrowed initial-memory proof. Existing graph scenarios describe RGB wires only; the final native-foundations profile/host command must independently bind actual PSRAM and this exact compiled consumer."
+  },
+  "known_unknowns": [
+    "No compilation on either locked SDK has been authorized/exercised for these new profiles.",
+    "No native boot, cache/GDMA transaction, actual SPI0 PSRAM read, ISR refill, ownership event, or physical RGB capture has been exercised by this author.",
+    "Final native-foundations runtime profile and exact host execution command are parent-owned and were unavailable at source authoring; no invented runnable host command or passing native qualification is supplied.",
+    "Firmware CPU aliases/capacity checks do not prove independent physical identity or MMU/SSI coherence; those require parent host captures/model evidence.",
+    "S3 reusable callbacks are coarse EOF observations under driver prefetch; actual old-buffer immutability and independent captured frames are required, and overwrite ownership is not claimed."
+  ],
+  "primary_semantics": [
+    "build-idf-5.5.5/components/esp_lcd/rgb/include/esp_lcd_panel_rgb.h:90-118,151-174 ordinary callback and allocation contract",
+    "build-idf-5.5.5/components/esp_lcd/rgb/esp_lcd_panel_rgb.c:175-200 external driver framebuffers and internal bounce allocations",
+    "build-idf-5.5.5/components/esp_lcd/rgb/esp_lcd_panel_rgb.c:215-267 successful destroy stops LCD, disconnects/deletes GDMA and frees driver buffers/descriptors",
+    "build-idf-5.5.5/components/esp_lcd/rgb/esp_lcd_panel_rgb.c:948-984,1018-1027 S3 EOF/prefetch callback limitation",
+    "build-idf-5.5.5/components/esp_lcd/rgb/esp_lcd_panel_rgb.c:1205-1230 startup prefill then actual GDMA and LCD start",
+    "build-idf-5.5.5/components/esp_mm/include/esp_cache.h:53-62 actual C2M writeback and M2C invalidation",
+    "https://github.com/espressif/esp-idf/blob/v5.5.5/components/esp_lcd/rgb/esp_lcd_panel_rgb.c",
+    "https://github.com/espressif/esp-idf/blob/fff9895c82d744c7237be8847347bdd1b07c6643/components/esp_lcd/rgb/esp_lcd_panel_rgb.c"
+  ],
+  "changelog": [
+    {
+      "date": "2026-10-07",
+      "change": "Authored opt-in genuine external RGB double-framebuffer and PSRAM-read/internal-bounce consumers, explicit ordinary cache maintenance, actual callback/byte retention evidence, source-only profiles and contract. No build or runtime claim."
+    }
+  ]
+}

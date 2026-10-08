@@ -65,7 +65,8 @@ void SchemaDevicePanel::buildBaseUi()
 
     m_panelDescriptionLabel = new QLabel(this);
     m_panelDescriptionLabel->setWordWrap(true);
-    m_panelDescriptionLabel->setStyleSheet("color: #888; font-size: 11px;");
+    m_panelDescriptionLabel->setProperty("tone", "helper");
+    m_panelDescriptionLabel->setStyleSheet("font-size: 11px;");
     m_panelDescriptionLabel->hide();
     controlsVBox->addWidget(m_panelDescriptionLabel);
 
@@ -82,8 +83,6 @@ void SchemaDevicePanel::buildBaseUi()
     m_stateView = new QTextEdit(this);
     m_stateView->setReadOnly(true);
     m_stateView->setFont(QFont("Courier New", 10));
-    m_stateView->setStyleSheet(
-        "background: #0a0a0a; color: #c0c0c0; border: 1px solid #333;");
     m_stateView->setPlaceholderText("Waiting for device state...");
     stateLayout->addWidget(m_stateView);
     layout->addWidget(stateGroup, 1);
@@ -173,7 +172,7 @@ void SchemaDevicePanel::rebuildDisplayView(const QJsonObject &panelObj)
     m_displayHost = group;
     m_displayLabel = new QLabel(this);
     m_displayLabel->setAlignment(Qt::AlignCenter);
-    m_displayLabel->setStyleSheet("background:#000; border:1px solid #333; padding:4px;");
+    m_displayLabel->setProperty("role", "display");
 
     m_displayZoom = new QSpinBox(this);
     m_displayZoom->setRange(1, 8);
@@ -197,7 +196,8 @@ void SchemaDevicePanel::rebuildDisplayView(const QJsonObject &panelObj)
             .arg(m_displayHeight)
             .arg(panelObj.value("pixel_format").toString("mono1")),
         this);
-    m_displayMetaLabel->setStyleSheet("color:#888; font-size: 10px;");
+    m_displayMetaLabel->setProperty("tone", "helper");
+    m_displayMetaLabel->setStyleSheet("font-size: 10px;");
     box->addWidget(m_displayMetaLabel);
 
     connect(m_displayZoom, qOverload<int>(&QSpinBox::valueChanged), this, [this]() {

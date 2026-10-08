@@ -1,0 +1,2 @@
+# Preserve exact official component archive bytes across Windows checkouts.
+components/esp32-camera/** -text

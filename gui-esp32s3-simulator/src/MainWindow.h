@@ -10,6 +10,10 @@ class DebugWidget;
 class QemuController;
 class PeripheralManager;
 class PeripheralsWidget;
+class BoardWorkspace;
+class QLabel;
+class QPushButton;
+struct RuntimeStatus;
 
 class MainWindow : public QMainWindow
 {
@@ -17,11 +21,16 @@ class MainWindow : public QMainWindow
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
+    ~MainWindow() override;
+    void loadFirmware(const QString &path);
 
 private:
     void syncI2cBridgeAddresses();
+    void updateRuntimeStatus(const RuntimeStatus &status);
+    void showRuntimeCapabilities();
 
     QTabWidget *tabWidget;
+    BoardWorkspace *boardWorkspace;
     SerialConsoleWidget *serialWidget;
     CpuStatusWidget *cpuWidget;
     ControlPanelWidget *controlWidget;
@@ -29,4 +38,10 @@ private:
     PeripheralsWidget *peripheralsWidget;
     QemuController *controller;
     PeripheralManager *peripheralManager;
+    QLabel *firmwareLabel = nullptr;
+    QLabel *runtimeLabel = nullptr;
+    QPushButton *openFirmwareButton = nullptr;
+    QPushButton *runButton = nullptr;
+    QPushButton *stopButton = nullptr;
+    QPushButton *resetButton = nullptr;
 };

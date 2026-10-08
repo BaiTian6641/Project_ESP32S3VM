@@ -1,0 +1,24 @@
+menu "Native SPI ordinary driver qualification"
+choice SPI_NATIVE_PROFILE
+    prompt "Expected independently supplied v3 electrical graph"
+    default SPI_NATIVE_PROFILE_CONNECTED
+config SPI_NATIVE_PROFILE_CONNECTED
+    bool "Two NOR devices per bus"
+config SPI_NATIVE_PROFILE_LOOPBACK
+    bool "External MOSI-to-MISO graph wire (no NOR)"
+config SPI_NATIVE_PROFILE_WRONG_CS
+    bool "NOR CS disconnected from firmware CS (strict pause expected)"
+config SPI_NATIVE_PROFILE_DISCONNECTED_MISO
+    bool "NOR MISO disconnected from firmware MISO (strict pause expected)"
+config SPI_NATIVE_PROFILE_OWNER_ERROR
+    bool "SPI3 direct RX owner error (strict pause expected)"
+endchoice
+config SPI_NATIVE_NEGATIVE_HOST
+    int "Controller targeted by strict-pause negative profile"
+    range 2 3
+    default 2
+config SPI_NATIVE_SPEED_HZ
+    int "SCLK frequency"
+    range 100000 1000000
+    default 1000000
+endmenu

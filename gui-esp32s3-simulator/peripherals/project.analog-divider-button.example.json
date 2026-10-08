@@ -1,0 +1,46 @@
+{
+  "version": 3,
+  "id": "example-divider-button",
+  "name": "Explicit 3.3 V divider and open-drain/button node",
+  "profile": {"chip": "esp32s3", "board": "logical-chip", "module": "unspecified", "reservations_known": false, "reserved_gpios": []},
+  "firmware": {"artifacts": []},
+  "runtime": {"electrical": {"driver_profile": "s3-explicit-finite-v1", "mode": "dc"}},
+  "components": [
+    {"id": "mcu", "name": "ESP32-S3", "kind": "mcu", "type": "esp32s3", "parameters": {}, "terminals": [
+      {"id": "mcu.vdd", "name": "VDD", "role": "vdd", "domain": "power", "direction": "input"},
+      {"id": "mcu.gnd", "name": "GND", "role": "gnd", "domain": "ground", "direction": "passive"},
+      {"id": "mcu.adc1", "name": "GPIO 1 / ADC1 CH0", "role": "gpio", "domain": "analog", "direction": "inout", "gpio": 1},
+      {"id": "mcu.gpio4", "name": "GPIO 4 / button node", "role": "gpio", "domain": "digital", "direction": "inout", "gpio": 4}
+    ]},
+    {"id": "supply", "name": "Explicit supply", "kind": "voltage-source", "type": "voltage-source", "parameters": {"voltage": {"value": 3.3, "unit": "V"}}, "terminals": [
+      {"id": "supply.p", "name": "+", "role": "p", "domain": "analog", "direction": "passive"},
+      {"id": "supply.n", "name": "−", "role": "n", "domain": "analog", "direction": "passive"}
+    ]},
+    {"id": "upper", "name": "Divider upper", "kind": "resistor", "type": "resistor", "parameters": {"resistance": {"value": 10, "unit": "kohm"}}, "terminals": [
+      {"id": "upper.a", "name": "A", "role": "a", "domain": "analog", "direction": "passive"},
+      {"id": "upper.b", "name": "B", "role": "b", "domain": "analog", "direction": "passive"}
+    ]},
+    {"id": "lower", "name": "Divider lower", "kind": "resistor", "type": "resistor", "parameters": {"resistance": {"value": 10, "unit": "kohm"}}, "terminals": [
+      {"id": "lower.a", "name": "A", "role": "a", "domain": "analog", "direction": "passive"},
+      {"id": "lower.b", "name": "B", "role": "b", "domain": "analog", "direction": "passive"}
+    ]},
+    {"id": "pullup", "name": "Explicit button pull-up", "kind": "resistor", "type": "resistor", "parameters": {"resistance": {"value": 10, "unit": "kohm"}}, "terminals": [
+      {"id": "pullup.a", "name": "A", "role": "a", "domain": "analog", "direction": "passive"},
+      {"id": "pullup.b", "name": "B", "role": "b", "domain": "analog", "direction": "passive"}
+    ]},
+    {"id": "button", "name": "Button", "kind": "switch", "type": "button", "parameters": {"state": {"value": "open", "unit": "state"}, "on_resistance": {"value": 1, "unit": "ohm"}, "off_resistance": {"value": 1, "unit": "Mohm"}}, "terminals": [
+      {"id": "button.a", "name": "A", "role": "a", "domain": "analog", "direction": "passive"},
+      {"id": "button.b", "name": "B", "role": "b", "domain": "analog", "direction": "passive"}
+    ]},
+    {"id": "ground", "name": "Explicit reference", "kind": "ground", "type": "ground", "parameters": {}, "terminals": [
+      {"id": "ground.ref", "name": "REF", "role": "ref", "domain": "ground", "direction": "passive"}
+    ]}
+  ],
+  "nets": [
+    {"id": "rail", "name": "3.3 V rail", "endpoints": ["supply.p", "mcu.vdd", "upper.a", "pullup.a"]},
+    {"id": "reference", "name": "Ground reference", "endpoints": ["supply.n", "mcu.gnd", "lower.b", "button.b", "ground.ref"]},
+    {"id": "divider", "name": "Divider / ADC", "endpoints": ["upper.b", "lower.a", "mcu.adc1"]},
+    {"id": "button-node", "name": "Button / open-drain node", "endpoints": ["pullup.b", "button.a", "mcu.gpio4"]}
+  ],
+  "geometry": {"components": {"supply": {"x": 40, "y": 40}, "upper": {"x": 310, "y": 40}, "lower": {"x": 310, "y": 275}, "mcu": {"x": 600, "y": 40}, "pullup": {"x": 40, "y": 275}, "button": {"x": 40, "y": 510}, "ground": {"x": 600, "y": 510}}, "nets": {}}
+}

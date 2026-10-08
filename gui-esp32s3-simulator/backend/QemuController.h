@@ -6,6 +6,9 @@
 #include <QStringList>
 #include <QString>
 #include <QSet>
+#include <QHash>
+#include <QElapsedTimer>
+#include "RuntimeContract.h"
 
 class QProcess;
 class QTcpSocket;
@@ -48,6 +51,19 @@ public:
     void stepInstruction();
     void addBreakpoint(const QString &addressText);
     void clearBreakpoints();
+    void stopSimulation();
+    RuntimeStatus runtimeStatus() const;
+    QList<RuntimeCapability> runtimeCapabilities() const;
+
+    bool nativeCircuitAvailable() const;
+    QString nativeCircuitUnavailableReason() const;
+    QString nativeCircuitApplyUnavailableReason() const;
+    bool applyNativeCircuit(const QJsonObject &document);
+    void requestNativeCircuitSnapshot();
+
+    // Test seam: exercise the real QMP parser/correlation against a local server.
+    // It does not launch firmware or make peripheral support claims.
+    void attachQmpEndpointForTesting(quint16 port);
 
     void setGdbServerConfig(bool enabled, int port, bool waitForAttach);
     void startWithGdb(const QString &firmwarePath, int port, bool waitForAttach);
@@ -62,6 +78,13 @@ public:
     void loadFirmware(const QString &path);
 
 signals:
+    void runtimeStatusChanged(const RuntimeStatus &status);
+    void runtimeCapabilitiesChanged(const QList<RuntimeCapability> &capabilities);
+    void peripheralBridgeAvailable(bool available);
+    void nativeCircuitAvailableChanged(bool available, const QString &reason);
+    void nativeCircuitApplyInFlightChanged(bool inFlight, const QString &result);
+    void nativeCircuitSnapshotUpdated(const QJsonObject &snapshot, const QJsonObject &acceptedDocument);
+    void nativeCircuitSnapshotUnavailable(const QString &reason);
     void qemuStarted();
     void qemuStopped();
     void i2cTransferRequested(const QJsonObject &request);
@@ -77,8 +100,9 @@ signals:
     void gdbAttachCommandUpdated(const QString &command);
 
 private:
+    struct PendingQmpCommand;
     bool containsDownloadSyncPreamble(const QByteArray &bytes);
-    void startQemuWithFirmware(const QString &firmwarePath);
+    void startQemuWithFirmware(const QString &firmwarePath, bool preserveSession = false);
     void stopQemu();
     QString resolveQemuBinary() const;
     void handleQemuOutputChunk(const QString &chunk);
@@ -96,6 +120,16 @@ private:
                         int callbackId = -1);
     void pushI2cBridgeAddresses(int busIndex);
     void pushAllI2cBridgeAddresses();
+    void setRuntimePhase(RuntimePhase phase, const QString &message);
+    void updateRuntimeCapabilities();
+    void failRuntime(const QString &message, bool stopProcess = false);
+    void requestRuntimeStatus();
+    void finishRuntimeInitialization();
+    void startBridgeProbes();
+    bool qmpTransportExpected() const;
+    void clearNativeCircuit(bool clearSupport, bool clearAcceptedDocument, const QString &reason);
+    void finishNativeCircuitDiscovery();
+    bool handleNativeCircuitReply(int id, const PendingQmpCommand &command, const QJsonObject &reply);
     void pollLiveState();
     QString resolveQemuDataDir() const;
     void parseRegisterDump(const QString &dump,
@@ -115,6 +149,10 @@ private:
     QString qemuBinaryPath;
     QString memoryInspectBase;
     bool qmpReady;
+    bool nativePeripheralBridge = false;
+    int pendingBridgeProbe = -1;
+    int qmpConnectionAttempts = 0;
+    bool qmpBootReleasePending = false;
     int qmpSeq;
     int pendingSnapshotCb;
     int pendingRegsCb;
@@ -158,4 +196,56 @@ private:
     /* I2C bridge address sets (one per bus, indexed 0/1) */
     static constexpr int I2C_BUS_COUNT = 2;
     QSet<QString> i2cBridgeAddrs[I2C_BUS_COUNT];
+    QString i2cResponseMaps[I2C_BUS_COUNT];
+    QHash<QString, int> spiDcGpios;
+
+    struct PendingQmpCommand {
+        QString execute;
+        QJsonObject arguments;
+        quint64 revision = 0;
+        quint64 epoch = 0;
+        bool initializationSetting = false;
+        qint64 sentAt = 0;
+        quint64 circuitContext = 0;
+    };
+    struct BridgeCapabilityProbe {
+        QString type;
+        QSet<QString> properties;
+        bool enabled = false;
+        int remaining = 0;
+    };
+    RuntimeStatus status;
+    QList<RuntimeCapability> capabilities;
+    QString runtimeIdentity;
+    QHash<int, PendingQmpCommand> pendingQmpCommands;
+    QHash<QString, BridgeCapabilityProbe> bridgeProbes;
+    QSet<int> nativeI2cBuses;
+    QSet<QString> nativeSpiControllers;
+    int pendingCapabilitiesCb = -1;
+    int pendingInitializationProbes = 0;
+    bool initializationComplete = false;
+    bool executionStatusObserved = false;
+    bool bridgeSettingsReplayed = false;
+    bool collectingBridgeSettings = false;
+    int pendingBridgeSettings = 0;
+    bool debuggerWaitPending = false;
+    bool stoppingProcess = false;
+    bool qmpTestEndpoint = false;
+    quint64 observationRevision = 0;
+    QTimer *qmpDeadlineTimer = nullptr;
+    QTimer *qmpCommandTimer = nullptr;
+    QTimer *nativeCircuitTimer = nullptr;
+    bool nativeCircuitSupported = false;
+    bool executionStoppedObserved = false;
+    QString nativeCircuitReason = QStringLiteral("Native electrical QOM support has not been confirmed.");
+    QSet<QString> nativeCircuitProperties;
+    QJsonObject nativeCircuitDiscoverySnapshot;
+    QJsonObject acceptedNativeCircuit;
+    QJsonObject pendingNativeCircuit;
+    QString nativeCircuitGeneration;
+    int pendingNativeCircuitDiscovery = 0;
+    int pendingNativeCircuitApply = -1;
+    int pendingNativeCircuitSnapshot = -1;
+    quint64 nativeCircuitContext = 0;
+    QElapsedTimer qmpCommandClock;
 };

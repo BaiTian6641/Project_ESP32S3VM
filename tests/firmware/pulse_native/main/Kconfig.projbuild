@@ -1,0 +1,31 @@
+menu "Native pulse fixture"
+choice PULSE_NATIVE_WIRING
+    prompt "Physical project wiring"
+    default PULSE_NATIVE_CONNECTED
+config PULSE_NATIVE_CONNECTED
+    bool "Connected GPIO4 to GPIO5 and GPIO6 to GPIO8"
+config PULSE_NATIVE_DISCONNECTED
+    bool "Disconnected inputs held by explicit project pulldowns"
+config PULSE_NATIVE_WRONG_WIRE
+    bool "PCNT wired to inactive GPIO3, capture wired to MCPWM B GPIO7"
+endchoice
+choice PULSE_NATIVE_FEATURE
+    prompt "Feature to exercise"
+    default PULSE_NATIVE_ALL
+config PULSE_NATIVE_ALL
+    bool "All pulse features"
+config PULSE_NATIVE_LEDC_PCNT
+    bool "LEDC with physical PCNT input"
+config PULSE_NATIVE_MCPWM
+    bool "MCPWM timer/operator/capture/sync/brake"
+config PULSE_NATIVE_SDM
+    bool "SDM density and allocation"
+endchoice
+config PULSE_NATIVE_ADC_PROVIDER_READY
+    bool "Run actual ADC conversion (requires externally qualified native ADC provider)"
+    default n
+    help
+        Enable only after the native ADC controller/provider is READY. The runner
+        requires --adc-provider-ready evidence JSON; absence is UNAVAILABLE,
+        never a fake conversion or a failure hidden as a passing ADC test.
+endmenu

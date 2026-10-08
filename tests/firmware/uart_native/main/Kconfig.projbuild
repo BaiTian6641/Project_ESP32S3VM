@@ -1,0 +1,16 @@
+menu "Ordinary native UART fixture"
+choice UART_NATIVE_PROFILE
+    prompt "Physical wiring expectation"
+    default UART_NATIVE_PROFILE_CONNECTED
+config UART_NATIVE_PROFILE_CONNECTED
+    bool "Crossed UART1/2 and physical UART0 loopback"
+config UART_NATIVE_PROFILE_ABSENT
+    bool "UART2 driver absent; UART1 has no responding peer"
+config UART_NATIVE_PROFILE_DISCONNECTED
+    bool "UART1/2 data wires disconnected"
+config UART_NATIVE_PROFILE_WRONG
+    bool "UART1/2 TX wired to non-receiver pads"
+config UART_NATIVE_PROFILE_UHCI
+    bool "Ordinary UART1 UHCI/GDMA full duplex with real UART2 peer"
+endchoice
+endmenu

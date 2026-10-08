@@ -1,0 +1,289 @@
+{
+  "version": 3,
+  "id": "i2s-peer-tdm-32-s4-md-mcu-slave-0",
+  "name": "I2S peer tdm-32-s4-md-mcu-slave-0",
+  "profile": {
+    "chip": "esp32s3",
+    "board": "esp32-s3-devkitc-1",
+    "module": "esp32-s3-wroom-1"
+  },
+  "firmware": {},
+  "runtime": {
+    "electrical": {
+      "driver_profile": "s3-explicit-finite-v1",
+      "mode": "dc"
+    }
+  },
+  "components": [
+    {
+      "id": "U1",
+      "name": "U1",
+      "type": "mcu",
+      "kind": "mcu",
+      "terminals": [
+        {
+          "id": "U1.vdd",
+          "name": "vdd",
+          "role": "vdd",
+          "domain": "power",
+          "direction": "unspecified"
+        },
+        {
+          "id": "U1.gnd",
+          "name": "gnd",
+          "role": "gnd",
+          "domain": "ground",
+          "direction": "unspecified"
+        },
+        {
+          "id": "U1.io18",
+          "name": "io18",
+          "role": "io18",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 18
+        },
+        {
+          "id": "U1.io19",
+          "name": "io19",
+          "role": "io19",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 19
+        },
+        {
+          "id": "U1.io20",
+          "name": "io20",
+          "role": "io20",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 20
+        },
+        {
+          "id": "U1.io21",
+          "name": "io21",
+          "role": "io21",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 21
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "G",
+      "name": "G",
+      "type": "ground",
+      "kind": "ground",
+      "terminals": [
+        {
+          "id": "G.ref",
+          "name": "ref",
+          "role": "ref",
+          "domain": "ground",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "V",
+      "name": "V",
+      "type": "voltage-source",
+      "kind": "voltage-source",
+      "terminals": [
+        {
+          "id": "V.p",
+          "name": "p",
+          "role": "p",
+          "domain": "power",
+          "direction": "unspecified"
+        },
+        {
+          "id": "V.n",
+          "name": "n",
+          "role": "n",
+          "domain": "ground",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "voltage": {
+          "value": 3.3,
+          "unit": "V"
+        }
+      }
+    },
+    {
+      "id": "Idlebclk",
+      "name": "Idlebclk",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Idlebclk.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Idlebclk.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Idlews",
+      "name": "Idlews",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Idlews.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Idlews.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Idlemcu-tx",
+      "name": "Idlemcu-tx",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Idlemcu-tx.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Idlemcu-tx.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Idlepeer-tx",
+      "name": "Idlepeer-tx",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Idlepeer-tx.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Idlepeer-tx.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    }
+  ],
+  "nets": [
+    {
+      "id": "gnd",
+      "name": "gnd",
+      "endpoints": [
+        "G.ref",
+        "V.n",
+        "U1.gnd",
+        "Idlebclk.b",
+        "Idlews.b",
+        "Idlemcu-tx.b",
+        "Idlepeer-tx.b"
+      ]
+    },
+    {
+      "id": "vdd",
+      "name": "vdd",
+      "endpoints": [
+        "V.p",
+        "U1.vdd"
+      ]
+    },
+    {
+      "id": "bclk",
+      "name": "bclk",
+      "endpoints": [
+        "U1.io18",
+        "Idlebclk.a"
+      ]
+    },
+    {
+      "id": "ws",
+      "name": "ws",
+      "endpoints": [
+        "U1.io19",
+        "Idlews.a"
+      ]
+    },
+    {
+      "id": "mcu-tx",
+      "name": "mcu-tx",
+      "endpoints": [
+        "U1.io20",
+        "Idlemcu-tx.a"
+      ]
+    },
+    {
+      "id": "peer-tx",
+      "name": "peer-tx",
+      "endpoints": [
+        "U1.io21",
+        "Idlepeer-tx.a"
+      ]
+    }
+  ],
+  "geometry": {
+    "components": {},
+    "nets": {}
+  }
+}

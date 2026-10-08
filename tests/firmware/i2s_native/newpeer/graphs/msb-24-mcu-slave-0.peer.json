@@ -1,0 +1,559 @@
+{
+  "version": 3,
+  "id": "i2s-peer-msb-24-mcu-slave-0",
+  "name": "I2S peer msb-24-mcu-slave-0",
+  "profile": {
+    "chip": "esp32s3",
+    "board": "esp32-s3-devkitc-1",
+    "module": "esp32-s3-wroom-1"
+  },
+  "firmware": {},
+  "runtime": {
+    "electrical": {
+      "driver_profile": "s3-explicit-finite-v1",
+      "mode": "dc"
+    }
+  },
+  "components": [
+    {
+      "id": "U1",
+      "name": "U1",
+      "type": "mcu",
+      "kind": "mcu",
+      "terminals": [
+        {
+          "id": "U1.vdd",
+          "name": "vdd",
+          "role": "vdd",
+          "domain": "power",
+          "direction": "unspecified"
+        },
+        {
+          "id": "U1.gnd",
+          "name": "gnd",
+          "role": "gnd",
+          "domain": "ground",
+          "direction": "unspecified"
+        },
+        {
+          "id": "U1.io18",
+          "name": "io18",
+          "role": "io18",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 18
+        },
+        {
+          "id": "U1.io19",
+          "name": "io19",
+          "role": "io19",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 19
+        },
+        {
+          "id": "U1.io20",
+          "name": "io20",
+          "role": "io20",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 20
+        },
+        {
+          "id": "U1.io21",
+          "name": "io21",
+          "role": "io21",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 21
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "Peer",
+      "name": "Peer",
+      "type": "i2s-sample-peer",
+      "kind": "device",
+      "terminals": [
+        {
+          "id": "Peer.vdd",
+          "name": "vdd",
+          "role": "vdd",
+          "domain": "power",
+          "direction": "input"
+        },
+        {
+          "id": "Peer.gnd",
+          "name": "gnd",
+          "role": "gnd",
+          "domain": "ground",
+          "direction": "input"
+        },
+        {
+          "id": "Peer.bclk",
+          "name": "bclk",
+          "role": "bclk",
+          "domain": "digital",
+          "direction": "output"
+        },
+        {
+          "id": "Peer.ws",
+          "name": "ws",
+          "role": "ws",
+          "domain": "digital",
+          "direction": "output"
+        },
+        {
+          "id": "Peer.din",
+          "name": "din",
+          "role": "din",
+          "domain": "digital",
+          "direction": "input"
+        },
+        {
+          "id": "Peer.dout",
+          "name": "dout",
+          "role": "dout",
+          "domain": "digital",
+          "direction": "output"
+        }
+      ],
+      "parameters": {},
+      "attributes": {
+        "native_i2s_peer": {
+          "role": "master",
+          "format": "msb",
+          "dataBits": 24,
+          "slotBits": 24,
+          "slots": 2,
+          "slotMask": 3,
+          "wsWidth": 24,
+          "wsPol": false,
+          "bitShift": false,
+          "leftAlign": true,
+          "lsbFirst": false,
+          "sampleRateNumeratorHz": 12500,
+          "sampleRateDenominator": 1,
+          "repeat": true,
+          "captureCapacity": 65536,
+          "txSamples": [
+            3635663,
+            7271393,
+            7271373,
+            10907127,
+            10906659,
+            14542785,
+            14542773,
+            1401331,
+            1401095,
+            5037025,
+            5036981,
+            8672783,
+            8672803,
+            12308353,
+            12308413,
+            15942931,
+            15942975,
+            2802657,
+            2802237,
+            6437335,
+            6437283,
+            10074049,
+            10073909,
+            13708755,
+            13708679,
+            568289,
+            568373,
+            4203935,
+            4203939,
+            7839489,
+            7839533,
+            11473299,
+            11472975,
+            15108641,
+            15108685,
+            1969623,
+            1969443,
+            5605313,
+            5605269,
+            9238995,
+            9239047,
+            12874657,
+            12874645,
+            16509199,
+            16509219,
+            3370881,
+            3370589,
+            7005235,
+            7005279,
+            10640289,
+            10640221,
+            14274871,
+            14274915,
+            1136577,
+            1136661,
+            4768179,
+            4768135,
+            8407841,
+            8407829,
+            12039615,
+            12039267,
+            15678977,
+            15679085,
+            2537907,
+            2537807,
+            6169377,
+            6169421,
+            9809335,
+            9809507,
+            13440065,
+            13440117,
+            302387,
+            302343,
+            3939233,
+            3938933,
+            7569423,
+            7569507,
+            11210625,
+            11210621,
+            14841107,
+            14841215,
+            1700769,
+            1700989,
+            5340759,
+            5340771,
+            8972097,
+            8972149,
+            12609875,
+            12609671,
+            16241185,
+            16241269,
+            3102111,
+            3102051,
+            6741761,
+            6741869,
+            10371475,
+            10371663,
+            14010465,
+            14010445,
+            864599,
+            864611,
+            4503361,
+            4503189,
+            8141907,
+            8141831,
+            11772513,
+            11772565,
+            15411471,
+            15411555,
+            2273153,
+            2273373,
+            5900915,
+            5900895,
+            9536353,
+            9536349,
+            13180279,
+            13180067,
+            38465,
+            38421,
+            3674227,
+            3674247,
+            7301985,
+            7301909,
+            10937727,
+            10938019,
+            14580737,
+            14580781,
+            1439091,
+            1439055,
+            5075809,
+            5075789,
+            8702071,
+            8701987,
+            12338753,
+            12338869,
+            15981939,
+            15981831,
+            2841441,
+            2841781,
+            6477327,
+            6477347,
+            10102913,
+            10102973,
+            13738259,
+            13738303,
+            604769,
+            604733,
+            4242519,
+            4242595,
+            7878465,
+            7878453,
+            11503955,
+            11504263,
+            15138913,
+            15138869,
+            2000543,
+            2000547,
+            5644033,
+            5644077,
+            9278611,
+            9278671,
+            12904993,
+            12905165,
+            16539991,
+            16539939,
+            3401537,
+            3401877,
+            7041619,
+            7041543,
+            10681505,
+            10681493,
+            14304527,
+            14304547,
+            1166977,
+            1167069,
+            4802611,
+            4802783,
+            8442529,
+            8442589,
+            12082487,
+            12082915,
+            15705153,
+            15705109,
+            2564787,
+            2564743,
+            6204193,
+            6204181,
+            9842879,
+            9842915,
+            13483521,
+            13483757,
+            328883
+          ]
+        }
+      }
+    },
+    {
+      "id": "G",
+      "name": "G",
+      "type": "ground",
+      "kind": "ground",
+      "terminals": [
+        {
+          "id": "G.ref",
+          "name": "ref",
+          "role": "ref",
+          "domain": "ground",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "V",
+      "name": "V",
+      "type": "voltage-source",
+      "kind": "voltage-source",
+      "terminals": [
+        {
+          "id": "V.p",
+          "name": "p",
+          "role": "p",
+          "domain": "power",
+          "direction": "unspecified"
+        },
+        {
+          "id": "V.n",
+          "name": "n",
+          "role": "n",
+          "domain": "ground",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "voltage": {
+          "value": 3.3,
+          "unit": "V"
+        }
+      }
+    },
+    {
+      "id": "Idlebclk",
+      "name": "Idlebclk",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Idlebclk.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Idlebclk.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Idlews",
+      "name": "Idlews",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Idlews.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Idlews.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Idlemcu-tx",
+      "name": "Idlemcu-tx",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Idlemcu-tx.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Idlemcu-tx.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Idlepeer-tx",
+      "name": "Idlepeer-tx",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Idlepeer-tx.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Idlepeer-tx.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    }
+  ],
+  "nets": [
+    {
+      "id": "gnd",
+      "name": "gnd",
+      "endpoints": [
+        "G.ref",
+        "V.n",
+        "U1.gnd",
+        "Peer.gnd",
+        "Idlebclk.b",
+        "Idlews.b",
+        "Idlemcu-tx.b",
+        "Idlepeer-tx.b"
+      ]
+    },
+    {
+      "id": "vdd",
+      "name": "vdd",
+      "endpoints": [
+        "V.p",
+        "U1.vdd",
+        "Peer.vdd"
+      ]
+    },
+    {
+      "id": "bclk",
+      "name": "bclk",
+      "endpoints": [
+        "U1.io18",
+        "Peer.bclk",
+        "Idlebclk.a"
+      ]
+    },
+    {
+      "id": "ws",
+      "name": "ws",
+      "endpoints": [
+        "U1.io19",
+        "Peer.ws",
+        "Idlews.a"
+      ]
+    },
+    {
+      "id": "mcu-tx",
+      "name": "mcu-tx",
+      "endpoints": [
+        "U1.io20",
+        "Peer.din",
+        "Idlemcu-tx.a"
+      ]
+    },
+    {
+      "id": "peer-tx",
+      "name": "peer-tx",
+      "endpoints": [
+        "Peer.dout",
+        "U1.io21",
+        "Idlepeer-tx.a"
+      ]
+    }
+  ],
+  "geometry": {
+    "components": {},
+    "nets": {}
+  }
+}

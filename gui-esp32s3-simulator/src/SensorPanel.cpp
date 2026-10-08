@@ -10,6 +10,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QStyle>
 
 SensorPanel::SensorPanel(const QString &deviceId,
                          const QString &deviceType,
@@ -30,10 +31,7 @@ void SensorPanel::buildUI()
 
     m_telemetryLabel = new QLabel(this);
     m_telemetryLabel->setAlignment(Qt::AlignCenter);
-    m_telemetryLabel->setStyleSheet(
-        "font-size: 22px; font-weight: bold; color: #40ff40; "
-        "background: #0a0a0a; border: 1px solid #333; border-radius: 6px; "
-        "padding: 12px; font-family: 'Courier New', monospace;");
+    m_telemetryLabel->setProperty("role", "metric");
     m_telemetryLabel->setText("--- Waiting for data ---");
     telemetryLayout->addWidget(m_telemetryLabel);
 
@@ -64,9 +62,10 @@ void SensorPanel::buildUI()
     m_pauseCsvButton = new QPushButton("Pause", this);
     m_stopCsvButton = new QPushButton("Stop", this);
     m_playbackStatusLabel = new QLabel("Idle", this);
-    m_playbackStatusLabel->setStyleSheet("color: gray;");
+    m_playbackStatusLabel->setProperty("tone", "helper");
     m_playbackIndexLabel = new QLabel("", this);
-    m_playbackIndexLabel->setStyleSheet("color: #888; font-size: 10px;");
+    m_playbackIndexLabel->setProperty("tone", "helper");
+    m_playbackIndexLabel->setStyleSheet("font-size: 10px;");
 
     csvLayout->addWidget(m_startCsvButton);
     csvLayout->addWidget(m_pauseCsvButton);
@@ -158,9 +157,7 @@ void SensorPanel::buildControlRow(SensorControl &ctrl, int row)
     if (ctrl.type == "number") {
         // Value display
         ctrl.valueLabel = new QLabel("---", this);
-        ctrl.valueLabel->setStyleSheet(
-            "font-size: 16px; font-weight: bold; color: #ffcc00; "
-            "font-family: monospace;");
+        ctrl.valueLabel->setProperty("role", "metricValue");
         ctrl.valueLabel->setMinimumWidth(80);
         grid->addWidget(ctrl.valueLabel, row, 1);
 
@@ -277,8 +274,10 @@ void SensorPanel::updateState(const QJsonObject &state)
         int rows = pb.value("rows").toInt();
 
         m_playbackStatusLabel->setText(running ? "Playing" : "Stopped");
-        m_playbackStatusLabel->setStyleSheet(
-            running ? "color: #40ff40; font-weight: bold;" : "color: gray;");
+        m_playbackStatusLabel->setProperty("tone", running ? "success" : "helper");
+        m_playbackStatusLabel->style()->unpolish(m_playbackStatusLabel);
+        m_playbackStatusLabel->style()->polish(m_playbackStatusLabel);
+        m_playbackStatusLabel->update();
         m_playbackIndexLabel->setText(
             rows > 0 ? QString("%1 / %2").arg(idx).arg(rows) : "");
     }

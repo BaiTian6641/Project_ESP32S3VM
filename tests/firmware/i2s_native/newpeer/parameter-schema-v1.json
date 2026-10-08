@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:esp32s3vm:i2s-sample-peer:1",
+  "title": "Registered native I2S external sample peer configuration version 1",
+  "description": "The attributes.native_i2s_peer object of a version-3 registered i2s-sample-peer component. Component parameters remains an empty quantity object. No schemaVersion field is accepted in this object. All listed non-vector fields are required; exactly one format-appropriate vector is required. QMP accepts integer lexical numbers only: decimal-point/exponent numbers are not coerced even when mathematically integral.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "role": {
+      "enum": [
+        "master",
+        "slave"
+      ]
+    },
+    "format": {
+      "enum": [
+        "philips",
+        "msb",
+        "pcm",
+        "tdm",
+        "raw-pdm"
+      ]
+    },
+    "dataBits": {
+      "enum": [
+        8,
+        16,
+        24,
+        32
+      ]
+    },
+    "slotBits": {
+      "enum": [
+        8,
+        16,
+        24,
+        32
+      ]
+    },
+    "slots": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 16
+    },
+    "slotMask": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "wsWidth": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 128
+    },
+    "sampleRateNumeratorHz": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 18446744073709551615
+    },
+    "sampleRateDenominator": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    },
+    "captureCapacity": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65536
+    },
+    "txSamples": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 65536,
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 4294967295
+      }
+    },
+    "rawBits": {
+      "type": "array",
+      "minItems": 32,
+      "maxItems": 65536,
+      "items": {
+        "type": "integer",
+        "enum": [
+          0,
+          1
+        ]
+      }
+    },
+    "wsPol": {
+      "type": "boolean"
+    },
+    "bitShift": {
+      "type": "boolean"
+    },
+    "leftAlign": {
+      "type": "boolean"
+    },
+    "lsbFirst": {
+      "type": "boolean"
+    },
+    "repeat": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "role",
+    "format",
+    "dataBits",
+    "slotBits",
+    "slots",
+    "slotMask",
+    "wsWidth",
+    "sampleRateNumeratorHz",
+    "sampleRateDenominator",
+    "captureCapacity",
+    "wsPol",
+    "bitShift",
+    "leftAlign",
+    "lsbFirst",
+    "repeat"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "format": {
+            "const": "raw-pdm"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "rawBits"
+        ],
+        "not": {
+          "required": [
+            "txSamples"
+          ]
+        },
+        "properties": {
+          "dataBits": {
+            "const": 16
+          },
+          "slotBits": {
+            "const": 16
+          },
+          "slots": {
+            "const": 2
+          },
+          "slotMask": {
+            "const": 3
+          },
+          "wsWidth": {
+            "const": 1
+          },
+          "bitShift": {
+            "const": false
+          },
+          "leftAlign": {
+            "const": false
+          },
+          "lsbFirst": {
+            "const": false
+          }
+        }
+      },
+      "else": {
+        "required": [
+          "txSamples"
+        ],
+        "not": {
+          "required": [
+            "rawBits"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "format": {
+            "enum": [
+              "philips",
+              "msb",
+              "pcm"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "slots": {
+            "const": 2
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "format": {
+            "const": "philips"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "bitShift": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "format": {
+            "const": "msb"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "bitShift": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "format": {
+            "const": "pcm"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "wsWidth": {
+            "const": 1
+          },
+          "bitShift": {
+            "const": true
+          }
+        }
+      }
+    }
+  ],
+  "x-native-constraints": [
+    "dataBits <= slotBits; slots*slotBits <=128; slotMask <2**slots",
+    "Philips/MSB wsWidth == slotBits; PCM wsWidth==1; TDM wsWidth 1..physical framebits",
+    "txSamples count divisible by popcount(slotMask); each value <2**dataBits, in frame then ascending selected-slot order",
+    "rawBits count divisible32; chronological physical CLK terminal ws halfphases, phase0 WS==wsPol is left and phase1 WS!=wsPol is right, each 16-bit DMA word MSB first; source bit0 begins on first actual transition into wsPol, not baseline publication",
+    "sampleRateNumeratorHz/sampleRateDenominator is DMA/playlist frame rate; rateNum*slots*slotBits*2 <= 1000000000*rateDen bounds internal BCLK halfperiod>=1ns",
+    "leftAlign shifts normalized low-dataBits sample high within full slot; lsbFirst independently reverses full slot serialization",
+    "captureCapacity is number of immutable capture records, words for serial PCM/TDM and bits for raw-PDM; bounded overflow is reported, not dropped"
+  ]
+}

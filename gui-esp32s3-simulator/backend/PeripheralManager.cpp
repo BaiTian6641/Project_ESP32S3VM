@@ -31,7 +31,16 @@ PeripheralManager::PeripheralManager(QObject *parent)
 
 PeripheralManager::~PeripheralManager()
 {
+    autoRefreshTimer->stop();
     stopAll();
+    // Normal stop/reload is asynchronous. On application shutdown the event
+    // loop will end, so reap detached children before QProcess destruction.
+    for (QProcess *process : findChildren<QProcess *>(QString(), Qt::FindDirectChildrenOnly)) {
+        if (process->state() != QProcess::NotRunning && !process->waitForFinished(300)) {
+            process->kill();
+            process->waitForFinished(1000);
+        }
+    }
     qDeleteAll(devices);
     devices.clear();
 }
@@ -43,18 +52,6 @@ void PeripheralManager::setWorkspaceRoot(const QString &path)
 
 bool PeripheralManager::loadConfig(const QString &path)
 {
-    // Force-unload previous runtime before reading the new config.
-    // This guarantees that selecting a new JSON always stops old processes first.
-    stopAll();
-    qDeleteAll(devices);
-    devices.clear();
-    loadedConfigPath.clear();
-    configDir.clear();
-
-    emit managerMessage("[Peripherals] previous config unloaded");
-    emit devicesChanged();
-    emit deviceSetChanged();
-
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly)) {
         emit managerMessage(QString("[Peripherals] failed to open config: %1").arg(path));
@@ -92,6 +89,10 @@ bool PeripheralManager::loadConfig(const QString &path)
         emit managerMessage(QString("[Peripherals][Validation][WARN] %1").arg(msg));
     }
 
+    // Commit a new runtime only after parsing and validation succeed.
+    stopAll();
+    qDeleteAll(devices);
+    devices.clear();
     loadedConfigPath = QFileInfo(path).absoluteFilePath();
     configDir = QFileInfo(loadedConfigPath).absolutePath();
 

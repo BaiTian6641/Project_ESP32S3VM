@@ -19,9 +19,6 @@ DebugWidget::DebugWidget(QWidget *parent)
       gdbPortLine(new QLineEdit(this)),
       waitForAttachCheck(new QCheckBox("Wait for debugger attach (-S)", this)),
       applyGdbButton(new QPushButton("Apply GDB Config", this)),
-    firmwarePathLine(new QLineEdit(this)),
-    browseFirmwareButton(new QPushButton("Browse", this)),
-    startWithGdbButton(new QPushButton("Start with GDB", this)),
       pauseButton(new QPushButton("Pause", this)),
       continueButton(new QPushButton("Continue", this)),
       stepButton(new QPushButton("Step PC", this)),
@@ -31,10 +28,9 @@ DebugWidget::DebugWidget(QWidget *parent)
       statusLabel(new QLabel("[GDB] disabled", this)),
       gdbHintLabel(new QLabel(this))
 {
-    enableGdbCheck->setChecked(true);
+    enableGdbCheck->setChecked(false);
     gdbPortLine->setText("1234");
     breakpointLine->setPlaceholderText("0x40000000");
-    firmwarePathLine->setPlaceholderText("Select firmware (.elf/.bin)");
 
     gdbHintLabel->setText("gdb -ex \"target remote 127.0.0.1:1234\"");
 
@@ -43,15 +39,9 @@ DebugWidget::DebugWidget(QWidget *parent)
     gdbForm->addRow("GDB Port", gdbPortLine);
     gdbForm->addRow(waitForAttachCheck);
 
-    auto *fwRow = new QHBoxLayout();
-    fwRow->addWidget(firmwarePathLine);
-    fwRow->addWidget(browseFirmwareButton);
-    gdbForm->addRow("Firmware", fwRow);
-
     auto *gdbLayout = new QVBoxLayout();
     gdbLayout->addLayout(gdbForm);
     gdbLayout->addWidget(applyGdbButton);
-    gdbLayout->addWidget(startWithGdbButton);
     gdbLayout->addWidget(gdbHintLabel);
 
     auto *gdbBox = new QGroupBox("GDB Server", this);
@@ -79,6 +69,10 @@ DebugWidget::DebugWidget(QWidget *parent)
     bpBox->setLayout(bpBoxLayout);
 
     auto *layout = new QVBoxLayout(this);
+    auto *notice = new QLabel("Apply debugger settings, then run the selected firmware from the header. Step and breakpoint controls become available after a supported debugger path is verified.", this);
+    notice->setObjectName("notice");
+    notice->setWordWrap(true);
+    layout->addWidget(notice);
     layout->addWidget(gdbBox);
     layout->addWidget(execBox);
     layout->addWidget(bpBox);
@@ -86,8 +80,6 @@ DebugWidget::DebugWidget(QWidget *parent)
     layout->addStretch();
 
     connect(applyGdbButton, &QPushButton::clicked, this, &DebugWidget::applyGdbConfig);
-    connect(browseFirmwareButton, &QPushButton::clicked, this, &DebugWidget::browseFirmware);
-    connect(startWithGdbButton, &QPushButton::clicked, this, &DebugWidget::startWithGdbClicked);
     connect(pauseButton, &QPushButton::clicked, this, &DebugWidget::pauseClicked);
     connect(continueButton, &QPushButton::clicked, this, &DebugWidget::continueClicked);
     connect(stepButton, &QPushButton::clicked, this, &DebugWidget::stepClicked);
@@ -106,43 +98,26 @@ void DebugWidget::setController(QemuController *ctrl)
             this, &DebugWidget::onDebugStatusUpdated);
     connect(controller, &QemuController::gdbAttachCommandUpdated,
             this, &DebugWidget::onGdbAttachCommandUpdated);
-}
-
-void DebugWidget::browseFirmware()
-{
-    const QString path = QFileDialog::getOpenFileName(
-        this,
-        "Select Firmware",
-        QString(),
-        "Firmware Files (*.elf *.bin);;All Files (*)");
-    if (!path.isEmpty()) {
-        firmwarePathLine->setText(path);
-    }
-}
-
-void DebugWidget::startWithGdbClicked()
-{
-    if (!controller) {
-        return;
-    }
-
-    bool ok = false;
-    const int port = gdbPortLine->text().toInt(&ok);
-    const int safePort = ok ? port : 1234;
-
-    const QString firmwarePath = firmwarePathLine->text().trimmed();
-    if (firmwarePath.isEmpty()) {
-        browseFirmware();
-    }
-
-    if (firmwarePathLine->text().trimmed().isEmpty()) {
-        return;
-    }
-
-    enableGdbCheck->setChecked(true);
-    controller->startWithGdb(firmwarePathLine->text().trimmed(),
-                             safePort,
-                             waitForAttachCheck->isChecked());
+    controller->setGdbServerConfig(false, 1234, false);
+    auto updateControls = [this]() {
+        bool step = false, breakpoints = false;
+        for (const auto &capability : controller->runtimeCapabilities()) {
+            if (capability.id == "debug.step") step = capability.available;
+            if (capability.id == "debug.breakpoints") breakpoints = capability.available;
+        }
+        const auto phase = controller->runtimeStatus().phase;
+        pauseButton->setEnabled(phase == RuntimePhase::Running);
+        continueButton->setEnabled(phase == RuntimePhase::Paused || phase == RuntimePhase::WaitingForDebugger);
+        stepButton->setEnabled(step && phase == RuntimePhase::Paused);
+        addBreakpointButton->setEnabled(breakpoints);
+        clearBreakpointsButton->setEnabled(breakpoints);
+        breakpointLine->setEnabled(breakpoints);
+        stepButton->setToolTip(step ? "Single instruction step" : "A verified GDB stepping path is not available in this runtime.");
+        breakpointLine->setToolTip(breakpoints ? "Breakpoint address" : "A verified breakpoint path is not available in this runtime.");
+    };
+    connect(controller, &QemuController::runtimeStatusChanged, this, [updateControls](const RuntimeStatus &) { updateControls(); });
+    connect(controller, &QemuController::runtimeCapabilitiesChanged, this, [updateControls](const QList<RuntimeCapability> &) { updateControls(); });
+    updateControls();
 }
 
 void DebugWidget::applyGdbConfig()

@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "componentType": "i2s-sample-peer",
+  "configLocation": "component.attributes.native_i2s_peer",
+  "quantityParameters": {},
+  "schema": "parameter-schema-v1.json",
+  "launcher": "run_peer.py",
+  "launcherContract": "runner-contract.json",
+  "physicalQualification": "Requires a fresh complete authoritative native binary and mandatory automatic independent finite actual RX/DIN qualification using native controller/peer phase records. Missing genuine activation/source-word phase anchors or independent mismatches fail closed; no manual launcher phase fallback.",
+  "parser": {
+    "symbol": "esp32s3_i2s_peer_parse",
+    "input": "const QDict *whole_component",
+    "output": "empty S3I2sPeerConfig",
+    "failure": "output unchanged; no owned buffer retained",
+    "success": "one allocation and copy for exactly one vector; service new moves it and zeroes config",
+    "clear": "esp32s3_i2s_peer_config_clear frees only config-owned vectors and zeros config"
+  },
+  "captureInterface": {
+    "qomPath": "/machine/soc/i2s-sample-peers",
+    "requestProperty": "capture-request-json",
+    "captureProperty": "capture-json",
+    "statusProperty": "status-json",
+    "request": {
+      "componentId": "actual committed peer ID, not its config identity",
+      "offset": "absolute actual DIN event offset",
+      "count": "integer 1..1024",
+      "transitions": {
+        "optional": true,
+        "controllerId": "integer 0 or 1; resolves actual SOC child and checks actual C controller ID",
+        "peerOffset": "absolute peer transition sequence",
+        "controllerOffset": "absolute controller transition sequence",
+        "count": "integer 1..1024 per phase window"
+      }
+    },
+    "dinCompatibility": "Existing version1 kind/events/ns/sequence/sample/slot/raw/config_identity/offset/total/status fields remain unchanged; preserve every actual startup DIN event. No expected values enter native metadata.",
+    "transitionResponse": "Optional transitions={version:1,peer:window,controller:window}; exact getter record fields, ordered absolute sequences. No generic trace device.",
+    "peerWindowFields": ["version", "generation", "epoch", "capacity", "count", "first_index", "first_sequence", "total", "lost", "power_on_ns", "config_activation_ns", "activation_ns", "offset", "records"],
+    "controllerWindowFields": ["version", "controller", "epoch", "capacity", "count", "first_index", "first_sequence", "total", "lost", "active", "activation_ns", "offset", "records"],
+    "discovery": "status-json peers[].transitions contains the peer window summary without offset/records; controllers[] contains the actual controller summary plus capture_enabled. Disabled capture returns only actual controller ID and capture_enabled:false, never manufactured epoch/range state. Discover retained ranges before paging.",
+    "peerRecordFields": ["sequence", "epoch", "power_epoch", "generation", "power_on_ns", "source_id", "source_cursor", "word_ordinal", "frame", "first_halfphase", "last_halfphase", "ns", "first_ns", "last_ns", "first_boundary_ns", "last_boundary_ns", "kind", "source", "slot", "raw_channel", "physical_phase", "bit_phase", "valid_bits", "slot_bits", "published_bits", "raw", "power_known", "powered"],
+    "controllerRecordFields": ["sequence", "epoch", "source_word_id", "word_ordinal", "frame", "first_halfphase", "last_halfphase", "ns", "first_ns", "last_ns", "first_boundary_ns", "last_boundary_ns", "kind", "reason", "flags", "source", "slot", "raw_channel", "physical_phase", "valid_bits", "slot_bits", "shifted_bits"],
+    "peerKinds": ["ACTIVATE", "POWER_EPOCH", "BEGIN", "COMPLETE", "ABORT", "RELEASE", "EXHAUSTED"],
+    "peerSources": ["PAYLOAD", "EXHAUSTED", "RELEASED"],
+    "controllerKinds": ["START", "ACTIVATE", "STOP", "RESET", "FIFO_RESET", "SUSPEND", "LOAD", "COMPLETE", "ABORT"],
+    "controllerSources": ["PAYLOAD", "SINGLE", "MONO_COPY", "UNDERRUN_REPEAT", "IDLE_ZERO"],
+    "enumEncoding": "zero-based integer positions; controller lifecycle source/slot/channel/physical_phase UINT32_MAX means not applicable, never PAYLOAD. Controller reason/flags definitions are the actual esp32s3_i2s.h ABI; emitted controller word_ordinal starts1 globally and lifecycle ordinal is0.",
+    "storage": "Peer once-preallocated 2*captureCapacity+16 records; controller once-preallocated 16384 records only with native record-directory enabled. Retain newest; count is retained total, not exported page length; lost=first_sequence=total-count. Every overwritten record is reported.",
+    "bounds": "Offset in inclusive [first_sequence,total]; offset==total yields empty records. Overwritten/out-of-range requests, missing scope or disabled controller capture fail without replacing a prior valid request. Every page has <=1024 records per window.",
+    "timestamps": "Actual QEMU virtual nanoseconds, never scheduled deadline/host/dataset time. BEGIN follows successful outgoing publication; COMPLETE requires every real slot bit publication and the actual boundary when observable locally. Controller raw slave completion logs actual WS/data emissions but sampling-boundary times remain-1: downstream DIN sampling is independent. Missing emitted/boundary times=-1; absent phase indices=UINT32_MAX or UINT64_MAX.",
+    "peerSourceAttribution": "source_cursor is the consumed immutable vector index; source_id is unique across repeats/power resets in a config instance. PCM word_ordinal=source_id-1, frame=actual wire frame; raw-only halfphase/channel/phase/bit_phase indices are UINT*_MAX. Raw word_ordinal=epoch physical halfphase/16, frame=/32, bit_phase=%16, raw_channel/physical_phase=source_cursor%2; raw metadata slot=(source_cursor/16)%2 is vector packing half, not the alternating DIN capture slot/WS physical phase. Raw COMPLETE is one published bit at the actual physical WS edge, not the later master BCLK DIN sample. Master preloads before the physical edge and holds the entire phase; slave publication follows immutable edge DIN consumption. Payload-free metadata never replaces actual RX/DIN comparison.",
+    "origins": "config_activation_ns is actual construction for committed configuration; activation_ns is actual successful subscription/start. ACTIVATE follows the first real provider endpoint observation establishing generation, power_on_ns, power_epoch, local epoch and actual known/powered state, before serial initialization. Unknown rails and known-off rails are distinct; provider absence cannot create a default-origin ACTIVATE. Power epoch changes reset source/wire phase but not retained captures or unique source IDs.",
+    "activationFailureClassification": "esp32s3_i2s_peer_start true means lifecycle subscription/setup succeeded, including an immediate genuine runtime electrical dependency pause. Such a peer exposes actual status.paused/dependency; its outputs stay released, reason remains logged and VM remains paused. Only invalid lifecycle state or genuine subscription/setup failure returns false with Error and becomes activation_error. Unknown rails are not a factory failure and no source/power fallback is manufactured.",
+    "readonly": "Explicit cold JSON export consumes read-only native getters synchronously. No hardware stream mutation, per-edge allocation, sample-value metadata copy, per-edge disk writer or fallback state."
+  },
+  "identity": {
+    "encoding": "lowercase 64-character SHA256, NUL terminated config.identity[65]",
+    "domainAscii": "i2s-sample-peer-config-v1",
+    "concatenation": [
+      "domain bytes, no terminator",
+      "each canonicalFields value as unsigned uint64 little-endian",
+      "32-byte vector SHA256 digest"
+    ],
+    "canonicalFields": [
+      "role(0=master,1=slave)",
+      "format(0=philips,1=msb,2=pcm,3=tdm,4=raw-pdm)",
+      "dataBits",
+      "slotBits",
+      "slots",
+      "slotMask",
+      "wsWidth",
+      "wsPol(0/1)",
+      "bitShift(0/1)",
+      "leftAlign(0/1)",
+      "lsbFirst(0/1)",
+      "sampleRateNumeratorHz",
+      "sampleRateDenominator",
+      "repeat(0/1)",
+      "captureCapacity",
+      "txSampleCount",
+      "rawBitCount"
+    ],
+    "vectorEncoding": "txSamples each uint32 little-endian in JSON order; rawBits one byte per chronological physical CLK halfphase in JSON order; only selected vector is hashed",
+    "fieldOrderInvariant": true,
+    "noDefaultFields": true
+  },
+  "electrical": {
+    "rails": "explicit V=3.3V source between vdd/gnd shared by MCU and peer; G.ref known ground; provider accepts2.7..3.6V only",
+    "drive": "actual provider rail referenced40ohm push-pull, not fake digital API",
+    "rawPolarity": "wsPol accepts either boolean; phase0 WS==wsPol is left, phase1 WS!=wsPol is right. Source bit0 begins on first actual transition into wsPol. Published driver graph cases use false; true polarity is an authored parser acceptance case, not exercised qualification.",
+    "pins": {
+      "serial": {
+        "bclk": 18,
+        "ws": 19,
+        "mcuDoutPeerDin": 20,
+        "peerDoutMcuDin": 21
+      },
+      "rawPdm": {
+        "physicalClkPeerWs": 18,
+        "mcuDoutPeerDin": 20,
+        "peerDoutMcuDin": 21,
+        "peerBclk": "separate idle biased graph net; no invented internal MCU pin"
+      }
+    },
+    "idleBias": "real10kohm resistor from each clock/data net to knownGND; DIN zeros captured before firmware enables TX remain actual unqualified startup captures"
+  },
+  "firmware": {
+    "source": "../peer_fixture",
+    "idfCommit": "fff9895c82d744c7237be8847347bdd1b07c6643",
+    "normalPublicDriverOnly": true,
+    "controllerCount": 1,
+    "txSource": 0,
+    "expectedRxSource": 1,
+    "dataBits": "8/16/24/32, little-endian packed DMA units",
+    "descriptorFrames": 96,
+    "descriptorCount": 4,
+    "sustainedRounds": 8,
+    "independentPattern": "source0 MCU TX and source1 peer TX materialized independently; deterministic vectors are fixture data, never native peer sample generation",
+    "caseManifest": "cases-v1.json",
+    "caseSelection": "One ordinary-IDF ELF supports the complete case matrix. Send CASE <id> followed by newline over real UART before READY; ids are stable zero-based positions in cases-v1.json cases array, with the manifest name identifying the matching graph pair."
+  },
+  "launch": {
+    "sdkPreparation": "Prepare once with bash tools/prepare-idf-wsl.sh idf-6.1 and require the native SDK READY gate. Subsequent build launch sources $HOME/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/activate.sh only; do not repeat SDK preparation.",
+    "buildCommand": "bash build-runtime-state/i2s-peer-idf61-2026-10-07/build-interactive.sh",
+    "buildEnvironment": "Canonical activation supplies IDF_PATH, ESP32S3_IDF_BUILD_ROOT and ESP32S3_IDF_METADATA; build uses native build-root/i2s-peer-interactive, IDF_PY_BUILD_JOBS=1, IDF_CCACHE_ENABLE=1 and reused ccache.",
+    "buildManifest": "build-runtime-state/i2s-peer-idf61-2026-10-07/interactive/build-manifest.json records source, driver, case-corpus, SDK and artifact hashes; build evidence is not runtime qualification.",
+    "builtArtifacts": "build-runtime-state/i2s-peer-idf61-2026-10-07/interactive/ contains i2s_external_peer.elf, ordinary IDF flash constituents and i2s-peer.merged.bin; preserve previous evidence and use a fresh flash copy per case.",
+    "buildTemplate": "idf.py -B <peer-fixture-build-dir> -DIDF_TARGET=esp32s3 -DSDKCONFIG=<peer-fixture-build-dir>/sdkconfig -DSDKCONFIG_DEFAULTS=<peer_fixture>/sdkconfig.defaults build",
+    "flash": "merge the newly built normal IDF bootloader, partitions and app into an independent per-case flash copy, never a corpus image",
+    "qemuTemplate": "<runtime> -machine esp32s3 -nographic -S -icount shift=0,align=off,sleep=off -serial unix:<uart.sock>,server=on,wait=off -drive file=<case-flash-copy>,if=mtd,format=raw -qmp unix:<qmp.sock>,server=on,wait=off",
+    "virtualClock": "Native launcher uses -icount shift=0,align=off,sleep=off for deterministic 1ns instruction-count virtual-clock granularity, matching physical wire qualification and preventing host-time drift through QMP/GDB pauses. This controls time only; actual DIN/RX remain the sole sample oracle.",
+    "steps": [
+      "Connect QMP and bidirectional UART sockets; qmp_capabilities",
+      "QMP qom-set /machine/soc/electrical project-json to matching .boot.json fullproject; snapshot then cont",
+      "Wait for I2S_PEER_SELECT cases=68 protocol=CASE-zero-based over real UART before sending the case selection",
+      "Send CASE <id> followed by newline over real UART to select the manifest case; CRLF is accepted. Selection changes ordinary driver configuration only, never injects samples/results",
+      "Require I2S_PEER_CASE id=<id> name=<name> to match the selected manifest row",
+      "Wait for I2S_PEER_READY id=<id> name=<name> format=<format> bits=<bits> slots=<slots> mask=<hex-mask> master=<0|1> controller=<0|1> bytes=<descriptor-bytes>; require every field to match the manifest, graph pair and independent vector geometry",
+      "QMP stop; qom-set same project-json property to matching .peer.json registered peer graph; snapshot must show genuine factory model and nonempty configidentity; unsupported/unready factory is failure",
+      "Queue byte G over UART while stopped; QMP cont. G is only lifecycle permission, never sample injection or expected success",
+      "Collect I2S_PEER_OBS, I2S_PEER_CADENCE and I2S_PEER_DONE; stop immediately after DONE",
+      "Obtain actual closed DIN pages and scoped controller/peer transition windows through the existing public QOM capture contract; retain every startup DIN event and explicit metadata loss/budgets; attribute finite ranges using genuine activation and complete outgoing phase records only",
+      "Automatically derive the origin epoch from the unique fresh-VM FIFO LOAD source_word_id1 and actual COMPLETE epoch lists; independently qualify this run's exact RX/DIN/transition bytes without manual launcher attribution or payload-phase matching",
+      "Require failures0; exact independent source1 RX bytehash,8/8 complete descriptor matches and stable complete-frame phase; actual TX/RX EOF callbacks and cadence; independently verify source0 MCU TX against actual peer DIN capture, excluding no mismatching event inside the explicit selected range",
+      "Reject dependency pauses, unknownrails, unresolved activeclock/data, forgedserialsuccess, captureoverflow or unavailable real capture/provider seam"
+    ]
+  },
+  "sources": [
+    {
+      "path": "build-idf-6.1/components/esp_driver_i2s/include/driver/i2s_std.h",
+      "lines": "140-187",
+      "findings": "S3 HWv2 Philips/MSB half-frame WS, PCM short wsWidth1; shift defaults and explicit alignment/bitorder"
+    },
+    {
+      "path": "build-idf-6.1/components/esp_driver_i2s/include/driver/i2s_tdm.h",
+      "lines": "33-86",
+      "findings": "TDM slot masks, explicit wsWidth/shift/leftAlign; shortPCM timing chosen by fixture"
+    },
+    {
+      "path": "build-idf-6.1/components/esp_driver_i2s/include/driver/i2s_pdm.h",
+      "lines": "267-285",
+      "findings": "raw2slot16bit one-line codec; no converter"
+    },
+    {
+      "path": "build-idf-6.1/components/esp_hal_i2s/esp32s3/include/hal/i2s_ll.h",
+      "lines": "40,519-532,553-591,623-662,1048-1105",
+      "findings": "physicalframe<=128,WSwidthregisterminus1,widths/halfframe fields,16bitmask,independentalignment/bitorder"
+    },
+    {
+      "url": "https://documentation.espressif.com/esp32-s3_technical_reference_manual_en.pdf",
+      "version": "1.8",
+      "sha256": "4484bf8a69035ec42a731c58c64ada6fbd1f1618c5559409f134d9ea083f444f",
+      "reference": "chapter28; source provenance already recorded in qemu-extensions/prototypes/i2s/pdm-provenance.json"
+    }
+  ],
+  "changelog": [
+    "Adds strictversion1 external-peer config under v3 componentattributes, requiring every geometry/format/rate/alignment/sourcefield",
+    "Adds immutablevectorownership and canonicalfullconfig identity; noecho/generator/default source",
+    "Adds68 complete registeredpeer vectorgraphs plus paired no-peer bootgraphs and one ordinary IDF controller full-duplex runtime-selectable firmware",
+    "Adds bounded payload-free actual outgoing peer/controller phase windows to the existing read-only capture contract; complete source publication is independent of DIN capture success, with genuine epochs/origins and explicit retained/lost ranges"
+  ],
+  "verification": {
+    "executed": [],
+    "requiredByMain": [
+      "Build integrated QEMU including peer service/config and actual registeredprovider",
+      "Malformed-type and unknownfield parser negatives; geometry/vector/rational boundarycases; identity fieldorderinvariance and configurationdistinction",
+      "Build the single interactive IDF fixture ELF, then launch all68 runtime-selected CASE ids against their actual graph pairs",
+      "Independent finiteeventreference comparison of both data directions and actualrational cadence"
+    ]
+  }
+}

@@ -1,4 +1,5 @@
 #include "QemuController.h"
+#include "QemuLaunchOptions.h"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -13,6 +14,8 @@
 #include <QSocketNotifier>
 #include <QStandardPaths>
 #include <QTimer>
+#include <QUuid>
+#include <cmath>
 
 #ifdef Q_OS_LINUX
 #include <errno.h>
@@ -52,6 +55,47 @@ static QByteArray filterPrintableSerialLog(const QByteArray &bytes)
 }
 
 static constexpr char kEspSyncPreamble[] = {0x07, 0x07, 0x12, 0x20};
+
+static const QString kElectricalPath = QStringLiteral("/machine/soc/electrical");
+static const QString kElectricalProfile = QStringLiteral("s3-explicit-finite-v1");
+static constexpr qsizetype kMaxQmpMessage = 4 * 1024 * 1024;
+static constexpr qsizetype kMaxNativeProject = 1024 * 1024;
+
+static bool decimalCounter(const QJsonValue &value)
+{
+    if (!value.isString() || value.toString().isEmpty()) return false;
+    for (const auto ch : value.toString())
+        if (ch < QLatin1Char('0') || ch > QLatin1Char('9')) return false;
+    bool ok = false;
+    value.toString().toULongLong(&ok);
+    return ok;
+}
+
+static bool parseElectricalSnapshot(const QJsonValue &value, QJsonObject &snapshot)
+{
+    if (!value.isString() || value.toString().size() > kMaxQmpMessage) return false;
+    QJsonParseError error;
+    const auto document = QJsonDocument::fromJson(value.toString().toUtf8(), &error);
+    if (error.error != QJsonParseError::NoError || !document.isObject()) return false;
+    const auto object = document.object();
+    if (object.value("abi") != 1 || !decimalCounter(object.value("generation"))
+        || !decimalCounter(object.value("timestamp_ns")) || !object.value("status").isString()
+        || !object.value("diagnostic").isString() || !object.value("nets").isArray()) return false;
+    QSet<QString> ids;
+    for (const auto &entry : object.value("nets").toArray()) {
+        if (!entry.isObject()) return false;
+        const auto net = entry.toObject();
+        const auto id = net.value("id").toString();
+        const auto voltage = net.value("voltage_v");
+        if (id.isEmpty() || ids.contains(id) || !net.value("valid").isBool()
+            || !net.value("floating").isBool() || (!voltage.isNull() && !voltage.isDouble())
+            || (voltage.isDouble() && !std::isfinite(voltage.toDouble()))
+            || (net.value("valid").toBool() && !voltage.isDouble())) return false;
+        ids.insert(id);
+    }
+    snapshot = object;
+    return true;
+}
 
 #ifdef Q_OS_LINUX
 static speed_t baudToSpeed(int baud)
@@ -115,6 +159,34 @@ QemuController::QemuController(QObject *parent)
             autoDownloadByUartSync(true),
             autoDownloadSwitchPending(false)
 {
+    qRegisterMetaType<RuntimeStatus>();
+    qRegisterMetaType<QList<RuntimeCapability>>();
+    qmpDeadlineTimer = new QTimer(this);
+    qmpDeadlineTimer->setSingleShot(true);
+    qmpDeadlineTimer->setInterval(10000);
+    connect(qmpDeadlineTimer, &QTimer::timeout, this, [this]() {
+        if (qmpTransportExpected() && (!initializationComplete || !executionStatusObserved))
+            failRuntime(QStringLiteral("QMP initialization deadline exceeded. Restart the simulation to retry."), true);
+    });
+    qmpCommandClock.start();
+    qmpCommandTimer = new QTimer(this);
+    qmpCommandTimer->setInterval(250);
+    connect(qmpCommandTimer, &QTimer::timeout, this, [this]() {
+        if (!qmpReady || stoppingProcess) return;
+        const qint64 now = qmpCommandClock.elapsed();
+        for (const auto &command : pendingQmpCommands) {
+            if (now - command.sentAt >= 10000) {
+                failRuntime(QString("QMP %1 acknowledgement deadline exceeded; the simulation was stopped.")
+                            .arg(command.execute), true);
+                return;
+            }
+        }
+    });
+    qmpCommandTimer->start();
+    nativeCircuitTimer = new QTimer(this);
+    nativeCircuitTimer->setInterval(500);
+    connect(nativeCircuitTimer, &QTimer::timeout, this, &QemuController::requestNativeCircuitSnapshot);
+    updateRuntimeCapabilities();
     qemuProcess->setProcessChannelMode(QProcess::SeparateChannels);
         liveTimer->setInterval(500);
 
@@ -157,13 +229,20 @@ QemuController::QemuController(QObject *parent)
         if (bootMode == 1) {
             qmpReady = false;
             emit debugMessageReceived("[QMP] disabled in Download Boot mode to keep ROM serial downloader path exclusive");
+            setRuntimePhase(RuntimePhase::WaitingForDevice,
+                            QStringLiteral("ROM download process started; waiting for firmware upload. CPU execution is not observed because QMP is disabled."));
+            updateRuntimeCapabilities();
         } else {
+            setRuntimePhase(RuntimePhase::Connecting, QStringLiteral("QEMU process started; connecting to QMP before releasing firmware."));
+            qmpDeadlineTimer->start();
             QTimer::singleShot(250, this, &QemuController::connectQmp);
         }
     });
 
     connect(qemuProcess, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {
         emit debugMessageReceived(QString("[QEMU] process error: %1").arg(static_cast<int>(error)));
+        if (!stoppingProcess)
+            failRuntime(QString("QEMU process error: %1").arg(qemuProcess->errorString()));
     });
 
     connect(qemuProcess, qOverload<int, QProcess::ExitStatus>(&QProcess::finished), this,
@@ -175,13 +254,28 @@ QemuController::QemuController(QObject *parent)
                     emit debugMessageReceived("[QEMU] guest/emulator crash detected; UART/QMP transport may disconnect as a consequence");
                 }
                 qmpReady = false;
+                nativePeripheralBridge = false;
+                nativeI2cBuses.clear();
+                nativeSpiControllers.clear();
+                qmpDeadlineTimer->stop();
+                disconnectQmp();
+                emit peripheralBridgeAvailable(false);
                 liveTimer->stop();
                 autoDownloadSwitchPending = false;
+                if (this->status.phase != RuntimePhase::Error) {
+                    if (!stoppingProcess && (status == QProcess::CrashExit || code != 0))
+                        setRuntimePhase(RuntimePhase::Error, QString("QEMU exited with code %1 (%2).")
+                                        .arg(code).arg(status == QProcess::CrashExit ? "crashed" : "failed"));
+                    else
+                        setRuntimePhase(RuntimePhase::Stopped, QStringLiteral("QEMU process stopped."));
+                }
+                updateRuntimeCapabilities();
                 emit qemuStopped();
             });
 
     connect(qmpTcpSocket, &QTcpSocket::connected, this, [this]() {
         emit debugMessageReceived("[QMP] connected");
+        qmpDeadlineTimer->start();
     });
 
     connect(qmpTcpSocket, &QTcpSocket::readyRead, this, [this]() {
@@ -190,11 +284,29 @@ QemuController::QemuController(QObject *parent)
             return;
         }
         qmpBuffer += QString::fromUtf8(bytes);
+        if (qmpBuffer.size() > kMaxQmpMessage) {
+            failRuntime(QStringLiteral("QMP reply exceeded the bounded message size."), true);
+            return;
+        }
         processQmpBuffer();
     });
 
     connect(qmpTcpSocket, &QTcpSocket::errorOccurred, this, [this](QAbstractSocket::SocketError e) {
         emit debugMessageReceived(QString("[QMP] socket error: %1").arg(static_cast<int>(e)));
+        if (stoppingProcess || status.phase == RuntimePhase::Stopping || status.phase == RuntimePhase::Stopped)
+            return;
+        if (qmpReady) {
+            failRuntime(QStringLiteral("QMP connection was lost; execution state is no longer observable."), true);
+        } else if (qmpTransportExpected() && qmpConnectionAttempts < 40) {
+            QTimer::singleShot(250, this, &QemuController::connectQmp);
+        } else if (qmpTransportExpected() && qmpConnectionAttempts >= 40) {
+            emit debugMessageReceived("[QMP] connection deadline exceeded; restart the target to retry.");
+            failRuntime(QStringLiteral("QMP connection deadline exceeded. Restart the simulation to retry."), true);
+        }
+    });
+    connect(qmpTcpSocket, &QTcpSocket::disconnected, this, [this]() {
+        if (!stoppingProcess && status.phase != RuntimePhase::Stopping && qmpReady)
+            failRuntime(QStringLiteral("QMP disconnected; execution state is no longer observable."), true);
     });
 
     connect(liveTimer, &QTimer::timeout, this, &QemuController::pollLiveState);
@@ -218,6 +330,293 @@ QemuController::~QemuController()
 {
     stopQemu();
     teardownUartPty();
+}
+
+RuntimeStatus QemuController::runtimeStatus() const { return status; }
+QList<RuntimeCapability> QemuController::runtimeCapabilities() const { return capabilities; }
+
+bool QemuController::nativeCircuitAvailable() const { return nativeCircuitSupported; }
+QString QemuController::nativeCircuitUnavailableReason() const { return nativeCircuitReason; }
+
+QString QemuController::nativeCircuitApplyUnavailableReason() const
+{
+    if (!nativeCircuitSupported) return nativeCircuitReason;
+    if (!qmpReady || !qmpTransportExpected() || !executionStatusObserved || !executionStoppedObserved)
+        return QStringLiteral("An acknowledged stopped execution state is required before native Apply.");
+    if (status.phase != RuntimePhase::Paused && status.phase != RuntimePhase::Initializing)
+        return QStringLiteral("Pause the live simulator and await acknowledgement before native Apply.");
+    if (pendingNativeCircuitApply >= 0)
+        return QStringLiteral("Native Apply is in flight; awaiting QMP acknowledgement.");
+    for (const auto &command : pendingQmpCommands)
+        if (command.execute == "cont" || command.execute == "stop")
+            return QStringLiteral("Await the pending execution-control acknowledgement before native Apply.");
+    return {};
+}
+
+bool QemuController::applyNativeCircuit(const QJsonObject &document)
+{
+    QString reason = nativeCircuitApplyUnavailableReason();
+    const auto electrical = document.value("runtime").toObject().value("electrical").toObject();
+    const auto mode = electrical.value("mode").toString("dc");
+    if (reason.isEmpty() && (document.value("version") != 3
+        || electrical.value("driver_profile").toString() != kElectricalProfile))
+        reason = QStringLiteral("Native Apply requires a pure v3 circuit and the explicit S3 finite driver profile.");
+    if (reason.isEmpty() && mode != "dc" && mode != "rc")
+        reason = QStringLiteral("Native Apply requires an explicit DC or RC solver mode.");
+    if (reason.isEmpty() && mode == "rc" &&
+        !nativeCircuitDiscoverySnapshot.value("support").toObject().value("rc").toBool())
+        reason = QStringLiteral("This native electrical runtime did not advertise RC support.");
+    if (reason.isEmpty() && mode == "rc" && electrical.value("edit_charge") != "keep"
+        && electrical.value("edit_charge") != "reset")
+        reason = QStringLiteral("Native RC Apply requires an explicit keep/reset edit charge policy.");
+    const auto json = QJsonDocument(document).toJson(QJsonDocument::Compact);
+    if (reason.isEmpty() && json.size() > kMaxNativeProject)
+        reason = QStringLiteral("The native circuit exceeds the bounded project JSON size.");
+    if (!reason.isEmpty()) {
+        // A duplicate caller must not clear the first request's in-flight state.
+        if (pendingNativeCircuitApply < 0) emit nativeCircuitApplyInFlightChanged(false, reason);
+        emit debugMessageReceived("[Electrical] " + reason);
+        return false;
+    }
+    clearNativeCircuit(false, false, QStringLiteral("Awaiting native project-json acknowledgement."));
+    pendingNativeCircuit = document; // Immutable submitted graph, never the editor's later draft.
+    pendingNativeCircuitApply = qmpSeq++;
+    sendQmpCommand("qom-set", {{"path", kElectricalPath}, {"property", "project-json"},
+                              {"value", QString::fromUtf8(json)}}, pendingNativeCircuitApply);
+    emit nativeCircuitApplyInFlightChanged(true, QStringLiteral("Native Apply is awaiting QMP acknowledgement."));
+    return true;
+}
+
+void QemuController::requestNativeCircuitSnapshot()
+{
+    if (!nativeCircuitSupported || !qmpReady || !qmpTransportExpected() || !executionStatusObserved
+        || acceptedNativeCircuit.isEmpty() || pendingNativeCircuitApply >= 0
+        || pendingNativeCircuitSnapshot >= 0
+        || (status.phase != RuntimePhase::Running && status.phase != RuntimePhase::Paused
+            && status.phase != RuntimePhase::Initializing && status.phase != RuntimePhase::WaitingForDebugger))
+        return;
+    pendingNativeCircuitSnapshot = qmpSeq++;
+    sendQmpCommand("qom-get", {{"path", kElectricalPath}, {"property", "snapshot-json"}},
+                   pendingNativeCircuitSnapshot);
+}
+
+void QemuController::clearNativeCircuit(bool clearSupport, bool clearAcceptedDocument, const QString &reason)
+{
+    ++nativeCircuitContext;
+    const bool wasApplying = pendingNativeCircuitApply >= 0;
+    pendingNativeCircuitApply = pendingNativeCircuitSnapshot = -1;
+    pendingNativeCircuitDiscovery = 0;
+    pendingNativeCircuit = {};
+    nativeCircuitGeneration.clear();
+    for (auto it = pendingQmpCommands.begin(); it != pendingQmpCommands.end();) {
+        if (it->arguments.value("path").toString() == kElectricalPath) it = pendingQmpCommands.erase(it);
+        else ++it;
+    }
+    if (clearAcceptedDocument) acceptedNativeCircuit = {};
+    emit nativeCircuitSnapshotUpdated({}, acceptedNativeCircuit);
+    if (wasApplying) emit nativeCircuitApplyInFlightChanged(false, reason);
+    if (clearSupport) {
+        nativeCircuitSupported = false;
+        nativeCircuitProperties.clear();
+        nativeCircuitDiscoverySnapshot = {};
+        nativeCircuitReason = reason;
+        nativeCircuitTimer->stop();
+        emit nativeCircuitAvailableChanged(false, nativeCircuitReason);
+    }
+}
+
+void QemuController::finishNativeCircuitDiscovery()
+{
+    const auto support = nativeCircuitDiscoverySnapshot.value("support").toObject();
+    nativeCircuitSupported = nativeCircuitProperties.contains("project-json")
+        && nativeCircuitProperties.contains("snapshot-json")
+        && nativeCircuitDiscoverySnapshot.value("abi") == 1
+        && support.value("dc").toBool() && support.value("profile").toString() == kElectricalProfile;
+    nativeCircuitReason = nativeCircuitSupported
+        ? QStringLiteral("QOM project-json and snapshot-json ABI 1 acknowledged; explicit finite DC support is implemented, not hardware-qualified.")
+        : QStringLiteral("This runtime did not acknowledge project-json, snapshot-json ABI 1 and the explicit finite DC profile.");
+    emit nativeCircuitAvailableChanged(nativeCircuitSupported, nativeCircuitReason);
+    if (nativeCircuitSupported) nativeCircuitTimer->start();
+    updateRuntimeCapabilities();
+}
+
+bool QemuController::handleNativeCircuitReply(int id, const PendingQmpCommand &command, const QJsonObject &reply)
+{
+    if (command.circuitContext != nativeCircuitContext) return true;
+    const bool error = reply.contains("error");
+    const auto errorText = reply.value("error").toObject().value("desc").toString("Unknown QMP error");
+    if (pendingNativeCircuitDiscovery > 0) {
+        if (!error && command.execute == "qom-list") {
+            for (const auto &entry : reply.value("return").toArray()) {
+                const auto property = entry.toObject();
+                if (property.value("type") == "string")
+                    nativeCircuitProperties.insert(property.value("name").toString());
+            }
+        } else if (!error && command.execute == "qom-get") {
+            parseElectricalSnapshot(reply.value("return"), nativeCircuitDiscoverySnapshot);
+        }
+        --pendingNativeCircuitDiscovery;
+        --pendingInitializationProbes;
+        if (pendingNativeCircuitDiscovery == 0) finishNativeCircuitDiscovery();
+        finishRuntimeInitialization();
+        return true;
+    }
+    if (id == pendingNativeCircuitApply) {
+        pendingNativeCircuitApply = -1;
+        if (error) {
+            pendingNativeCircuit = {};
+            emit nativeCircuitApplyInFlightChanged(false, "Native Apply failed: " + errorText
+                + QStringLiteral(" The previous acknowledged graph is unchanged."));
+        } else {
+            acceptedNativeCircuit = pendingNativeCircuit;
+            pendingNativeCircuit = {};
+            emit nativeCircuitApplyInFlightChanged(false, QStringLiteral("Native circuit accepted by QMP. Readings await a backend snapshot."));
+        }
+        emit nativeCircuitSnapshotUpdated({}, acceptedNativeCircuit);
+        requestNativeCircuitSnapshot();
+        return true;
+    }
+    if (id == pendingNativeCircuitSnapshot) {
+        pendingNativeCircuitSnapshot = -1;
+        QJsonObject snapshot;
+        QString reason;
+        if (error) reason = "Native snapshot query failed: " + errorText;
+        else if (!parseElectricalSnapshot(reply.value("return"), snapshot))
+            reason = QStringLiteral("Native snapshot has an invalid ABI 1 response; no readings were displayed.");
+        else if (!nativeCircuitGeneration.isEmpty()
+                 && nativeCircuitGeneration != snapshot.value("generation").toString())
+            reason = QStringLiteral("The backend topology generation changed outside this accepted Apply context; no readings were displayed.");
+        if (!reason.isEmpty()) {
+            emit nativeCircuitSnapshotUpdated({}, acceptedNativeCircuit);
+            emit nativeCircuitSnapshotUnavailable(reason);
+            return true;
+        }
+        nativeCircuitGeneration = snapshot.value("generation").toString();
+        emit nativeCircuitSnapshotUpdated(snapshot, acceptedNativeCircuit);
+        return true;
+    }
+    return true; // Unmatched native replies cannot establish graph or support state.
+}
+
+void QemuController::setRuntimePhase(RuntimePhase phase, const QString &message)
+{
+    status.phase = phase;
+    status.message = message;
+    emit runtimeStatusChanged(status);
+    if (phase == RuntimePhase::Error || phase == RuntimePhase::Stopping || phase == RuntimePhase::Stopped)
+        clearNativeCircuit(true, true, QStringLiteral("No observable live native electrical session is available."));
+}
+
+void QemuController::updateRuntimeCapabilities()
+{
+    const bool active = qemuProcess->state() == QProcess::Running || qmpTestEndpoint;
+    const bool controllablePhase = status.phase == RuntimePhase::Running || status.phase == RuntimePhase::Paused
+        || status.phase == RuntimePhase::WaitingForDebugger;
+    const bool controlled = qmpReady && initializationComplete && executionStatusObserved && !stoppingProcess
+        && controllablePhase;
+    const QString noControl = bootMode == 1
+        ? QStringLiteral("QMP is disabled in ROM download mode; execution state is not observed.")
+        : QStringLiteral("QMP initialization and an acknowledged execution status are required.");
+    capabilities.clear();
+    auto add = [this](const QString &id, const QString &title, CapabilityMaturity maturity,
+                      bool available, const QString &reason, const QStringList &evidence = {}) {
+        capabilities.append({id, title, maturity, available, reason, evidence});
+    };
+    add("qemu.identity", "QEMU runtime identity", CapabilityMaturity::Implemented,
+        active && !runtimeIdentity.isEmpty(), runtimeIdentity.isEmpty()
+            ? QStringLiteral("No runtime version has been observed.") : runtimeIdentity,
+        runtimeIdentity.isEmpty() ? QStringList{} : QStringList{"QMP greeting version: " + runtimeIdentity});
+    add("qmp.control", "Pause, resume and execution status", CapabilityMaturity::Implemented,
+        controlled, controlled ? QStringLiteral("QMP negotiated with this runtime; execution states require acknowledgements/events.") : noControl);
+    add("uart.console", "UART0 console", CapabilityMaturity::Implemented,
+        qemuProcess->state() == QProcess::Running && bootMode == 0,
+        bootMode == 1 ? QStringLiteral("ROM download mode uses the external PTY upload path.")
+                      : QStringLiteral("Firmware UART byte transport; framing/electrical fidelity is not qualified."));
+    add("debug.inspect", "Scalar registers and memory inspection", CapabilityMaturity::Implemented,
+        controlled, controlled ? QStringLiteral("QMP monitor inspection; unavailable values remain explicitly unavailable.") : noControl);
+    for (int bus = 0; bus < I2C_BUS_COUNT; ++bus) {
+        const QString path = QString("/machine/soc/i2c%1/i2c/child[0]").arg(bus);
+        const auto probe = bridgeProbes.value(path);
+        const bool detected = nativeI2cBuses.contains(bus);
+        const QString reason = detected
+            ? QStringLiteral("Cached address/command response bridge; generic transactions, timing and electrical routing are not qualified.")
+            : (probe.type.isEmpty() ? QStringLiteral("Cached I2C bridge was not detected in the selected runtime.")
+                                   : QString("QOM type %1 does not expose the required cached-read interface.").arg(probe.type));
+        add(QString("i2c%1.cached-read").arg(bus), QString("I2C%1 cached sensor bridge").arg(bus),
+            detected ? CapabilityMaturity::Implemented : CapabilityMaturity::Catalogued,
+            controlled && detected, reason,
+            detected ? QStringList{path + ": esp32s3.i2c-bridge; registered-addrs; read-response-map"} : QStringList{});
+    }
+    for (const QString &controller : {QStringLiteral("spi2"), QStringLiteral("spi3")}) {
+        const bool detected = nativeSpiControllers.contains(controller);
+        add(controller + ".tx", controller.toUpper() + " TX display bridge",
+            detected ? CapabilityMaturity::Implemented : CapabilityMaturity::Catalogued,
+            controlled && detected, detected
+                ? QStringLiteral("TX event bridge only; MISO, full duplex, timing and electrical routing are not qualified.")
+                : QStringLiteral("An enabled GP-SPI TX bridge of the expected QOM type was not detected."),
+            detected ? QStringList{"QOM esp32s3.gpspi; bridge-enabled=true; bridge-dc-gpio"} : QStringList{});
+    }
+    add("electrical.native", "Native electrical circuit Apply and snapshots",
+        nativeCircuitSupported ? CapabilityMaturity::Implemented : CapabilityMaturity::Catalogued,
+        nativeCircuitSupported, nativeCircuitReason,
+        nativeCircuitSupported ? QStringList{kElectricalPath + ": project-json; snapshot-json ABI 1"} : QStringList{});
+    add("debug.step", "Single instruction step", CapabilityMaturity::Catalogued, false,
+        "A verified GDB control path has not been implemented; use an external GDB client.");
+    add("debug.breakpoints", "Breakpoint control", CapabilityMaturity::Catalogued, false,
+        "A verified GDB control path has not been implemented; monitor command requests are not proof of acceptance.");
+    for (const auto &item : QList<QPair<QString, QString>>{{"gpio.nets", "Electrical pin routing"},
+            {"analog.adc", "Analog voltages and ADC"}, {"radio.wifi", "Native Wi-Fi"},
+            {"radio.ble", "Native Bluetooth LE"}, {"cpu.simd", "Qualified SIMD instruction behavior"}})
+        add(item.first, item.second, CapabilityMaturity::Catalogued, false,
+            "This runtime has no loaded qualification evidence for this capability.");
+    emit runtimeCapabilitiesChanged(capabilities);
+}
+
+void QemuController::failRuntime(const QString &message, bool stopProcess)
+{
+    setRuntimePhase(RuntimePhase::Error, message);
+    emit debugMessageReceived("[Runtime] " + message);
+    if (stopProcess) {
+        qmpTestEndpoint = false;
+        stopQemu();
+    }
+    updateRuntimeCapabilities();
+}
+
+void QemuController::stopSimulation()
+{
+    qmpTestEndpoint = false;
+    ++observationRevision;
+    stopQemu();
+    nativePeripheralBridge = false;
+    nativeI2cBuses.clear();
+    nativeSpiControllers.clear();
+    updateRuntimeCapabilities();
+    emit peripheralBridgeAvailable(false);
+    if (qemuProcess->state() == QProcess::NotRunning)
+        setRuntimePhase(RuntimePhase::Stopped, QStringLiteral("Simulation stopped."));
+}
+
+void QemuController::attachQmpEndpointForTesting(quint16 port)
+{
+    stopSimulation();
+    status.sessionId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    status.resetEpoch = 0;
+    qmpTestEndpoint = true;
+    runtimeIdentity.clear();
+    bridgeProbes.clear();
+    qmpPort = port;
+    qmpConnectionAttempts = 0;
+    qmpBootReleasePending = false;
+    initializationComplete = false;
+    executionStatusObserved = false;
+    bridgeSettingsReplayed = false;
+    collectingBridgeSettings = false;
+    pendingBridgeSettings = 0;
+    debuggerWaitPending = gdbEnabled && gdbWaitForAttach;
+    setRuntimePhase(RuntimePhase::Connecting, QStringLiteral("Connecting to the local QMP test endpoint."));
+    qmpDeadlineTimer->start();
+    connectQmp();
 }
 
 void QemuController::sendUart0(const QString &text)
@@ -301,9 +700,9 @@ void QemuController::requestCpuSnapshot()
         return;
     }
 
-    pendingPcText = "0x00000000";
-    pendingScalars.fill("0x00000000", 16);
-    pendingVectors.fill("0x00000000", 8);
+    pendingPcText = "unavailable";
+    pendingScalars.fill("unavailable", 16);
+    pendingVectors.fill("unavailable", 8);
 
     pendingRegsCb = qmpSeq++;
     QJsonObject args;
@@ -340,61 +739,53 @@ void QemuController::handleBridgeResponse(const QString &busKind, const QJsonObj
 
     emit debugMessageReceived(line);
 
-    if (qemuProcess->state() == QProcess::Running) {
+    // Legacy tester sketches explicitly parse these UART lines. Ordinary
+    // firmware must never receive host peripheral JSON as console input.
+    if (qemuProcess->state() == QProcess::Running && qEnvironmentVariableIntValue("ESP32S3_SERIAL_BRIDGE") == 1) {
         qemuProcess->write((line + "\n").toUtf8());
     }
 }
 
 void QemuController::pauseExecution()
 {
-    if (!qmpReady) {
+    if (!qmpReady || !initializationComplete || !executionStatusObserved || stoppingProcess
+        || pendingNativeCircuitApply >= 0
+        || (status.phase != RuntimePhase::Running && status.phase != RuntimePhase::Paused
+            && status.phase != RuntimePhase::WaitingForDebugger)) {
         return;
     }
+    ++observationRevision;
     sendQmpCommand("stop");
     emit debugMessageReceived("[Debug] pause requested");
 }
 
 void QemuController::continueExecution()
 {
-    if (!qmpReady) {
+    if (!qmpReady || !initializationComplete || !executionStatusObserved || stoppingProcess
+        || pendingNativeCircuitApply >= 0
+        || (status.phase != RuntimePhase::Running && status.phase != RuntimePhase::Paused
+            && status.phase != RuntimePhase::WaitingForDebugger)) {
         return;
     }
+    ++observationRevision;
     sendQmpCommand("cont");
     emit debugMessageReceived("[Debug] continue requested");
 }
 
 void QemuController::stepInstruction()
 {
-    if (!qmpReady) {
-        return;
-    }
-    QJsonObject args;
-    args["command-line"] = "si";
-    sendQmpCommand("human-monitor-command", args);
-    emit debugMessageReceived("[Debug] single-step requested");
-    requestCpuSnapshot();
+    emit debugMessageReceived("[Debug] Single-step is unavailable: a verified GDB control path has not been implemented. Use an external GDB client.");
 }
 
 void QemuController::addBreakpoint(const QString &addressText)
 {
-    if (!qmpReady) {
-        return;
-    }
-    QJsonObject args;
-    args["command-line"] = QString("break %1").arg(addressText.trimmed());
-    sendQmpCommand("human-monitor-command", args);
-    emit debugMessageReceived(QString("[Debug] breakpoint set at %1").arg(addressText.trimmed()));
+    Q_UNUSED(addressText)
+    emit debugMessageReceived("[Debug] Breakpoints are unavailable: a verified GDB control path has not been implemented. Use an external GDB client.");
 }
 
 void QemuController::clearBreakpoints()
 {
-    if (!qmpReady) {
-        return;
-    }
-    QJsonObject args;
-    args["command-line"] = "delete";
-    sendQmpCommand("human-monitor-command", args);
-    emit debugMessageReceived("[Debug] all breakpoints clear requested");
+    emit debugMessageReceived("[Debug] Breakpoint removal is unavailable: a verified GDB control path has not been implemented.");
 }
 
 /* ================================================================== */
@@ -434,7 +825,7 @@ void QemuController::clearAllI2cBridgeAddresses()
 
 void QemuController::pushI2cBridgeAddresses(int busIndex)
 {
-    if (!qmpReady || busIndex < 0 || busIndex >= I2C_BUS_COUNT) {
+    if (!qmpReady || !nativeI2cBuses.contains(busIndex) || busIndex < 0 || busIndex >= I2C_BUS_COUNT) {
         return;
     }
 
@@ -469,7 +860,8 @@ void QemuController::pushAllI2cBridgeAddresses()
 
 void QemuController::setI2cBridgeResponseMap(int busIndex, const QString &mapStr)
 {
-    if (!qmpReady || busIndex < 0 || busIndex >= I2C_BUS_COUNT) {
+    if (busIndex >= 0 && busIndex < I2C_BUS_COUNT) i2cResponseMaps[busIndex] = mapStr;
+    if (!qmpReady || !nativeI2cBuses.contains(busIndex) || busIndex < 0 || busIndex >= I2C_BUS_COUNT) {
         return;
     }
 
@@ -484,7 +876,8 @@ void QemuController::setI2cBridgeResponseMap(int busIndex, const QString &mapStr
 
 void QemuController::setSpiDcGpio(const QString &controller, int gpioNum)
 {
-    if (!qmpReady) {
+    spiDcGpios[controller] = gpioNum;
+    if (!qmpReady || !nativeSpiControllers.contains(controller.trimmed().toLower())) {
         return;
     }
 
@@ -629,7 +1022,7 @@ void QemuController::resetTarget()
     }
 
     emit debugMessageReceived("[Control] Reset requested: restarting QEMU process");
-    startQemuWithFirmware(pendingFirmware);
+    startQemuWithFirmware(pendingFirmware, true);
 }
 
 void QemuController::setBootMode(int modeIndex)
@@ -656,21 +1049,43 @@ void QemuController::loadFirmware(const QString &path)
     startQemuWithFirmware(pendingFirmware);
 }
 
-void QemuController::startQemuWithFirmware(const QString &firmwarePath)
+void QemuController::startQemuWithFirmware(const QString &firmwarePath, bool preserveSession)
 {
     stopQemu();
+    if (qemuProcess->state() != QProcess::NotRunning) {
+        failRuntime(QStringLiteral("The previous QEMU process did not stop; a new session was not launched."));
+        return;
+    }
+    qmpTestEndpoint = false;
+    stoppingProcess = false;
+    if (preserveSession && !status.sessionId.isEmpty()) ++status.resetEpoch;
+    else { status.sessionId = QUuid::createUuid().toString(QUuid::WithoutBraces); status.resetEpoch = 0; }
+    runtimeIdentity.clear();
+    nativeI2cBuses.clear();
+    nativeSpiControllers.clear();
+    initializationComplete = false;
+    executionStatusObserved = false;
+    bridgeSettingsReplayed = false;
+    collectingBridgeSettings = false;
+    pendingBridgeSettings = 0;
+    debuggerWaitPending = bootMode == 0 && gdbEnabled && gdbWaitForAttach;
+    ++observationRevision;
+    setRuntimePhase(RuntimePhase::Validating, QStringLiteral("Checking firmware and QEMU machine compatibility."));
+    updateRuntimeCapabilities();
     uartIngressHistory.clear();
     autoDownloadSwitchPending = false;
 
     QFileInfo fwInfo(firmwarePath);
     if (!fwInfo.exists()) {
         emit debugMessageReceived(QString("[QEMU] Firmware file not found: %1").arg(firmwarePath));
+        failRuntime(QString("Firmware file not found: %1").arg(firmwarePath));
         return;
     }
 
     qemuBinaryPath = resolveQemuBinary();
     if (qemuBinaryPath.isEmpty()) {
         emit debugMessageReceived("[QEMU] qemu-system-xtensa not found. Set ESP32S3_QEMU_BIN or build qemu/build/qemu-system-xtensa");
+        failRuntime(QStringLiteral("QEMU was not found. Configure ESP32S3_QEMU_BIN or build the runtime."));
         return;
     }
     {
@@ -689,23 +1104,35 @@ void QemuController::startQemuWithFirmware(const QString &firmwarePath)
 
     flushUartBridgeBuffers();
 
+    QProcess probe;
+    probe.start(qemuBinaryPath, {"-machine", "esp32s3,help"});
+    if (!probe.waitForFinished(3000) || probe.exitCode() != 0) {
+        probe.kill();
+        probe.waitForFinished();
+        emit debugMessageReceived("[QEMU] This binary does not provide the esp32s3 machine.");
+        failRuntime(QStringLiteral("The selected QEMU binary does not provide the ESP32-S3 machine."));
+        return;
+    }
+    const auto properties = parseMachineProperties(QString::fromUtf8(probe.readAllStandardOutput()));
+    QemuLaunchOptions options;
+    options.downloadBoot = bootMode == 1;
+    options.psramEnabled = psramEnabled;
+    options.psramMode = psramMode;
+    options.baseMac = customBaseMac;
+    options.revisionEnabled = chipRevisionEnabled;
+    options.revision = chipRevision;
     QStringList args;
-    QString machineArg = (bootMode == 1)
-        ? QString("esp32s3,boot-mode=download")
-        : QString("esp32s3,boot-mode=flash");
-
-    if (!customBaseMac.isEmpty()) {
-        machineArg += QString(",mac=%1").arg(customBaseMac);
+    QString error;
+    if (!buildMachineArguments(properties, options, args, error)) {
+        emit debugMessageReceived("[QEMU] " + error);
+        failRuntime(error);
+        return;
     }
-    if (chipRevisionEnabled) {
-        machineArg += QString(",chip-revision=%1").arg(chipRevision);
-    }
-    if (psramEnabled) {
-        machineArg += QString(",psram-mode=%1").arg(psramMode);
-    }
-
-    args << "-M" << "esp32s3"
-            << "-accel" << "tcg,thread=multi,tb-size=1024"
+    nativePeripheralBridge = false;
+    pendingBridgeProbe = -1;
+    qmpConnectionAttempts = 0;
+    qmpBootReleasePending = bootMode == 0 && !(gdbEnabled && gdbWaitForAttach);
+    args << "-accel" << "tcg"
          << "-display" << "none"
          << "-monitor" << "none"
             << "-serial" << "stdio"
@@ -714,8 +1141,6 @@ void QemuController::startQemuWithFirmware(const QString &firmwarePath)
     /* QMP over TCP — works on all platforms (replaces Unix-only local socket). */
     qmpPort = static_cast<quint16>(45454 + (QCoreApplication::applicationPid() % 10000));
     args << "-qmp" << QString("tcp:127.0.0.1:%1,server=on,wait=off").arg(qmpPort);
-
-    args[1] = machineArg;
 
     /* Resolve QEMU data directory so the machine model can find esp32s3_rev0_rom.bin. */
     const QString dataDir = resolveQemuDataDir();
@@ -738,29 +1163,38 @@ void QemuController::startQemuWithFirmware(const QString &firmwarePath)
     } else if (isBin) {
         if (!spiFlashEnabled) {
             emit debugMessageReceived("[QEMU] .bin firmware requires SPI flash in this launcher; enable SPI flash in Control tab");
+            failRuntime(QStringLiteral("BIN firmware requires an enabled SPI flash profile."));
             return;
         }
 
         QString flashPath;
         if (!prepareSpiFlashImage(firmwarePath, flashPath)) {
+            failRuntime(QStringLiteral("Firmware flash preparation failed. Select a merged image with bootloader and partition table; see the log for details."));
             return;
         }
 
-        args << "-drive" << QString("file=%1,if=mtd,format=raw").arg(flashPath);
+        QString escapedFlashPath = flashPath;
+        escapedFlashPath.replace(",", ",,"); // QEMU key/value option escaping
+        args << "-drive" << QString("file=%1,if=mtd,format=raw").arg(escapedFlashPath);
         emit debugMessageReceived(QString("[QEMU] SPI flash image prepared: %1 (%2MB)")
                                 .arg(flashPath)
                                 .arg(spiFlashSizeMB));
     } else {
         emit debugMessageReceived("[QEMU] Unsupported firmware type; use .elf or .bin");
+        failRuntime(QStringLiteral("Unsupported firmware type. Select an ELF or merged BIN image."));
         return;
     }
 
     if (gdbEnabled) {
-        args << "-gdb" << QString("tcp::%1").arg(gdbPort);
+        args << "-gdb" << QString("tcp:127.0.0.1:%1").arg(gdbPort);
         if (gdbWaitForAttach) {
             args << "-S";
         }
     }
+
+    // Freeze normal boot until QMP has installed the available bridge state.
+    // UART download mode runs immediately and does not depend on QMP.
+    if (bootMode == 0 && !(gdbEnabled && gdbWaitForAttach)) args << "-S";
 
     if (!isElf) {
         emit debugMessageReceived("[QEMU] BIN launch uses SPI flash boot path (no -kernel)");
@@ -796,11 +1230,12 @@ void QemuController::startQemuWithFirmware(const QString &firmwarePath)
     }
     if (gdbEnabled) {
         const QString endpoint = QString("127.0.0.1:%1").arg(gdbPort);
-        const QString mode = gdbWaitForAttach ? "waiting for debugger" : "running";
+        const QString mode = gdbWaitForAttach ? "waiting for debugger" : "execution status pending QMP";
         emit debugStatusUpdated(QString("[GDB] endpoint %1 (%2)").arg(endpoint, mode));
     } else {
         emit debugStatusUpdated("[GDB] disabled");
     }
+    setRuntimePhase(RuntimePhase::Launching, QStringLiteral("Starting the selected QEMU executable."));
     qemuProcess->start(qemuBinaryPath, args);
 }
 
@@ -995,6 +1430,14 @@ bool QemuController::prepareSpiFlashImage(const QString &firmwarePath, QString &
 
     const QByteArray fwData = fwFile.readAll();
     fwFile.close();
+
+    if (bootMode == 0 && (fwData.size() < 0x8020
+        || static_cast<quint8>(fwData.at(0)) != 0xE9
+        || static_cast<quint8>(fwData.at(0x8000)) != 0xAA
+        || static_cast<quint8>(fwData.at(0x8001)) != 0x50)) {
+        emit debugMessageReceived("[SPI Flash] Select a merged ESP32-S3 flash image containing the bootloader at 0x0 and partition table at 0x8000. An application .bin alone cannot boot through ROM.");
+        return false;
+    }
 
     auto decodeFlashSizeFromHeader = [](const QByteArray &image) -> int {
         if (image.size() < 4) {
@@ -1196,9 +1639,14 @@ bool QemuController::prepareSpiFlashImage(const QString &firmwarePath, QString &
 
 void QemuController::stopQemu()
 {
+    stoppingProcess = true;
+    qmpDeadlineTimer->stop();
+    if (qemuProcess->state() != QProcess::NotRunning && status.phase != RuntimePhase::Error)
+        setRuntimePhase(RuntimePhase::Stopping, QStringLiteral("Stopping QEMU and closing its transports."));
     disconnectQmp();
 
     if (qemuProcess->state() == QProcess::NotRunning) {
+        stoppingProcess = false;
         return;
     }
 
@@ -1207,6 +1655,7 @@ void QemuController::stopQemu()
         qemuProcess->kill();
         qemuProcess->waitForFinished(1000);
     }
+    stoppingProcess = false;
 }
 
 QString QemuController::resolveQemuBinary() const
@@ -1296,17 +1745,27 @@ bool QemuController::ingestBridgeEventLine(const QString &line)
     return false;
 }
 
+bool QemuController::qmpTransportExpected() const
+{
+    return bootMode == 0 && !stoppingProcess && status.phase != RuntimePhase::Error
+        && status.phase != RuntimePhase::Stopping && status.phase != RuntimePhase::Stopped
+        && (qmpTestEndpoint || qemuProcess->state() == QProcess::Running);
+}
+
 void QemuController::connectQmp()
 {
-    if (qemuProcess->state() != QProcess::Running) {
+    if (!qmpTransportExpected() || qmpTcpSocket->state() == QAbstractSocket::ConnectedState
+        || qmpTcpSocket->state() == QAbstractSocket::ConnectingState) return;
+    if (qmpConnectionAttempts >= 40) {
+        failRuntime(QStringLiteral("QMP connection deadline exceeded. Restart the simulation to retry."), true);
         return;
     }
-    if (qmpTcpSocket->state() == QAbstractSocket::ConnectedState) {
-        return;
-    }
-
+    ++qmpConnectionAttempts;
     qmpBuffer.clear();
     qmpReady = false;
+    pendingCapabilitiesCb = -1;
+    pendingQmpCommands.clear();
+    clearNativeCircuit(true, true, QStringLiteral("Awaiting this QMP connection's native electrical handshake."));
     qmpTcpSocket->abort();
     qmpTcpSocket->connectToHost(QStringLiteral("127.0.0.1"), qmpPort);
 }
@@ -1320,6 +1779,15 @@ void QemuController::disconnectQmp()
     pendingSnapshotCb = -1;
     pendingRegsCb = -1;
     pendingMemCb = -1;
+    pendingCapabilitiesCb = -1;
+    pendingInitializationProbes = 0;
+    pendingBridgeSettings = 0;
+    collectingBridgeSettings = false;
+    pendingQmpCommands.clear();
+    initializationComplete = false;
+    executionStatusObserved = false;
+    executionStoppedObserved = false;
+    clearNativeCircuit(true, true, QStringLiteral("Native electrical transport is disconnected."));
 }
 
 void QemuController::processQmpBuffer()
@@ -1344,23 +1812,133 @@ void QemuController::processQmpBuffer()
 void QemuController::handleQmpMessage(const QJsonObject &obj)
 {
     if (obj.contains("QMP")) {
-        sendQmpCommand("qmp_capabilities");
+        if (pendingCapabilitiesCb >= 0 || qmpReady) return;
+        const auto version = obj.value("QMP").toObject().value("version").toObject();
+        const auto number = version.value("qemu").toObject();
+        if (number.contains("major") && number.contains("minor") && number.contains("micro"))
+            runtimeIdentity = QString("QEMU %1.%2.%3 %4")
+                .arg(number.value("major").toInt()).arg(number.value("minor").toInt())
+                .arg(number.value("micro").toInt()).arg(version.value("package").toString()).trimmed();
+        setRuntimePhase(RuntimePhase::Initializing, QStringLiteral("Negotiating QMP and discovering this runtime's interfaces."));
+        updateRuntimeCapabilities();
+        pendingCapabilitiesCb = qmpSeq++;
+        sendQmpCommand("qmp_capabilities", {}, pendingCapabilitiesCb);
         return;
     }
 
-    if (obj.contains("return") && !qmpReady) {
+    if (obj.contains("event")) {
+        const QString event = obj.value("event").toString();
+        if (!qmpReady || stoppingProcess || status.phase == RuntimePhase::Stopped
+            || status.phase == RuntimePhase::Stopping) return;
+        if (event == "STOP" || event == "RESUME") {
+            ++observationRevision;
+            executionStatusObserved = true;
+            executionStoppedObserved = event == "STOP";
+            if (event == "RESUME") {
+                debuggerWaitPending = false;
+                setRuntimePhase(RuntimePhase::Running, QStringLiteral("QMP reports firmware execution resumed."));
+            } else {
+                setRuntimePhase(debuggerWaitPending ? RuntimePhase::WaitingForDebugger : RuntimePhase::Paused,
+                                QStringLiteral("QMP reports CPU execution stopped."));
+            }
+            if (initializationComplete) qmpDeadlineTimer->stop();
+            updateRuntimeCapabilities();
+        } else if (event == "RESET") {
+            ++status.resetEpoch;
+            ++observationRevision;
+            executionStatusObserved = false;
+            executionStoppedObserved = false;
+            clearNativeCircuit(false, false, QStringLiteral("Reset invalidated pending native electrical replies."));
+            pendingQmpCommands.clear();
+            pendingRegsCb = pendingMemCb = pendingSnapshotCb = -1;
+            setRuntimePhase(RuntimePhase::Initializing, QStringLiteral("QMP reported a target reset; refreshing execution state."));
+            if (!initializationComplete) startBridgeProbes();
+            else requestRuntimeStatus();
+            qmpDeadlineTimer->start();
+            updateRuntimeCapabilities();
+        } else if (event == "SHUTDOWN") {
+            ++observationRevision;
+            setRuntimePhase(RuntimePhase::Stopping, QStringLiteral("QMP reported guest shutdown; waiting for process exit."));
+            liveTimer->stop();
+            updateRuntimeCapabilities();
+        } else if (event == "GUEST_PANICKED") {
+            failRuntime(QStringLiteral("QMP reported a guest panic; inspect the serial log and reset the target."));
+        }
+        return;
+    }
+    if (!obj.contains("id") || (!obj.contains("return") && !obj.contains("error"))) return;
+    const int id = obj.value("id").toInt(-1);
+    if (!pendingQmpCommands.contains(id)) return; // Late/unknown acknowledgements cannot establish state.
+    const auto command = pendingQmpCommands.take(id);
+    if (command.epoch != status.resetEpoch) return;
+    const bool error = obj.contains("error");
+    const QString errorText = obj.value("error").toObject().value("desc").toString("Unknown QMP error");
+
+    if (id == pendingCapabilitiesCb) {
+        pendingCapabilitiesCb = -1;
+        if (error) { failRuntime("QMP negotiation failed: " + errorText, true); return; }
         qmpReady = true;
         emit debugMessageReceived("[QMP] capabilities enabled");
-        /* Push any pending I2C bridge addresses now that QMP is live */
-        pushAllI2cBridgeAddresses();
+        startBridgeProbes();
         return;
     }
-
-    if (!obj.contains("id")) {
+    const QString path = command.arguments.value("path").toString();
+    if (path == kElectricalPath && handleNativeCircuitReply(id, command, obj)) return;
+    if (bridgeProbes.contains(path) && bridgeProbes[path].remaining > 0
+        && (command.execute == "qom-list" || command.execute == "qom-get")) {
+        auto &probe = bridgeProbes[path];
+        if (!error) {
+            const QString property = command.arguments.value("property").toString();
+            if (command.execute == "qom-list") {
+                for (const auto &value : obj.value("return").toArray())
+                    probe.properties.insert(value.toObject().value("name").toString());
+            } else if (property == "type") probe.type = obj.value("return").toString();
+            else if (property == "bridge-enabled") probe.enabled = obj.value("return").toBool();
+        }
+        --probe.remaining;
+        --pendingInitializationProbes;
+        finishRuntimeInitialization();
         return;
     }
-
-    const int id = obj.value("id").toInt(-1);
+    if (command.initializationSetting) {
+        --pendingBridgeSettings;
+        if (error) { failRuntime("Peripheral initialization failed: " + errorText, true); return; }
+        finishRuntimeInitialization();
+        return;
+    }
+    if (command.execute == "query-status") {
+        if (command.revision != observationRevision) return;
+        if (error) { failRuntime("QMP execution-status query failed: " + errorText, true); return; }
+        const auto observed = obj.value("return").toObject();
+        if (!observed.value("running").isBool() || !observed.value("status").isString()) {
+            failRuntime(QStringLiteral("QMP returned an invalid execution-status response."), true);
+            return;
+        }
+        const QString runState = observed.value("status").toString();
+        executionStatusObserved = true;
+        executionStoppedObserved = !observed.value("running").toBool()
+            && (runState == "paused" || runState == "prelaunch" || runState == "debug");
+        if (observed.value("running").toBool() && runState == "running") {
+            debuggerWaitPending = false;
+            setRuntimePhase(RuntimePhase::Running, QStringLiteral("QMP confirms firmware is running."));
+        } else if (runState == "shutdown") {
+            setRuntimePhase(RuntimePhase::Stopping, QStringLiteral("QMP confirms guest shutdown."));
+        } else if (runState == "internal-error" || runState == "io-error" || runState == "guest-panicked") {
+            failRuntime(QString("QEMU reports %1; inspect the log before resuming.").arg(runState));
+        } else {
+            setRuntimePhase(debuggerWaitPending ? RuntimePhase::WaitingForDebugger : RuntimePhase::Paused,
+                            QString("QMP confirms execution is stopped (%1).").arg(runState));
+        }
+        if (initializationComplete) qmpDeadlineTimer->stop();
+        updateRuntimeCapabilities();
+        return;
+    }
+    if (command.execute == "stop" || command.execute == "cont") {
+        if (command.revision != observationRevision) return;
+        if (error) failRuntime("Execution control failed: " + errorText);
+        else requestRuntimeStatus();
+        return;
+    }
     if (obj.contains("error")) {
         if (id == pendingSnapshotCb) {
             pendingSnapshotCb = -1;
@@ -1371,7 +1949,7 @@ void QemuController::handleQmpMessage(const QJsonObject &obj)
         if (id == pendingMemCb) {
             pendingMemCb = -1;
         }
-        emit debugMessageReceived(QString("[QMP] command error for id=%1").arg(id));
+        emit debugMessageReceived(QString("[QMP] command error for id=%1: %2").arg(id).arg(errorText));
         return;
     }
 
@@ -1401,23 +1979,108 @@ void QemuController::sendQmpCommand(const QString &execute,
     if (qmpTcpSocket->state() != QAbstractSocket::ConnectedState) {
         return;
     }
+    if (execute == "query-status") {
+        for (const auto &pending : pendingQmpCommands)
+            if (pending.execute == execute && pending.epoch == status.resetEpoch
+                && pending.revision == observationRevision) return;
+    }
 
     QJsonObject obj;
     obj["execute"] = execute;
     if (!arguments.isEmpty()) {
         obj["arguments"] = arguments;
     }
-    if (callbackId >= 0) {
-        obj["id"] = callbackId;
-    }
+    const int id = callbackId >= 0 ? callbackId : qmpSeq++;
+    obj["id"] = id;
+    const bool initializationSetting = collectingBridgeSettings && execute == "qom-set";
+    pendingQmpCommands.insert(id, {execute, arguments, observationRevision, status.resetEpoch,
+                                   initializationSetting, qmpCommandClock.elapsed(), nativeCircuitContext});
+    if (initializationSetting) ++pendingBridgeSettings;
 
     const QByteArray data = QJsonDocument(obj).toJson(QJsonDocument::Compact) + "\n";
     qmpTcpSocket->write(data);
     qmpTcpSocket->flush();
 }
 
+void QemuController::requestRuntimeStatus()
+{
+    if (qmpReady) sendQmpCommand("query-status");
+}
+
+void QemuController::startBridgeProbes()
+{
+    bridgeProbes.clear();
+    nativeI2cBuses.clear();
+    nativeSpiControllers.clear();
+    nativePeripheralBridge = false;
+    pendingInitializationProbes = 0;
+    pendingBridgeSettings = 0;
+    bridgeSettingsReplayed = false;
+    initializationComplete = false;
+    for (int bus = 0; bus < I2C_BUS_COUNT; ++bus) {
+        const QString path = QString("/machine/soc/i2c%1/i2c/child[0]").arg(bus);
+        bridgeProbes[path].remaining = 2;
+        pendingInitializationProbes += 2;
+        sendQmpCommand("qom-get", {{"path", path}, {"property", "type"}});
+        sendQmpCommand("qom-list", {{"path", path}});
+    }
+    for (int spi = 2; spi <= 3; ++spi) {
+        const QString path = QString("/machine/soc/gpspi%1").arg(spi);
+        bridgeProbes[path].remaining = 3;
+        pendingInitializationProbes += 3;
+        sendQmpCommand("qom-get", {{"path", path}, {"property", "type"}});
+        sendQmpCommand("qom-list", {{"path", path}});
+        sendQmpCommand("qom-get", {{"path", path}, {"property", "bridge-enabled"}});
+    }
+    clearNativeCircuit(true, true, QStringLiteral("Discovering native electrical QOM properties and snapshot ABI."));
+    pendingNativeCircuitDiscovery = 2;
+    pendingInitializationProbes += pendingNativeCircuitDiscovery;
+    sendQmpCommand("qom-list", {{"path", kElectricalPath}});
+    sendQmpCommand("qom-get", {{"path", kElectricalPath}, {"property", "snapshot-json"}});
+}
+
+void QemuController::finishRuntimeInitialization()
+{
+    if (pendingInitializationProbes > 0 || initializationComplete) return;
+    if (!bridgeSettingsReplayed) {
+        bridgeSettingsReplayed = true;
+        for (int bus = 0; bus < I2C_BUS_COUNT; ++bus) {
+            const auto probe = bridgeProbes.value(QString("/machine/soc/i2c%1/i2c/child[0]").arg(bus));
+            if (probe.type == "esp32s3.i2c-bridge" && probe.properties.contains("registered-addrs")
+                && probe.properties.contains("read-response-map")) nativeI2cBuses.insert(bus);
+        }
+        for (int spi = 2; spi <= 3; ++spi) {
+            const auto probe = bridgeProbes.value(QString("/machine/soc/gpspi%1").arg(spi));
+            if (probe.type == "esp32s3.gpspi" && probe.enabled && probe.properties.contains("bridge-dc-gpio"))
+                nativeSpiControllers.insert(QString("spi%1").arg(spi));
+        }
+        nativePeripheralBridge = !nativeI2cBuses.isEmpty() || !nativeSpiControllers.isEmpty();
+        collectingBridgeSettings = true;
+        pushAllI2cBridgeAddresses();
+        for (int bus = 0; bus < I2C_BUS_COUNT; ++bus)
+            if (!i2cResponseMaps[bus].isEmpty()) setI2cBridgeResponseMap(bus, i2cResponseMaps[bus]);
+        const auto dcGpios = spiDcGpios;
+        for (auto it = dcGpios.cbegin(); it != dcGpios.cend(); ++it) setSpiDcGpio(it.key(), it.value());
+        collectingBridgeSettings = false;
+        emit debugMessageReceived(nativePeripheralBridge
+            ? "[Peripherals] Runtime bridge subtypes detected; cached I2C / SPI TX paths have explicit limits."
+            : "[Peripherals] Native bus bridge unavailable in this QEMU. Device panels run independently; firmware bus connections require the custom QEMU extension.");
+        emit peripheralBridgeAvailable(nativePeripheralBridge);
+        updateRuntimeCapabilities();
+    }
+    if (pendingBridgeSettings > 0) return;
+    initializationComplete = true;
+    if (qmpBootReleasePending) {
+        qmpBootReleasePending = false;
+        ++observationRevision;
+        sendQmpCommand("cont");
+    }
+    requestRuntimeStatus();
+}
+
 void QemuController::pollLiveState()
 {
+    requestRuntimeStatus();
     requestCpuSnapshot();
 }
 
@@ -1514,7 +2177,7 @@ void QemuController::parseRegisterDump(const QString &dump,
 QStringList QemuController::parseMemoryDump(const QString &dump) const
 {
     QStringList out;
-    out.fill("0x00000000", 8);
+    out.fill("unavailable", 8);
 
     QRegularExpression wordRe("0x[0-9A-Fa-f]+|[0-9A-Fa-f]{8}");
     const QStringList lines = dump.split('\n', Qt::SkipEmptyParts);
