@@ -1,0 +1,6 @@
+[submodule "qemu"]
+	path = qemu
+	url = git@github.com:BaiTian6641/qemu.git
+[submodule "esp-idf"]
+	path = esp-idf
+	url = https://github.com/espressif/esp-idf.git

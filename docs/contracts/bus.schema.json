@@ -1,0 +1,634 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:esp32s3vm:peripheral-bus:1",
+  "title": "ESP32-S3 dedicated peripheral bus envelope v1.0",
+  "description": "JSON body following a four-byte unsigned big-endian length. Prefix/frame bounds, negotiated limits, monotonic/correlation/deadline constraints are additionally enforced by PeripheralFrameCodec/PeripheralTransport.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "kind",
+    "status",
+    "session_id",
+    "connection_id",
+    "reset_epoch",
+    "topology_generation",
+    "sequence",
+    "request_id",
+    "virtual_time_ns",
+    "data"
+  ],
+  "properties": {
+    "version": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "major",
+        "minor"
+      ],
+      "properties": {
+        "major": {
+          "const": 1
+        },
+        "minor": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        }
+      }
+    },
+    "kind": {
+      "enum": [
+        "hello",
+        "hello_ack",
+        "request",
+        "response",
+        "event",
+        "reset"
+      ]
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "pending",
+        "nack",
+        "error",
+        "timeout",
+        "unavailable"
+      ]
+    },
+    "session_id": {
+      "$ref": "#/$defs/uuid"
+    },
+    "connection_id": {
+      "$ref": "#/$defs/uuid"
+    },
+    "reset_epoch": {
+      "$ref": "#/$defs/uint64"
+    },
+    "topology_generation": {
+      "$ref": "#/$defs/uint64"
+    },
+    "sequence": {
+      "$ref": "#/$defs/positive_uint64"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "virtual_time_ns": {
+      "$ref": "#/$defs/uint64"
+    },
+    "data": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "hello",
+              "hello_ack"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "const": "ok"
+          },
+          "request_id": {
+            "const": ""
+          },
+          "data": {
+            "$ref": "#/$defs/handshake"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "request"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "const": "pending"
+          },
+          "request_id": {
+            "$ref": "#/$defs/positive_uint64"
+          },
+          "data": {
+            "$ref": "#/$defs/request"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "response"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "enum": [
+              "ok",
+              "nack",
+              "error",
+              "timeout",
+              "unavailable"
+            ]
+          },
+          "request_id": {
+            "$ref": "#/$defs/positive_uint64"
+          },
+          "data": {
+            "$ref": "#/$defs/response"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "event"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "enum": [
+              "ok",
+              "error"
+            ]
+          },
+          "request_id": {
+            "const": ""
+          },
+          "data": {
+            "$ref": "#/$defs/event"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "reset"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "const": "ok"
+          },
+          "request_id": {
+            "const": ""
+          },
+          "data": {
+            "$ref": "#/$defs/reset"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "uint64": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,18}|1[0-7][0-9]{18}|18[0-3][0-9]{17}|184[0-3][0-9]{16}|1844[0-5][0-9]{15}|18446[0-6][0-9]{14}|184467[0-3][0-9]{13}|1844674[0-3][0-9]{12}|184467440[0-6][0-9]{10}|1844674407[0-2][0-9]{9}|18446744073[0-6][0-9]{8}|1844674407370[0-8][0-9]{6}|18446744073709[0-4][0-9]{5}|184467440737095[0-4][0-9]{4}|18446744073709550[0-9]{3}|18446744073709551[0-5][0-9]{2}|1844674407370955160[0-9]{1}|1844674407370955161[0-4]|18446744073709551615)(?![\\s\\S])"
+    },
+    "positive_uint64": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/uint64"
+        },
+        {
+          "not": {
+            "const": "0"
+          }
+        }
+      ]
+    },
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\\s\\S])",
+      "not": {
+        "const": "00000000-0000-0000-0000-000000000000"
+      }
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,63}(?![\\s\\S])"
+    },
+    "bit_length": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,4}|[1-4][0-9]{5}|5[0-1][0-9]{4}|52[0-7][0-9]{3}|528[0-2][0-9]{2}|5283[0-7][0-9]{1}|52838[0-3]|528384)(?![\\s\\S])"
+    },
+    "base64": {
+      "type": "string",
+      "maxLength": 87384,
+      "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/][AQgw]==|[A-Za-z0-9+/]{2}[AEIMQUYcgkosw048]=)?(?![\\s\\S])",
+      "allOf": [
+        {
+          "if": {
+            "minLength": 87384
+          },
+          "then": {
+            "pattern": "==(?![\\s\\S])"
+          }
+        }
+      ],
+      "description": "Canonical base64, decoded maximum 65536 bytes. Negotiated lower limits are additionally checked by the codec."
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frame_bytes",
+        "bus_payload_bytes",
+        "in_flight"
+      ],
+      "properties": {
+        "frame_bytes": {
+          "type": "integer",
+          "minimum": 512,
+          "maximum": 1048576
+        },
+        "bus_payload_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        },
+        "in_flight": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        }
+      }
+    },
+    "handshake": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capabilities",
+        "required_capabilities",
+        "limits"
+      ],
+      "properties": {
+        "capabilities": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9.-]{0,63}(?![\\s\\S])"
+          }
+        },
+        "required_capabilities": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9.-]{0,63}(?![\\s\\S])"
+          }
+        },
+        "limits": {
+          "$ref": "#/$defs/limits"
+        }
+      }
+    },
+    "phase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "start",
+            "address",
+            "write",
+            "read",
+            "restart",
+            "stop",
+            "command",
+            "dummy",
+            "edge",
+            "sample",
+            "frame"
+          ]
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65536
+        },
+        "address": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1023
+        },
+        "direction": {
+          "enum": [
+            "read",
+            "write"
+          ]
+        },
+        "bit_length": {
+          "$ref": "#/$defs/bit_length"
+        },
+        "level": {
+          "type": "boolean"
+        },
+        "duration_ns": {
+          "$ref": "#/$defs/uint64"
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bus",
+        "controller_id",
+        "endpoint_ids",
+        "net_ids",
+        "payload_encoding",
+        "payload",
+        "phases",
+        "bit_length",
+        "bit_order",
+        "mode",
+        "chip_select",
+        "read_length",
+        "virtual_deadline_ns"
+      ],
+      "properties": {
+        "bus": {
+          "enum": [
+            "i2c",
+            "spi",
+            "gpio",
+            "uart",
+            "i2s",
+            "rmt",
+            "lcd",
+            "cam"
+          ]
+        },
+        "controller_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "endpoint_ids": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "net_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "payload_encoding": {
+          "const": "base64"
+        },
+        "payload": {
+          "$ref": "#/$defs/base64"
+        },
+        "phases": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/phase"
+          }
+        },
+        "bit_length": {
+          "$ref": "#/$defs/bit_length"
+        },
+        "bit_order": {
+          "enum": [
+            "msb-first",
+            "lsb-first"
+          ]
+        },
+        "mode": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 3
+        },
+        "chip_select": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 5
+        },
+        "read_length": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65536
+        },
+        "virtual_deadline_ns": {
+          "$ref": "#/$defs/uint64"
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Compact UTF-8 JSON encoding must be at most 16384 bytes; enforced by the codec, since standard JSON Schema cannot measure serialized byte length."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "bus": {
+                "const": "spi"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "mode": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 3
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "mode": {
+                "type": "null"
+              },
+              "chip_select": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bus",
+        "controller_id",
+        "endpoint_ids",
+        "net_ids",
+        "payload_encoding",
+        "payload",
+        "phase_statuses",
+        "modeled_latency_ns",
+        "accepted_length",
+        "error_message"
+      ],
+      "properties": {
+        "bus": {
+          "enum": [
+            "i2c",
+            "spi",
+            "gpio",
+            "uart",
+            "i2s",
+            "rmt",
+            "lcd",
+            "cam"
+          ]
+        },
+        "controller_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "endpoint_ids": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "net_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "payload_encoding": {
+          "const": "base64"
+        },
+        "payload": {
+          "$ref": "#/$defs/base64"
+        },
+        "phase_statuses": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "index",
+              "status"
+            ],
+            "properties": {
+              "index": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 63
+              },
+              "status": {
+                "enum": [
+                  "ack",
+                  "nack",
+                  "error",
+                  "timeout"
+                ]
+              }
+            }
+          }
+        },
+        "modeled_latency_ns": {
+          "$ref": "#/$defs/uint64"
+        },
+        "accepted_length": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65536
+        },
+        "error_message": {
+          "type": "string",
+          "maxLength": 1024
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event",
+        "payload_encoding",
+        "payload",
+        "details"
+      ],
+      "properties": {
+        "event": {
+          "$ref": "#/$defs/identifier"
+        },
+        "payload_encoding": {
+          "const": "base64"
+        },
+        "payload": {
+          "$ref": "#/$defs/base64"
+        },
+        "details": {
+          "type": "object",
+          "description": "Compact UTF-8 JSON encoding must be at most 16384 bytes; enforced by the codec."
+        }
+      }
+    },
+    "reset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason"
+      ],
+      "properties": {
+        "reason": {
+          "type": "string",
+          "maxLength": 512
+        }
+      }
+    }
+  }
+}

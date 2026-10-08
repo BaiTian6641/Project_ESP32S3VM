@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-07",
+  "qemu": {
+    "repository": "https://github.com/espressif/qemu.git",
+    "tag": "esp-develop-9.2.2-20260417",
+    "commit": "40edccac415693c5130f91c01d84176ae6008566",
+    "target": "xtensa-softmmu",
+    "machine": "esp32s3",
+    "patches": [],
+    "tag_object": "6cdce334bfa5541a5e46c860a9b40a4fe5a13aae"
+  },
+  "candidate_extensions": {
+    "repository": "git@github.com:BaiTian6641/qemu.git",
+    "commit": "33c2bdd17104b3baeea3b788bafd27b2f921c13f",
+    "status": "audited candidates; not qualified or silently copied into the official baseline"
+  },
+  "firmware_profiles": [
+    {
+      "id": "idf-6.1",
+      "repository": "https://github.com/espressif/esp-idf.git",
+      "tag": "v6.1",
+      "commit": "fff9895c82d744c7237be8847347bdd1b07c6643",
+      "qualification": "boot/control fixture passed on pristine official QEMU; not blanket peripheral qualification"
+    },
+    {
+      "id": "idf-5.5.5",
+      "repository": "https://github.com/espressif/esp-idf.git",
+      "tag": "v5.5.5",
+      "commit": "b774170ff46c393eeb5e495ea37936038d3f4f4f",
+      "qualification": "boot/control fixture passed on pristine official QEMU; full runtime manifest collected",
+      "evidence": "build-runtime-state/firmware-matrix-2026-10-07.md",
+      "boot_fixture_sha256": "23bf13220ab1734ee4a4254c54000e9d41671f715a2a2cee6667d129eadf31c9"
+    },
+    {
+      "id": "arduino-3.3.12",
+      "repository": "https://github.com/espressif/arduino-esp32.git",
+      "tag": "3.3.12",
+      "commit": "94afccf35fb1e401facddbcf9e13bcf7c76a31d8",
+      "underlying_idf": "5.5.5",
+      "qualification": "Arduino-as-IDF-component boot/control fixture passed on pristine official QEMU; not blanket Arduino peripheral qualification",
+      "evidence": "build-runtime-state/firmware-matrix-2026-10-07.md",
+      "boot_fixture_sha256": "7a67c902cdfcecee16cf108f377a33a9ea25ad63339a78b482bba9847c2ea346"
+    },
+    {
+      "id": "idf-6.2-dev-baseline",
+      "repository": "https://github.com/espressif/esp-idf.git",
+      "commit": "25fe69f946311abdaf9ad56591f25fedbc20ac98",
+      "qualification": "boot/control and one cached native I2C sensor fixture; development profile"
+    }
+  ],
+  "evidence_policy": "A source lock is reproducibility metadata. Capability maturity requires actual fixture/reference evidence for the binary, model and firmware profile."
+}

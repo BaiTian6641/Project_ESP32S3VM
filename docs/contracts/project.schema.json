@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:esp32s3vm:project:3",
+  "title": "ESP32S3VM project document v3",
+  "$comment": "Electrical topology is nets[].endpoints (stable global terminal IDs); geometry never creates connectivity. Cross references, global ID uniqueness, one net per terminal, GPIO reservations, unit dimensions and legacy adapter restrictions are enforced by ProjectDocument. Invalid drafts can be saved but must not be applied. This schema/model is not a physical solver or a runtime capability claim. Unknown extension fields are retained. File rebasing covers declared artifact/resource paths, simulator exec (PATH commands stay commands), runtime qemu_executable/rom_path/working_directory, and known legacy csv_example/csv_path; opaque extension strings and command arguments are not guessed to be files. A drag previews canvas geometry and commits one moveComponent command on release. Profile reservations must be explicit and qualified against the exact module; built-in GPIO35/36/37 reservations cover only the documented Octal variants from https://documentation.espressif.com/esp-dev-kits/en/latest/esp32s3/esp32-s3-devkitc-1/user_guide_v1.0.html. Atomic saves follow https://doc.qt.io/qt-6/qsavefile.html with direct-write fallback disabled; undo clean-state follows https://doc.qt.io/qt-6/qundostack.html.",
+  "type": "object",
+  "required": ["version", "id", "name", "profile", "firmware", "runtime", "components", "nets", "geometry"],
+  "properties": {
+    "version": { "const": 3 },
+    "id": { "$ref": "#/$defs/id" },
+    "name": { "$ref": "#/$defs/text" },
+    "profile": {
+      "type": "object",
+      "required": ["chip", "board", "module"],
+      "properties": {
+        "chip": { "const": "esp32s3" },
+        "board": { "$ref": "#/$defs/text" },
+        "module": { "$ref": "#/$defs/text" },
+        "reservations_known": { "type": "boolean", "default": false },
+        "reserved_gpios": {
+          "type": "array",
+          "items": { "oneOf": [
+            { "$ref": "#/$defs/gpio" },
+            { "type": "object", "required": ["gpio"], "properties": {
+              "gpio": { "$ref": "#/$defs/gpio" }, "reason": { "type": "string" }, "source": { "type": "string" }
+            } }
+          ] }
+        }
+      }
+    },
+    "firmware": {
+      "type": "object",
+      "properties": {
+        "path": { "$ref": "#/$defs/path" },
+        "artifacts": { "type": "array", "items": {
+          "type": "object", "required": ["id", "kind", "path"],
+          "properties": {
+            "id": { "$ref": "#/$defs/id" }, "kind": { "$ref": "#/$defs/text" }, "path": { "$ref": "#/$defs/path" },
+            "offset": { "type": "integer", "minimum": 0 }, "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }
+          }
+        } }
+      }
+    },
+    "runtime": {
+      "type": "object", "description": "Runtime profile metadata. Availability/state belongs to the acknowledged native runtime contract, not this document.",
+      "properties": {
+        "qemu_executable": { "$ref": "#/$defs/path" }, "rom_path": { "$ref": "#/$defs/path" }, "working_directory": { "$ref": "#/$defs/path" },
+        "electrical": {
+          "type": "object", "description": "Explicit native simulation model selection, never implicit rail wiring. Native Apply requires driver_profile. RC mode also requires edit_charge.",
+          "properties": {
+            "driver_profile": { "const": "s3-explicit-finite-v1", "description": "Simulation profile: output resistance 40 ohm, firmware-enabled weak pulls 45 kohm, thresholds 0.25/0.75 of explicitly wired rails; not silicon characterization." },
+            "mode": { "enum": ["dc", "rc"] }, "edit_charge": { "enum": ["reset", "keep"] }
+          },
+          "allOf": [{ "if": { "required": ["mode"], "properties": { "mode": { "const": "rc" } } }, "then": { "required": ["edit_charge"] } }]
+        }
+      }
+    },
+    "components": { "type": "array", "items": { "$ref": "#/$defs/component" } },
+    "nets": { "type": "array", "items": {
+      "type": "object", "required": ["id", "name", "endpoints"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "name": { "$ref": "#/$defs/text" },
+        "endpoints": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "attributes": { "type": "object" }
+      }
+    } },
+    "geometry": {
+      "type": "object", "required": ["components", "nets"],
+      "properties": {
+        "components": { "type": "object", "propertyNames": { "$ref": "#/$defs/id" }, "additionalProperties": { "$ref": "#/$defs/point" } },
+        "nets": { "type": "object", "propertyNames": { "$ref": "#/$defs/id" }, "additionalProperties": {
+          "type": "object", "properties": { "points": { "type": "array", "items": { "$ref": "#/$defs/point" } } }
+        } }
+      }
+    },
+    "migration": {
+      "type": "object", "required": ["from_version", "report", "legacy_source"],
+      "properties": {
+        "from_version": { "const": 2 },
+        "legacy_source": { "type": "object", "description": "Full original v2 document, including source extensions and decoder/electrical assumptions. Known resource paths may be rebased without changing their referents." },
+        "report": { "type": "array", "items": {
+          "type": "object", "required": ["severity", "code", "message"],
+          "properties": { "severity": { "enum": ["warning", "error"] }, "code": { "type": "string" }, "message": { "type": "string" }, "original_component_id": { "type": "string", "description": "Historical source identity, retained even when invalid or the component was removed. Current validity comes from present components and topology; resolved errors remain history warnings." } }
+        } }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,63}$", "not": { "pattern": "[^A-Za-z0-9_.:/-]" }, "description": "Opaque transport ID; exact ASCII full match, no prefix ownership inference. The negative character guard also rejects a final newline before a regex $ anchor." },
+    "text": { "type": "string", "minLength": 1, "pattern": "\\S" },
+    "path": { "allOf": [{ "$ref": "#/$defs/text" }, { "not": { "pattern": "://" } }], "description": "Local paths may be rebased for Save As. Backslash UNC is preserved verbatim; on a foreign host it requires explicit mapping. A leading // is preserved as ambiguous network/POSIX/UNC syntax and requires explicit mapping rather than inferred host meaning. Native Windows UNC is preserved and its network access remains unverified. No network-resource existence checks occur during document normalization." },
+    "gpio": { "type": "integer", "minimum": 0, "maximum": 48, "not": { "enum": [22, 23, 24, 25] } },
+    "point": { "type": "object", "required": ["x", "y"], "properties": { "x": { "type": "number" }, "y": { "type": "number" } } },
+    "passiveTerminals": { "type": "array", "minItems": 2, "maxItems": 2, "allOf": [
+      { "contains": { "properties": { "role": { "const": "a" } } }, "minContains": 1, "maxContains": 1 },
+      { "contains": { "properties": { "role": { "const": "b" } } }, "minContains": 1, "maxContains": 1 }
+    ] },
+    "polarTerminals": { "type": "array", "minItems": 2, "maxItems": 2, "allOf": [
+      { "contains": { "properties": { "role": { "const": "p" } } }, "minContains": 1, "maxContains": 1 },
+      { "contains": { "properties": { "role": { "const": "n" } } }, "minContains": 1, "maxContains": 1 }
+    ] },
+    "potTerminals": { "type": "array", "minItems": 3, "maxItems": 3, "allOf": [
+      { "contains": { "properties": { "role": { "const": "a" } } }, "minContains": 1, "maxContains": 1 },
+      { "contains": { "properties": { "role": { "const": "w" } } }, "minContains": 1, "maxContains": 1 },
+      { "contains": { "properties": { "role": { "const": "b" } } }, "minContains": 1, "maxContains": 1 }
+    ] },
+    "terminal": {
+      "type": "object", "required": ["id", "name", "role", "domain", "direction"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "name": { "$ref": "#/$defs/text" }, "role": { "$ref": "#/$defs/text" },
+        "domain": { "enum": ["digital", "analog", "power", "ground", "passive", "unspecified"] },
+        "direction": { "enum": ["input", "output", "inout", "passive", "unspecified"] },
+        "gpio": { "$ref": "#/$defs/gpio" }, "attributes": { "type": "object" }
+      }
+    },
+    "quantity": {
+      "type": "object", "required": ["value", "unit"],
+      "properties": {
+        "unit": { "enum": ["V", "mV", "A", "mA", "ohm", "kohm", "Mohm", "F", "uF", "nF", "pF", "ratio", "%", "Hz", "s", "ms", "degC", "Pa", "count", "bool", "state"] }
+      },
+      "allOf": [
+        { "if": { "properties": { "unit": { "const": "bool" } } }, "then": { "properties": { "value": { "type": "boolean" } } },
+          "else": { "if": { "properties": { "unit": { "const": "state" } } }, "then": { "properties": { "value": { "enum": ["open", "closed"] } } }, "else": { "properties": { "value": { "type": "number" } } } } },
+        { "if": { "properties": { "unit": { "enum": ["ohm", "kohm", "Mohm", "F", "uF", "nF", "pF"] } } }, "then": { "properties": { "value": { "exclusiveMinimum": 0 } } } }
+      ]
+    },
+    "component": {
+      "type": "object", "required": ["id", "name", "kind", "type", "terminals", "parameters"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "name": { "$ref": "#/$defs/text" }, "type": { "$ref": "#/$defs/text" },
+        "kind": { "enum": ["mcu", "device", "resistor", "capacitor", "voltage-source", "current-source", "potentiometer", "switch", "ground"] },
+        "terminals": { "type": "array", "items": { "$ref": "#/$defs/terminal" } },
+        "parameters": { "type": "object", "additionalProperties": { "$ref": "#/$defs/quantity" } },
+        "simulator": { "type": "object", "properties": { "exec": { "$ref": "#/$defs/path" } } }, "attributes": { "type": "object" }, "legacy": { "type": "object" },
+        "catalogue": { "type": "object", "required": ["source_project_path", "template_device"], "properties": {
+          "source_project_path": { "$ref": "#/$defs/path" }, "template_device": { "type": "object", "description": "Full template device, including extensions and declared simulator/CSV resource paths. Provenance does not create runtime bindings or electrical connections." }
+        } },
+        "resources": { "type": "object", "additionalProperties": { "type": "object", "required": ["path"], "properties": { "path": { "$ref": "#/$defs/path" } } } }
+      },
+      "allOf": [
+        { "if": { "properties": { "kind": { "enum": ["resistor", "switch"] } } }, "then": { "properties": { "terminals": { "$ref": "#/$defs/passiveTerminals" } } } },
+        { "if": { "properties": { "kind": { "enum": ["capacitor", "voltage-source", "current-source"] } } }, "then": { "properties": { "terminals": { "$ref": "#/$defs/polarTerminals" } } } },
+        { "if": { "properties": { "kind": { "const": "potentiometer" } } }, "then": { "properties": { "terminals": { "$ref": "#/$defs/potTerminals" } } } },
+        { "if": { "properties": { "kind": { "const": "ground" } } }, "then": { "properties": { "terminals": { "minItems": 1, "maxItems": 1, "items": { "properties": { "role": { "const": "ref" } } } } } } },
+        { "if": { "properties": { "kind": { "enum": ["resistor", "potentiometer"] } } }, "then": { "properties": { "parameters": { "required": ["resistance"], "properties": { "resistance": { "properties": { "unit": { "enum": ["ohm", "kohm", "Mohm"] } } } } } } } },
+        { "if": { "properties": { "kind": { "const": "capacitor" } } }, "then": { "properties": { "parameters": { "required": ["capacitance"], "properties": { "capacitance": { "properties": { "unit": { "enum": ["F", "uF", "nF", "pF"] } } }, "initial_voltage": { "properties": { "unit": { "enum": ["V", "mV"] } } } } } } } },
+        { "if": { "properties": { "kind": { "const": "voltage-source" } } }, "then": { "properties": { "parameters": { "required": ["voltage"], "properties": { "voltage": { "properties": { "unit": { "enum": ["V", "mV"] } } }, "series_resistance": { "properties": { "unit": { "enum": ["ohm", "kohm", "Mohm"] } } } } } } } },
+        { "if": { "properties": { "kind": { "const": "current-source" } } }, "then": { "properties": { "parameters": { "required": ["current"], "properties": { "current": { "properties": { "unit": { "enum": ["A", "mA"] } } }, "series_resistance": { "properties": { "unit": { "enum": ["ohm", "kohm", "Mohm"] } } } } } } } },
+        { "if": { "properties": { "kind": { "const": "potentiometer" } } }, "then": { "properties": { "parameters": { "required": ["position"], "properties": { "position": { "oneOf": [
+          { "properties": { "unit": { "const": "ratio" }, "value": { "minimum": 0, "maximum": 1 } } },
+          { "properties": { "unit": { "const": "%" }, "value": { "minimum": 0, "maximum": 100 } } }
+        ] } } } } } },
+        { "if": { "properties": { "kind": { "const": "switch" } } }, "then": { "properties": { "parameters": { "required": ["state"], "properties": { "state": { "properties": { "unit": { "const": "state" } } }, "on_resistance": { "properties": { "unit": { "enum": ["ohm", "kohm", "Mohm"] } } }, "off_resistance": { "properties": { "unit": { "enum": ["ohm", "kohm", "Mohm"] } } } } } } } }
+      ],
+      "$comment": "Analog terminal roles enforced by model: resistor/switch a,b; capacitor/voltage-source/current-source p,n (signed values refer p minus n); potentiometer a,w,b (position 0 at a, 1 at b); ground ref. No implicit ground/pull-up/power supply is created. MCU pad identity is unique per MCU. Analog behavior and supported topology belong to the external native solver, not this schema. The S3 explicit finite profile requires wired MCU power role vdd and ground role gnd; imported projects are never given these implicitly."
+    }
+  }
+}

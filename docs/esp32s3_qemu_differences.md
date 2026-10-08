@@ -1,5 +1,7 @@
 # ESP32-S3 QEMU Differences Record
 
+> Historical generated comparison. Recheck claims against code and fixtures; see [current evidence](current-status.md).
+
 Last updated: 2026-02-28
 Project: `Project_ESP32S3VM/qemu`
 

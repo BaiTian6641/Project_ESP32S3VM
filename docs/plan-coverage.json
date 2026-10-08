@@ -1,0 +1,2301 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-07",
+  "status": "reviewed",
+  "plan": "docs/development-plan.md",
+  "review": "docs/plan-review.md",
+  "goal_scope": [
+    "ux",
+    "peripherals",
+    "digital_nets",
+    "analog_voltages",
+    "adc",
+    "wifi",
+    "ble",
+    "simd",
+    "recent_idf_compatibility",
+    "hardware_reference"
+  ],
+  "documents": [
+    "docs/development-plan.md",
+    "docs/plans/ux.md",
+    "docs/plans/peripherals-electrical.md",
+    "docs/plans/radio-simd.md"
+  ],
+  "milestones": [
+    {
+      "id": "M0",
+      "dependencies": [],
+      "deliverable": "Freeze official base, references, contracts and reproducible evidence",
+      "status": "planned"
+    },
+    {
+      "id": "M1",
+      "dependencies": [
+        "M0"
+      ],
+      "deliverable": "Theme tokens, appearance and usable shell",
+      "status": "planned"
+    },
+    {
+      "id": "M2",
+      "dependencies": [
+        "M0"
+      ],
+      "deliverable": "Dedicated bounded transport and virtual-time feasibility",
+      "status": "planned"
+    },
+    {
+      "id": "M3",
+      "dependencies": [
+        "M0",
+        "M2"
+      ],
+      "deliverable": "Clock, reset, IRQ, GDMA and GPIO endpoints",
+      "status": "planned"
+    },
+    {
+      "id": "M3C",
+      "dependencies": [
+        "M0",
+        "M3"
+      ],
+      "deliverable": "Minimum crypto, RNG, key/eFuse and persistent NVS/calibration/bond prerequisites",
+      "status": "planned"
+    },
+    {
+      "id": "M3P",
+      "dependencies": [
+        "M3"
+      ],
+      "deliverable": "Radio clock, power, sleep/wakeup and retention prerequisites",
+      "status": "planned"
+    },
+    {
+      "id": "M4",
+      "dependencies": [
+        "M1",
+        "M3"
+      ],
+      "deliverable": "Real digital nets and durable circuit document",
+      "status": "planned"
+    },
+    {
+      "id": "M4A",
+      "dependencies": [
+        "M4"
+      ],
+      "deliverable": "Analog DC/RC and native ADC acquisition",
+      "status": "planned"
+    },
+    {
+      "id": "M5",
+      "dependencies": [
+        "M3",
+        "M4"
+      ],
+      "deliverable": "Native UART, I2C and SPI bidirectional devices",
+      "status": "planned"
+    },
+    {
+      "id": "M6",
+      "dependencies": [
+        "M3",
+        "M5"
+      ],
+      "deliverable": "Clocked RMT, I2S, LCD and camera streams",
+      "status": "planned"
+    },
+    {
+      "id": "M7",
+      "dependencies": [
+        "M0",
+        "M3",
+        "M4"
+      ],
+      "deliverable": "Hardware SIMD differential qualification",
+      "status": "planned"
+    },
+    {
+      "id": "M8",
+      "dependencies": [
+        "M0",
+        "M3"
+      ],
+      "deliverable": "Native vendor radio initialization feasibility",
+      "status": "planned"
+    },
+    {
+      "id": "M9",
+      "dependencies": [
+        "M8",
+        "M3C",
+        "M3P",
+        "M4A"
+      ],
+      "deliverable": "Wi-Fi and BLE feature qualification",
+      "status": "planned"
+    },
+    {
+      "id": "M10",
+      "dependencies": [
+        "M3",
+        "M4",
+        "M4A"
+      ],
+      "deliverable": "Remaining chip blocks and power/security",
+      "status": "planned"
+    },
+    {
+      "id": "M11",
+      "dependencies": [
+        "M1",
+        "M4A",
+        "M5",
+        "M6",
+        "M7",
+        "M9",
+        "M10"
+      ],
+      "deliverable": "Required release matrix, soak and packaging",
+      "status": "planned"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "BASE",
+      "title": "boot and firmware",
+      "milestones": [
+        "M0",
+        "M11"
+      ],
+      "document": "docs/development-plan.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "boot_smoke plus new stable-IDF/Arduino/OTA/PSRAM fixtures",
+        "negative": "Invalid/app-only image, corrupt partition and unsupported profile rejected",
+        "reset": "Cold, software, watchdog and interrupted OTA reboot",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "ROM/flash specification and real board boot/persistence records"
+      },
+      "evidence": [],
+      "required_packages": [
+        "CORE-01",
+        "CORE-05",
+        "SOC-09",
+        "UX-03"
+      ]
+    },
+    {
+      "id": "CPU",
+      "title": "CPU and chip state",
+      "milestones": [
+        "M3",
+        "M7",
+        "M11"
+      ],
+      "document": "docs/development-plan.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Dual-core exceptions, atomics, MMU/cache, FPU and actual register snapshots",
+        "negative": "Illegal instruction, access fault, stale/unavailable debug data",
+        "reset": "Core-specific reset and per-core state isolation",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "Pinned ISA/TRM and board raw state"
+      },
+      "evidence": [],
+      "required_packages": [
+        "CORE-03",
+        "SOC-14",
+        "SIMD-07"
+      ]
+    },
+    {
+      "id": "CLOCK",
+      "title": "clocks, interrupts, reset and power",
+      "milestones": [
+        "M3",
+        "M3P",
+        "M10"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Gating/divider changes and shared-source IRQ aggregation",
+        "negative": "Invalid routing and asserted IRQ remap without lost source",
+        "reset": "Peripheral/core/watchdog reset and sleep retention",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "TRM domains and hardware edge/IRQ captures"
+      },
+      "evidence": [],
+      "required_packages": [
+        "CORE-02",
+        "CORE-03",
+        "SOC-04",
+        "SOC-05"
+      ]
+    },
+    {
+      "id": "DMA",
+      "title": "GDMA and memory visibility",
+      "milestones": [
+        "M3",
+        "M6"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Partial bursts, descriptor chains, simultaneous channels and circular stream",
+        "negative": "Bad owner/length/address/cycle, backpressure and PSRAM constraints",
+        "reset": "Stop/restart/reset mid-descriptor discards old work",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "TRM descriptor state and hardware buffer/IRQ results"
+      },
+      "evidence": [],
+      "required_packages": [
+        "CORE-04"
+      ]
+    },
+    {
+      "id": "NET",
+      "title": "GPIO and electrical digital routing",
+      "milestones": [
+        "M3",
+        "M4"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Native button/LED, matrix fanout/inversion, open-drain and branched nets",
+        "negative": "Disconnected/reserved/float/contention/no-pullup and address/CS conflict",
+        "reset": "Hold/sleep/reset defaults and topology-generation apply",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "S3 pad/TRM/board profile plus logic-analyzer capture"
+      },
+      "evidence": [],
+      "required_packages": [
+        "NET-01",
+        "NET-02",
+        "NET-03"
+      ]
+    },
+    {
+      "id": "ANALOG",
+      "title": "analog voltages and RC",
+      "milestones": [
+        "M3",
+        "M4",
+        "M4A"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Divider/pot/source impedance/RC step and voltage-derived digital edges",
+        "negative": "Singular/floating node, conflicting sources and convergence failure",
+        "reset": "Source/topology reset and explicit capacitor initial state",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "Analytic circuits, independent numerical reference and measured board voltage"
+      },
+      "evidence": [],
+      "required_packages": [
+        "ANALOG-01",
+        "ANALOG-02",
+        "ANALOG-03",
+        "ANALOG-04",
+        "EHW-03"
+      ]
+    },
+    {
+      "id": "ADC",
+      "title": "ADC1/ADC2 and calibration",
+      "milestones": [
+        "M4A",
+        "M9"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Oneshot, ADC1 continuous pattern/filter/monitor and eFuse calibration",
+        "negative": "Clipping, missing calibration, overflow, ADC2 DMA erratum/arbitration",
+        "reset": "Conversion/DMA/reset and radio enable/disable interactions",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "Errata/TRM and measured voltage/source-impedance sweep"
+      },
+      "evidence": [],
+      "required_packages": [
+        "ADC-01",
+        "ADC-02",
+        "ADC-03",
+        "ADC-04",
+        "ADC-05"
+      ]
+    },
+    {
+      "id": "UART",
+      "title": "UART0/1/2 and UHCI",
+      "milestones": [
+        "M5"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "External full-duplex bytes, FIFO/IRQ and flow control via routed pads",
+        "negative": "Wrong baud/parity/framing, break, overrun and RTS/CTS stall",
+        "reset": "Reset during TX/RX, restart and console/protocol isolation",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "Driver/TRM and peer waveform/byte capture"
+      },
+      "evidence": [],
+      "required_packages": [
+        "UART-01",
+        "UART-02",
+        "UART-03"
+      ]
+    },
+    {
+      "id": "I2C",
+      "title": "I2C0/1 native master/slave",
+      "milestones": [
+        "M5"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Stateful slave verifies real repeated START and >FIFO TX/RX",
+        "negative": "Address/data NACK, collision, stretching timeout and stuck SDA",
+        "reset": "Abort/reset/recovery at each command phase",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "Driver/TRM plus hardware slave that distinguishes STOP from repeated START"
+      },
+      "evidence": [],
+      "required_packages": [
+        "I2C-01",
+        "I2C-02",
+        "I2C-03"
+      ]
+    },
+    {
+      "id": "SPI",
+      "title": "SPI2/3 and boot flash",
+      "milestones": [
+        "M5"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Actual MISO, phases/modes/order/CS, PIO/DMA flash readback and panel",
+        "negative": "Wrong/disconnected CS/MISO, malformed DMA, underrun and conflicting drivers",
+        "reset": "Reset/abort while CS active or descriptor incomplete",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "TRM/device datasheets and full-duplex hardware captures"
+      },
+      "evidence": [],
+      "required_packages": [
+        "SPI-01",
+        "SPI-02",
+        "SPI-03"
+      ]
+    },
+    {
+      "id": "RMT",
+      "title": "RMT waveform TX/RX",
+      "milestones": [
+        "M6"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Pulse durations, filtering/carrier/loop/DMA and WS2812/IR fixture",
+        "negative": "RX overflow, empty TX, timeout and routing contention",
+        "reset": "Disable/reset during waveform and DMA wrap",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "TRM, timestamped independent pulse captures"
+      },
+      "evidence": [],
+      "required_packages": [
+        "RMT-01",
+        "RMT-02"
+      ]
+    },
+    {
+      "id": "I2S",
+      "title": "I2S0/1 standard, TDM and PDM",
+      "milestones": [
+        "M6"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Exact sample packing/frame clocks and continuous TX/RX DMA",
+        "negative": "Underrun/overrun, unsupported mode, wrong external clock",
+        "reset": "Stop/restart/rate change and descriptor-wrap reset",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "S3 capability table/TRM plus independent PCM/clock reference"
+      },
+      "evidence": [],
+      "required_packages": [
+        "I2S-01",
+        "I2S-02"
+      ]
+    },
+    {
+      "id": "LCD",
+      "title": "I80/RGB LCD and SPI panels",
+      "milestones": [
+        "M6"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Known frame checksum, control pins, sync/pclk and buffer ownership",
+        "negative": "Starved/wrong-size buffer, bad sync/control, circular chain bounded",
+        "reset": "Panel/guest reset, VSYNC buffer swap and PSRAM profile",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "Native driver/device specs and real frame/signal captures"
+      },
+      "evidence": [],
+      "required_packages": [
+        "LCD-01",
+        "LCD-02"
+      ]
+    },
+    {
+      "id": "CAM",
+      "title": "SCCB/DVP camera",
+      "milestones": [
+        "M6"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Normal camera driver reads deterministic sensor frames and DMA EOF",
+        "negative": "Truncated/oversized frame, missing sync, FIFO/DMA overflow",
+        "reset": "Reset sensor/camera during frame and bounded stop/restart",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "Sensor/TRM plus independent chart bytes and timing capture"
+      },
+      "evidence": [],
+      "required_packages": [
+        "CAM-01",
+        "CAM-02"
+      ]
+    },
+    {
+      "id": "WIFI",
+      "title": "native Wi-Fi and full feature backlog",
+      "milestones": [
+        "M8",
+        "M9"
+      ],
+      "document": "docs/plans/radio-simd.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Unchanged blob init followed by scan/security/AP/STA and real IP payload",
+        "negative": "Auth/association/key replay/DHCP/backend loss and queue starvation",
+        "reset": "Cold/warm calibration, reconnect, reset/stop/start and coexistence",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "Pinned vendor libraries/TRM plus AP/peer packet captures"
+      },
+      "evidence": [],
+      "required_packages": [
+        "WIFI-01",
+        "WIFI-02",
+        "WIFI-03",
+        "WIFI-04",
+        "WIFI-05",
+        "WIFI-06",
+        "WIFI-07",
+        "WIFI-08",
+        "WIFI-09",
+        "WIFI-10",
+        "WIFI-11",
+        "WIFI-12",
+        "WIFI-13",
+        "WIFI-14",
+        "WIFI-15",
+        "WIFI-16"
+      ]
+    },
+    {
+      "id": "BLE",
+      "title": "native Bluetooth LE",
+      "milestones": [
+        "M8",
+        "M9"
+      ],
+      "document": "docs/plans/radio-simd.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Unchanged controller and NimBLE/Bluedroid; roles/GATT/security/peers",
+        "negative": "Rejected pairing, permission/credit/fragment faults and timeout",
+        "reset": "Bond restore/unbond/reset/connect-disconnect and coexistence",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "Controller feature masks/specs plus independent BLE peer/captures"
+      },
+      "evidence": [],
+      "required_packages": [
+        "BLE-01",
+        "BLE-02",
+        "BLE-03",
+        "BLE-04",
+        "BLE-05",
+        "BLE-06",
+        "BLE-07",
+        "BLE-08",
+        "BLE-09",
+        "BLE-10",
+        "BLE-11",
+        "BLE-12",
+        "BLE-13",
+        "BLE-14"
+      ]
+    },
+    {
+      "id": "SIMD",
+      "title": "PIE ISA and debugger state",
+      "milestones": [
+        "M7"
+      ],
+      "document": "docs/plans/radio-simd.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Every catalogued operation has byte-exact state/alias/operand vectors",
+        "negative": "Saturation/shift edges, illegal encoding and memory fault side effects",
+        "reset": "Per-core/reset/interrupt/task context save and restore",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "Independent fixed-width reference and COM5 board vectors"
+      },
+      "evidence": [],
+      "required_packages": [
+        "SIMD-01",
+        "SIMD-02",
+        "SIMD-03",
+        "SIMD-04",
+        "SIMD-05",
+        "SIMD-06",
+        "SIMD-07",
+        "SIMD-08",
+        "SIMD-09",
+        "SIMD-10"
+      ]
+    },
+    {
+      "id": "PWM",
+      "title": "LEDC and MCPWM",
+      "milestones": [
+        "M10"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Duty/fade/deadtime/capture/sync/fault output and IRQ behavior",
+        "negative": "Illegal config, fault/brake and missed-update cases",
+        "reset": "Clock gate/reset and duty update mid-period",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "TRM and hardware pulse/capture reference"
+      },
+      "evidence": [],
+      "required_packages": [
+        "SOC-01",
+        "SOC-03"
+      ]
+    },
+    {
+      "id": "COUNT",
+      "title": "PCNT",
+      "milestones": [
+        "M10"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "External edge/direction/filter/watch/limit behavior",
+        "negative": "Glitch pulses, overflow and missing control pin",
+        "reset": "Clear/reset and pulse routing changes while counting",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "TRM plus pulse-source and board count records"
+      },
+      "evidence": [],
+      "required_packages": [
+        "SOC-02"
+      ]
+    },
+    {
+      "id": "CAN",
+      "title": "TWAI",
+      "milestones": [
+        "M10"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Native loopback/peer arbitration/filter and frames",
+        "negative": "ACK/error/bus-off/malformed frame/recovery",
+        "reset": "Controller reset during arbitration and bus-off recovery",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "Controller specification and independent CAN peer trace"
+      },
+      "evidence": [],
+      "required_packages": [
+        "SOC-12"
+      ]
+    },
+    {
+      "id": "USB",
+      "title": "USB OTG and Serial/JTAG",
+      "milestones": [
+        "M10"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Native enumeration and endpoint/FIFO/IRQ transfer profiles",
+        "negative": "Bad descriptor, stall/disconnect and transfer overflow",
+        "reset": "Bus/controller reset and endpoint teardown",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "USB specs/TRM and independent host/device capture"
+      },
+      "evidence": [],
+      "required_packages": [
+        "SOC-11"
+      ]
+    },
+    {
+      "id": "SD",
+      "title": "SDMMC",
+      "milestones": [
+        "M10"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Native commands/card model/data/DMA and filesystem read/write",
+        "negative": "No card, CRC/error response, bad descriptor and removal",
+        "reset": "Reset/removal mid-command/data and persistence recovery",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "TRM/card specification and hardware image/command capture"
+      },
+      "evidence": [],
+      "required_packages": [
+        "SOC-13"
+      ]
+    },
+    {
+      "id": "TOUCH",
+      "title": "capacitive touch",
+      "milestones": [
+        "M10"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Explicit capacitance/threshold/filter/wakeup and native touch driver",
+        "negative": "Disconnected/floating/noisy input and threshold corner cases",
+        "reset": "Sleep/hold/reset and wakeup retention",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "TRM plus characterized capacitance/hardware readings"
+      },
+      "evidence": [],
+      "required_packages": [
+        "SOC-07"
+      ]
+    },
+    {
+      "id": "ULP",
+      "title": "ULP FSM/RISC-V and RTC",
+      "milestones": [
+        "M10"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Native ULP examples execute and wake main CPU using RTC memory",
+        "negative": "Invalid program/config, unavailable power domain and bounds",
+        "reset": "Deep sleep/wakeup/reset retention of coprocessor/RTC state",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "ULP ISA/TRM and board wakeup/state results"
+      },
+      "evidence": [],
+      "required_packages": [
+        "SOC-06"
+      ]
+    },
+    {
+      "id": "SECURITY",
+      "title": "crypto, eFuse, RNG and secure boot",
+      "milestones": [
+        "M0",
+        "M3C",
+        "M10"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Official crypto vectors, permissions and consistent eFuse/flash profiles",
+        "negative": "Invalid key purpose, protected read/write, signature or cipher rejection",
+        "reset": "Crypto busy reset, flash/eFuse persistence and seeded replay mode",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "Known-answer vectors and revision-specific official security behavior"
+      },
+      "evidence": [],
+      "required_packages": [
+        "SOC-08",
+        "SOC-10",
+        "SOC-15"
+      ]
+    },
+    {
+      "id": "UX",
+      "title": "Carbon light/dark and easier interaction",
+      "milestones": [
+        "M1",
+        "M4",
+        "M4A",
+        "M11"
+      ],
+      "document": "docs/plans/ux.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "First boot, wire sensor/analog source, save/reopen, switch themes, keyboard route",
+        "negative": "Invalid project/artifact/QMP timeout/model crash and actionable recovery",
+        "reset": "Session/device restart and restored document/view without stale evidence",
+        "compatibility": "Required current stable plus applicable supported release/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "Carbon/Qt sources plus visual and assistive-tool workflow review"
+      },
+      "evidence": [],
+      "required_packages": [
+        "UX-01",
+        "UX-02",
+        "UX-03",
+        "UX-04",
+        "UX-05",
+        "UX-06",
+        "UX-07",
+        "UX-08",
+        "UX-09",
+        "UX-10",
+        "UX-11",
+        "UX-12",
+        "UX-13",
+        "UX-14"
+      ]
+    },
+    {
+      "id": "TEMP",
+      "title": "internal temperature sensor",
+      "milestones": [
+        "M10"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Native sensor enable/range/clock/read/calibration profile",
+        "negative": "Out-of-range profile, unavailable readiness and calibration errors",
+        "reset": "Sensor clock/domain reset and disabled acquisition",
+        "compatibility": "Applicable supported IDF/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "S3 driver/TRM plus board temperature/code profile"
+      },
+      "evidence": [],
+      "required_packages": [
+        "SOC-07"
+      ]
+    },
+    {
+      "id": "SDM",
+      "title": "sigma-delta output",
+      "milestones": [
+        "M10"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Native prescale/duty/routed waveform and RC voltage effects",
+        "negative": "Bad profile, disconnected pad and disabled output",
+        "reset": "Disable/reset mid-waveform and pad rerouting",
+        "compatibility": "Applicable supported IDF/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "Pinned SoC capabilities and board waveform/reference RC voltage"
+      },
+      "evidence": [],
+      "required_packages": [
+        "SOC-16"
+      ]
+    },
+    {
+      "id": "BROWN",
+      "title": "supply and brownout reset",
+      "milestones": [
+        "M4A",
+        "M10"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Profiled VDD sweep triggers detection/reset reason and retention",
+        "negative": "Undefined threshold band, filter/power state and conflicting rails",
+        "reset": "Repeated rail drop/recovery with reset-domain retention",
+        "compatibility": "Applicable supported IDF/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "S3 brownout specification and measured rail/reset capture"
+      },
+      "evidence": [],
+      "required_packages": [
+        "SOC-17"
+      ]
+    },
+    {
+      "id": "RETENTION",
+      "title": "APB backup and RTC retention DMA",
+      "milestones": [
+        "M3P",
+        "M10"
+      ],
+      "document": "docs/plans/peripherals-electrical.md",
+      "status": "planned",
+      "acceptance": {
+        "positive": "Native low-power register save/restore and transfer descriptor behavior",
+        "negative": "Corrupt/missing retained data, bad descriptor and overflow",
+        "reset": "Reset/abort/sleep/wakeup preserves only declared domains",
+        "compatibility": "Applicable supported IDF/Arduino/chip-profile matrix; exact hashes and skips recorded.",
+        "reference": "S3 retention engine specification and board low-power state results"
+      },
+      "evidence": [],
+      "required_packages": [
+        "SOC-18"
+      ]
+    }
+  ],
+  "cross_cutting": [
+    {
+      "id": "HW",
+      "document": "docs/plans/radio-simd.md",
+      "acceptance": "COM5 inventory and identity before capture; reviewable unchanged hardware/QEMU fixtures; exact output/hash/uncertainty records; no unapproved flashing",
+      "required_packages": [
+        "EHW-01",
+        "EHW-02",
+        "EHW-03",
+        "HW-01",
+        "HW-02",
+        "HW-03",
+        "HW-04",
+        "HW-05",
+        "HW-06",
+        "HW-07"
+      ]
+    },
+    {
+      "id": "VERSION",
+      "document": "docs/development-plan.md",
+      "acceptance": "Pinned supported recent IDF and Arduino stable lanes plus forward/older compatibility profiles; mandatory fixtures cannot silently skip",
+      "required_packages": [
+        "CORE-05",
+        "UX-14"
+      ]
+    },
+    {
+      "id": "TRANSPORT",
+      "document": "docs/development-plan.md",
+      "acceptance": "Framing/epoch/limits/backpressure/host barrier watchdog; deterministic guest results under varied host latency/reset/crash",
+      "required_packages": [
+        "CORE-02",
+        "NET-04",
+        "NET-05"
+      ]
+    },
+    {
+      "id": "TRACE",
+      "document": "docs/plans/ux.md",
+      "acceptance": "Session/epoch/virtual-time/sequence data, bounded recording, replay feasibility and explicit loss; no UI redraw changes simulation",
+      "required_packages": [
+        "NET-06",
+        "UX-09"
+      ]
+    },
+    {
+      "id": "REFERENCE",
+      "document": "docs/development-plan.md",
+      "acceptance": "Pinned official base and patches; native-driver and independent reference evidence; unverified or unsupported profiles remain explicit",
+      "required_packages": [
+        "CORE-01"
+      ]
+    }
+  ],
+  "work_packages": [
+    {
+      "id": "UX-01",
+      "document": "docs/plans/ux.md",
+      "milestones": [
+        "M0",
+        "M1"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "UX-02",
+      "document": "docs/plans/ux.md",
+      "milestones": [
+        "M1"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "UX-03",
+      "document": "docs/plans/ux.md",
+      "milestones": [
+        "M1"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "UX-04",
+      "document": "docs/plans/ux.md",
+      "milestones": [
+        "M1",
+        "M2"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "UX-05",
+      "document": "docs/plans/ux.md",
+      "milestones": [
+        "M4"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "UX-06",
+      "document": "docs/plans/ux.md",
+      "milestones": [
+        "M4"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "UX-07",
+      "document": "docs/plans/ux.md",
+      "milestones": [
+        "M4A"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "UX-08",
+      "document": "docs/plans/ux.md",
+      "milestones": [
+        "M1",
+        "M11"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "UX-09",
+      "document": "docs/plans/ux.md",
+      "milestones": [
+        "M4",
+        "M4A",
+        "M5",
+        "M6",
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "UX-10",
+      "document": "docs/plans/ux.md",
+      "milestones": [
+        "M3",
+        "M7",
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "UX-11",
+      "document": "docs/plans/ux.md",
+      "milestones": [
+        "M5",
+        "M6",
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "UX-12",
+      "document": "docs/plans/ux.md",
+      "milestones": [
+        "M1",
+        "M4",
+        "M4A",
+        "M11"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "UX-13",
+      "document": "docs/plans/ux.md",
+      "milestones": [
+        "M0",
+        "M7",
+        "M4A"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "UX-14",
+      "document": "docs/plans/ux.md",
+      "milestones": [
+        "M0",
+        "M11"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "ADC-01",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M4A"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "ADC-02",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M4A"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "ADC-03",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M4A"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "ADC-04",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M4A"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "ADC-05",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M4A",
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "ANALOG-01",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M3",
+        "M4"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "ANALOG-02",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M4A"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "ANALOG-03",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M4",
+        "M4A"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "ANALOG-04",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M4A"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "CAM-01",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M6"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "CAM-02",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M6"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "CORE-01",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M0"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "CORE-02",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M3"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "CORE-03",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M3"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "CORE-04",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M3"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "CORE-05",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M0",
+        "M11"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "EHW-01",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M0"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "EHW-02",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M4",
+        "M5",
+        "M6"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "EHW-03",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M4A",
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "I2C-01",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M5"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "I2C-02",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M5"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "I2C-03",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M5"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "I2S-01",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M6"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "I2S-02",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M6"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "LCD-01",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M6"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "LCD-02",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M6"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "NET-01",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M0",
+        "M4"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "NET-02",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M3",
+        "M4"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "NET-03",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M4",
+        "M4A"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "NET-04",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M2",
+        "M3"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "NET-05",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M2",
+        "M5",
+        "M6"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "NET-06",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M2",
+        "M5",
+        "M6",
+        "M11"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "RMT-01",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M6"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "RMT-02",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M6"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-01",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-02",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-03",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-04",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M3",
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-05",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M3P",
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-06",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-07",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-08",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M0",
+        "M3C",
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-09",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M0",
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-10",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M3C",
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-11",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-12",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-13",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-14",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M3",
+        "M7",
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-15",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-16",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-17",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M4A",
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SOC-18",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M3P",
+        "M10"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SPI-01",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M5"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SPI-02",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M5"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SPI-03",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M5"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "UART-01",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M5"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "UART-02",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M5"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "UART-03",
+      "document": "docs/plans/peripherals-electrical.md",
+      "milestones": [
+        "M5"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "BLE-01",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M8"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "BLE-02",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "BLE-03",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "BLE-04",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "BLE-05",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "BLE-06",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "BLE-07",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "BLE-08",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "BLE-09",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "BLE-10",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "BLE-11",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "BLE-12",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "BLE-13",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "BLE-14",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "HW-01",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M0",
+        "M7",
+        "M4A",
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "HW-02",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M0",
+        "M7",
+        "M4A",
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "HW-03",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M0",
+        "M7",
+        "M4A",
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "HW-04",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M0",
+        "M7",
+        "M4A",
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "HW-05",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M0",
+        "M7",
+        "M4A",
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "HW-06",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M0",
+        "M7",
+        "M4A",
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "HW-07",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M0",
+        "M7",
+        "M4A",
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SIMD-01",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M0",
+        "M7"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SIMD-02",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M0",
+        "M7"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SIMD-03",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M7"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SIMD-04",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M7"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SIMD-05",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M7"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SIMD-06",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M7"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SIMD-07",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M7"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SIMD-08",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M7"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SIMD-09",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M7"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "SIMD-10",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M7"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "WIFI-01",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M8",
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "WIFI-02",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M8",
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "WIFI-03",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "WIFI-04",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "WIFI-05",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "WIFI-06",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "WIFI-07",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "WIFI-08",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "WIFI-09",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "WIFI-10",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "WIFI-11",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "WIFI-12",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "WIFI-13",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "WIFI-14",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "WIFI-15",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    },
+    {
+      "id": "WIFI-16",
+      "document": "docs/plans/radio-simd.md",
+      "milestones": [
+        "M9"
+      ],
+      "status": "planned",
+      "evidence": [],
+      "scope": "Functional/native profile as specified; quantitative RF or unimplemented component claims require separate evidence.",
+      "dependency_review": "Detailed prerequisites and multi-phase exit conditions are defined in the document and independently reviewed; milestone DAG is checked automatically."
+    }
+  ],
+  "validation_limits": "Checks all stable package references, milestone DAG/table agreement and qualification closure. Fine-grained phase/interface dependencies require recorded independent technical review; software validation does not prove hardware correctness."
+}

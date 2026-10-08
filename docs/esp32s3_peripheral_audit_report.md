@@ -1,5 +1,7 @@
 # ESP32-S3 QEMU Peripheral Implementation Audit Report
 
+> Historical generated audit. Register presence/grades are not firmware acceptance results; see [current evidence](current-status.md).
+
 **Date:** 2025-01-XX  
 **Scope:** Cross-reference of all 38 ESP32-S3 QEMU peripheral models against ESP-IDF `soc/*_reg.h` register definitions and TRM v1.2  
 **Methodology:** Register offset verification, bit-position cross-check, interrupt model validation, GDMA integration audit

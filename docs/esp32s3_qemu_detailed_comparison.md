@@ -1,5 +1,7 @@
 # ESP32-S3 QEMU Detailed Comparison
 
+> Historical generated comparison. Recheck claims against code and fixtures; see [current evidence](current-status.md).
+
 Last updated: 2026-02-27
 Compared artifact: local tree `Project_ESP32S3VM/qemu`
 

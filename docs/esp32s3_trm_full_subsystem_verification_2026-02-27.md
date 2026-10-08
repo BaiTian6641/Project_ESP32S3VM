@@ -1,5 +1,7 @@
 # ESP32-S3 QEMU Full Subsystem Verification Against TRM
 
+> Historical generated verification report. Recheck claims with real driver fixtures; see [current evidence](current-status.md).
+
 Last verified: 2026-02-28  
 Workspace: Project_ESP32S3VM  
 Primary sources: `qemu/hw/**/esp32s3*.c`, `qemu/hw/xtensa/esp32s3.c`, `docs/Esp32-s3_technical_reference_manual_en.md`, ESP-IDF register headers

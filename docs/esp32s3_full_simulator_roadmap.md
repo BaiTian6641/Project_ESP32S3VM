@@ -1,5 +1,7 @@
 # ESP32-S3 Full Simulator Roadmap (Including Wi-Fi and Bluetooth)
 
+> Historical generated roadmap. Completion labels are unverified; see [current evidence](current-status.md).
+
 Last updated: 2026-02-27  
 Project root: `Project_ESP32S3VM`  
 Target tree: `qemu/`  

@@ -1,5 +1,7 @@
 # ESP32-S3 Simulator Execution Backlog
 
+> Historical generated backlog. Completion labels are unverified; see [current evidence](current-status.md).
+
 Last updated: 2026-02-28  
 Scope: action backlog derived from roadmap for a fully functional ESP32-S3 simulator, including Wi-Fi and BLE.
 

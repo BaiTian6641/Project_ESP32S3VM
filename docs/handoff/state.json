@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "snapshot_date": "2026-10-07",
+  "timezone": "Asia/Shanghai",
+  "scope": "Operational takeover metadata; canonical 119-package plan remains authoritative",
+  "repository": {
+    "windows": "C:/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM",
+    "wsl": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM",
+    "branch": "codex/simulator-foundation",
+    "head": "8cb306fe4709d6eb3a6e5f274f24349befecb21a",
+    "uncommitted_work": true
+  },
+  "goal": {
+    "status": "active",
+    "complete": false,
+    "latest_request": "Detailed takeover documents including WSL2 interaction",
+    "original_workers_frozen": true,
+    "known_owned_processes_running": false,
+    "heartbeat": {
+      "id": "resume-esp32-s3-simulator",
+      "name": "Resume ESP32-S3 simulator",
+      "status": "ACTIVE",
+      "interval_minutes": 30,
+      "ownership_coordination_required": true
+    }
+  },
+  "runtime": {
+    "official_commit": "40edccac415693c5130f91c01d84176ae6008566",
+    "official_tag_object": "6cdce334bfa5541a5e46c860a9b40a4fe5a13aae",
+    "recovered_commit": "33c2bdd17104b3baeea3b788bafd27b2f921c13f",
+    "extension_source": "/home/polar/.cache/esp32s3vm/qemu-extension-40edccac4156",
+    "prepared_patch_order": [
+      "integration.patch",
+      "gdb-execution-preflight.patch",
+      "state-restore-guard.patch",
+      "qom-options.patch"
+    ],
+    "qom_options_patch_applied": false,
+    "enabled_barrier_qualified": false,
+    "current_failure": "QAPI qom-type rejects esp32s3-hostbus-probe before QMP",
+    "failure_artifacts": "build-runtime-state/hostbus-first-run",
+    "native_electrical_adc_qualified": false
+  },
+  "validation": {
+    "latest_required_gui_ctest": {
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 38.45,
+      "command": "bash tools/validate-required-wsl.sh",
+      "log": "build-runtime-state/handoff-gui-validation.log"
+    },
+    "isolated_qt": { "circuit": 5, "theme": 6, "project": 16, "transport": 69 },
+    "dc": { "scenarios": 8, "checks": 553, "native_integration": false },
+    "mocked_acquisition": 14,
+    "mocked_deployment": 14,
+    "plan": { "functionality_rows": 30, "work_packages": 119, "milestones": 15, "shared_gates": 5, "negative_checks": 8 },
+    "idf_5_5_5_prepared": true,
+    "idf_5_5_5_boot_tested": false,
+    "fresh_previews": ["docs/handoff/assets/light.png", "docs/handoff/assets/dark.png"],
+    "visual_issue": "Terminal / parameter table header clips in both default-size previews"
+  },
+  "hardware": {
+    "port": "COM5",
+    "flash_authorization": null,
+    "physical_fixture_write_performed": false,
+    "backup_is_private_local_ignored": true,
+    "backup_path": "build-hardware-host/board-original-16MB.bin",
+    "backup_bytes": 16777216,
+    "backup_sha256": "610b31430392a0d32228d7600c9c377881d5043c103c0c6d535e400a736edbc3",
+    "deployment_manifest": "build-hardware-host/deployment-manifest.json"
+  },
+  "immediate_task_count": 32,
+  "entry_point": "docs/handoff/README.md",
+  "canonical_plan": "docs/development-plan.md",
+  "canonical_coverage": "docs/plan-coverage.json"
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:esp32s3vm:runtime-contract:1",
+  "title": "ESP32-S3 studio runtime contract v1",
+  "description": "Status and capability records emitted by RuntimeContract JSON helpers. Runtime availability and evidence maturity are distinct.",
+  "oneOf": [
+    { "$ref": "#/$defs/runtime_status" },
+    { "$ref": "#/$defs/runtime_capability" }
+  ],
+  "$defs": {
+    "runtime_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "phase", "message", "session_id", "reset_epoch"],
+      "properties": {
+        "schema_version": { "const": 1 },
+        "phase": {
+          "enum": ["idle", "validating", "launching", "connecting", "initializing", "running", "paused", "waiting-for-debugger", "waiting-for-device", "stopping", "stopped", "error"]
+        },
+        "message": { "type": "string" },
+        "session_id": { "type": "string" },
+        "reset_epoch": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20,
+          "description": "Unsigned 64-bit epoch serialized in decimal text to preserve precision in JSON consumers. Check uint64 bounds when decoding."
+        }
+      }
+    },
+    "runtime_capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "maturity", "available", "reason", "evidence"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "maturity": { "enum": ["catalogued", "implemented", "native-tested", "hardware-compared", "qualified"] },
+        "available": { "type": "boolean" },
+        "reason": { "type": "string" },
+        "evidence": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "maturity": { "enum": ["native-tested", "hardware-compared", "qualified"] } } },
+          "then": { "properties": { "evidence": { "minItems": 1 } } }
+        }
+      ]
+    }
+  }
+}
