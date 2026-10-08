@@ -39,6 +39,11 @@
     "binary": "qemu-extension-40edccac4156/build-hostbus/qemu-system-xtensa (qom-options.patch applied via tools/apply-qemu-hostbus-prototype.py)",
     "evidence": "build-runtime-state/hostbus-qom-enabled-2026-10-08/{command.json,result.json,uart.log,stderr.log}",
     "result": "PASS: -object esp32s3-hostbus-probe accepted by QAPI ObjectType; /objects lists probe; watchdog-ms reads back 5000; hostbus socket peer connected; VM stayed in prelaunch under -S; clean quit rc=0. Previous failure (parameter qom-type does not accept value esp32s3-hostbus-probe, QEMU exited before opening QMP) is resolved.",
-    "remaining": "M2 scheduler/timer-arm evidence, lifecycle malformed-response tests, two-CPU participation, and byte-stream recording per docs/contracts/qemu-hostbus-prototype.md findings 2-7 are still open; prototype remains unqualified for integration."
+    "remaining": "M2 scheduler/timer-arm evidence, lifecycle malformed-response tests, two-CPU participation, and byte-stream recording per docs/contracts/qemu-hostbus-prototype.md findings 2-7 are still open; prototype remains unqualified for integration.",
+    "scenarios_2026_10_08": {
+      "result": "7/7 scenario suite PASS on the rebuilt binary with the manifest-identical peer (sha256 938e5368...): delay-fast, delay-slow (1 ms modeled latency honored in both), watchdog (host watchdog expiry blocks guest execution exactly as designed), disconnect (explicit cancel/reset required), reset (stale callback rejected, new epoch 1), released-reset (old completion cancelled), gdb-raw-step. Both CPUs enumerated in every scenario.",
+      "evidence": "build-runtime-state/hostbus-enabled-scenarios-2026-10-08/<scenario>/ (command.json, qmp.jsonl, peer.jsonl, wire-*.bin, wire-envelopes.jsonl, result.json)",
+      "still_open": "lifecycle malformed-response broadening (contract finding 3), --require-core-heartbeats two-core execution evidence (finding 6; core_execution.established=false in all runs above), disabled-extension boot/control baseline re-run (finding 7). Prototype remains unqualified for integration."
+    }
   }
 }

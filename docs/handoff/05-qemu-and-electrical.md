@@ -32,11 +32,17 @@ qemu-extension-40edccac4156/build-hostbus/qemu-system-xtensa:
   build-runtime-state/hostbus-enabled-scenarios-2026-10-08/delay-fast/
   (qmp.jsonl, peer.jsonl, wire-*.bin, wire-envelopes.jsonl).
 
-Still open per the contract findings: the remaining scenarios (delay-slow,
-watchdog, disconnect, reset, released-reset, gdb-raw-step), lifecycle
-malformed-response tests, --require-core-heartbeats two-CPU execution evidence
-(currently established=false), and the disabled-extension boot/control baseline
-re-run. The prototype remains unqualified for integration.
+Full scenario suite (2026-10-08, same binary and manifest-identical peer):
+**7/7 PASS** — delay-fast, delay-slow (1 ms modeled latency in both), watchdog
+(host expiry blocks guest execution as designed), disconnect (explicit
+cancel/reset required), reset (stale callback rejected, new epoch 1),
+released-reset (old completion cancelled), gdb-raw-step. Evidence:
+build-runtime-state/hostbus-enabled-scenarios-2026-10-08/<scenario>/.
+
+Still open per the contract findings: lifecycle malformed-response broadening,
+--require-core-heartbeats two-CPU execution evidence (core_execution stays
+established=false in all seven runs), and the disabled-extension boot/control
+baseline re-run. The prototype remains unqualified for integration.
 
 ## Source mapping and patch order
 

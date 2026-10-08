@@ -67,6 +67,8 @@ An incoming agent's first report should name its exact file scope, current
 reproduced result, next testable change and any dependency. It must not claim full
 peripheral/radio/SIMD support from these foundation checks.
 
-Fresh handoff previews: [Light](assets/light.png), [Dark](assets/dark.png).
-The right-hand table's first header clips in both themes; this is a known UX
-polish task, not hidden by the passing regression.
+Fresh handoff previews (2026-10-08 rebuild): [Light](assets/light.png),
+[Dark](assets/dark.png). The right-hand table header clipping was stale-binary
+skew (the pre-fix binary had been captured); the frozen source was already
+correct. Rebuilt shared lane verified 10/10 CTest, 0 skipped; fresh captures
+show both headers fully rendered in both themes.
