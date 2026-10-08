@@ -1,6 +1,6 @@
 {
   "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
-  "status": "enabled-launch-pass-scheduler-evidence-pending",
+  "status": "executed-qualification-pass-integration-review-pending",
   "license": "GPL-2.0-or-later",
   "copies": [
     {
@@ -44,6 +44,13 @@
       "result": "7/7 scenario suite PASS on the rebuilt binary with the manifest-identical peer (sha256 938e5368...): delay-fast, delay-slow (1 ms modeled latency honored in both), watchdog (host watchdog expiry blocks guest execution exactly as designed), disconnect (explicit cancel/reset required), reset (stale callback rejected, new epoch 1), released-reset (old completion cancelled), gdb-raw-step. Both CPUs enumerated in every scenario.",
       "evidence": "build-runtime-state/hostbus-enabled-scenarios-2026-10-08/<scenario>/ (command.json, qmp.jsonl, peer.jsonl, wire-*.bin, wire-envelopes.jsonl, result.json)",
       "still_open": "lifecycle malformed-response broadening (contract finding 3), --require-core-heartbeats two-core execution evidence (finding 6; core_execution.established=false in all runs above), disabled-extension boot/control baseline re-run (finding 7). Prototype remains unqualified for integration."
-    }
+    },
+    "findings_closed_2026_10_08": {
+      "restore_denial": "PASS: hmp-loadvm, qmp snapshot-load and migrate-incoming each denied twice with probe-specific preflight while a barrier is stopped; startup loadvm/-incoming refuse at launch (exit 1). Evidence: hostbus-enabled-scenarios-2026-10-08/{barrier,startup-loadvm,startup-incoming} (restore-denial-test.py, --boot-timeout 120)",
+      "raw_faults": "PASS: 31/31 malformed-input checks (epoch/topology rollback, UUID reuse, generation floors, JSON strictness, final-LF framing, UTF16 512/513 boundary, stale responses, post-armed-reset completion). Evidence: hostbus-enabled-scenarios-2026-10-08/raw-faults/{summary.json,artifacts/}",
+      "two_core_execution": "PASS: delay-fast --require-core-heartbeats with rebuilt dualcore firmware (flash sha256 e67ad358d873c814a34ba26e478c56aedf20195e7185daaa2842ca45d4988d44): core_execution.established=true; asserted CORE_EXEC markers from both core 0 (iter 1,2,3,50) and core 1 (iter 1,2,3). Evidence: hostbus-enabled-scenarios-2026-10-08/core-heartbeats/",
+      "note": "Prior fixture flash (sha256 bbb445d0...) predates the CORE_EXEC firmware and cannot pass the heartbeat gate; core-heartbeats/flash.bin is the rebuilt fixture from tracked test-helpers/dualcore-firmware."
+    },
+    "still_open": "Integration review/promotion decision and the disabled-extension boot/control baseline re-run record. All contract findings 1-6 now have executed evidence on this binary."
   }
 }
