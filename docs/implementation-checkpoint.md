@@ -5,6 +5,48 @@ parallel implementation in this session. Preserve the reviewed full scope; do no
 reduce completion to the foundation slices below. Historical heartbeat metadata
 is retained in the frozen packet; it is not an inventory of this session's jobs.
 
+## 2026-10-08 — takeover integration: UART finalized, hostbus enabled launch resolved
+
+Takeover coordinator session (branch `codex/simulator-foundation`, commits
+`c0c2281` docs/lock, `da8be21` GUI/tools/tests, `3c948e8` qemu-extensions lanes,
+plus follow-ups, all pushed to origin):
+
+* **UART lane post-review state:** the gpio/electrical link bind now takes
+  explicit references (strong-link teardown double-unref removed). The
+  console-TX retry prototype (fifo+G_IO_OUT watch) was **reverted after proving
+  it corrupts the heap at teardown** (`tcache_thread_shutdown(): unaligned
+  tcache chunk` during physmem flatview cleanup); the single-shot
+  `qemu_chr_fe_write` stays and the busy-backend drop gap is documented, not
+  silently fixed. Final verification on checkout
+  `qemu-uart-40edccac4156-9c13378e7afd27ff` (binary sha256 `40932b7e…ffd0`):
+  **60/60** Xtensa UART qtests, **17/17** UHCI unit vectors, all five ordinary
+  fixture modes and the ROM-download run execute without crashes. Residual open
+  rows, both measured and documented in `uart/source-map.json`:
+  `uart0_physical_loopback513` (sent=513, received=0, ESP_OK; next probe is the
+  model's sample() matrix-vs-direct-pad branch for signal 12) and the
+  ROM-download SLIP interleave (runner-side banner byte in first frame).
+* **Hostbus blocker resolved:** `qom-options.patch` applied through the guarded
+  apply flow, extension rebuilt, and the previously failing enabled launch now
+  passes: QAPI accepts `-object esp32s3-hostbus-probe` (`/objects` lists probe,
+  `watchdog-ms`="5000", peer connects, prelaunch under `-S`, clean rc=0), and
+  the **delay-fast scenario passes with the manifest-identical peer** (sha256
+  `938e5368…`): 1 ms modeled latency honored, both CPUs enumerated, 4 captured
+  frames. Evidence: `build-runtime-state/hostbus-qom-enabled-2026-10-08/` and
+  `hostbus-enabled-scenarios-2026-10-08/delay-fast/`. Remaining contract
+  findings (other scenarios, malformed lifecycle, two-core execution evidence,
+  disabled baseline re-run) stay open; the prototype remains unqualified.
+* **Memory lane:** `qualification.json` repointed to candidate `aa8b5f8e…`
+  (evidence `memory-core04-aa8b5f8e-2026-10-08/`) after the IOMMU UNMAP event
+  address fix; the earlier `6dfa7350` section below is superseded by it.
+* **Radio research:** `docs/research/sar2-pwdet-calibration-register.md`
+  identifies the Wi-Fi calibration poll target `0x6000e050[26:24]` as the
+  PWDET/SAR2 measurement sequencer inside the undocumented I2C_MST (REGI2C)
+  analog block, with the documented C6-family engine grammar and the SENS
+  clock/reset/ownership prerequisite chain. H-RADIO modeling must implement the
+  FSM (never a hardwired done=7); see the note for citations and [UNVERIFIED]
+  items.
+
+
 ## 2026-10-08 — external PSRAM (CORE-04) requalified
 
 Candidate `runtime 6dfa7350906414c4`, executable sha256

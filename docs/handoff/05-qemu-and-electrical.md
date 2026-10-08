@@ -3,7 +3,7 @@
 Read [the native prototype contract](../contracts/qemu-hostbus-prototype.md) and
 [the peripheral/electrical workstream](../plans/peripherals-electrical.md).
 
-## Actual current blocker
+## Resolved blocker (2026-10-08)
 
 The separate extension builds. Ordinary IDF 6.1 boot with the prototype disabled
 passed. The first enabled delay-fast run exited before QMP:
@@ -12,14 +12,31 @@ passed. The first enabled delay-fast run exited before QMP:
 Parameter 'qom-type' does not accept value 'esp32s3-hostbus-probe'
 ~~~
 
-Artifacts: build-runtime-state/hostbus-first-run/delay-fast. This is a real failure,
-not a passing virtual-time test. QEMU 9.2's -object uses typed QAPI ObjectOptions;
-QOM type registration alone is insufficient.
+Original artifacts: build-runtime-state/hostbus-first-run/delay-fast. QEMU 9.2's
+-object uses typed QAPI ObjectOptions; QOM type registration alone was
+insufficient.
 
-qom-options.patch now supplies the CONFIG_TCG ObjectType entry, typed chardev
-string/optional watchdog-ms string and ObjectOptions arm. Its pristine
-applicability check passed. Parent appended it to source-map.json and the guarded
-apply whitelist. It has **not been applied/rebuilt/executed** at this snapshot.
+qom-options.patch supplies the CONFIG_TCG ObjectType entry, typed chardev
+string/optional watchdog-ms string and ObjectOptions arm. **Resolved
+2026-10-08:** the patch was applied through the guarded
+tools/apply-qemu-hostbus-prototype.py flow, the extension rebuilt, and both
+enabled gates now pass on binary
+qemu-extension-40edccac4156/build-hostbus/qemu-system-xtensa:
+
+* QOM enabled launch: /objects lists probe, watchdog-ms reads back "5000",
+  hostbus socket peer connects, VM holds prelaunch under -S, clean quit rc=0.
+  Evidence: build-runtime-state/hostbus-qom-enabled-2026-10-08/.
+* delay-fast scenario with the manifest-identical peer (sha256 938e5368...):
+  passed=true, modeled latency 1 ms honored (stop 2533935167 ns, deliver
+  2534935167 ns), both CPUs enumerated, 4 captured frames. Evidence:
+  build-runtime-state/hostbus-enabled-scenarios-2026-10-08/delay-fast/
+  (qmp.jsonl, peer.jsonl, wire-*.bin, wire-envelopes.jsonl).
+
+Still open per the contract findings: the remaining scenarios (delay-slow,
+watchdog, disconnect, reset, released-reset, gdb-raw-step), lifecycle
+malformed-response tests, --require-core-heartbeats two-CPU execution evidence
+(currently established=false), and the disabled-extension boot/control baseline
+re-run. The prototype remains unqualified for integration.
 
 ## Source mapping and patch order
 
