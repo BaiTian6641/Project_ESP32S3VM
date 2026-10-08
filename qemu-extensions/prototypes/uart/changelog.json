@@ -129,5 +129,15 @@
    "Runner completion detection fixed twice over: the token regex matched partially flushed DONE lines (killing QEMU mid-print so zero-failure validation could never match), and uhci mode watched UART_NATIVE_DONE instead of UHCI_NATIVE_DONE (guaranteed watchdog).",
    "Console-mirror gate attempted and reverted: the loopback payload is physically present on pad43 (IO_MUX keeps U0TXD), so gating was either ineffective (pad43 mcu_sel stays 0) or harmful (stale matrix out_sel suppressed post-restore output). Evidence-text pollution recorded as a fixture/runner design residual in source-map blocked_by."
   ]
+ },
+ {
+  "date": "2026-10-08",
+  "packages": [
+   "UART-03"
+  ],
+  "qualification": "ROM-download relay: banner bytes no longer reach esptool (SLIP framing clean through SYNC); the remaining failure is the ROM UART0 RX path (rxfifo_cnt=0 after a well-formed SYNC; registers sane: 0x78=0x03700000 enables rx clock, CONF0=0x0c00001c) \u2014 model-side console-injection delivery is the next instrumented target.",
+  "changes": [
+   "run-rom-download.py Relay: ROM banner bytes are captured as evidence but not forwarded to esptool until the banner's CRLF-terminated marker completes; bytes after the marker end in the completing chunk forward. Fixes the SYNC head-byte corruption (0x45 -> 0x64 -> 0x0d -> clean)."
+  ]
  }
 ]

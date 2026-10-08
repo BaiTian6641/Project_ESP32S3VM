@@ -118,6 +118,7 @@ class Relay:
         self.stop = threading.Event()
         self.lock = threading.Lock()
         self.received = bytearray()
+        self.banner_done = False
         self.events = []
         self.error = None
         self.thread = threading.Thread(target=self.forward, name="qemu-only-uart0-capture", daemon=True)
@@ -150,6 +151,22 @@ class Relay:
                                                     offset=offset, size=len(data), monotonic_ns=time.monotonic_ns()))
                             if source is self.qemu_socket:
                                 self.received.extend(data)
+                        # ROM banner bytes are captured as evidence but never
+                        # forwarded: esptool's one-shot input flush races the
+                        # relay's delivery latency, so stale banner bytes would
+                        # otherwise surface as the first byte of the SYNC reply.
+                        if source is self.qemu_socket and not self.banner_done:
+                            marker = b"waiting for download\r\n"
+                            idx = self.received.find(marker)
+                            if idx < 0:
+                                continue
+                            # Forward only bytes past the marker's end; the
+                            # completing chunk may carry the marker's tail.
+                            self.banner_done = True
+                            chunk_start = len(self.received) - len(data)
+                            data = data[max(0, idx + len(marker) - chunk_start):]
+                            if not data:
+                                continue
                         destination.sendall(data)
         except Exception as exc:
             if not self.stop.is_set():
