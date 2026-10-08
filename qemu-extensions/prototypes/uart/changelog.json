@@ -102,5 +102,18 @@
    "Review-driven fixes: the gpio/electrical link bind now takes explicit references (the strong link properties' teardown release otherwise unrefs objects nobody ref'd); the shared Xtensa qtest suite no longer aborts when UART_QTEST_PROJECT_DIR is unset (the suite registers one skip entry); the runner's drvfs retry is limited to the transient errno class; the writable flash and session artifacts live on native disk and are published after QEMU exits; the memory lane's IOMMU UNMAP event reports the alias-rebased physical address.",
    "Reverted the console-TX retry prototype (fifo+watch): it corrupted the heap at teardown (physmem flatview cleanup), so the original single-shot write stays and the busy-backend drop gap is recorded, not silently fixed."
   ]
+ },
+ {
+  "date": "2026-10-08",
+  "packages": [
+   "UART-01",
+   "UART-02"
+  ],
+  "qualification": "Loopback row root-caused and a candidate patch rejected on evidence; baseline unchanged (60/60 + 17/17 vectors, absent mode fails only uart0_physical_loopback513). Arduino fixture build unblocked.",
+  "changes": [
+   "Root-cause evidence for uart0_physical_loopback513: RX sampler deschedules under the console-port MMIO storm; the net_changed re-poke fast-forwards frames (12 samples in one bit period), stop-bit checks fail, err_wr_mask discards. Not a routing/matrix/electrical defect (live dumps in build-runtime-state/uart-loopback-2026-10-08/).",
+   "Rejected the clamp-based RX patch after verification: absent row unchanged, connected-mode rows regressed; lane copy reverted byte-exact (git apply -R) and vectors re-verified.",
+   "tests/firmware/uart_native/arduino: added esp_netif to REQUIRES (IDF diagnostic); the Arduino3.3.12/IDF5.5.5 fixture now builds and freezes. New open gate at run time: 'Pinned Arduino3.3.12/IDF5.5.5 boot identity missing' \u2014 the sketch does not emit the runner's pinned boot identity."
+  ]
  }
 ]

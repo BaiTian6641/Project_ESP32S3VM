@@ -68,8 +68,8 @@
     "uhci_system_vectors": 17,
     "executed": true,
     "results": {
-      "uart_qtests": "60/60 PASS on clean checkout qemu-uart-40edccac4156-9c13378e7afd27ff (binary sha256 40932b7ed4270b046ee6d2910f0a43b03d7c5f486a360309faf636b61676ffd0); log build-runtime-state/uart-native-2026-10-07/qtests/esp32s3-uart-test-final2.log",
-      "uhci_system_vectors": "17/17 PASS (test-esp32s3-uhci --tap -k) on the same checkout",
+      "uart_qtests": "60/60 PASS on clean checkout qemu-uart-40edccac4156-9c13378e7afd27ff (binary sha256 40932b7ed4270b046ee6d2910f0a43b03d7c5f486a360309faf636b61676ffd0); log build-runtime-state/uart-native-2026-10-07/qtests/esp32s3-uart-test-final2.log; re-verified 60/60 after the rejected-patch revert on binary sha256 46817083ab16d03a (log qtests/esp32s3-uart-test-revert.log)",
+      "uhci_system_vectors": "17/17 PASS (test-esp32s3-uhci --tap -k) on the same checkout; re-verified 17/17 after revert (log qtests/test-esp32s3-uhci-revert.log)",
       "build": "ninja rc0 for qemu-system-xtensa, tests/qtest/esp32s3-uart-test, test-esp32s3-uhci; clean tree, no diagnostics"
     }
   },
@@ -186,7 +186,7 @@
   "firmware": "tests/firmware/uart_native; firmware/build-idf-fixture.sh freezes original images before run-native-fixture.py creates writable evidence disks",
   "evidence": "build-runtime-state/uart-native-2026-10-07/",
   "blocked_by": [
-    "Ordinary fixture loopback row (measured): uart0_physical_loopback513 fails in all five modes with sent=513, received=0, done=ESP_OK; the driver accepts every byte and the TX path runs (the chardev observes the frames) but nothing reaches the driver's RX. The signal-ID and sig_in_sel conventions match IDF (gpio_ll.h:520, gpio_sig_map.h:30-43); the next probe is the model's sample() branch (matrix vs direct pad 44) for signal 12 during the driver's pin setup. uart0_physical_loopback513 remains the unqualified row of UART-01/02 ordinary-firmware qualification.",
+    "Ordinary fixture loopback row (root-caused 2026-10-08): uart0_physical_loopback513 fails in all five IDF modes with sent=513, received=0, ESP_OK. Measured cause: the RX wire-sampling state machine deschedules mid-frame under the console port's MMIO write storm; the net_changed re-poke then fast-forwards all 12 frame samples inside one bit period, every frame fails the stop-bit check, and CONF0.err_wr_mask (driver default) correctly discards them. Routing, matrix signal IDs, IO_MUX and the electrical net are all proven intact (live register/net dumps in build-runtime-state/uart-loopback-2026-10-08/). A clamp-based patch was tried and REJECTED: it did not fix the row and regressed connected-mode rows (at_*, auto_rts_*, autobaud_actual_edges, break_irq, cts_resume_exact), matching its own risk note. Next step: make synchronize()/retime() no-ops on value-stable register writes (the identified deeper root), as a designed change with the full fixture matrix as the gate.",
     "Arduino wrapper build is blocked by the pinned vendor component's missing esp_netif REQUIRES (see ordinary_fixture_results.arduino_build).",
     "ROM download SYNC parsing is blocked by banner-byte interleaving into the first SLIP frame.",
     "Hardware timing comparison still requires independent instruments (EHW-02); native vector timestamps are virtual-time oracles, not silicon evidence."
