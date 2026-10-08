@@ -1,0 +1,40 @@
+target/xtensa: fix ESP32-S3 20-bit signed MAC negative rail
+
+ee.vmulas.s8.qacc clamped negative 20-bit accumulator lanes at
+-0x7ffff, so a saturated negative lane was stored packed as 0x80001.
+Physical arbitration seq 63 (op5-case2) shows the chip rails at
+-0x80000 (packed 0x80000): golden bytes 2/7/12/... are 0x07 where QEMU
+produced 0x17, bytes 3-4 (00 80) identical. This is the same
+off-by-one class as the vadds/vsubs negative rails fixed earlier in
+this series. The positive rail (0x7ffff) already matches hardware and
+is unchanged.
+
+Golden: build-hardware-host/run-2026-10-07-rebaselined/simd/capture/
+records.json vs tests/firmware/simd_reference/build/runs/
+grace-official-01/capture/records.json, identical flash image sha256
+c4263180bd9f6531408707c2ba2d628b98359d82fb012916b2d71a3e20a3caeb.
+---
+ target/xtensa/translate_tie_esp32s3.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/target/xtensa/translate_tie_esp32s3.c b/target/xtensa/translate_tie_esp32s3.c
+index 1111111..2222222 100644
+--- a/target/xtensa/translate_tie_esp32s3.c
++++ b/target/xtensa/translate_tie_esp32s3.c
+@@ -1956,11 +1956,11 @@ void HELPER(vmulas_qacc_s3)(CPUXtensaState *env, uint32_t qx, uint32_t qy, uint3
+         for (int i = 0; i < 8; i++)
+         {
+             q_req_l.s20[i] += (int32_t)tie->Q[qx].s8[i]*(int32_t)tie->Q[qy].s8[i];
+             if (q_req_l.s20[i] > 0x7ffff) q_req_l.s20[i] = 0x7ffff;
+-            if (q_req_l.s20[i] < -0x7ffff) q_req_l.s20[i] = -0x7ffff;
++            if (q_req_l.s20[i] < -0x80000) q_req_l.s20[i] = -0x80000;
+             q_req_h.s20[i] += (int32_t)tie->Q[qx].s8[i + 8]*(int32_t)tie->Q[qy].s8[i + 8];
+             if (q_req_h.s20[i] > 0x7ffff) q_req_h.s20[i] = 0x7ffff;
+-            if (q_req_h.s20[i] < -0x7ffff) q_req_h.s20[i] = -0x7ffff;
++            if (q_req_h.s20[i] < -0x80000) q_req_h.s20[i] = -0x80000;
+         }
+         save_qacc20(&q_req_l, tie->ACCQ[0].u8);
+         save_qacc20(&q_req_h, tie->ACCQ[1].u8);
+-- 
+2.43.0
+

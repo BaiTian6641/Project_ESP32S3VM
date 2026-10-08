@@ -1,0 +1,341 @@
+From e070b2ee5426713be4f5afc5f3f0bb92a7ebc695 Mon Sep 17 00:00:00 2001
+From: ESP32S3VM coreclk <coreclk@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 11:52:21 +0800
+Subject: [PATCH 5/7] hw/xtensa/esp32s3: propagate the clock tree and reset
+ domains
+
+esp32s3_clk_update() now recomputes and propagates the whole clock tree
+from the SYSTEM registers plus the RTC_CNTL selections whenever RTC_CNTL
+pulses clk_update; the XTAL propagation into RTC_CNTL refreshes the
+RTC_SLOW/RTC_FAST rates synchronously, so the update path never recurses
+through reset callbacks.
+
+Wiring (before the consumers are realized): both CPU cores take the
+cpu-clk output on their clk-in inputs, TIMG0/1 take apb-clk/xtal-clk plus
+the PERIP_CLK_EN0 gate lines, SYSTIMER takes xtal-clk, RTC_CNTL takes
+xtal-clk, and every digital peripheral receives the soc-reset link that
+gates its hold phase by reset domain.
+
+esp32s3_soc_reset() PERIPH domain now cold-resets the SYSTEM device,
+interrupt matrix, all UARTs, TIMG0/1, SYSTIMER, GDMA, SPI1, SDMMC, TWAI,
+AES, SHA, RSA, HMAC, DS, XTS-AES, RNG, GPIO and PMS; the RTC domain
+cold-resets RTC_CNTL. eFuse (OTP), the USB-Serial/JTAG console and the
+RGB framebuffer are deliberately not reset by the digital domain. The
+pending reset domain is latched (a request can dispatch through more than
+one qemu_system_reset pass) and cleared by explicit PERIP_RST strobes.
+
+esp32s3_reset_covers_periph/_rtc() implement the domain queries used by
+the peripheral hold phases (include/hw/xtensa/esp32s3_reset_domain.h).
+---
+ hw/xtensa/esp32s3.c | 217 +++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 213 insertions(+), 4 deletions(-)
+
+diff --git a/hw/xtensa/esp32s3.c b/hw/xtensa/esp32s3.c
+index 4a24a04..b81b620 100644
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -52,6 +52,8 @@
+ 
+ #include "hw/nvram/esp32s3_efuse.h"
+ #include "hw/xtensa/esp32s3_clk.h"
++#include "hw/xtensa/esp32s3_reset_domain.h"
++#include "hw/qdev-clock.h"
+ #include "hw/dma/esp32s3_gdma.h"
+ #include "hw/misc/esp32s3_sha.h"
+ #include "hw/misc/esp32s3_aes.h"
+@@ -207,10 +209,39 @@ static void esp32s3_soc_reset(DeviceState *dev)
+         s->requested_reset = ESP32S3_SOC_RESET_ALL;
+     }
+     if (s->requested_reset & ESP32S3_SOC_RESET_PERIPH) {
++        /* Digital PERIPH domain (TRM v1.8 ch.7 §7.1): SYSTEM registers,
++         * interrupt matrix and every realized digital peripheral with a
++         * reset implementation. The devices with reset phases gate
++         * themselves on this domain through esp32s3_reset_covers_periph(),
++         * so a blanket device reset only clears state when a PERIPH/chip
++         * reset is actually pending. */
++        device_cold_reset(DEVICE(&s->clock));
+         device_cold_reset(DEVICE(&s->intmatrix));
+         for (int i = 0; i < ESP32S3_UART_COUNT; ++i) {
+             device_cold_reset(DEVICE(&s->uart[i]));
+         }
++        device_cold_reset(DEVICE(&s->timg[0]));
++        device_cold_reset(DEVICE(&s->timg[1]));
++        device_cold_reset(DEVICE(&s->systimer));
++        device_cold_reset(DEVICE(&s->gdma));
++        device_cold_reset(DEVICE(&s->spi1));
++        device_cold_reset(DEVICE(&s->sdmmc));
++        device_cold_reset(DEVICE(&s->twai));
++        device_cold_reset(DEVICE(&s->aes));
++        device_cold_reset(DEVICE(&s->sha));
++        device_cold_reset(DEVICE(&s->rsa));
++        device_cold_reset(DEVICE(&s->hmac));
++        device_cold_reset(DEVICE(&s->ds));
++        device_cold_reset(DEVICE(&s->xts_aes));
++        device_cold_reset(DEVICE(&s->rng));
++        device_cold_reset(DEVICE(&s->gpio));
++        device_cold_reset(DEVICE(&s->pms));
++        /* Note: eFuse (OTP), USB-Serial/JTAG console and the RGB framebuffer
++         * are intentionally not reset by the digital domain. */
++    }
++    if (s->requested_reset & ESP32S3_SOC_RESET_RTC) {
++        /* RTC domain: RTC_CNTL registers and the RTC_TIME base */
++        device_cold_reset(DEVICE(&s->rtc_cntl));
+     }
+     if (s->requested_reset & ESP32S3_SOC_RESET_PROCPU) {
+         xtensa_select_static_vectors(&s->cpu[0].env, s->rtc_cntl.stat_vector_sel[0]);
+@@ -222,18 +253,95 @@ static void esp32s3_soc_reset(DeviceState *dev)
+         remove_cpu_watchpoints(&s->cpu[1]);
+         cpu_reset(CPU(&s->cpu[1]));
+     }
+-    s->requested_reset = 0;
++    /* The pending domain stays latched until the next reset request overwrites
++     * it: a reset request can be dispatched through more than one
++     * qemu_system_reset() pass, and the devices must keep seeing the domain
++     * that was actually requested. esp32s3_periph_rst_req() clears the latch
++     * for explicit peripheral reset strobes. */
++}
++
++bool esp32s3_reset_covers_periph(const DeviceState *soc)
++{
++    const Esp32s3SocState *s = ESP32S3_SOC((void *)(uintptr_t)soc);
++    /* requested_reset == 0: power-on/chip reset or an explicit device reset */
++    return s->requested_reset == 0 ||
++           (s->requested_reset & ESP32S3_SOC_RESET_PERIPH) != 0;
++}
++
++bool esp32s3_reset_covers_rtc(const DeviceState *soc)
++{
++    const Esp32s3SocState *s = ESP32S3_SOC((void *)(uintptr_t)soc);
++    return s->requested_reset == 0 ||
++           (s->requested_reset & ESP32S3_SOC_RESET_RTC) != 0;
+ }
+ 
+ static void esp32s3_cpu_stall(void* opaque, int n, int level)
+ {
+ }
+ 
++/* Recompute and propagate the whole ESP32-S3 clock tree from the SYSTEM
++ * register state (source of truth, esp32s3_clk) plus the RTC_CNTL clock
++ * selections. Called from the RTC_CNTL clk_update pulse, after SYSTEM
++ * register writes (through the outputs' propagation) and once at wiring
++ * time.
++ *
++ * No reset callback participates in this path: the XTAL clock propagation
++ * into RTC_CNTL refreshes rtc_slowclk_freq/rtc_fastclk_freq synchronously
++ * before they are read below, so the RTC outputs are never stale and the
++ * update cannot recurse. */
++static void esp32s3_soc_update_clocks(Esp32s3SocState *s)
++{
++    esp32s3_clk_recompute_system(&s->clock);
++    esp32s3_clk_set_rtc_clocks(&s->clock,
++                               s->rtc_cntl.rtc_slowclk_freq,
++                               s->rtc_cntl.rtc_fastclk_freq);
++}
++
+ static void esp32s3_clk_update(void* opaque, int n, int level)
+ {
++    Esp32s3SocState *s = ESP32S3_SOC(opaque);
+     if (!level) {
+         return;
+     }
++    esp32s3_soc_update_clocks(s);
++}
++
++/* SYSTEM_PERIP_RST_EN0/1 strobe handler: cold-reset the modeled device
++ * matching the reset bit that software just raised. An explicit peripheral
++ * reset strobe covers the PERIPH domain regardless of any pending system
++ * reset request (requested_reset == 0 at that point). */
++static void esp32s3_periph_rst_req(void *opaque, int n, int level)
++{
++    Esp32s3SocState *s = ESP32S3_SOC(opaque);
++    DeviceState *dev = NULL;
++
++    if (!level) {
++        return;     /* act on the rising edge only */
++    }
++    /* An explicit peripheral reset strobe covers the PERIPH domain regardless
++     * of any latched system reset domain */
++    s->requested_reset = 0;
++    switch (n) {
++    case ESP32S3_RST_TIMG0:    dev = DEVICE(&s->timg[0]); break;
++    case ESP32S3_RST_TIMG1:    dev = DEVICE(&s->timg[1]); break;
++    case ESP32S3_RST_SYSTIMER: dev = DEVICE(&s->systimer); break;
++    case ESP32S3_RST_GDMA:     dev = DEVICE(&s->gdma); break;
++    case ESP32S3_RST_UART0:    dev = DEVICE(&s->uart[0]); break;
++    case ESP32S3_RST_UART1:    dev = DEVICE(&s->uart[1]); break;
++    case ESP32S3_RST_UART2:    dev = DEVICE(&s->uart[2]); break;
++    case ESP32S3_RST_SPI1:     dev = DEVICE(&s->spi1); break;
++    case ESP32S3_RST_TWAI:     dev = DEVICE(&s->twai); break;
++    case ESP32S3_RST_AES:      dev = DEVICE(&s->aes); break;
++    case ESP32S3_RST_SHA:      dev = DEVICE(&s->sha); break;
++    case ESP32S3_RST_RSA:      dev = DEVICE(&s->rsa); break;
++    case ESP32S3_RST_HMAC:     dev = DEVICE(&s->hmac); break;
++    case ESP32S3_RST_DS:       dev = DEVICE(&s->ds); break;
++    default:
++        break;
++    }
++    if (dev) {
++        device_cold_reset(dev);
++    }
+ }
+ 
+ static void esp32s3_soc_add_periph_device(MemoryRegion *dest, void* dev, hwaddr dport_base_addr)
+@@ -362,6 +470,34 @@ static void esp32s3_soc_realize(DeviceState *dev, Error **errp)
+     MemoryRegion *rtcslow = g_new(MemoryRegion, 1);
+     MemoryRegion *rtcfast = g_new(MemoryRegion, 1);
+ 
++    /* -----------------------------------------------------------------
++     * Clock tree and reset-domain wiring, first stage (coreclk lane).
++     * The SYSTEM clock device was created before this realize; connect its
++     * CPU_CLK output to both cores and link the SoC into the devices that
++     * realize below, all before their qdev_realize() (clock inputs assert
++     * on realized devices).
++     * ----------------------------------------------------------------- */
++    {
++        DeviceState *clk_dev = DEVICE(&s->clock);
++        DeviceState *peripherals[] = {
++            DEVICE(&s->intmatrix), DEVICE(&s->rtc_cntl),
++            DEVICE(&s->uart[0]), DEVICE(&s->uart[1]), DEVICE(&s->uart[2]),
++            DEVICE(&s->twai),
++        };
++
++        for (size_t i = 0; i < ARRAY_SIZE(peripherals); ++i) {
++            object_property_set_link(OBJECT(peripherals[i]), "soc-reset",
++                                     OBJECT(s), &error_abort);
++        }
++        for (int i = 0; i < ms->smp.cpus; ++i) {
++            qdev_connect_clock_in(DEVICE(&s->cpu[i]), "clk-in",
++                                  qdev_get_clock_out(clk_dev, "cpu-clk"));
++        }
++        /* RTC_CNTL derives the XTAL/2 RTC_FAST_CLK rate from the XTAL clock */
++        qdev_connect_clock_in(DEVICE(&s->rtc_cntl), "xtal-clk",
++                              qdev_get_clock_out(clk_dev, "xtal-clk"));
++    }
++
+     for (int i = 0; i < ms->smp.cpus; ++i) {
+         MemoryRegion *drom = g_new(MemoryRegion, 1);
+         MemoryRegion *irom = g_new(MemoryRegion, 1);
+@@ -547,6 +683,8 @@ static void esp32s3_soc_init(Object *obj)
+     qdev_init_gpio_in_named(DEVICE(s), esp32s3_cpu_reset,  ESP32S3_RTC_CPU_RESET_GPIO, ESP32S3_CPU_COUNT);
+     qdev_init_gpio_in_named(DEVICE(s), esp32s3_cpu_stall,  ESP32S3_RTC_CPU_STALL_GPIO, ESP32S3_CPU_COUNT);
+     qdev_init_gpio_in_named(DEVICE(s), esp32s3_clk_update, ESP32S3_RTC_CLK_UPDATE_GPIO, 1);
++    qdev_init_gpio_in_named(DEVICE(s), esp32s3_periph_rst_req, ESP32S3_CLK_RST_GPIO,
++                            ESP32S3_RST_COUNT);
+ 
+     object_initialize_child(obj, "twai", &s->twai, TYPE_ESP32S3_TWAI);
+ 
+@@ -633,6 +771,10 @@ static void esp32s3_machine_init(MachineState *machine)
+     // qdev_prop_set_chr(DEVICE(ss), "serial1", serial_hd(1));
+     // qdev_prop_set_chr(DEVICE(ss), "serial2", serial_hd(2));
+ 
++    /* Create the SYSTEM clock device before the SoC realize so the CPU core
++     * clock inputs can be connected prior to their realization */
++    object_initialize_child(OBJECT(ss), "clock", &ss->clock, TYPE_ESP32S3_CLOCK);
++
+     qdev_realize(DEVICE(ss), NULL, &error_fatal);
+ 
+     object_initialize_child(OBJECT(ss), "extmem", &ss->cache, TYPE_ESP32S3_CACHE);
+@@ -642,8 +784,6 @@ static void esp32s3_machine_init(MachineState *machine)
+     object_initialize_child(OBJECT(ss), "gpio", &ss->gpio, TYPE_ESP32S3_GPIO);
+     object_initialize_child(OBJECT(ss), "rng", &ss->rng, TYPE_ESP32S3_RNG);
+ 
+-    object_initialize_child(OBJECT(ss), "clock", &ss->clock, TYPE_ESP32S3_CLOCK);
+-
+     object_initialize_child(OBJECT(ss), "gdma", &ss->gdma, TYPE_ESP32S3_GDMA);
+     object_initialize_child(OBJECT(ss), "sha", &ss->sha, TYPE_ESP32S3_SHA);
+     object_initialize_child(OBJECT(ss), "aes", &ss->aes, TYPE_ESP32S3_AES);
+@@ -658,6 +798,37 @@ static void esp32s3_machine_init(MachineState *machine)
+     object_initialize_child(OBJECT(ss), "systimer", &ss->systimer, TYPE_ESP32S3_SYSTIMER);
+     object_initialize_child(OBJECT(ss), "rgb", &ss->rgb, TYPE_ESP_RGB);
+ 
++    /* ---------------------------------------------------------------------
++     * Clock tree and reset-domain wiring, second stage (coreclk lane).
++     *
++     * The CPU-core clock inputs, the RTC_CNTL XTAL input and the links of
++     * the devices realized inside esp32s3_soc_realize() are wired in the
++     * first stage (top of esp32s3_soc_realize) because qdev_connect_clock_in
++     * asserts on realized devices. This stage covers the devices realized
++     * here in esp32s3_machine_init() and finishes the propagation.
++     * ------------------------------------------------------------------- */
++    {
++        DeviceState *clk_dev = DEVICE(&ss->clock);
++        DeviceState *peripherals[] = {
++            DEVICE(&ss->clock), DEVICE(&ss->gdma),
++            DEVICE(&ss->aes), DEVICE(&ss->sha),
++            DEVICE(&ss->rsa), DEVICE(&ss->hmac), DEVICE(&ss->ds),
++        };
++
++        for (size_t i = 0; i < ARRAY_SIZE(peripherals); ++i) {
++            object_property_set_link(OBJECT(peripherals[i]), "soc-reset",
++                                     OBJECT(ss), &error_abort);
++        }
++        for (int i = 0; i < ESP32S3_RST_COUNT; ++i) {
++            qdev_connect_gpio_out_named(clk_dev, ESP32S3_CLK_RST_GPIO, i,
++                                        qdev_get_gpio_in_named(DEVICE(ss),
++                                                               ESP32S3_CLK_RST_GPIO, i));
++        }
++
++        /* Propagate the power-on clock tree through all the connections */
++        esp32s3_soc_update_clocks(ss);
++    }
++
+     DeviceState* intmatrix_dev = DEVICE(&ss->intmatrix);
+     {
+         /* Store the current Machine CPU in the interrupt matrix */
+@@ -727,6 +898,45 @@ static void esp32s3_machine_init(MachineState *machine)
+         }
+     }
+     /* Timer Groups realization */
++    /* TIMG clock wiring (coreclk lane): time-base source is APB or XTAL per
++     * timer (TIMG_TxCONFIG.USE_XTAL) and the SYSTEM PERIP_CLK_EN0 aggregated
++     * gates drive the timer/MWDT gate inputs. Must precede the realizes. */
++    {
++        DeviceState *clk_dev = DEVICE(&ss->clock);
++
++        object_property_set_link(OBJECT(&ss->timg[0]), "soc-reset", OBJECT(ss), &error_abort);
++        object_property_set_link(OBJECT(&ss->timg[1]), "soc-reset", OBJECT(ss), &error_abort);
++        for (int i = 0; i < 2; ++i) {
++            qdev_connect_clock_in(DEVICE(&ss->timg[i]), ESP_TIMG_APB_CLK_IN,
++                                  qdev_get_clock_out(clk_dev, "apb-clk"));
++            qdev_connect_clock_in(DEVICE(&ss->timg[i]), ESP_TIMG_XTAL_CLK_IN,
++                                  qdev_get_clock_out(clk_dev, "xtal-clk"));
++        }
++        qdev_connect_gpio_out_named(clk_dev, ESP32S3_CLK_GATES_GPIO,
++                                    ESP32S3_GATE_TIMG0_TIMERS,
++                                    qdev_get_gpio_in_named(DEVICE(&ss->timg[0]),
++                                                           ESP_TIMG_CLK_GATE_IN, 0));
++        qdev_connect_gpio_out_named(clk_dev, ESP32S3_CLK_GATES_GPIO,
++                                    ESP32S3_GATE_TIMG0_WDT,
++                                    qdev_get_gpio_in_named(DEVICE(&ss->timg[0]),
++                                                           ESP_TIMG_CLK_GATE_IN, 1));
++        qdev_connect_gpio_out_named(clk_dev, ESP32S3_CLK_GATES_GPIO,
++                                    ESP32S3_GATE_TIMG1_TIMERS,
++                                    qdev_get_gpio_in_named(DEVICE(&ss->timg[1]),
++                                                           ESP_TIMG_CLK_GATE_IN, 0));
++        qdev_connect_gpio_out_named(clk_dev, ESP32S3_CLK_GATES_GPIO,
++                                    ESP32S3_GATE_TIMG1_WDT,
++                                    qdev_get_gpio_in_named(DEVICE(&ss->timg[1]),
++                                                           ESP_TIMG_CLK_GATE_IN, 1));
++    }
++    {
++        /* SYSTIMER CNT_CLK is XTAL-derived (TRM ch.11): not an APB consumer */
++        DeviceState *clk_dev = DEVICE(&ss->clock);
++
++        object_property_set_link(OBJECT(&ss->systimer), "soc-reset", OBJECT(ss), &error_abort);
++        qdev_connect_clock_in(DEVICE(&ss->systimer), ESP_SYSTIMER_XTAL_CLK_IN,
++                              qdev_get_clock_out(clk_dev, "xtal-clk"));
++    }
+     {
+         sysbus_realize(SYS_BUS_DEVICE(&ss->timg[0]), &error_fatal);
+         MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->timg[0]), 0);
+@@ -872,7 +1082,6 @@ static void esp32s3_machine_init(MachineState *machine)
+     esp32s3_soc_add_unimp_device(sys_mem, "esp32s3.rmt", DR_REG_RMT_BASE, 0x1000);
+     esp32s3_soc_add_unimp_device(sys_mem, "esp32s3.iomux", DR_REG_IO_MUX_BASE, 0x2000);
+ 
+-    
+     esp32s3_machine_init_sd(ss);
+ 
+     /* Need MMU initialized prior to ELF loading,
+-- 
+2.43.0
+

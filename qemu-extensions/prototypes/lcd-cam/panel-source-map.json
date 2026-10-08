@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "slice": [
+    "LCD-01",
+    "LCD-02"
+  ],
+  "implementation": [
+    "copies/esp32s3_lcd_panel_service.c",
+    "copies/esp32s3_lcd_panel_service.h"
+  ],
+  "license": "GPL-2.0-or-later; native executable only, no Qt linkage",
+  "sources": [
+    {
+      "url": "https://dl.espressif.com/dl/schematics/ST7789V_SPEC_V1.0.pdf",
+      "publisher": "Sitronix, public PDF hosted by Espressif",
+      "version": "1.0, 2013-10",
+      "sections": [
+        "8.2 write cycle, pp49-50",
+        "8.8 RGB565 8-bit/16-bit color coding, pp69,75",
+        "8.12 address control",
+        "9.1 SWRESET/SLPIN/SLPOUT/DISPOFF/DISPON/CASET/RASET/RAMWR/MADCTL/COLMOD",
+        "9.2.1 RAMCTRL, p255"
+      ],
+      "use": "CS and RESET active low; WR rising-edge sample; DC low command/high parameter or pixel; command bytes D7..D0; RGB565 byte order and MADCTL mapping; RAMCTRL little-endian only 8-bit RGB565"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/espressif/esp-idf/v5.4/components/esp_lcd/src/esp_lcd_panel_st7789.c",
+      "publisher": "Espressif ESP-IDF",
+      "version": "v5.4",
+      "use": "official reset/sleep-exit/MADCTL/COLMOD/RAMCTRL init sequence, inclusive CASET/RASET endpoints, RGB565 and byte-per-component RGB666"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/espressif/esp-idf/v5.4/components/esp_lcd/rgb/include/esp_lcd_panel_rgb.h",
+      "publisher": "Espressif ESP-IDF",
+      "version": "v5.4",
+      "use": "RGB timing: HSYNC pulse, horizontal back porch, active width, horizontal front porch; VSYNC pulse, vertical back porch, active height, vertical front porch; explicit clock/sync/DE polarities"
+    }
+  ],
+  "profiles": {
+    "st7789-i80": {
+      "parameters": "attributes.native_lcd_panel",
+      "required": {
+        "width": "integer 1..240",
+        "height": "integer 1..320",
+        "bus_width": [
+          8,
+          16
+        ]
+      },
+      "terminals": [
+        "vdd",
+        "gnd",
+        "reset",
+        "cs",
+        "dc",
+        "wr",
+        "d0..d15"
+      ],
+      "power": "Explicit rails, generic registered endpoint power epoch, 2.7..3.6 V",
+      "formats": [
+        "COLMOD MCU field5 (0x55/0x65) RGB565: 8-bit two byte samples or 16-bit one word sample",
+        "COLMOD MCU field6 (0x56/0x66) RGB666: 8-bit three byte samples"
+      ],
+      "commands": "00 01 10 11 12 13 20 21 26 28 29 2a 2b 2c 34 35 36 38 39 3a 3c 44 51 53 55 5e b0 b1 b2 b3 b7 ba bb c0 c2 c3 c4 c5 c6 d0 e0 e1",
+      "scope": "Required digital memory, sleep/display, color order, byte order, address and reset commands are modeled. SWRESET and RESX preserve frame RAM exactly; only a new physical power epoch initializes the bounded digital canvas to black (silicon power-on RAM is unspecified, not claimed black). C2h VDVVRHEN consumes its documented two parameters. Listed analog/gamma initialization commands consume exact parameter counts only; no analog transfer curve claim. Inversion and refresh-order flags are observable state; RGB888 capture is RAM content, not simulated optical output. No reads/RD terminal, analog reset-pulse rejection, minimum reset/sleep delay, or analog LCD response emulation. Unsupported formats/commands are explicit errors. Configured smaller canvas is a bounded digital profile, not a new ST7789 silicon geometry."
+    },
+    "rgb-panel": {
+      "parameters": "attributes.native_lcd_panel",
+      "required": {
+        "width": "integer 1..1024",
+        "height": "integer 1..1024",
+        "bus_width": [
+          8,
+          16
+        ],
+        "pclk_active_high": "boolean; sample rising when true, falling when false",
+        "de_active_high": "boolean",
+        "hsync_active_high": "boolean",
+        "vsync_active_high": "boolean",
+        "hsync_pulse_width": "integer 1..4096 PCLK periods",
+        "h_back_porch": "integer 0..4096 PCLK periods",
+        "h_front_porch": "integer 0..4096 PCLK periods",
+        "vsync_pulse_width": "integer 1..4096 lines",
+        "v_back_porch": "integer 0..4096 lines",
+        "v_front_porch": "integer 0..4096 lines",
+        "bits_per_pixel": [
+          8,
+          16,
+          24
+        ]
+      },
+      "terminals": [
+        "vdd",
+        "gnd",
+        "reset",
+        "pclk",
+        "de",
+        "hsync",
+        "vsync",
+        "d0..d15"
+      ],
+      "power": "Explicit rails, generic registered endpoint power epoch, 2.7..3.6 V",
+      "formats": [
+        "bus8/pixel8 declared RGB332",
+        "bus8 or bus16/pixel16 declared RGB565-LE byte stream",
+        "bus8 or bus16/pixel24 declared RGB888 R,G,B byte stream; width*bpp divisible by bus_width"
+      ],
+      "scope": "Generic parallel digital sink, not an identified panel chip. Required bits_per_pixel is independent of bus_width; per-row active wire cycles equal width*bits_per_pixel/bus_width. RGB565-LE and RGB888 R,G,B are explicit functional stream profiles proven only when actual firmware buffers and controller bit/byte-order registers produce those wires, not universal panel color order. All timing derives from resolved PCLK/HSYNC/VSYNC/DE. observed_width counts logical completed pixels; observed_wire_width counts actual DE-active wire cycles. Malformed/unknown pixel samples remain zero at affected positions and valid=false; no guest framebuffer injection."
+    }
+  },
+  "capture_contract": {
+    "qom_child": "/machine/soc/lcd-panels",
+    "create_api": "void esp32s3_lcd_panel_service_create(Object *soc, DeviceState *electrical)",
+    "input": "Only electrical solved-frame subscription, generic registered endpoints and actual role terminal samples. No GPIO-injected data, controller-frame calls, guest memory access or host path configuration.",
+    "status-json": "{version:1,panels:[{component_id,config_identity,model,width,height,bus_width,power_known,powered,power_epoch,generation,power_on_ns,vdd_v,gnd_v,commands,data_samples,pixels,resets,captures,first_retained_sequence,evicted_count,error_total,active_unknown_mask,errors,error_last_ns,sleep,display_on,inversion,madctl,colmod,configured_timing}]}",
+    "error_categories": [
+      "unknown_power",
+      "unknown_reset",
+      "unknown_clock",
+      "unknown_cs",
+      "unknown_dc",
+      "unknown_data",
+      "unsupported_command",
+      "parameter_count",
+      "unsupported_pixel_format",
+      "address_window",
+      "rgb_timing"
+    ],
+    "capture-request-json": "Exactly {componentId:string,offset:uint,count:integer 1..64}; offset is absolute zero-based sequence, must be retained or equal captures. Successful setter freezes selected records; failed setter preserves prior selection.",
+    "capture-json": "{version:1,kind:lcd-panel-capture,offset,total_at_request,first_retained_sequence_at_request,frames:[record],status:live panel status}",
+    "record": "{sequence,start_ns,end_ns,power_epoch,pixels,errors,pclk_samples,lines,period_min_ns,period_max_ns,observed_width,observed_height,observed_hsync_width,observed_h_back_porch,observed_h_front_porch,observed_vsync_width,observed_v_back_porch,observed_v_front_porch,valid:boolean,visible:boolean,sha256_rgb888}",
+    "framebuffer-request-json": "Exactly {componentId:string,sequence:uint,offset:uint,count:integer 1..65536}; sequence must be latest completed capture or previously frozen same-component sequence. First request freezes entire frame; later windows of same sequence do not replace snapshot. Offset 0..total_bytes. Failed setter preserves prior selection.",
+    "framebuffer-json": "record plus {version:1,kind:lcd-panel-framebuffer,component_id,config_identity,format:rgb888,hex:lowercase hex bytes,width,height,offset,count,total_bytes}. All windows for selected sequence remain immutable. Component removal or immutable identity change invalidates requests.",
+    "bytes": "RGB888 row-major full configured canvas, no padding; SHA256 covers exactly width*height*3 bytes. RGB565 expands by bit replication. RGB332 expands 3-bit components by (c<<5)|(c<<2)|(c>>1), blue by c*85. RGB666 expands high six byte bits by (byte&0xfc)|(byte>>6).",
+    "st_memory_order": "CASET/RASET inclusive x/y coordinates advance x first then y and wrap window. MADCTL MV swaps x/y before canvas mapping, MX reflects canvas x, MY reflects canvas y, BGR swaps R/B. RAMWR resets cursor; RAMWRC keeps cursor. Sleep/display affect visible, not RAM writes. Captures at each completed address-window wrap include entire canvas, not only the window.",
+    "timing": "All ns values are actual virtual solved-frame times. RGB period minima/maxima are successive sampled active PCLK intervals. Observed horizontal porch values describe last active row; invalid line variations increment rgb_timing. Vertical porches derive first/last active sampled lines. ST timing fields are zero because captures are memory-write completions rather than scanout emulation.",
+    "bounds": "32 panels maximum, 64 metadata records per panel, two width*height*3 byte buffers per panel; one service-wide explicit-query RGB888 snapshot plus one 64-record metadata snapshot. No per-edge heap allocation or file I/O. Ring eviction increments evicted_count and first_retained_sequence and never affects guest execution.",
+    "append_archive": "Host runner saves immutable capture-json records and contiguous framebuffer-json windows, decodes hex into binary RGB888, checks sequence/config identity and SHA256, then appends evidence outside the native service. Host polling/render skips never rewrite retained records; metadata eviction is explicit. No unlimited retention claim without host archival."
+  },
+  "review_vectors": [
+    "Registered powered 8-bit ST7789 normal IDF init, 64x48 RGB565 CASET/RASET/RAMWR; compare RGB888 hash to independent byte-pair decoder",
+    "16-bit ST7789 RGB565 one word per rising WR, low-byte command/parameter order; 8-bit RGB666; little-endian RGB565 RAMCTRL",
+    "MADCTL MX/MY/MV/BGR with asymmetric corner pattern; partial window plus wrap and RAMWRC",
+    "Disconnected/unknown WR, DC, RESET, data terminal or power rail: meaningful counters, no valid fabricated frame; wrong CS yields no command acceptance",
+    "Wrong DC, wrong bus wiring/order, odd payload, unsupported COLMOD, invalid/repairable address windows; count-preserving reset and generic power epoch transition",
+    "RGB16 64x48 HS2/HBP4/HFP4 VS2/VBP2/VFP2, all polarities, sample timing/frame count/cadence and SHA256",
+    "RGB porch mismatch, interrupted PCLK, unknown DE/HSYNC/VSYNC/data, short/long active row: invalid captures, measured dimensions and timing errors",
+    "More than64 captures: explicit eviction and absolute sequence rejection, no pause; frozen query windows unchanged while new scanouts complete",
+    "Apply rejection of unknown fields/fractional/wrong-type/out-of-range params; immutable identity and no-op Apply preservation; removal invalidates snapshots"
+  ],
+  "verification": "Not run by implementation worker; parent owns separate review/build/execution.",
+  "qualification": "Authored source and reviewed source corrections only. Native build/runtime qualification and post-RGB-migration review remain unobserved.",
+  "changelog_2026_10_07": [
+    "Retain ST7789 RAM on SWRESET/RESX; initialize declared black viewport only at a new physical power epoch.",
+    "C2h VDVVRHEN consumes two documented parameters; MCU COLMOD field decoded independently of RGB interface field.",
+    "Require explicit RGB bits_per_pixel and physical serial/packed byte assembly; immutable records carry bus_width, bits_per_pixel and separate logical/wire widths."
+  ]
+}

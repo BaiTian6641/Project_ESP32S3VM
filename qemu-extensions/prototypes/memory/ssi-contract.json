@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "scope": "Native software-model qualification only; no timing, electrical, hardware measurement or full physical SKU claim.",
+  "origin": {
+    "official_commit": "40edccac415693c5130f91c01d84176ae6008566",
+    "source": "build-qemu-official-base/hw/misc/ssi_psram.c",
+    "header": "build-qemu-official-base/include/hw/misc/ssi_psram.h",
+    "copies": ["copies/ssi_psram.c", "copies/ssi_psram.h"],
+    "official_source_modified": false,
+    "ssi_changes_modify_flash_controller_or_xts": false,
+    "attachment": "Existing esp32s3_machine_init_psram: SPI1 SSI bus, CS1. No replacement machine."
+  },
+  "sources": [
+    {
+      "id": "esp-psram64-v1",
+      "title": "Espressif ESP-PSRAM64 & ESP-PSRAM64H Datasheet, v1.0, June 2018",
+      "url": "https://cdn-shop.adafruit.com/product-files/4677/4677_esp-psram64_esp-psram64h_datasheet_en.pdf",
+      "publisher": "Espressif Systems; vendor-authored primary datasheet hosted by Adafruit",
+      "sha256": "88b9a9535c699a97dc8c6fd123cb58829c39812dbdd641067d4ed9988602a011",
+      "sections": ["4: linear and 32-byte wrap", "5.1: A[22:0]", "5.3-5.5: SPI power-up, truth table, CE# termination", "6.4 / Figure 6-7: 9F + 24 address bits, MF=0D, KGD=5D, 48-bit EID", "7: QPI EB read, 02/38 write, F5 exit", "8: immediate 66/99 reset sequence"]
+    },
+    {
+      "id": "ap-3sqr-v2.7",
+      "title": "AP Memory APS6404L-3SQR QSPI PSRAM, Rev. 2.7, January 5 2024",
+      "url": "https://www.apmemory.com/en/downloadFiles/032411212009597427",
+      "sha256": "8defcc47238ab297a8780220fed57c8a8d39e265b8d7e50661bfbfc5be0e3bb4",
+      "sections": ["9.1: A[22:0]", "12.1 / Figure 13: MF=0D, KGD=5D, EID[47:45]=010 density"],
+      "limit": "Corroborating identifier encoding only: this copy does not claim all 3SQR behavior. Newer AP SKUs differ from the pinned Espressif protocol, including QPI 0B and ID-read preconditions."
+    },
+    {
+      "id": "ap-octal-v3.9",
+      "title": "AP Memory APS6408L-OBMx OPI Xccela PSRAM, Rev. 3.9, June 27 2023",
+      "url": "https://www.apmemory.com/tw/downloadFiles/0324112221jz592656",
+      "sections": ["7.1-7.2: reset and unspecified array retention", "8.1-8.6: DDR command/address edges, even addresses, DQS/DM, hybrid/linear bursts", "8.7: MR0-controlled read latency and register read/write"],
+      "limit": "Reviewed to reject the official fixed-byte-latency OPI approximation: byte SSI does not carry DDR edges, DQS/DM, or variable refresh pushout."
+    },
+    {
+      "id": "idf-native",
+      "commit": "fff9895c82d744c7237be8847347bdd1b07c6643",
+      "url": "https://github.com/espressif/esp-idf/blob/fff9895c82d744c7237be8847347bdd1b07c6643/components/esp_psram/device/esp_psram_impl_ap_quad.c",
+      "definitions_url": "https://github.com/espressif/esp-idf/blob/fff9895c82d744c7237be8847347bdd1b07c6643/components/esp_psram/device/esp_quad_psram_defs_ap.h",
+      "symbols": ["psram_disable_qio_mode", "s_check_psram_connected", "psram_read_id", "s_check_2tmode", "esp_psram_impl_enable", "psram_reset_mode", "psram_enable_qio_mode", "psram_enable_wrap", "config_psram_spi_phases"],
+      "identifier": "Definitions: EID[47:45]=010 means 8MiB. Init reads full ID and tests EID[41]=1 for non-2T, then 66/99 and 35."
+    },
+    {
+      "id": "idf-compatibility",
+      "commit": "b774170ff46c393eeb5e495ea37936038d3f4f4f",
+      "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/esp_psram/device/esp_psram_impl_ap_quad.c",
+      "limit": "The same density/non-2T decoding was inspected; no execution qualification is claimed."
+    }
+  ],
+  "interface": {
+    "type": "ssi_psram",
+    "stable_fields": {"data_mr": "Actual shared MemoryRegion RAM backing; 8388608 bytes", "size_mbytes": "uint32_t, exactly 8 at successful realize"},
+    "properties": {"size_mbytes": {"default": 8, "accepted": [8], "other_values": "error_setg and no RAM allocation"}, "is_octal": {"default": false, "accepted": [false], "true": "error_setg: unqualified OPI; no ID/register simulation"}},
+    "state_changes": "Unused official octal MR fields and old unused dummy field removed; protocol state is private. No new property required."
+  },
+  "implemented": {
+    "capacity_bytes": 8388608,
+    "backing": "Only data_mr supplies memory reads and accepts writes; CPU cache and GDMA must bind to this same physical array, not create a second PSRAM allocation.",
+    "spi": ["03: read, 24-bit address, no dummy", "0B: fast read, 24-bit address, 8 dummy clocks", "EB: quad fast read, 24-bit address, 6 dummy clocks", "02/38: write, 24-bit address, no dummy", "35: enter QPI on CE# rising", "9F: 24-bit address then 64 identifier bits, no dummy"],
+    "qpi": ["EB: read, 24-bit address, 6 dummy clocks", "02/38: write, 24-bit address, no dummy", "F5: exit to SPI on CE# rising"],
+    "both_modes": ["C0 toggles linear / aligned 32-byte wrap on CE# rising", "66 arms reset; immediately following 99 resets SPI+linear on CE# rising; any intervening opcode cancels the old enable"],
+    "id_wire_bytes_hex": "0d 5d 42 00 00 00 00 00",
+    "id_semantics": "Standard MF/KGD/64Mbit encoding, EID[41]=1 selects genuinely backed non-2T 8MiB. Unspecified manufacturing EID bits are deterministic zero model identity, not a measured chip ID. KGD is an emulated protocol identity, not evidence of hardware die testing. No FF manufacturer workaround, 16/32MiB fake density or claimed capacity remains.",
+    "bounds": "Wire address is 24-bit; only physical A[22:0] decode. Upper wire A23 and linear end-of-array carry wrap into existing backing. This modulo physical decoder follows address width, not a measured boundary trace. C0 wrap preserves the starting aligned 32-byte block. CPU-MMU/GDMA invalid physical mappings must independently fault rather than apply this SSI-wire wrap.",
+    "dirty_tracking": "CE# rising marks written actual ranges dirty, splitting linear array-end wrap; 32-byte wrap marks its actual block. SSI callback bool is the electrical level, not logical selection.",
+    "reset": "SoC/controller warm reset aborts the in-flight frame, marks existing writes dirty and clears reset-enable; preserves physical RAM, QPI selection and burst mode because external PSRAM has not been power-cycled. 66/99 resets protocol SPI+linear without clearing RAM. Fresh realize allocates RAM and starts SPI+linear; initial RAM contents are not a hardware power-up value claim."
+  },
+  "explicitly_unqualified": [
+    {"mode": "OPI", "status": "rejected at realize", "reason": "Primary AP datasheet requires DDR edges, DQS/DM, register-dependent latency, even-address and burst rules; official byte-SSI approximation cannot qualify these semantics. No octal mode-register ID or fixed fake latency remains."},
+    {"mode": "lane-width and cycle-accurate SPI/QPI", "status": "not represented", "reason": "Official SSI passes bytes, not line width. Device mode gates opcode availability but cannot distinguish wrongly framed SPI versus QPI lane transactions."},
+    {"mode": "dummy timing", "status": "byte-transport implementation only", "reason": "Unchanged official SPI1 serializes configured dummy cycles as ceil(cycles/8) bytes, even for quad transfers. Supported 8- and 6-clock waits each consume one SSI transfer. Extra tuning dummy clocks and analog sampling correctness are not qualified."},
+    {"mode": "other densities, 2T, halfsleep, refresh, electrical timing", "status": "not supported or claimed"}
+  ],
+  "rejection": "Unsupported or mode-invalid commands, overlong control commands and ID reads past the documented response log LOG_GUEST_ERROR and reject the rest of the CE# frame. Non-data SSI returns zero as the bus's undriven contribution; this is never a substitute for a RAM read outside backing. Reset without 66 is ignored as specified, not accepted as a reset.",
+  "verification": {"builds": "not run by SSI worker", "tests": "not run by SSI worker", "pending_owner_checks": ["native QPI IDF init reports 8388608 bytes", "CS-high commit, 66/99 ordering and warm-reset retention", "SSI array-end and C0 wrap read/write vectors", "unsupported sizes/OPI fail realize", "CPU cache and GDMA share data_mr with separate visibility"]}
+}

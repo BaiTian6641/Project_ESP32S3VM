@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "idf_commit": "fff9895c82d744c7237be8847347bdd1b07c6643",
+  "sources": {
+    "tests/firmware/spi_native/CMakeLists.txt": "7d19ae502cba1435ba444f4918d006f6c012d8713739f68aeb79118a959757c3",
+    "tests/firmware/spi_native/main/CMakeLists.txt": "85f51c6823e8ea8ec04013f7ba6c5d39356b9c82c3afdaa959485d84f3928621",
+    "tests/firmware/spi_native/main/Kconfig.projbuild": "761dba6e26a9450ffa0a68b6737ffd6ffb9726614655fc04ad049fbfdb31ce69",
+    "tests/firmware/spi_native/main/spi_native.c": "143329c76fa3bfd6b84f628e60e1c08a96587e5bfbaef8783ee9be0ef63127c4",
+    "tests/firmware/spi_native/sdkconfig.defaults": "2cd3b2afede296da295779eaf43fa952237a514a42315cb8e9c11c466f3a3e18",
+    "tests/firmware/spi_native/sdkconfig.disconnected_miso.defaults": "2ab72cbb3d71bb439950e0407bc5bd687046e979b553ec0a40d072ba4edbfb8c",
+    "tests/firmware/spi_native/sdkconfig.loopback.defaults": "a1abcb5e733a7ca45be93da84b612505f80fe29484e095dda71aa515bf9193d8",
+    "tests/firmware/spi_native/sdkconfig.negative_spi3.defaults": "43c383778415061ecc4e6955d1340d82f9a9072371b12a06c7bd98c3f1f3bda8",
+    "tests/firmware/spi_native/sdkconfig.owner_error.defaults": "d3475a1db1e41ac5319f6534e899dbc94ad5bbc5550e482f99414fdfd844cb53",
+    "tests/firmware/spi_native/sdkconfig.wrong_cs.defaults": "08a4312e98ab3ebae190157fba1ea16ceef3e24fadeeb32375a4fe0a7550e42d"
+  },
+  "identity": "821ff66522997ebb00691c481651674687ce4f5571070474c289d02c11d99aa2",
+  "repair_2026_10_08": "First matrix execution found IDF6.1 finite-wait API misuse: spi_device_acquire_bus and spi_device_polling_start only support portMAX_DELAY (spi_master.c:1304,1368); three call sites repaired, finite waits kept where IDF supports them (queue_trans/get_trans_result/polling_end). Superseded identity e8af03f8c4a4e8a06c3a0d287c11c31e804d67650ad5090fa513ee1b0ebcd478 preserved in build family.",
+  "repair2_2026_10_08": "First full DMA execution: pre_callback channel discovery matched PERI_SEL==0 (SPI2 trigger id on ESP32-S3, gdma_channel.h) against reset/unconfigured channels and ended at ch4; require armed IN/OUT link address. Model EOF/raw behavior verified correct on ch0/ch4.",
+  "repair3_2026_10_08": "controlled() CLOCK poke (79<<18)|(99<<12)|(49<<6)|99 overflowed every S3 clock field (6/6/6/4 bits, TRM spi_struct.h) truncating to invalid duty H+1>N+1; strict model pause was correct. Replaced with max legal divider (15<<18)|(63<<12)|(31<<6)|63 (78.125kHz, 512 bits=6.5536ms, cancel at +50us still mid-transfer, 60ms wait still past deadline). Affects loopback profile only (connected uses nor_pio/nor_dma)."
+}

@@ -1,0 +1,99 @@
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -51,6 +51,8 @@
+ #include "hw/ssi/esp32s3_spi.h"
+ #include "hw/misc/esp32s3_cache.h"
+ #include "hw/char/esp32s3_uart.h"
++#include "hw/char/esp32s3_uhci.h"
++#include "esp32s3_uart_binding.inc"
+ #include "hw/misc/esp32s3_rng.h"
+ 
+ #include "hw/nvram/esp32s3_efuse.h"
+@@ -140,6 +142,8 @@
+     XtensaCPU cpu[ESP32S3_CPU_COUNT];
+     Esp32s3IntMatrixState intmatrix;
+     ESP32S3UARTState uart[ESP32S3_UART_COUNT];
++    ESP32S3UARTMemory uart_memory;
++    ESP32S3UhciState uhci;
+     ESP32S3GPIOState gpio;
+     ESP32S3IOMuxState iomux;
+     ESP32S3RtcIoState rtc_io;
+@@ -730,7 +734,17 @@
+ 
+     for (int i = 0; i < ESP32S3_UART_COUNT; ++i) {
+         const hwaddr uart_base[] = {DR_REG_UART_BASE, DR_REG_UART1_BASE, DR_REG_UART2_BASE};
+-        qdev_realize(DEVICE(&s->uart[i]), &s->periph_bus, &error_fatal);
++        const unsigned gates[] = {ESP32S3_GATE_UART0, ESP32S3_GATE_UART1, ESP32S3_GATE_UART2};
++        const unsigned resets[] = {ESP32S3_RST_UART0, ESP32S3_RST_UART1, ESP32S3_RST_UART2};
++        DeviceState *uart = DEVICE(&s->uart[i]);
++        qdev_connect_clock_in(uart, "apb", qdev_get_clock_out(DEVICE(&s->clock), "apb-clk"));
++        qdev_connect_clock_in(uart, "xtal", qdev_get_clock_out(DEVICE(&s->clock), "xtal-clk"));
++        qdev_connect_clock_in(uart, "rc-fast", qdev_get_clock_out(DEVICE(&s->clock), "rc-fast-clk"));
++        qdev_connect_gpio_out_named(DEVICE(&s->clock), ESP32S3_CLK_GATES_GPIO, gates[i],
++                                   qdev_get_gpio_in_named(uart, "clock-enable", 0));
++        qdev_connect_gpio_out_named(DEVICE(&s->clock), ESP32S3_CLK_RST_LEVEL_GPIO, resets[i],
++                                   qdev_get_gpio_in_named(uart, "reset", 0));
++        qdev_realize(uart, &s->periph_bus, &error_fatal);
+         esp32s3_soc_add_periph_device(sys_mem, &s->uart[i], uart_base[i]);
+         sysbus_connect_irq(SYS_BUS_DEVICE(&s->uart[i]), 0,
+                            qdev_get_gpio_in(intmatrix_dev, ETS_UART0_INTR_SOURCE + i));
+@@ -838,9 +852,12 @@
+         cs->memory = &s->cpu_specific_mem[i];
+     }
+ 
++    object_initialize_child(obj, "uart-memory", &s->uart_memory, TYPE_ESP32S3_UART_MEMORY);
++    object_initialize_child(obj, "uhci", &s->uhci, TYPE_ESP32S3_UHCI);
+     for (int i = 0; i < ESP32S3_UART_COUNT; ++i) {
+         snprintf(name, sizeof(name), "uart%d", i);
+         object_initialize_child(obj, name, &s->uart[i], TYPE_ESP32S3_UART);
++        qdev_prop_set_uint32(DEVICE(&s->uart[i]), "index", i);
+     }
+ 
+     object_property_add_alias(obj, "serial0", OBJECT(&s->uart[0]), "chardev");
+@@ -950,6 +967,13 @@
+     Esp32s3MachineState *ms = ESP32S3_MACHINE(machine);
+     object_initialize_child(OBJECT(ms), "soc", &ms->esp32s3, TYPE_ESP32S3_SOC);
+     Esp32s3SocState *ss = ESP32S3_SOC(&ms->esp32s3);
++    /* QOM link properties resolve canonical object paths, so they must be set
++     * after the SoC is attached to the machine: the SoC's own instance_init
++     * runs before that and an empty path would silently leave the link NULL. */
++    for (int i = 0; i < ESP32S3_UART_COUNT; ++i) {
++        object_property_set_link(OBJECT(&ss->uart[i]), "fifo-memory",
++                                 OBJECT(&ss->uart_memory), &error_abort);
++    }
+ 
+     MemoryRegion *dram = g_new(MemoryRegion, 1);
+     const struct MemmapEntry *memmap = esp32s3_memmap;
+@@ -1357,6 +1381,21 @@
+                                         qdev_get_gpio_in(intmatrix_dev, ETS_DMA_OUT_CH0_INTR_SOURCE + i));
+         }
+    }
++
++    object_property_set_link(OBJECT(&ss->uhci), "gdma", OBJECT(&ss->gdma), &error_abort);
++    object_property_set_link(OBJECT(&ss->uhci), "soc-reset", OBJECT(ss), &error_abort);
++    qdev_connect_gpio_out_named(DEVICE(&ss->clock), ESP32S3_CLK_GATES_GPIO, ESP32S3_GATE_UHCI0,
++                               qdev_get_gpio_in_named(DEVICE(&ss->uhci), "clk-gate", 0));
++    qdev_connect_gpio_out_named(DEVICE(&ss->clock), ESP32S3_CLK_RST_LEVEL_GPIO, ESP32S3_RST_UHCI0,
++                               qdev_get_gpio_in_named(DEVICE(&ss->uhci), "reset", 0));
++    sysbus_realize(SYS_BUS_DEVICE(&ss->uhci), &error_fatal);
++    memory_region_add_subregion_overlap(sys_mem, 0x60014000,
++        sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->uhci), 0), 0);
++    sysbus_connect_irq(SYS_BUS_DEVICE(&ss->uhci), 0,
++                      qdev_get_gpio_in(intmatrix_dev, ETS_UHCI0_INTR_SOURCE));
++    for (unsigned i = 0; i < ESP32S3_UART_COUNT; ++i) {
++        s3_uhci_bind_uart(&ss->uhci, &ss->uart[i], i);
++    }
+ 
+     /* SHA realization */
+     {
+--- a/hw/char/meson.build
++++ b/hw/char/meson.build
+@@ -35,7 +35,7 @@
+ system_ss.add(when: 'CONFIG_MCHP_PFSOC_MMUART', if_true: files('mchp_pfsoc_mmuart.c'))
+ system_ss.add(when: 'CONFIG_XTENSA_ESP32', if_true: files('esp32_uart.c'))
+ system_ss.add(when: 'CONFIG_RISCV_ESP32C3', if_true: files('esp32_uart.c', 'esp32c3_uart.c'))
+-system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files('esp32_uart.c', 'esp32s3_uart.c'))
++system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files('esp32_uart.c', 'esp32s3_uart.c', 'esp32s3_uhci.c'))
+ system_ss.add(when: 'CONFIG_HTIF', if_true: files('riscv_htif.c'))
+ system_ss.add(when: 'CONFIG_GOLDFISH_TTY', if_true: files('goldfish_tty.c'))
+ 

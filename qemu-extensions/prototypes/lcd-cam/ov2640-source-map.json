@@ -1,0 +1,250 @@
+{
+  "schema_version": 1,
+  "slice": [
+    "CAM-01",
+    "CAM-02"
+  ],
+  "model": "ov2640-dvp",
+  "software_service_status": "implemented; integration and qualification are prerequisites, not claimed",
+  "copy_map": [
+    {
+      "source": "qemu-extensions/prototypes/lcd-cam/copies/esp32s3_ov2640_service.c",
+      "destination": "hw/misc/esp32s3_ov2640_service.c",
+      "sha256": "e4c7bff53efd808f185ea4d50659a98aba28fb243b01866b1cfa80a93e4faec2"
+    },
+    {
+      "source": "qemu-extensions/prototypes/lcd-cam/copies/esp32s3_ov2640_service.h",
+      "destination": "include/hw/misc/esp32s3_ov2640_service.h",
+      "sha256": "495f40fd9318f45a77032dcbf4a2ec1e277dc5cc9439eea78870b27c5242d644"
+    }
+  ],
+  "create_api": "void esp32s3_ov2640_service_create(Object *soc, DeviceState *electrical)",
+  "native_license": "GPL-2.0-or-later; independent native executable, no Qt/hardware source changes",
+  "sources": {
+    "ov2640_datasheet_v2_2": {
+      "url": "https://dl.espressif.com/dl/schematics/Camera_OV2640.pdf",
+      "sha256": "7b88a029c84342779fccc106e27d2bbda8165144e10ac8e6584b73e5dbf46abd",
+      "bytes": 846605
+    },
+    "jpeg_t81": {
+      "url": "https://www.w3.org/Graphics/JPEG/itu-t81.pdf",
+      "sha256": "631031d4ba56b06abee3e312a0f235b9422da9c7267d1c8f7604418795768bf0",
+      "bytes": 1058883
+    },
+    "ov2640_driver_v2_1_3": {
+      "url": "https://raw.githubusercontent.com/espressif/esp32-camera/b3c2aa273a88c7debf2b1683448933ca2b28aad9/sensors/ov2640.c",
+      "sha256": "38829e0a0c91a1661e58d318e8066c52017aefdaf0526b265115cd7b393f88ba",
+      "bytes": 17817
+    },
+    "ov2640_regs_v2_1_3": {
+      "url": "https://raw.githubusercontent.com/espressif/esp32-camera/b3c2aa273a88c7debf2b1683448933ca2b28aad9/sensors/private_include/ov2640_regs.h",
+      "sha256": "7ffc0cebb0f67aaac037b8111c5f247383a8e502ff2fd62fe4caf4383222d213",
+      "bytes": 7043
+    },
+    "ov2640_settings_v2_1_3": {
+      "url": "https://raw.githubusercontent.com/espressif/esp32-camera/b3c2aa273a88c7debf2b1683448933ca2b28aad9/sensors/private_include/ov2640_settings.h",
+      "sha256": "b0086d2fd8498f126bb0483ae0992b46a03c82503be1c0f5b778037930d9da66",
+      "bytes": 11495
+    },
+    "sccb_legacy_v2_1_3": {
+      "url": "https://raw.githubusercontent.com/espressif/esp32-camera/b3c2aa273a88c7debf2b1683448933ca2b28aad9/driver/sccb.c",
+      "sha256": "2cd60ba6e175839d4ecb7502ff7779be163c52f7b4d819009f2066748eb53970",
+      "bytes": 8589
+    },
+    "sccb_ng_v2_1_3": {
+      "url": "https://raw.githubusercontent.com/espressif/esp32-camera/b3c2aa273a88c7debf2b1683448933ca2b28aad9/driver/sccb-ng.c",
+      "sha256": "a0f9276c026df2fe6126f567969cc41b6ebfcadfec864a603ff87252cf95012b",
+      "bytes": 8613
+    }
+  },
+  "official_component": {
+    "version": "2.1.3",
+    "commit": "b3c2aa273a88c7debf2b1683448933ca2b28aad9",
+    "availability": "Existing inspected Arduino managed lock did not include esp32-camera. Parent firmware owner reports retrieving this unmodified official tag in its separately owned project. This service neither vendors nor modifies that firmware component."
+  },
+  "primary_sections": {
+    "ov2640": "OmniVision v2.2 2007-02-23, reset/PWDN/line-pixel description page6; module pins pages7-8; DSP bank table12 pages17-20; sensor bank table13 pages21-26. Ambiguous PDF reader table columns resolved with coordinate-sorted primary PDF text extraction.",
+    "component": "ov2640 reset, set_pixformat, set_window, init_status and detect; ov2640_settings format/scaler sequences; SCCB legacy STOP-separated reads and SCCB-ng repeated-start reads.",
+    "jpeg": "ITU-T T.81 Annex A FDCT/quantization/zigzag, Annex B markers/DQT/DHT/SOF/SOS, Annex C canonical Huffman construction, Annex F sequential DCT entropy coding."
+  },
+  "configuration": {
+    "path": "attributes.native_camera",
+    "required_exact_keys": [
+      "source",
+      "timing_profile"
+    ],
+    "source_enum": [
+      "color-bars",
+      "testimage"
+    ],
+    "timing_profile_enum": [
+      "ov2640-functional-dvp-v1"
+    ],
+    "identity": "SHA256 of canonical model|profile|source|scene-v1|jpeg-t81-444-v1 string; newly owned by factory, live source identity survives only exact component ID and key",
+    "config_lifetime": "QDict borrowed during preflight/activation only; no proposed-config cache or retained borrowed pointer",
+    "filesystem": "No capture_path accepted; no project filesystem writes or file-backed data source."
+  },
+  "electrical": {
+    "roles": [
+      "vdd",
+      "gnd",
+      "sda",
+      "scl",
+      "xclk",
+      "reset",
+      "pwdn",
+      "d0",
+      "d1",
+      "d2",
+      "d3",
+      "d4",
+      "d5",
+      "d6",
+      "d7",
+      "pclk",
+      "href",
+      "vsync"
+    ],
+    "rails": "External 3.3V camera module profile VDD-GND 2.7..3.6V, explicit rails; NOT bare-die core/analog voltage qualification. Bare die datasheet separately specifies core1.3V, analog2.5..3.0V, I/O1.7..3.3V.",
+    "drive": "NativeNet finite 40-ohm D0..D7/PCLK/HREF/VSYNC branches to own explicit VDD/GND. Unknown rails remain UNKNOWN, never a fabricated off/reset epoch.",
+    "input": "Resolved terminal RESET active low, PWDN active high and actual XCLK transitions only. XCLK measured rising-to-rising; one-nanosecond quantization jitter tolerated. Four measured periods without an edge stop production. No fallback20MHz, no surrogate MCU peer, no GPIO input injection.",
+    "power_reset": "Generic registered endpoint power_epoch is sole power-cycle authority. RESET low and COM7[7] reset banked volatile registers. Default bank selector0x7f selects bank1; PID0x2641 and MID0x7fa2 are read-only. Settling10ms is named functional-profile driver-compatible delay.",
+    "consumer_boundary": "Controller parent consumes only resolved matrix/pad DVP edges. Source capture is resolved sensor-terminal emission evidence, never a CAM RX delivery claim."
+  },
+  "sccb": {
+    "address_7bit": "0x30",
+    "owner": "I2cNativeWorker existing controller/electrical binding; actual SDA/SCL reachability, power and stable registered component ID select external dispatch.",
+    "headers": [
+      "hw/i2c/esp32s3_i2c_service.h",
+      "hw/i2c/esp32s3_i2c_binding.h"
+    ],
+    "registration": "esp32s3_i2c_register_service(electrical,id,&S3I2CServiceOps,slot); unregister before slot destruction",
+    "ops": [
+      "address",
+      "write",
+      "read",
+      "read_ack",
+      "stop",
+      "cancel",
+      "power_reset",
+      "ready_ns"
+    ],
+    "registers": "Two 256-byte banks, BANK_SEL0xff, register pointer preserved across STOP or repeated-start, SS_CTRL[5] autoincrement, read-only IDs, COM7 reset, BPADDR/BPDATA indexed storage, read/write retention for component settings. Publicly XX factory-reserved reset reads NACK until a value is written; never silently return fabricated zero.",
+    "qualification_limit": "I2C owner reports existing controller transaction timing fast path is NOT physical bit-edge-qualified SCCB. This service supplies complete live callbacks, not an address-only response or a second bus model. Physical SCCB edge qualification remains an explicit owner dependency."
+  },
+  "source_scene": {
+    "scene_dimensions": "COM7 resolution selects UXGA1600x1200, SVGA800x600 or CIF400x296.",
+    "crop": "Output dimensions4*(ZMOW|ZMHHwidthbits),4*(ZMOH|ZMHHheightbit), bounded1600x1200. Input window4*(HSIZE/VHYX/TEST),4*(VSIZE/VHYX). Coordinates use XOFFL/YOFFL and VHYX high bits. Mirror/flip output coordinate first, then offset+floor(output_coordinate*window_size/output_size). Window must lie inside scene.",
+    "color-bars": "floor(8*x/scene_width): white,yellow,cyan,green,magenta,red,blue,black; channel values0 or255. COM7[1] overrides testimage with these declared bars, not an optical silicon calibration claim.",
+    "testimage": "R=floor(255*x/(scene_width-1)); G=floor(255*y/(scene_height-1)); B=255 if ((x//8)^(y//8))&1 else0.",
+    "rgb565": "R5/G6/B5, high byte first unless IMAGE_MODE[0] swaps byte pair.",
+    "yuv422": "Y=16+floor((66R+129G+25B+128)/256); U=128+floor((-38R-74G+112B+128)/256); V=128+floor((112R-94G-18B+128)/256), clamp0..255. Shared chroma=(chroma_pixel0+chroma_pixel1+1)//2. DefaultYUYV; CTRL0[4] swaps U/V; IMAGE_MODE[0] swaps each adjacent byte pair.",
+    "jpeg": "Real independently implemented baseline8-bit JFIF YCbCr444 encoder in sensor, not CAM compression. Fullrange Y=(19595R+38470G+7471B+32768)//65536; U=128+(-11059R-21709G+32768B+32768)//65536; V=128+(32768R-27439G-5329B+32768)//65536, clamp0..255. Separable8x8 FDCT, uniform quant clamp(QS,1,63), DC prediction, zigzag/RLE, complete custom canonical Huffman DHT, stuffing and EOI. Image edge replication. No encoded fixtures, magic padding or libjpeg/VNC dependency.",
+    "y8": "IMAGE_MODE[6] selects one limited-range luminance byte per pixel for non-JPEG."
+  },
+  "functional_timing_profile": {
+    "name": "ov2640-functional-dvp-v1",
+    "pclk_half_ns": "ceil(measured_XCLK_period_ns*(CLKRC[5:0]+1)*max(1,R_DVP_SP[6:0])/(2*(CLKRC[7]?2:1))), minimum1ns.",
+    "line": "line_bytes+16 PCLK cycles. Four VSYNC lines then four inactive lines then payload rows. COM10[4] chooses data-update edge, opposite edge latches stable bytes. Primary OmniVision v2.2 table13 page23 defines COM10[5]=0 always-output PCLK and COM10[5]=1 HREF-qualified PCLK (documented for DSP bypass); the processed-mode application is an explicit functional profile, not silicon qualification. The official component identifier COM10_PCLK_FREE is misleading relative to that explicit vendor table and is not used to invert the documented bit semantics. Bits3/1 invert HREF/VSYNC.",
+    "jpeg_line": "IMAGE_MODE[1] gives one contiguous HREF payload burst; otherwise line_bytes=2*width, ceil(encoded_length/line_bytes) rows. Final partial row has no emitted padding bytes. Exact proprietary compressed timing and AUTO divider behavior are not claimed.",
+    "operations": "Two bounded virtual timers per sensor. Atomic terminal-drive batches; changes-only finite-drive updates; no edge JSON/filesystem I/O."
+  },
+  "capture_contract": {
+    "qom_child": "ov2640-sensors",
+    "properties": [
+      "status-json",
+      "capture-request-json",
+      "capture-json"
+    ],
+    "request": {
+      "component_id": "exact ID",
+      "offset": "unsigned",
+      "count": "0..4096",
+      "frame": "optional matching completed frame; nonzero leases snapshot until request frame0/omitted releases"
+    },
+    "response_metadata": [
+      "component_id",
+      "config_identity",
+      "frame",
+      "power_epoch",
+      "generation",
+      "format",
+      "source",
+      "timing_profile",
+      "width",
+      "height",
+      "image_mode",
+      "ctrl0",
+      "scene_width",
+      "scene_height",
+      "crop_x",
+      "crop_y",
+      "crop_width",
+      "crop_height",
+      "mirror",
+      "flip",
+      "byte_count",
+      "frame_hash_fnv1a64",
+      "frame_start_ns",
+      "frame_end_ns",
+      "half_period_ns",
+      "line_bytes",
+      "line_count",
+      "offset",
+      "count"
+    ],
+    "response_payload": "bytes integer array, timestamps_ns integer array, exactly requested count. Captured data is sampled from actually resolved D0..D7 at valid physical PCLK/HREF/VSYNC latch; unknown/contended sync/data is a precise dependency.",
+    "timestamps": "frame_start_ns is virtual cycle0 latch slot at initial VSYNC; timestamp(k)=start+((8+k//line_bytes)*(line_bytes+16)+k%line_bytes)*2*half_period_ns. frame_end_ns=start+((line_count+8)*(line_bytes+16)-1)*2*half_period_ns. In gated blanking these prefix/blank slots are internal timer slots, not asserted physical PCLK edges; payload timestamps are actual asserted latch samples.",
+    "hash": "FNV1a64 over actual completed emitted bytes, offset14695981039346656037 prime1099511628211, lowercase16hex. Host may independently SHA256 gathered immutable windows; no fabricated source/RX hash equivalence.",
+    "lifetime": "Double-buffered completed-frame snapshot; matching frame lease freezes last buffer while streaming continues. Graph removal/replacement invalidates request. Larger runtime frame-buffer resize invalidates capture explicitly. Missing/stale/out-of-bounds window returns QOM error, not clipped or invented bytes.",
+    "bounds": "32 registered slots,2 timers each. Procedural source has no source-vector allocation. JPEG cap32MiB; actual allocation300bytes*3*ceil(width/8)*ceil(height/8)+512. Two capture buffers grow only on larger configured payload, each <=32MiB; no steady-state per-frame allocation. QOM serialization only on requested read."
+  },
+  "unsupported_or_unqualified": [
+    "Bare-die separate core/analog rails, optics, analog image processing/AE/AWB/gamma/lens/special effects are not modeled; component setting bytes remain readable/writable where written.",
+    "RAW10, reserved formats, DSP-bypass raw output, slave DVP, FREX/external shutter/snapshot mode, and programmable SS_ID SCCB address relocation are unsupported.",
+    "REGED programmed hold-last outputs on power-down is not implemented; declared/default profile tri-states outputs.",
+    "Proprietary compression microcode, exact sensor JPEG bitstream, compression latency/frame rate, AUTO PCLK divider rules, and factory-reserved reset defaults are not publicly qualified. Primary PDF explicitly says contact OmniVision for reference factory-reserved settings.",
+    "SCCB physical bit-edge qualification is not claimed for the existing owner transaction fast path."
+  ],
+  "integration_prerequisites": [
+    {
+      "owner": "NativeNetWorker",
+      "state": "BLOCKED until actual publication",
+      "required": [
+        "ESP32S3_ELECTRICAL_OV2640_DVP canonical ov2640-dvp registration and explicit rails/roles/output branches",
+        "const QDict *esp32s3_electrical_model_component(DeviceState*,const char*,const char**) with committed identity borrow",
+        "Require live native_camera factory before Apply",
+        "i2c_resolve/endpoint route ov2640-dvp address0x30 over actual registered SDA/SCL"
+      ]
+    },
+    {
+      "owner": "I2cNativeWorker",
+      "state": "Owner reports I2C_SCCB_SERVICE_SOURCE_READY: all eight callbacks and fixed-slot registration implementation landed; owner reports service 18/18 and independent registration review. These are owner-reported checks, not this worker's execution and not camera/runtime/physical-edge qualification.",
+      "required": [
+        "Consume all four owner service/binding C/H copies; external dispatch selected by actual registered component ID, not a bus/address registration",
+        "Full camera qualification still requires NativeNet OV2640 model, physical SDA/SCL route/drive and provider power epoch publication",
+        "No claim of physical SCCB edges from timed transaction callback alone"
+      ]
+    },
+    {
+      "owner": "PulseNativeWorker LEDC lane",
+      "state": "parent reports publication pending",
+      "required": [
+        "Actual LEDC XCLK terminal edges for ordinary unmodified esp32-camera default20MHz setup; sensor never substitutes a nominal clock"
+      ]
+    },
+    {
+      "owner": "LcdCamNativeWorker",
+      "state": "separate owner",
+      "required": [
+        "Copy/meson integration and init once after electrical before Apply",
+        "Physical CAM matrix sampling, MMIO/IRQ/GDMA/controller capture",
+        "Firmware and independent reference qualification only after full family readiness"
+      ]
+    }
+  ],
+  "verification": {
+    "executed": [],
+    "policy": "No builds, tests, formatters or firmware execution performed by this delegated service worker. Source provenance byte hashes are facts, not functional qualification. Separate authorized verifiers must compile and qualify RGB565,YUV422,JPEG guest captures and physical faults."
+  }
+}

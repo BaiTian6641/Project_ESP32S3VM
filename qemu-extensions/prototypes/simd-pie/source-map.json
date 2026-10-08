@@ -1,0 +1,22 @@
+{
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "status": "prototype-unqualified",
+  "license": "GPL-2.0-or-later",
+  "copies": [],
+  "patches": [
+    "qemu-simd-pie-01-vadds-vsubs-negative-rails.patch",
+    "qemu-simd-pie-02-vmulas-u8-qacc-saturate.patch",
+    "qemu-simd-pie-03-vmulas-s8-qacc-negative-rail.patch"
+  ],
+  "core_paths": ["target/xtensa/translate_tie_esp32s3.c"],
+  "helpers": ["compare-captures.py"],
+  "arbitration_sources": {
+    "hardware_records": "build-hardware-host/run-2026-10-07-rebaselined/simd/capture/records.json",
+    "hardware_records_sha256": "e89f305674f8122b59f2bca73357aa604ec9586332b821e05038de09995956c2",
+    "qemu_reference_records": "tests/firmware/simd_reference/build/runs/grace-official-01/capture/records.json",
+    "flash_image_sha256": "c4263180bd9f6531408707c2ba2d628b98359d82fb012916b2d71a3e20a3caeb"
+  },
+  "native_peripheral_support": false,
+  "auto_resume": false,
+  "qualification_profile": "tcg,thread=single; ESP32-S3; simd_reference 84-vector fixture byte-compared against hardware golden records; boot_smoke on IDF 6.1 image"
+}

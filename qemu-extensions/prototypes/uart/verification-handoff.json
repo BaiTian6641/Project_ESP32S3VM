@@ -1,0 +1,62 @@
+{
+ "status": "prepared-built-native-vectors-partially-exercised",
+ "source_contract": "source-map.json",
+ "current_authored_targets": {
+  "uart_qtests": 60,
+  "uhci_full_system_vectors": 17,
+  "ordinary_profiles": [
+   "connected",
+   "absent",
+   "disconnected",
+   "wrong",
+   "uhci",
+   "arduino"
+  ],
+  "rom_download": "run-rom-download.py"
+ },
+ "performed": {
+  "native_build": true,
+  "firmware_build": false,
+  "native_qtests": false,
+  "ordinary_runtime": false,
+  "rom_download_runtime": false,
+  "hardware_operations": false,
+  "static_review": "Delegated multiple passes; previous capacity/default/strict-input/hash/IrDA/RS485/latch findings corrected. Final timeout-disable cancellation source change has an authored regression but is not runtime-exercised.",
+  "unit_vectors": true
+ },
+ "required_prerequisites": [
+  "Main-owned authoritative frozen native-foundation source record/profile including GPIO/ADC/electrical/core-clock dependencies; promised runtime-profile-native-foundations.json was not available at dependency lookup"
+ ],
+ "canonical_shared_dma": {
+  "raw_sha256": "2626ab0cad1955d02bc20cb9a190bc782a388eea0fac452b3524f15b4ab7b9fa",
+  "source": "0001-gdma-uhci-demand-and-packet-status.patch",
+  "historical_normalized_text_hash_not_accepted_input": "3a8169e167b35ca48daa813161be7727911a986b35df165a770e79c2ead733d4",
+  "spi_rx_eof_sha256": "d0a472c53f444304e29dbd4c979d60840e73a42bfbc935277041deec6b8ad422",
+  "gdma_0004_sha256": "7640a6e06bf9c7d9919cbd4837c25dab3e85f0dfb03da74eb77ee3718dead251"
+ },
+ "approved_patch_application": "Main approved explicit patch_context=ignore-space-change for canonical RAW2626 only: unchanged raw input bytes, strict default for all other patches, exact numstat target scope, operation recorded in fingerprint and actual source hashes. No normalized3a alternative input or artifact rewrite.",
+ "sdk_build_contract": "NativeSdkBuildWorker canonical already-READY activation API adopted by owned builder/source snapshot helper: IDF_PATH, IDF_PYTHON_ENV_PATH, ESP32S3_FIXTURE_PROFILE, ESP32S3_IDF_BUILD_ROOT, ESP32S3_IDF_METADATA; no hardcoded repository/master SDK fallback. Actual SDK/fixture snapshots and manifests must be frozen before delegated builds/runs.",
+ "verification_sequence": [
+  "Delegate preparation of a fresh immutable qemu-uart checkout from the actual frozen foundation record using prepare.py; preserve all existing caches/checkouts",
+  "Delegate configure/build of that exact source and record every final source hash, executable hash and command",
+  "Run all60 actual-machine UART/UHCI/GDMA qtests plus17 isolated full-system controller/segment vectors; physical timing logs and native graph snapshots are evidence, not forced status",
+  "Build and freeze all five ordinary pinned IDF6.1 profiles, separate pinned Arduino3.3.12-IDF5.5.5 HardwareSerial image, and the real QEMU-only ROM download input set before any launches",
+  "Run six frozen ordinary modes and ROM SYNC/MEM_BEGIN/>FIFO MEM_DATA/MEM_END no-execute regression with evidence-local writable flash copies",
+  "Run unchanged ordinary pinned boot regressions against this exact additive executable; supporting GDMA-owner suite18/18 and boot3/3 are not UART consumer evidence",
+  "Record every failed run honestly, fix actual findings through the owners, then update docs and individual qualification rows from exercised evidence only"
+ ],
+ "remaining_primary_reference_boundaries": [
+  "UHCI header/CRC/quick-send/hung exact format/timing",
+  "FIFO SIZE=0 encoding",
+  "UART source A/B arithmetic conflict",
+  "16-pulse fractional-divider phase/interleave hardware fidelity",
+  "break NULL inclusion in GDMA payload",
+  "no independently approved hardware timing reference"
+ ],
+ "no_broad_support_claim": true,
+ "runtime": {
+  "prepared_checkout": "~/.cache/esp32s3vm/qemu-uart-40edccac4156-d7f4bed46d77c73a (runtime-profile-native-foundations-memory-lcdcam record 8ba824296e44c0fd as dependency)",
+  "unit_test": "17/17 PASS",
+  "uart_qtest": "first vector fails at the stop-bit sample; all start/data samples pass (snapshot pad 4 out_sel12 low, pad 5 low, pad 21 high at the failing instant)"
+ }
+}

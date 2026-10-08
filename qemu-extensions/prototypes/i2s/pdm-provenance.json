@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "target": "ESP32-S3, locked build-idf-6.1",
+  "change": "Allocation-free persistent raw PDM serializer/packer; target PCM conversion explicitly unavailable, never substituted",
+  "hardware_capabilities": {
+    "raw_pdm_ports": [0, 1],
+    "pcm2pdm_ports": [0],
+    "pdm2pcm_ports": [0],
+    "tx_lines_by_port": [2, 1],
+    "rx_lines_by_port": [4, 1],
+    "dma_unit_bits": 16,
+    "fifo_bytes_each_direction": 256
+  },
+  "implemented_contract": {
+    "state": "Separate TX/RX Esp32s3I2sPdmRawState: eight uint16 words, eight bit counts, ready/enabled masks and port. Constant bounded storage, no heap or process-global sample history.",
+    "clock": "Raw PDM CLK is the WS matrix signal; internal BCK is twice raw sample_rate_hz in locked TX/RX driver. Invoke TX helper on falling BCK after WS update, RX helper on rising BCK with sampled WS. Each codec channel advances one bit per full WS period.",
+    "packing": "Consecutive little-endian 16-bit DMA units; BIG_ENDIAN swaps the two bytes of a unit. BIT_ORDER=0 sends/receives MSB first, BIT_ORDER=1 LSB first. Stereo first/second temporal halves map left/right according to WS_IDLE_POL. No frame history is lost between edge calls or DMA descriptors.",
+    "tx": "Codec channel modes 0..4 follow TRM Table28.9-4 with actual SINGLE_DATA. Mono consumes one DMA unit; FIRST_VALID selects its temporal half. I2S0 single-DAC mono duplicates each serial bit over WS halves; dual-DAC stereo DOUT=right and DOUT2=left. Helpers reject buffer overwrite while frame is busy and leave output pointers untouched on EMPTY or undocumented conversion.",
+    "rx": "Channel2*line is left, channel2*line+1 right; active RX_TDM_CTRL bits0..7 gate capture. Full frames pop ascending channel order. Missing powered electrical inputs return MISSING_SOURCE atomically, never zero-fill. Parent supplies validity solely from powered, registered native electrical sources. RX_MONO additionally gates first/second temporal halves; IDF PDM HAL normally clears RX_MONO and selects channels with RX_TDM_CTRL.",
+    "raw_requirements": "PDM_EN=1,TDM_EN=0,PCM_BYPASS=1,HAL-compatible HALF_SAMPLE_BITS=15; RX_BITS_MOD=15; TX_BITS_MOD=15 or IDF stereo32 setting31. Format/mask changes require reset, electrical timing and FIFO/GDMA belong to controller.",
+    "qualification": "Vendor guide defines dual-DAC mono only as selecting even numbered supplied units without documenting raw-register DMA consumption across mono FIRST_VALID/channel-mode combinations; single-DAC stereo has no table row. Those configurations return MAPPING_UNDOCUMENTED rather than inventing routing. No converter output, reset seed, constant-input PCM value, or silence/echo fallback is fabricated. Hardware SINGLE_DATA itself is an explicit documented TX channel selection, not a source fallback."
+  },
+  "converter_known_properties": [
+    "I2S0 only; PCM output/input units are16bits.",
+    "TX register exposes HP,LP,SINC,sigma-delta shifts with encoded scale0=divide2,1=multiply1,2=multiply2,3=multiply4.",
+    "TX IIR HP stage1 fourth parameter=504+MULT12_0; stage2 fourth parameter=504+MULT12_5. Neither the other coefficients nor recurrence/denominator/precision is given.",
+    "Locked HAL uses21 cutoff-frequency pairs, chooses nearest absolute difference with earliest entry winning ties. Default35.5Hz maps(6,7). This lookup is not a filter algorithm.",
+    "TX LL documents Fpdm=64*Fpcm*fp/fs; locked driver computes OSR=floor(fp/fs), programs SINC_OSR2 and BCK=Fpcm*64*OSR. These clock settings do not determine the sigma-delta output bits.",
+    "RX DSR bit0=64,bit1=128 per locked struct/LL and register description. TRM prose erroneously states DSR=bit*64, which would be zero at reset; do not use that prose formula.",
+    "Default register reset values and HAL dither flags are software-visible configurations, not internal filter/PRNG reset state."
+  ],
+  "missing_for_bit_exact_conversion": [
+    "TX HP/LP/SINC interpolation stage recurrences, complete constant coefficients and their fixed-point denominators",
+    "TX sigma-delta order/topology, feedback gains, quantizer thresholds, intermediate signed widths and wrap/saturation rules",
+    "RX CIC/SINC/FIR/HP stage order, decimation phase, complete coefficients, DC subtraction and PCM normalization/gain",
+    "Every intermediate/output shift, signed rounding/truncation/tie rule, overflow/saturation and pipeline latency",
+    "Dither injection positions/amplitudes, PRNG polynomial, state width, seed, sequence and per-channel sharing",
+    "Filter accumulator/delay/phase/PRNG initial state on peripheral reset, FIFO reset, start/stop and register update",
+    "Authoritative known-bitstream/known-PCM golden vectors including reset transients and both DSR settings"
+  ],
+  "sources": [
+    {
+      "kind": "vendor TRM original PDF, v1.8",
+      "url": "https://documentation.espressif.com/esp32-s3_technical_reference_manual_en.pdf",
+      "sha256": "4484bf8a69035ec42a731c58c64ada6fbd1f1618c5559409f134d9ea083f444f",
+      "pages": "1040-1078 chapter28;1523-1530 revision history",
+      "findings": "64x32-bit FIFOs; channel routing; packed/endian/bit-order formats; PDM clock, line modes and rates; register descriptions. No converter arithmetic recurrences, constant filter coefficients or golden samples. Original downloaded directly and chapter extracted with PyMuPDF because repo markdown only has table-of-contents chapter references and web PDF reader truncates before chapter28."
+    },
+    {
+      "kind": "locked register/LL/HAL",
+      "paths": [
+        "build-idf-6.1/components/soc/esp32s3/register/soc/i2s_struct.h",
+        "build-idf-6.1/components/soc/esp32s3/register/soc/i2s_reg.h",
+        "build-idf-6.1/components/esp_hal_i2s/esp32s3/include/hal/i2s_ll.h",
+        "build-idf-6.1/components/esp_hal_i2s/i2s_hal.c",
+        "build-idf-6.1/components/esp_hal_i2s/esp32s3/i2s_periph.c",
+        "build-idf-6.1/components/esp_driver_i2s/i2s_pdm.c"
+      ],
+      "findings": "Authoritative port masks, matrix line counts, register encodings, scaling labels, two partial HP parameters, cutoff lookup and clock programming; not converter implementation."
+    },
+    {
+      "kind": "locked guide and public vendor guide",
+      "path": "build-idf-6.1/docs/en/api-reference/peripherals/i2s.rst",
+      "url": "https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-reference/peripherals/i2s.html",
+      "findings": "16-bit raw DMA CH0,CH1 layout; PDM TX line mapping table; broad LP/decimate/HP/amplify description, not target fixed-point equations."
+    },
+    {
+      "kind": "locked vendor test and example",
+      "paths": [
+        "build-idf-6.1/components/esp_driver_i2s/test_apps/i2s/main/test_i2s.c:1267-1294",
+        "build-idf-6.1/examples/peripherals/i2s/i2s_basic/i2s_pdm/pytest_i2s_pdm.py",
+        "build-idf-6.1/examples/peripherals/i2s/i2s_basic/i2s_pdm/main/i2s_pdm_tx.c",
+        "build-idf-6.1/examples/peripherals/i2s/i2s_basic/i2s_pdm/main/i2s_pdm_rx.c"
+      ],
+      "findings": "PDM2PCM_existence_test checks successful64-byte read only, no expected PCM values. Example sends sine-wave PCM or reads microphone samples; pytest checks initialization/clock log. No converter golden vectors."
+    },
+    {
+      "kind": "public Espressif technical issue, vendor response",
+      "url": "https://github.com/espressif/esp-idf/issues/12531",
+      "findings": "L-KAYA2023-11-07 confirms PDM2PCM fixed16bit hardware.2025-01-21 recommends external software FIR for24bit; points to raw-format introduction commit, not target arithmetic."
+    },
+    {
+      "kind": "public Espressif technical issue, vendor response",
+      "url": "https://github.com/espressif/esp-idf/issues/8660",
+      "findings": "L-KAYA2022-03-28 states PDM RX configurable parameter is downsample rate, TX filter controls not public in4.4; discussion gives software gain suggestions, no authoritative filter equations. User gain observations are not golden converter coefficients."
+    },
+    {
+      "kind": "vendor raw-format introduction commit",
+      "url": "https://github.com/espressif/esp-idf/commit/9b779d8b3c1c7d7aff73ebe5ef36d03ae3d60141",
+      "api_url_read": "https://api.github.com/repos/espressif/esp-idf/commits/9b779d8b3c1c7d7aff73ebe5ef36d03ae3d60141",
+      "findings": "Introduces raw/PCM format selector, bypass flags, clock calculations and guides; no converter recurrence/model."
+    },
+    {
+      "kind": "vendor silicon revision errata",
+      "url": "https://docs.espressif.com/projects/esp-chip-errata/en/latest/esp32s3/02-errata-summary/index.html",
+      "findings": "Published v0.0/v0.1/v0.2 summary has no I2S/PDM converter errata or arithmetic specification."
+    }
+  ],
+  "search_attempts": [
+    "Espressif public site appnotes: ESP32-S3 PDM filter coefficients/application/algorithm; returned driver guide and unrelated GPIO SDM (not I2S converter).",
+    "Espressif GitHub driver/tests/issues: PDM2PCM/PCM2PDM coefficients, algorithm, sinc, golden/model; returned register setters, hardware existence test and issues listed above, no authoritative bit-exact converter model."
+  ],
+  "controller_source_conflict": "RXEOF TRM page1067 and locked register comment state (BITS_MOD+1)*(EOF_NUM+1) bits, while locked HAL writes DMA buffer byte count without subtracting1. The helper does not implement EOF. Parent controller must qualify this conflict explicitly and follow its selected locked-driver contract.",
+  "verification": {
+    "executed": [],
+    "authoring": "pdm-reference-vectors.py independently routes binary-string streams and emits C fixture; copies/esp32s3-i2s-pdm-test.c tests all authored TX mappings plus persistent8channel RX frames, missing-source atomicity, backpressure, mask/endianness/bit order, port capability and converter failclosed outputs.",
+    "recommended_commands": [
+      "python qemu-extensions/prototypes/i2s/pdm-reference-vectors.py --header BUILD_DIR/esp32s3-i2s-pdm-vectors.h",
+      "cc -std=c11 -Wall -Wextra -Werror -DESP32S3_I2S_PDM_STANDALONE -IBUILD_DIR -Iqemu-extensions/prototypes/i2s/copies qemu-extensions/prototypes/i2s/copies/esp32s3_i2s_pdm.c qemu-extensions/prototypes/i2s/copies/esp32s3-i2s-pdm-test.c -o BUILD_DIR/esp32s3-i2s-pdm-test",
+      "BUILD_DIR/esp32s3-i2s-pdm-test"
+    ]
+  }
+}

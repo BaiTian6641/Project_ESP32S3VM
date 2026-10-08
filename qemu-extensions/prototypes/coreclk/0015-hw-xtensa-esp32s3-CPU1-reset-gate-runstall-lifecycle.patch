@@ -1,0 +1,1547 @@
+From 601dad6627fa15d93c384dc4d3f4734008ac4e9b Mon Sep 17 00:00:00 2001
+From: CPU Lifecycle <cpu-lifecycle@local>
+Date: Wed, 7 Oct 2026 21:20:38 +0800
+Subject: [PATCH] hw/xtensa/esp32s3: CPU1 reset clock gate and runstall
+ lifecycle
+
+---
+ hw/xtensa/esp32s3.c                   | 144 +++++++-
+ hw/xtensa/esp32s3_clk.c               |  60 ++++
+ hw/xtensa/pic_cpu.c                   |  14 +-
+ include/hw/xtensa/esp32s3_clk.h       |  15 +-
+ include/hw/xtensa/esp32s3_clk_defs.h  |   3 +
+ target/xtensa/cpu.c                   |  64 +++-
+ target/xtensa/cpu.h                   |  13 +
+ target/xtensa/gdbstub.c               |   5 +
+ target/xtensa/helper.c                |   4 +-
+ target/xtensa/op_helper.c             | 128 ++++++-
+ tests/qtest/esp32s3-coreclk-test.c    | 220 ++++++++++++
+ tests/qtest/esp32s3-cpu1-lifecycle.py | 483 ++++++++++++++++++++++++++
+ 12 files changed, 1131 insertions(+), 22 deletions(-)
+ create mode 100644 tests/qtest/esp32s3-cpu1-lifecycle.py
+
+diff --git a/hw/xtensa/esp32s3.c b/hw/xtensa/esp32s3.c
+index 97ae7fd..c191135 100644
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -52,6 +52,7 @@
+ 
+ #include "hw/nvram/esp32s3_efuse.h"
+ #include "hw/xtensa/esp32s3_clk.h"
++#include "hw/xtensa/esp32s3_clk_defs.h"
+ #include "hw/xtensa/esp32s3_reset_domain.h"
+ #include "hw/qdev-clock.h"
+ #include "hw/misc/esp32s3_regi2c.h"
+@@ -166,6 +167,11 @@ typedef struct Esp32s3SocState {
+     ESP32S3RegI2CState regi2c;
+ 
+     uint32_t requested_reset;
++    bool cpu1_held_state;
++    bool cpu1_runstall_raw;
++    bool cpu1_stalled;
++    unsigned cpu1_resets_pending;
++    uint64_t cpu1_reset_count;
+ } Esp32s3SocState;
+ 
+ 
+@@ -209,6 +215,95 @@ static void esp32s3_cpu_reset(void* opaque, int n, int level)
+     }
+ }
+ 
++static void esp32s3_cpu1_update_stall(Esp32s3SocState *s)
++{
++    /* Both GPIO callbacks see the already-stored register, so a combined
++     * gate/RUNSTALL write cannot briefly release the core between callbacks. */
++    s->cpu1_held_state =
++        FIELD_EX32(s->clock.core1_control0, SYSTEM_CORE_1_CONTROL_0_REG,
++                   RESETING) ||
++        !FIELD_EX32(s->clock.core1_control0, SYSTEM_CORE_1_CONTROL_0_REG,
++                    CLKGATE_EN);
++    s->cpu1_runstall_raw =
++        FIELD_EX32(s->clock.core1_control0, SYSTEM_CORE_1_CONTROL_0_REG,
++                   RUNSTALL);
++    s->cpu1_stalled = s->cpu1_held_state || s->cpu1_runstall_raw ||
++                     s->rtc_cntl.cpu_stall_state[1] ||
++                     s->cpu1_resets_pending;
++    if (s->cpu1_stalled != s->cpu[1].env.runstall) {
++        /* A cold-held core has never consumed its HALT interrupt. Cancel
++         * that pending request before releasing it, otherwise CPU execution
++         * immediately halts again despite RUNSTALL having been cleared. */
++        if (!s->cpu1_stalled) {
++            cpu_reset_interrupt(CPU(&s->cpu[1]), CPU_INTERRUPT_HALT);
++        }
++        xtensa_runstall(&s->cpu[1].env, s->cpu1_stalled);
++    }
++}
++
++static void esp32s3_cpu1_control(void *opaque, int n, int level)
++{
++    esp32s3_cpu1_update_stall(ESP32S3_SOC(opaque));
++}
++
++static void esp32s3_cpu1_reset_on_cpu(CPUState *cpu, run_on_cpu_data data)
++{
++    Esp32s3SocState *s = data.host_ptr;
++
++    /* Reset outside the requesting MMIO TB, even when CPU1 resets itself
++     * or both cores share the single-thread TCG execution thread. */
++    xtensa_select_static_vectors(&s->cpu[1].env,
++                                 s->rtc_cntl.stat_vector_sel[1]);
++    remove_cpu_watchpoints(&s->cpu[1]);
++    cpu_reset(cpu);
++    s->cpu1_reset_count++;
++    s->cpu1_resets_pending--;
++    esp32s3_cpu1_update_stall(s);
++}
++
++static void esp32s3_cpu1_reset_req(void *opaque, int n, int level)
++{
++    Esp32s3SocState *s = ESP32S3_SOC(opaque);
++
++    if (level) {
++        s->cpu1_resets_pending++;
++        esp32s3_cpu1_update_stall(s);
++        async_run_on_cpu(CPU(&s->cpu[1]), esp32s3_cpu1_reset_on_cpu,
++                         RUN_ON_CPU_HOST_PTR(s));
++    }
++}
++
++static bool esp32s3_diag_cpu1_held(Object *obj, Error **errp)
++{
++    return ESP32S3_SOC(obj)->cpu1_held_state;
++}
++
++static bool esp32s3_diag_cpu1_runstall(Object *obj, Error **errp)
++{
++    return ESP32S3_SOC(obj)->cpu1_runstall_raw;
++}
++
++static bool esp32s3_diag_cpu1_rtc_stall(Object *obj, Error **errp)
++{
++    return ESP32S3_SOC(obj)->rtc_cntl.cpu_stall_state[1];
++}
++
++static bool esp32s3_diag_cpu1_stalled(Object *obj, Error **errp)
++{
++    return ESP32S3_SOC(obj)->cpu1_stalled;
++}
++
++static bool esp32s3_diag_cpu1_halt_pending(Object *obj, Error **errp)
++{
++    return (CPU(&ESP32S3_SOC(obj)->cpu[1])->interrupt_request &
++            CPU_INTERRUPT_HALT) != 0;
++}
++
++static bool esp32s3_diag_cpu1_halted(Object *obj, Error **errp)
++{
++    return CPU(&ESP32S3_SOC(obj)->cpu[1])->halted;
++}
++
+ static void esp32s3_soc_update_clocks(Esp32s3SocState *s);
+ 
+ static void esp32s3_soc_reset(DeviceState *dev)
+@@ -261,6 +356,7 @@ static void esp32s3_soc_reset(DeviceState *dev)
+         xtensa_select_static_vectors(&s->cpu[1].env, s->rtc_cntl.stat_vector_sel[1]);
+         remove_cpu_watchpoints(&s->cpu[1]);
+         cpu_reset(CPU(&s->cpu[1]));
++        esp32s3_cpu1_update_stall(s);
+     }
+     /* Re-derive the clock outputs from the preserved RTC_CNTL state: the
+      * BBPLL/RC_FAST power bits survive this reset, so the pll and rc-fast
+@@ -291,6 +387,16 @@ bool esp32s3_reset_covers_rtc(const DeviceState *soc)
+ 
+ static void esp32s3_cpu_stall(void* opaque, int n, int level)
+ {
++    Esp32s3SocState *s = ESP32S3_SOC(opaque);
++
++    if (n == 1) {
++        esp32s3_cpu1_update_stall(s);
++    } else if ((level != 0) != s->cpu[0].env.runstall) {
++        if (!level) {
++            cpu_reset_interrupt(CPU(&s->cpu[0]), CPU_INTERRUPT_HALT);
++        }
++        xtensa_runstall(&s->cpu[0].env, level != 0);
++    }
+ }
+ 
+ /* Recompute and propagate the whole ESP32-S3 clock tree from the SYSTEM
+@@ -510,7 +616,9 @@ static void esp32s3_soc_realize(DeviceState *dev, Error **errp)
+         }
+         for (int i = 0; i < ms->smp.cpus; ++i) {
+             qdev_connect_clock_in(DEVICE(&s->cpu[i]), "clk-in",
+-                                  qdev_get_clock_out(clk_dev, "cpu-clk"));
++                                  qdev_get_clock_out(clk_dev,
++                                                     i == 1 ? "cpu1-clk" :
++                                                              "cpu-clk"));
+         }
+         /* RTC_CNTL derives the XTAL/2 RTC_FAST_CLK rate from the XTAL clock */
+         qdev_connect_clock_in(DEVICE(&s->rtc_cntl), "xtal-clk",
+@@ -704,6 +812,27 @@ static void esp32s3_soc_init(Object *obj)
+     qdev_init_gpio_in_named(DEVICE(s), esp32s3_clk_update, ESP32S3_RTC_CLK_UPDATE_GPIO, 1);
+     qdev_init_gpio_in_named(DEVICE(s), esp32s3_periph_rst_req, ESP32S3_CLK_RST_GPIO,
+                             ESP32S3_RST_COUNT);
++    qdev_init_gpio_in_named(DEVICE(s), esp32s3_cpu1_control,
++                            ESP32S3_CLK_CPU1_HELD_GPIO, 1);
++    qdev_init_gpio_in_named(DEVICE(s), esp32s3_cpu1_control,
++                            ESP32S3_CLK_CPU1_RUNSTALL_GPIO, 1);
++    qdev_init_gpio_in_named(DEVICE(s), esp32s3_cpu1_reset_req,
++                            ESP32S3_CLK_CPU1_RESET_GPIO, 1);
++
++    object_property_add_bool(obj, "diag-cpu1-held",
++                             esp32s3_diag_cpu1_held, NULL);
++    object_property_add_bool(obj, "diag-cpu1-runstall-raw",
++                             esp32s3_diag_cpu1_runstall, NULL);
++    object_property_add_bool(obj, "diag-rtc-cpu1-stall",
++                             esp32s3_diag_cpu1_rtc_stall, NULL);
++    object_property_add_bool(obj, "diag-cpu1-stalled",
++                             esp32s3_diag_cpu1_stalled, NULL);
++    object_property_add_uint64_ptr(obj, "diag-cpu1-reset-count",
++                                  &s->cpu1_reset_count, OBJ_PROP_FLAG_READ);
++    object_property_add_bool(obj, "diag-cpu1-halt-pending",
++                             esp32s3_diag_cpu1_halt_pending, NULL);
++    object_property_add_bool(obj, "diag-cpu1-halted",
++                             esp32s3_diag_cpu1_halted, NULL);
+ 
+     object_initialize_child(obj, "twai", &s->twai, TYPE_ESP32S3_TWAI);
+ 
+@@ -861,6 +990,19 @@ static void esp32s3_machine_init(MachineState *machine)
+                                                                ESP32S3_CLK_RST_GPIO, i));
+         }
+ 
++        /* 0015: CPU1 lifecycle lines */
++        qdev_connect_gpio_out_named(clk_dev, ESP32S3_CLK_CPU1_HELD_GPIO, 0,
++                                    qdev_get_gpio_in_named(DEVICE(ss),
++                                                           "cpu1-held", 0));
++        qdev_connect_gpio_out_named(clk_dev, ESP32S3_CLK_CPU1_RUNSTALL_GPIO, 0,
++                                    qdev_get_gpio_in_named(DEVICE(ss),
++                                                           "cpu1-runstall", 0));
++        qdev_connect_gpio_out_named(clk_dev, ESP32S3_CLK_CPU1_RESET_GPIO, 0,
++                                    qdev_get_gpio_in_named(DEVICE(ss),
++                                                           "cpu1-reset", 0));
++        /* Earlier reset delivery predates these GPIO connections. */
++        esp32s3_clk_publish_cpu1_control(&ss->clock);
++
+         /* Propagate the power-on clock tree through all the connections */
+         esp32s3_soc_update_clocks(ss);
+     }
+diff --git a/hw/xtensa/esp32s3_clk.c b/hw/xtensa/esp32s3_clk.c
+index 5425d76..8d43c8b 100644
+--- a/hw/xtensa/esp32s3_clk.c
++++ b/hw/xtensa/esp32s3_clk.c
+@@ -43,6 +43,15 @@
+  * esp_system/port/soc/esp32s3/clk.c "assert(rtc_clk_xtal_freq_get() == 40M)").
+  */
+ 
++static void esp32s3_clk_update_cpu1(ESP32S3ClockState *s)
++{
++    const bool enabled =
++        FIELD_EX32(s->core1_control0, SYSTEM_CORE_1_CONTROL_0_REG, CLKGATE_EN);
++
++    /* A separate physical gate, not an APB clock alias or a zeroed counter. */
++    clock_update(s->out_cpu1, enabled ? clock_get(s->out_cpu) : 0);
++}
++
+ void esp32s3_clk_recompute_system(ESP32S3ClockState *s)
+ {
+     const uint32_t xtal_hz =
+@@ -78,6 +87,7 @@ void esp32s3_clk_recompute_system(ESP32S3ClockState *s)
+     }
+ 
+     clock_update_hz(s->out_cpu, cpu_hz);
++    esp32s3_clk_update_cpu1(s);
+     /* APB_CLK: 80 MHz from PLL_CLK, otherwise equal to CPU_CLK */
+     clock_update_hz(s->out_apb,
+                     soc_clk_sel == ESP32S3_CLK_SEL_PLL ? 80000000 : cpu_hz);
+@@ -348,12 +358,36 @@ static uint32_t esp32s3_clock_get_ext_dev_enc_dec_ctrl(ESP32S3ClockState *s)
+     return s->sys_ext_dev_enc_dec_ctrl;
+ }
+ 
++void esp32s3_clk_publish_cpu1_control(ESP32S3ClockState *s)
++{
++    const bool enabled =
++        FIELD_EX32(s->core1_control0, SYSTEM_CORE_1_CONTROL_0_REG, CLKGATE_EN);
++
++    /* Release only after the real clock has resumed. Conversely, stop
++     * execution before suspending CCOUNT and compare-timer clock edges. */
++    if (enabled) {
++        esp32s3_clk_update_cpu1(s);
++    }
++    qemu_set_irq(s->cpu1_held_irq,
++                 FIELD_EX32(s->core1_control0, SYSTEM_CORE_1_CONTROL_0_REG,
++                            RESETING) || !enabled);
++    qemu_set_irq(s->cpu1_runstall_irq,
++                 FIELD_EX32(s->core1_control0, SYSTEM_CORE_1_CONTROL_0_REG,
++                            RUNSTALL));
++    if (!enabled) {
++        esp32s3_clk_update_cpu1(s);
++    }
++}
++
+ static uint64_t esp32s3_clock_read(void *opaque, hwaddr addr, unsigned int size)
+ {
+     ESP32S3ClockState *s = ESP32S3_CLOCK(opaque);
+     uint64_t r = 0;
+ 
+     switch(addr) {
++        case A_SYSTEM_CORE_1_CONTROL_0_REG:
++                r = s->core1_control0;
++            break;
+         case A_SYSTEM_CORE_1_CONTROL_1_REG:
+                 r = s->app_cpu_addr;
+             break;
+@@ -405,6 +439,21 @@ static void esp32s3_clock_write(void *opaque, hwaddr addr, uint64_t value,
+     ESP32S3ClockState *s = ESP32S3_CLOCK(opaque);
+ 
+     switch(addr) {
++        case A_SYSTEM_CORE_1_CONTROL_0_REG: {
++            const uint32_t old = s->core1_control0;
++            const uint32_t reset =
++                R_SYSTEM_CORE_1_CONTROL_0_REG_RESETING_MASK;
++
++            s->core1_control0 = value &
++                (reset | R_SYSTEM_CORE_1_CONTROL_0_REG_CLKGATE_EN_MASK |
++                 R_SYSTEM_CORE_1_CONTROL_0_REG_RUNSTALL_MASK);
++            /* Publish the new hold before queuing a CPU-only reset. */
++            esp32s3_clk_publish_cpu1_control(s);
++            if ((s->core1_control0 & reset) && !(old & reset)) {
++                qemu_irq_pulse(s->cpu1_reset_irq);
++            }
++            break;
++        }
+         case A_SYSTEM_CORE_1_CONTROL_1_REG:
+                 s->app_cpu_addr = (uint32_t)value;
+             break;
+@@ -505,6 +554,10 @@ static void esp32s3_clock_reset_hold(Object *obj, ResetType type)
+                 (ESP32S3_CLK_SEL_XTAL << R_SYSTEM_SYSCLK_CONF_SOC_CLK_SEL_SHIFT) |
+                 (40 << R_SYSTEM_SYSCLK_CONF_CLK_XTAL_FREQ_SHIFT);
+     s->pll_valid = true;         /* BBPLL_FORCE_PD resets to 0 = powered */
++    /* TRM v1.8 Register 17.1: reset asserted, clock gate disabled. */
++    s->core1_control0 = R_SYSTEM_CORE_1_CONTROL_0_REG_RESETING_MASK;
++    s->app_cpu_addr = 0;
++    esp32s3_clk_publish_cpu1_control(s);
+ 
+     /* Divider for PLL clock and APB  frequency */
+     s->cpuperconf = (ESP32S3_PERIOD_SEL_80 << R_SYSTEM_CPU_PER_CONF_CPUPERIOD_SEL_SHIFT) |
+@@ -576,6 +629,7 @@ static void esp32s3_clock_init(Object *obj)
+ 
+     /* Clock tree outputs (consumers are wired by the SoC) */
+     s->out_cpu = qdev_init_clock_out(DEVICE(obj), "cpu-clk");
++    s->out_cpu1 = qdev_init_clock_out(DEVICE(obj), "cpu1-clk");
+     s->out_apb = qdev_init_clock_out(DEVICE(obj), "apb-clk");
+     s->out_xtal = qdev_init_clock_out(DEVICE(obj), "xtal-clk");
+     s->out_rtc_slow = qdev_init_clock_out(DEVICE(obj), "rtc-slow-clk");
+@@ -592,6 +646,12 @@ static void esp32s3_clock_init(Object *obj)
+                              ESP32S3_RST_COUNT);
+     qdev_init_gpio_out_named(DEVICE(obj), s->rst_level_irqs,
+                              ESP32S3_CLK_RST_LEVEL_GPIO, ESP32S3_RST_COUNT);
++    qdev_init_gpio_out_named(DEVICE(obj), &s->cpu1_held_irq,
++                             ESP32S3_CLK_CPU1_HELD_GPIO, 1);
++    qdev_init_gpio_out_named(DEVICE(obj), &s->cpu1_runstall_irq,
++                             ESP32S3_CLK_CPU1_RUNSTALL_GPIO, 1);
++    qdev_init_gpio_out_named(DEVICE(obj), &s->cpu1_reset_irq,
++                             ESP32S3_CLK_CPU1_RESET_GPIO, 1);
+ 
+     /* Initialize the output IRQ lines used to manually trigger interrupts */
+     for (uint64_t i = 0; i < ESP32S3_SYSTEM_CPU_INTR_COUNT; i++) {
+diff --git a/hw/xtensa/pic_cpu.c b/hw/xtensa/pic_cpu.c
+index 8cef88c..405d9b5 100644
+--- a/hw/xtensa/pic_cpu.c
++++ b/hw/xtensa/pic_cpu.c
+@@ -88,7 +88,14 @@ static void xtensa_ccompare_cb(void *opaque)
+     CPUXtensaState *env = ccompare->env;
+     unsigned i = ccompare - env->ccompare;
+ 
+-    qemu_set_irq(env->irq_inputs[env->config->timerint[i]], 1);
++    XtensaCPU *cpu = env_archcpu(env);
++
++    qemu_mutex_lock(&cpu->ccount_lock);
++    if (ccompare->armed && !timer_pending(ccompare->timer)) {
++        ccompare->armed = false;
++        qemu_set_irq(env->irq_inputs[env->config->timerint[i]], 1);
++    }
++    qemu_mutex_unlock(&cpu->ccount_lock);
+ }
+ 
+ static void xtensa_set_runstall(void *opaque, int irq, int active)
+@@ -103,9 +110,10 @@ void xtensa_irq_init(CPUXtensaState *env)
+ 
+     env->irq_inputs = qemu_allocate_irqs(xtensa_set_irq, env,
+                                          env->config->ninterrupt);
++    env->time_base = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
++    env->ccount_time = env->time_base;
++    env->ccount_base = env->sregs[CCOUNT];
+     if (xtensa_option_enabled(env->config, XTENSA_OPTION_TIMER_INTERRUPT)) {
+-        env->time_base = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+-        env->ccount_base = env->sregs[CCOUNT];
+         for (i = 0; i < env->config->nccompare; ++i) {
+             env->ccompare[i].env = env;
+             env->ccompare[i].timer = timer_new_ns(QEMU_CLOCK_VIRTUAL,
+diff --git a/include/hw/xtensa/esp32s3_clk.h b/include/hw/xtensa/esp32s3_clk.h
+index 70a219d..4bb94fc 100644
+--- a/include/hw/xtensa/esp32s3_clk.h
++++ b/include/hw/xtensa/esp32s3_clk.h
+@@ -38,6 +38,10 @@
+  * semantics (block register writes while asserted) connect this instead of
+  * the rising-edge strobe bundle. */
+ #define ESP32S3_CLK_RST_LEVEL_GPIO  "periph-rst-level"
++/* 0015: CPU1 lifecycle from CORE_1_CONTROL_0 (TRM 17.1) */
++#define ESP32S3_CLK_CPU1_HELD_GPIO  "cpu1-held"
++#define ESP32S3_CLK_CPU1_RUNSTALL_GPIO "cpu1-runstall"
++#define ESP32S3_CLK_CPU1_RESET_GPIO "cpu1-reset"
+ 
+ /**
+  * Aggregated gate lines driven from SYSTEM_PERIP_CLK_EN0/1 and consumed by the
+@@ -142,7 +146,8 @@ typedef struct ESP32S3ClockState {
+     /* qdev Clock outputs of the ESP32-S3 clock tree (TRM v1.8 ch.7 fig. 7.2-1).
+      * All frequencies are recomputed and propagated by
+      * esp32s3_clk_recompute_system()/esp32s3_clk_set_rtc_clocks(). */
+-    Clock *out_cpu;         /* CPU_CLK, feeds both cores ("clk-in")           */
++    Clock *out_cpu;         /* Nominal CPU_CLK, feeds CPU0 and CPU1's gate   */
++    Clock *out_cpu1;        /* CPU1 clock after CORE_1_CONTROL_0.CLKGATE_EN  */
+     Clock *out_apb;         /* APB_CLK (TIMG time-base source)                */
+     Clock *out_xtal;        /* XTAL_CLK (SYSTIMER CNT_CLK and RTC_FAST input) */
+     Clock *out_rtc_slow;    /* RTC_SLOW_CLK                                   */
+@@ -171,6 +176,11 @@ typedef struct ESP32S3ClockState {
+     qemu_irq gate_irqs[ESP32S3_GATE_COUNT];
+     qemu_irq rst_irqs[ESP32S3_RST_COUNT];
+     qemu_irq rst_level_irqs[ESP32S3_RST_COUNT];
++    /* 0015: CPU1 lifecycle outputs consumed by the SoC */
++    qemu_irq cpu1_held_irq;
++    qemu_irq cpu1_runstall_irq;
++    qemu_irq cpu1_reset_irq;
++    uint32_t core1_control0;
+ 
+     /* ESP32-S3 SoC, used to gate the hold phase by reset domain */
+     DeviceState *soc_reset;
+@@ -232,3 +242,6 @@ void esp32s3_clk_set_rc_fast(ESP32S3ClockState *s, bool powered);
+  */
+ void esp32s3_clk_set_pll_valid(ESP32S3ClockState *s, bool valid);
+ 
++/* Replay CPU1 control levels after connecting their consumers. */
++void esp32s3_clk_publish_cpu1_control(ESP32S3ClockState *s);
++
+diff --git a/include/hw/xtensa/esp32s3_clk_defs.h b/include/hw/xtensa/esp32s3_clk_defs.h
+index c15b8e9..8aaf3a6 100644
+--- a/include/hw/xtensa/esp32s3_clk_defs.h
++++ b/include/hw/xtensa/esp32s3_clk_defs.h
+@@ -15,6 +15,9 @@
+ 
+ 
+ REG32(SYSTEM_CORE_1_CONTROL_0_REG, 0x000)
++    FIELD(SYSTEM_CORE_1_CONTROL_0_REG, RUNSTALL, 0, 1)
++    FIELD(SYSTEM_CORE_1_CONTROL_0_REG, CLKGATE_EN, 1, 1)
++    FIELD(SYSTEM_CORE_1_CONTROL_0_REG, RESETING, 2, 1)
+ 
+ REG32(SYSTEM_CORE_1_CONTROL_1_REG, 0x004)
+ 
+diff --git a/target/xtensa/cpu.c b/target/xtensa/cpu.c
+index 6f9039a..6af483c 100644
+--- a/target/xtensa/cpu.c
++++ b/target/xtensa/cpu.c
+@@ -37,6 +37,9 @@
+ #include "hw/qdev-clock.h"
+ #ifndef CONFIG_USER_ONLY
+ #include "exec/memory.h"
++#include "qapi/visitor.h"
++#include "qemu/atomic.h"
++#include "exec/helper-proto.h"
+ #endif
+ 
+ 
+@@ -63,12 +66,31 @@ static void xtensa_restore_state_to_opc(CPUState *cs,
+     cpu->env.pc = data[0];
+ }
+ 
++#ifndef CONFIG_USER_ONLY
++static void xtensa_cpu_dump_state_live(CPUState *cs, FILE *file, int flags)
++{
++    HELPER(update_ccount)(cpu_env(cs));
++    /* Keep qemu_fprintf(NULL, ...) on the monitor's own coroutine. */
++    xtensa_cpu_dump_state(cs, file, flags);
++}
++
++static bool xtensa_cpu_exec_interrupt_clocked(CPUState *cs,
++                                              int interrupt_request)
++{
++    XtensaCPU *cpu = XTENSA_CPU(cs);
++
++    return qatomic_read(&cpu->ccount_period) != 0 &&
++        xtensa_cpu_exec_interrupt(cs, interrupt_request);
++}
++#endif
++
+ static bool xtensa_cpu_has_work(CPUState *cs)
+ {
+ #ifndef CONFIG_USER_ONLY
+     XtensaCPU *cpu = XTENSA_CPU(cs);
+ 
+-    return !cpu->env.runstall && cpu->env.pending_irq_level;
++    return qatomic_read(&cpu->ccount_period) != 0 &&
++        !cpu->env.runstall && cpu->env.pending_irq_level;
+ #else
+     return true;
+ #endif
+@@ -131,7 +153,8 @@ static void xtensa_cpu_reset_hold(Object *obj, ResetType type)
+ 
+ #ifndef CONFIG_USER_ONLY
+     reset_mmu(env);
+-    cs->halted = env->runstall;
++    cs->halted = env->runstall ||
++        !clock_is_enabled(env_archcpu(env)->clock);
+ #endif
+     set_no_signaling_nans(!dfpu, &env->fp_status);
+     xtensa_use_first_nan(env, !dfpu);
+@@ -164,6 +187,8 @@ static void xtensa_cpu_realizefn(DeviceState *dev, Error **errp)
+     Error *local_err = NULL;
+ 
+ #ifndef CONFIG_USER_ONLY
++    qatomic_set(&XTENSA_CPU(dev)->ccount_period,
++                clock_get(XTENSA_CPU(dev)->clock));
+     xtensa_irq_init(&XTENSA_CPU(dev)->env);
+ #endif
+ 
+@@ -180,6 +205,22 @@ static void xtensa_cpu_realizefn(DeviceState *dev, Error **errp)
+     xcc->parent_realize(dev, errp);
+ }
+ 
++#ifndef CONFIG_USER_ONLY
++static void xtensa_cpu_clock_period_get(Object *obj, Visitor *v,
++                                         const char *name, void *opaque,
++                                         Error **errp)
++{
++    uint64_t period = clock_get(XTENSA_CPU(obj)->clock);
++
++    visit_type_uint64(v, name, &period, errp);
++}
++
++static void xtensa_cpu_finalizefn(Object *obj)
++{
++    qemu_mutex_destroy(&XTENSA_CPU(obj)->ccount_lock);
++}
++#endif
++
+ static void xtensa_cpu_initfn(Object *obj)
+ {
+     XtensaCPU *cpu = XTENSA_CPU(obj);
+@@ -189,14 +230,22 @@ static void xtensa_cpu_initfn(Object *obj)
+     env->config = xcc->config;
+ 
+ #ifndef CONFIG_USER_ONLY
++    qemu_mutex_init(&cpu->ccount_lock);
+     env->address_space_er = g_malloc(sizeof(*env->address_space_er));
+     env->system_er = g_malloc(sizeof(*env->system_er));
+     memory_region_init_io(env->system_er, obj, NULL, env, "er",
+                           UINT64_C(0x100000000));
+     address_space_init(env->address_space_er, env->system_er, "ER");
+ 
+-    cpu->clock = qdev_init_clock_in(DEVICE(obj), "clk-in", NULL, cpu, 0);
++    cpu->clock = qdev_init_clock_in(DEVICE(obj), "clk-in",
++                                   xtensa_cpu_clock_changed, cpu,
++                                   ClockPreUpdate | ClockUpdate);
+     clock_set_hz(cpu->clock, env->config->clock_freq_khz * 1000);
++    qatomic_set(&cpu->ccount_period, clock_get(cpu->clock));
++    object_property_add(obj, "clk-in-period", "uint64",
++                        xtensa_cpu_clock_period_get, NULL, NULL, NULL);
++    object_property_set_description(obj, "clk-in-period",
++                                   "Actual input clock period in 2^-32 ns");
+ #endif
+ }
+ 
+@@ -233,7 +282,7 @@ static const TCGCPUOps xtensa_tcg_ops = {
+ 
+ #ifndef CONFIG_USER_ONLY
+     .tlb_fill = xtensa_cpu_tlb_fill,
+-    .cpu_exec_interrupt = xtensa_cpu_exec_interrupt,
++    .cpu_exec_interrupt = xtensa_cpu_exec_interrupt_clocked,
+     .cpu_exec_halt = xtensa_cpu_has_work,
+     .do_interrupt = xtensa_cpu_do_interrupt,
+     .do_transaction_failed = xtensa_cpu_do_transaction_failed,
+@@ -258,7 +307,11 @@ static void xtensa_cpu_class_init(ObjectClass *oc, void *data)
+     cc->class_by_name = xtensa_cpu_class_by_name;
+     cc->has_work = xtensa_cpu_has_work;
+     cc->mmu_index = xtensa_cpu_mmu_index;
++#ifndef CONFIG_USER_ONLY
++    cc->dump_state = xtensa_cpu_dump_state_live;
++#else
+     cc->dump_state = xtensa_cpu_dump_state;
++#endif
+     cc->set_pc = xtensa_cpu_set_pc;
+     cc->get_pc = xtensa_cpu_get_pc;
+     cc->gdb_read_register = xtensa_cpu_gdb_read_register;
+@@ -278,6 +331,9 @@ static const TypeInfo xtensa_cpu_type_info = {
+     .instance_size = sizeof(XtensaCPU),
+     .instance_align = __alignof(XtensaCPU),
+     .instance_init = xtensa_cpu_initfn,
++#ifndef CONFIG_USER_ONLY
++    .instance_finalize = xtensa_cpu_finalizefn,
++#endif
+     .abstract = true,
+     .class_size = sizeof(XtensaCPUClass),
+     .class_init = xtensa_cpu_class_init,
+diff --git a/target/xtensa/cpu.h b/target/xtensa/cpu.h
+index 748e110..c0e6809 100644
+--- a/target/xtensa/cpu.h
++++ b/target/xtensa/cpu.h
+@@ -346,6 +346,10 @@ typedef struct XtensaGdbRegmap {
+ typedef struct XtensaCcompareTimer {
+     CPUXtensaState *env;
+     QEMUTimer *timer;
++    /* Last guest compare write committed under the counter lock. */
++    uint32_t value;
++    /* Guest compare intent, including while its input clock is stopped. */
++    bool armed;
+ } XtensaCcompareTimer;
+ 
+ typedef struct XtensaMemory {
+@@ -562,6 +566,11 @@ struct ArchCPU {
+ 
+     CPUXtensaState env;
+     Clock *clock;
++#ifndef CONFIG_USER_ONLY
++    QemuMutex ccount_lock;
++    /* Atomic actual clk-in period for lockless wake checks, not a clock alias. */
++    uint64_t ccount_period;
++#endif
+ };
+ 
+ /**
+@@ -625,6 +634,10 @@ void xtensa_register_core(XtensaConfigList *node);
+ void xtensa_sim_open_console(Chardev *chr);
+ void check_interrupts(CPUXtensaState *s);
+ void xtensa_irq_init(CPUXtensaState *env);
++#ifndef CONFIG_USER_ONLY
++uint32_t xtensa_cpu_get_ccount(CPUState *cs);
++void xtensa_cpu_clock_changed(void *opaque, ClockEvent event);
++#endif
+ qemu_irq *xtensa_get_extints(CPUXtensaState *env);
+ qemu_irq xtensa_get_runstall(CPUXtensaState *env);
+ void xtensa_sync_window_from_phys(CPUXtensaState *env);
+diff --git a/target/xtensa/gdbstub.c b/target/xtensa/gdbstub.c
+index d571c0b..4de1fce 100644
+--- a/target/xtensa/gdbstub.c
++++ b/target/xtensa/gdbstub.c
+@@ -95,6 +95,11 @@ int xtensa_cpu_gdb_read_register(CPUState *cs, GByteArray *mem_buf, int n)
+                                                      % env->config->nareg]);
+ 
+     case xtRegisterTypeSpecialReg: /*SR*/
++#ifndef CONFIG_USER_ONLY
++        if ((reg->targno & 0xff) == CCOUNT) {
++            return gdb_get_reg32(mem_buf, xtensa_cpu_get_ccount(cs));
++        }
++#endif
+         return gdb_get_reg32(mem_buf, env->sregs[reg->targno & 0xff]);
+ 
+     case xtRegisterTypeUserReg: /*UR*/
+diff --git a/target/xtensa/helper.c b/target/xtensa/helper.c
+index 32b95d0..5e721ca 100644
+--- a/target/xtensa/helper.c
++++ b/target/xtensa/helper.c
+@@ -319,8 +319,8 @@ void xtensa_runstall(CPUXtensaState *env, bool runstall)
+     CPUState *cpu = env_cpu(env);
+ 
+     env->runstall = runstall;
+-    cpu->halted = runstall;
+-    if (runstall) {
++    cpu->halted = runstall || !clock_is_enabled(env_archcpu(env)->clock);
++    if (cpu->halted) {
+         cpu_interrupt(cpu, CPU_INTERRUPT_HALT);
+     } else {
+         qemu_cpu_kick(cpu);
+diff --git a/target/xtensa/op_helper.c b/target/xtensa/op_helper.c
+index 028d4e0..1e1940f 100644
+--- a/target/xtensa/op_helper.c
++++ b/target/xtensa/op_helper.c
+@@ -33,42 +33,148 @@
+ #include "exec/exec-all.h"
+ #include "qemu/atomic.h"
+ #include "qemu/timer.h"
++#include "qemu/main-loop.h"
++#include "hw/irq.h"
+ 
+ #ifndef CONFIG_USER_ONLY
+ 
+-void HELPER(update_ccount)(CPUXtensaState *env)
++/* The caller holds the CPU's counter lock; clk-in cannot change under it. */
++static uint32_t xtensa_ccount_locked(CPUXtensaState *env)
+ {
+     XtensaCPU *cpu = env_archcpu(env);
+     uint64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+ 
+     env->ccount_time = now;
+-    env->sregs[CCOUNT] = env->ccount_base +
++    return env->ccount_base +
+         (uint32_t)clock_ns_to_ticks(cpu->clock, now - env->time_base);
+ }
+ 
++static void xtensa_rearm_ccompare_locked(CPUXtensaState *env, unsigned i,
++                                         uint32_t ccount)
++{
++    XtensaCPU *cpu = env_archcpu(env);
++    XtensaCcompareTimer *ccompare = &env->ccompare[i];
++    uint64_t dcc;
++
++    if (!ccompare->armed || !clock_is_enabled(cpu->clock)) {
++        timer_del(ccompare->timer);
++        return;
++    }
++    dcc = (uint64_t)(uint32_t)(ccompare->value - ccount - 1) + 1;
++    timer_mod(ccompare->timer,
++              env->ccount_time + clock_ticks_to_ns(cpu->clock, dcc));
++}
++
++void xtensa_cpu_clock_changed(void *opaque, ClockEvent event)
++{
++    XtensaCPU *cpu = opaque;
++    CPUXtensaState *env = &cpu->env;
++    unsigned i;
++
++    switch (event) {
++    case ClockPreUpdate:
++        /*
++         * Keep BQL held and retain this lock through ClockUpdate: neither
++         * guest counter accesses nor another source write may split the
++         * old-rate accounting from the input period update.
++         */
++        qemu_mutex_lock(&cpu->ccount_lock);
++        if (env->irq_inputs) {
++            env->ccount_base = xtensa_ccount_locked(env);
++        } else {
++            env->ccount_base = env->sregs[CCOUNT];
++            env->ccount_time = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
++        }
++        env->time_base = env->ccount_time;
++        for (i = 0; i < env->config->nccompare; ++i) {
++            XtensaCcompareTimer *ccompare = &env->ccompare[i];
++
++            if (!ccompare->timer) {
++                continue;
++            }
++            if (ccompare->armed && timer_pending(ccompare->timer) &&
++                timer_expire_time_ns(ccompare->timer) <= env->ccount_time) {
++                /* Preserve an expiry even if its main-loop callback is late. */
++                ccompare->armed = false;
++                qemu_set_irq(env->irq_inputs[env->config->timerint[i]], 1);
++            }
++            timer_del(ccompare->timer);
++        }
++        break;
++    case ClockUpdate:
++        qatomic_set(&cpu->ccount_period, clock_get(cpu->clock));
++        /* The stopped interval must not be charged on release or rate change. */
++        env->time_base = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
++        env->ccount_time = env->time_base;
++        for (i = 0; i < env->config->nccompare; ++i) {
++            if (env->ccompare[i].timer) {
++                xtensa_rearm_ccompare_locked(env, i, env->ccount_base);
++            }
++        }
++        qemu_mutex_unlock(&cpu->ccount_lock);
++        break;
++    }
++}
++
++uint32_t xtensa_cpu_get_ccount(CPUState *cs)
++{
++    XtensaCPU *cpu = XTENSA_CPU(cs);
++    uint32_t value;
++
++    qemu_mutex_lock(&cpu->ccount_lock);
++    value = xtensa_ccount_locked(&cpu->env);
++    qemu_mutex_unlock(&cpu->ccount_lock);
++    return value;
++}
++
++void HELPER(update_ccount)(CPUXtensaState *env)
++{
++    XtensaCPU *cpu = env_archcpu(env);
++
++    qemu_mutex_lock(&cpu->ccount_lock);
++    qatomic_set(&env->sregs[CCOUNT], xtensa_ccount_locked(env));
++    qemu_mutex_unlock(&cpu->ccount_lock);
++}
++
+ void HELPER(wsr_ccount)(CPUXtensaState *env, uint32_t v)
+ {
+-    int i;
++    XtensaCPU *cpu = env_archcpu(env);
++    unsigned i;
++    BQL_LOCK_GUARD();
+ 
+-    HELPER(update_ccount)(env);
+-    env->ccount_base += v - env->sregs[CCOUNT];
++    qemu_mutex_lock(&cpu->ccount_lock);
++    env->ccount_base += v - xtensa_ccount_locked(env);
++    qatomic_set(&env->sregs[CCOUNT], v);
+     for (i = 0; i < env->config->nccompare; ++i) {
+-        HELPER(update_ccompare)(env, i);
++        /*
++         * Retain the existing CCOUNT-write scheduling of all compares, but
++         * only a CCOMPARE write acknowledges a latched timer interrupt.
++         */
++        env->ccompare[i].value = env->sregs[CCOMPARE + i];
++        env->ccompare[i].armed = true;
++        xtensa_rearm_ccompare_locked(env, i, v);
+     }
++    env->yield_needed = 1;
++    qemu_mutex_unlock(&cpu->ccount_lock);
+ }
+ 
+ void HELPER(update_ccompare)(CPUXtensaState *env, uint32_t i)
+ {
+     XtensaCPU *cpu = env_archcpu(env);
+-    uint64_t dcc;
++    uint32_t ccount;
++    BQL_LOCK_GUARD();
+ 
++    qemu_mutex_lock(&cpu->ccount_lock);
+     qatomic_and(&env->sregs[INTSET],
+                ~(1u << env->config->timerint[i]));
+-    HELPER(update_ccount)(env);
+-    dcc = (uint64_t)(env->sregs[CCOMPARE + i] - env->sregs[CCOUNT] - 1) + 1;
+-    timer_mod(env->ccompare[i].timer,
+-              env->ccount_time + clock_ticks_to_ns(cpu->clock, dcc));
++    ccount = xtensa_ccount_locked(env);
++    qatomic_set(&env->sregs[CCOUNT], ccount);
++    env->ccompare[i].value = env->sregs[CCOMPARE + i];
++    env->ccompare[i].armed = true;
++    xtensa_rearm_ccompare_locked(env, i, ccount);
+     env->yield_needed = 1;
++    qemu_mutex_unlock(&cpu->ccount_lock);
++    check_interrupts(env);
+ }
+ 
+ /*!
+diff --git a/tests/qtest/esp32s3-coreclk-test.c b/tests/qtest/esp32s3-coreclk-test.c
+index 40b8a7d..92cf992 100644
+--- a/tests/qtest/esp32s3-coreclk-test.c
++++ b/tests/qtest/esp32s3-coreclk-test.c
+@@ -46,6 +46,9 @@
+ #define R_RST_EN0       (SYSTEM_BASE + 0x020)
+ #define R_RST_EN1       (SYSTEM_BASE + 0x024)
+ #define R_LPCK_DIV_INT  (SYSTEM_BASE + 0x028)
++#define R_CORE1_CTRL0   (SYSTEM_BASE + 0x000)
++#define R_CORE1_MESSAGE (SYSTEM_BASE + 0x004)
++#define R_RTC_CPU_STALL (RTCCNTL_BASE + 0x0BC)
+ 
+ /* Reset values per the model: sysclk = CLK_DIV_EN|SOC_CLK_SEL=PLL|40<<12|
+  * PRE_DIV_CNT=1; cpuperconf = CPUPERIOD_SEL=0|PLL480; PERIP_CLK_EN0/1 follow
+@@ -468,6 +471,217 @@ static void test_periph_rst_strobe_resets_device(void)
+     qtest_writel(qts, R_T0CONFIG(TIMG1_BASE), T0CFG_RESET);
+ }
+ 
++/* Use raw QMP here: the old JSON format interpolator must not interpret
++ * literal QOM paths. These properties report actual CPU lifecycle state. */
++static QDict *lifecycle_property(const char *property)
++{
++    QDict *reply;
++
++    qtest_qmp_send_raw(qts,
++        "{\"execute\":\"qom-get\",\"arguments\":"
++        "{\"path\":\"/machine/soc\",\"property\":\"%s\"}}\n", property);
++    reply = qtest_qmp_receive(qts);
++    g_assert_true(qdict_haskey(reply, "return"));
++    return reply;
++}
++
++static uint64_t lifecycle_resets(void)
++{
++    QDict *reply = lifecycle_property("diag-cpu1-reset-count");
++    uint64_t count = qdict_get_int(reply, "return");
++
++    qobject_unref(reply);
++    return count;
++}
++
++static void lifecycle_flag(const char *property, bool expected)
++{
++    QDict *reply = lifecycle_property(property);
++
++    g_assert_cmpint(qdict_get_bool(reply, "return"), ==, expected);
++    qobject_unref(reply);
++}
++
++static char *lifecycle_cpu(unsigned index)
++{
++    return qtest_hmp(qts, "info registers %u", index);
++}
++
++static uint32_t lifecycle_ccount(unsigned index)
++{
++    char *dump = lifecycle_cpu(index);
++    char *field = strstr(dump, "CCOUNT");
++    char *value;
++    uint32_t count;
++
++    g_assert_nonnull(field);
++    value = strchr(field, '=');
++    g_assert_nonnull(value);
++    count = g_ascii_strtoull(value + 1, NULL, 16);
++    g_free(dump);
++    return count;
++}
++
++static void test_cpu1_counter_clock_gate(void)
++{
++    QTestState *original = qts;
++    uint32_t cpu0, cpu1;
++
++    /* Native SDK fixture additionally programs a NONZERO CCOUNT/CCOMPARE1
++     * and handles real IRQs. This deterministic test observes the actual
++     * clock-derived live CCOUNT without executing any guest instructions. */
++    qts = qtest_init("-M esp32s3 -accel qtest -display none");
++    qtest_writel(qts, R_CORE1_CTRL0, 2);
++    qtest_clock_step(qts, 1000000);
++    cpu0 = lifecycle_ccount(0);
++    cpu1 = lifecycle_ccount(1);
++    g_assert_cmpuint(cpu1, >, 0);
++    qtest_writel(qts, R_CORE1_CTRL0, 0);
++    qtest_clock_step(qts, 1000000);
++    g_assert_cmpuint(lifecycle_ccount(1), ==, cpu1);
++    g_assert_cmpuint((uint32_t)(lifecycle_ccount(0) - cpu0), ==, 20000);
++
++    /* Recomputing nominal CPU rate must not reopen the physical CPU1 gate. */
++    qtest_writel(qts, R_SYSCLK_CONF, SYSCLK_PLL_80);
++    qtest_writel(qts, R_CPU_PER_CONF, 2);
++    cpu0 = lifecycle_ccount(0);
++    qtest_clock_step(qts, 1000000);
++    g_assert_cmpuint(lifecycle_ccount(1), ==, cpu1);
++    g_assert_cmpuint((uint32_t)(lifecycle_ccount(0) - cpu0), ==, 240000);
++
++    /* RUNSTALL holds instructions, not CPU clock cycles or internal timers. */
++    qtest_writel(qts, R_CORE1_CTRL0, 3);
++    cpu1 = lifecycle_ccount(1);
++    qtest_clock_step(qts, 1000000);
++    g_assert_cmpuint((uint32_t)(lifecycle_ccount(1) - cpu1), ==, 240000);
++    qtest_quit(qts);
++    qts = original;
++}
++
++static void test_cpu1_lifecycle_levels(void)
++{
++    QTestState *original = qts;
++    uint64_t resets;
++    char *cpu1;
++    const uint32_t rmw[] = { 6, 6, 6, 2 };
++    unsigned i;
++
++    qts = qtest_init("-M esp32s3 -accel qtest -display none");
++    g_assert_cmphex(qtest_readl(qts, R_CORE1_CTRL0), ==, 4);
++    g_assert_cmphex(qtest_readl(qts, R_CORE1_MESSAGE), ==, 0);
++    lifecycle_flag("diag-cpu1-held", true);
++    lifecycle_flag("diag-cpu1-stalled", true);
++    resets = lifecycle_resets();
++    cpu1 = lifecycle_cpu(1);
++    qtest_clock_step(qts, 1000000);
++    {
++        char *after = lifecycle_cpu(1);
++        g_assert_cmpstr(after, ==, cpu1);
++        g_free(after);
++    }
++    g_free(cpu1);
++
++    /* IDF's stored RMW sequence does not invent a RESETING rising edge. */
++    for (i = 0; i < G_N_ELEMENTS(rmw); i++) {
++        qtest_writel(qts, R_CORE1_CTRL0, rmw[i] | 0xFFFFFFF8u);
++        g_assert_cmphex(qtest_readl(qts, R_CORE1_CTRL0), ==, rmw[i]);
++        g_assert_cmpuint(lifecycle_resets(), ==, resets);
++        lifecycle_flag("diag-cpu1-held", i != 3);
++    }
++    lifecycle_flag("diag-cpu1-stalled", false);
++    cpu1 = lifecycle_cpu(1);
++    qtest_writel(qts, R_CORE1_CTRL0, 3);
++    lifecycle_flag("diag-cpu1-runstall-raw", true);
++    lifecycle_flag("diag-cpu1-held", false);
++    lifecycle_flag("diag-cpu1-stalled", true);
++    qtest_writel(qts, R_CORE1_CTRL0, 1);
++    lifecycle_flag("diag-cpu1-held", true);
++    qtest_writel(qts, R_CORE1_CTRL0, 2);
++    qtest_writel(qts, R_RTC_CPU_STALL, 0x21u << 20);
++    qtest_writel(qts, R_RTC_OPTIONS0,
++                 qtest_readl(qts, R_RTC_OPTIONS0) | 2);
++    lifecycle_flag("diag-rtc-cpu1-stall", true);
++    lifecycle_flag("diag-cpu1-stalled", true);
++    qtest_writel(qts, R_CORE1_CTRL0, 3);
++    qtest_writel(qts, R_RTC_CPU_STALL, 0);
++    lifecycle_flag("diag-rtc-cpu1-stall", false);
++    lifecycle_flag("diag-cpu1-stalled", true);
++    /* One write clears RUNSTALL while disabling the gate: never released. */
++    qtest_writel(qts, R_CORE1_CTRL0, 0);
++    lifecycle_flag("diag-cpu1-runstall-raw", false);
++    lifecycle_flag("diag-cpu1-stalled", true);
++    qtest_clock_step(qts, 1000000);
++    {
++        char *after = lifecycle_cpu(1);
++        g_assert_cmpstr(after, ==, cpu1);
++        g_free(after);
++    }
++    g_free(cpu1);
++    g_assert_cmpuint(lifecycle_resets(), ==, resets);
++    qtest_quit(qts);
++    qts = original;
++}
++
++static void test_cpu1_lifecycle_reset_domains(void)
++{
++    QTestState *original = qts;
++    uint64_t resets;
++    char *cpu0;
++    unsigned i;
++
++    qts = qtest_init("-M esp32s3 -accel qtest -display none");
++    program_periph_state();
++    qtest_writel(qts, R_CORE1_MESSAGE, 0x40381234);
++    qtest_writel(qts, R_SYSCLK_CONF, SYSCLK_PLL_80);
++    qtest_writel(qts, R_CPU_PER_CONF, 2);
++    qtest_writel(qts, R_RTC_STORE0, 0xA15C01);
++    /* State outside either CPU, including shared SRAM, must survive. */
++    qtest_writel(qts, 0x3FC80000, 0x0015C0DE);
++    qtest_writel(qts, R_CORE1_CTRL0, 2);
++    resets = lifecycle_resets();
++    cpu0 = lifecycle_cpu(0);
++    qtest_writel(qts, R_CORE1_CTRL0, 6);
++    /* The edge queues CPU-local work; count only completed callbacks.
++     * QMP round trips allow the main loop to drain that work in qtest. */
++    for (i = 0; i < 100 && lifecycle_resets() == resets; i++) {
++        qtest_clock_step(qts, 0);
++    }
++    g_assert_cmpuint(lifecycle_resets(), ==, resets + 1);
++    lifecycle_flag("diag-cpu1-stalled", true);
++    qtest_writel(qts, R_CORE1_CTRL0, 6);
++    qtest_clock_step(qts, 0);
++    g_assert_cmpuint(lifecycle_resets(), ==, resets + 1);
++    {
++        char *after = lifecycle_cpu(0);
++        g_assert_cmpstr(after, ==, cpu0);
++        g_free(after);
++    }
++    g_free(cpu0);
++    g_assert_cmphex(qtest_readl(qts, R_CORE1_CTRL0), ==, 6);
++    g_assert_cmphex(qtest_readl(qts, R_CORE1_MESSAGE), ==, 0x40381234);
++    g_assert_cmphex(qtest_readl(qts, R_SYSCLK_CONF), ==, SYSCLK_PLL_80);
++    g_assert_cmphex(qtest_readl(qts, R_CPU_PER_CONF), ==, 2);
++    g_assert_cmphex(qtest_readl(qts, R_CLK_EN0), ==, CLK_EN0_RESET);
++    g_assert_cmphex(qtest_readl(qts, R_GDMA_OUT_CONF0_CH0), ==, 0x3E);
++    g_assert_cmphex(qtest_readl(qts, R_ST_INT_ENA), ==, 7);
++    g_assert_cmphex(qtest_readl(qts, INTMATRIX_BASE + 4), ==, 5);
++    g_assert_cmphex(qtest_readl(qts, R_RTC_STORE0), ==, 0xA15C01);
++    g_assert_cmphex(qtest_readl(qts, 0x3FC80000), ==, 0x0015C0DE);
++    cpu_reset_via_rtc(1u << 4);
++    g_assert_cmphex(qtest_readl(qts, R_CORE1_CTRL0), ==, 6);
++    g_assert_cmphex(qtest_readl(qts, R_CORE1_MESSAGE), ==, 0x40381234);
++    g_assert_cmphex(qtest_readl(qts, 0x3FC80000), ==, 0x0015C0DE);
++    system_reset_via_rtc();
++    g_assert_cmphex(qtest_readl(qts, R_CORE1_CTRL0), ==, 4);
++    g_assert_cmphex(qtest_readl(qts, R_CORE1_MESSAGE), ==, 0);
++    lifecycle_flag("diag-cpu1-held", true);
++    g_assert_cmphex(qtest_readl(qts, R_GDMA_OUT_CONF0_CH0), ==, 0);
++    g_assert_cmphex(qtest_readl(qts, R_RTC_STORE0), ==, 0xA15C01);
++    g_assert_cmphex(qtest_readl(qts, 0x3FC80000), ==, 0x0015C0DE);
++    qtest_quit(qts);
++    qts = original;
++}
++
+ int main(int argc, char **argv)
+ {
+     const char *arch = qtest_get_arch();
+@@ -501,6 +715,12 @@ int main(int argc, char **argv)
+                    test_periph_rst_strobe_resets_device);
+     qtest_add_func("esp32s3-coreclk/common-clock-ports",
+                    test_common_clock_ports);
++    qtest_add_func("esp32s3-coreclk/cpu1-lifecycle-levels",
++                   test_cpu1_lifecycle_levels);
++    qtest_add_func("esp32s3-coreclk/cpu1-lifecycle-reset-domains",
++                   test_cpu1_lifecycle_reset_domains);
++    qtest_add_func("esp32s3-coreclk/cpu1-counter-clock-gate",
++                   test_cpu1_counter_clock_gate);
+ 
+     ret = g_test_run();
+     qtest_quit(qts);
+diff --git a/tests/qtest/esp32s3-cpu1-lifecycle.py b/tests/qtest/esp32s3-cpu1-lifecycle.py
+new file mode 100644
+index 0000000..078fb24
+--- /dev/null
++++ b/tests/qtest/esp32s3-cpu1-lifecycle.py
+@@ -0,0 +1,483 @@
++#!/usr/bin/env python3
++# SPDX-License-Identifier: GPL-2.0-or-later
++"""Native TCG lifecycle assertions; use the immutable verified QEMU image.
++
++The original lane injects no firmware/instructions: CPU1 starts at the real ROM
++reset vector before MESSAGE. The --counter-elf/--counter-flash lane boots the
++locked native SDK fixture and observes actual CCOUNT, CCOMPARE1 and timer ISRs.
++"""
++import argparse
++import json
++import pathlib
++import re
++import socket
++import subprocess
++import time
++import hashlib
++
++
++COUNTER_WORDS = (
++    'magic stage command cpu1_request cpu1_ack cpu0_count cpu0_loops '
++    'cpu0_time_lo cpu0_time_hi cpu1_loops seed delta armed compare '
++    'resumed timer_irqs timer_at external_irqs external_at '
++    'gate_cpu0_start gate_cpu0_end gate_time_start gate_time_end '
++    'gate_loops_start gate_loops_end gate_cpu1_loops gate_timer_irqs '
++    'gate_external_irqs gate_resumed gate_timer_at gate_external_at '
++    'stall_cpu0_start stall_cpu0_end stall_cpu1_loops stall_timer_irqs '
++    'stall_resumed stall_timer_at reset_cpu0_start reset_cpu0_end cpu_hz external_intno'
++).split()
++
++
++def counter_main(args):
++    """Real SDK instructions and timer ISR, with externally observed handshakes."""
++    root = args.evidence.resolve()
++    root.mkdir(parents=True, exist_ok=False)
++    transcript, observations, checks = [], {}, {}
++    result = {'passed': False, 'criterion': 'physical-cpu1-counter-clock-gate',
++              'checks': checks, 'observations': observations,
++              'deadline_seconds': 90, 'hardware_used': False}
++    deadline = time.monotonic() + 90
++    sockets = []
++    process = None
++    try:
++        for name, path in [('qemu', args.qemu), ('elf', args.counter_elf),
++                           ('flash_input', args.counter_flash)]:
++            result[name] = {'path': str(path.resolve()),
++                            'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
++        rom_dir = args.rom_dir or args.qemu.resolve().parent.parent / 'share/qemu'
++        rom = rom_dir / 'esp32s3_rev0_rom.bin'
++        result['rom'] = {'path': str(rom), 'sha256': hashlib.sha256(rom.read_bytes()).hexdigest()}
++        symbols = subprocess.check_output(
++            ['readelf', '-Ws', str(args.counter_elf.resolve())], text=True)
++        (root / 'elf-symbols.txt').write_text(symbols)
++        matches = re.findall(r'^\s*\d+:\s+([0-9a-fA-F]+)\s+\d+\s+OBJECT\s+'
++                             r'GLOBAL\s+\S+\s+\S+\s+counter_state$', symbols, re.M)
++        assert len(matches) == 1, 'Missing unique actual ELF counter_state'
++        address = int(matches[0], 16)
++        result['counter_state_address'] = hex(address)
++        flash = root / 'counter.flash.bin'
++        flash.write_bytes(args.counter_flash.read_bytes())
++        qmp_path, qt_path = root / 'qmp.sock', root / 'qtest.sock'
++        with (root / 'stderr.log').open('wb') as stderr, \
++                (root / 'serial.log').open('wb') as serial:
++            argv = [str(args.qemu.resolve()), '-M', 'esp32s3', '-accel', 'tcg',
++                    '-display', 'none', '-monitor', 'none', '-serial', 'stdio',
++                    '-drive', f'file={flash},if=mtd,format=raw',
++                    '-qmp', f'unix:{qmp_path},server=on,wait=off',
++                    '-qtest', f'unix:{qt_path},server=on,wait=off']
++            argv += ['-L', str(rom_dir)]
++            result['argv'] = argv
++            process = subprocess.Popen(argv, stdout=serial, stderr=stderr)
++            for path in (qmp_path, qt_path):
++                sock = socket.socket(socket.AF_UNIX)
++                sock.settimeout(5)
++                connect_deadline = time.monotonic() + 5
++                while True:
++                    try:
++                        sock.connect(str(path))
++                        break
++                    except (FileNotFoundError, ConnectionRefusedError):
++                        assert process.poll() is None, 'QEMU exited before sockets'
++                        assert time.monotonic() < connect_deadline, 'Socket deadline'
++                        time.sleep(0.01)
++                sockets.append(sock)
++            qmp, qt = (sock.makefile('rwb', buffering=0) for sock in sockets)
++            assert 'QMP' in json.loads(qmp.readline())
++
++            def command(execute, arguments=None, optional_observer=False):
++                request = {'execute': execute}
++                if arguments is not None:
++                    request['arguments'] = arguments
++                qmp.write(json.dumps(request).encode() + b'\n')
++                while True:
++                    response = json.loads(qmp.readline())
++                    transcript.append({'request': request, 'response': response})
++                    if 'event' not in response:
++                        if optional_observer and 'error' in response:
++                            return None
++                        assert 'return' in response, response
++                        return response['return']
++
++            command('qmp_capabilities')
++
++            def mmio(operation, location, value=None):
++                request = f'{operation} 0x{location:x}'
++                if value is not None:
++                    request += f' 0x{value:x}'
++                qt.write(request.encode() + b'\n')
++                response = qt.readline().decode().strip()
++                assert response.startswith('OK'), response
++                return int(response.split()[1], 0) if operation == 'readl' else None
++
++            def state():
++                return {name: mmio('readl', address + index * 4)
++                        for index, name in enumerate(COUNTER_WORDS)}
++
++            def wait_stage(stage):
++                while mmio('readl', address + 4) != stage:
++                    assert process.poll() is None, 'QEMU exited during guest proof'
++                    if time.monotonic() >= deadline:
++                        capture(f'deadline_stage_{stage}')
++                        raise AssertionError(f'Guest stage {stage} deadline')
++                    time.sleep(0.002)
++
++            def send(value):
++                mmio('writel', address + 8, value)
++
++            def capture(name):
++                command('stop')
++                entry = {'guest': state(), 'ctrl0': mmio('readl', 0x600c0000)}
++                entry['from_cpu3'] = mmio('readl', 0x600c003c)
++                observations[name] = entry
++                entry['qtree'] = command('human-monitor-command',
++                                         {'command-line': 'info qtree'})
++                for cpu in command('query-cpus-fast'):
++                    index = cpu['cpu-index']
++                    dump = command('human-monitor-command',
++                                   {'command-line': f'info registers {index}'})
++                    entry[f'cpu{index}_registers'] = dump
++                    entry[f'cpu{index}_clock_period'] = command('qom-get', {
++                        'path': cpu['qom-path'],
++                        'property': 'clk-in-period'}, optional_observer=True)
++                    for register in ('CCOUNT', 'CCOMPARE1', 'INTERRUPT', 'INTENABLE', 'PC'):
++                        match = re.search(r'\b' + register + r'\s*=\s*'
++                                          r'(?:0x)?([0-9a-fA-F]+)', dump)
++                        if match:
++                            key = 'intset' if register == 'INTERRUPT' else register.lower()
++                            entry[f'cpu{index}_{key}'] = int(match[1], 16)
++                observations[name] = entry
++                command('cont')
++                return entry
++
++            wait_stage(1)
++            capture('boot_ready')
++            send(1)
++            wait_stage(2)
++            gate_first = capture('gate_first')
++            wait_stage(3)
++            gate_last = capture('gate_after_cpu0_600ms')
++            # A second sample after asserting the real FROM_CPU interrupt.
++            time.sleep(0.02)
++            gate_irq = capture('gate_pending_external_irq')
++            hold = gate_irq['guest']
++            checks['gate_compare_not_pending'] = not (gate_irq['cpu1_intset'] & (1 << 15))
++            external_mask = 1 << hold['external_intno']
++            checks['gate_external_irq_enabled_and_pending'] = bool(
++                gate_irq['cpu1_intset'] & gate_irq['cpu1_intenable'] & external_mask)
++            checks['cpu0_counter_advances_gate_off'] = (
++                (hold['gate_cpu0_end'] - hold['gate_cpu0_start']) & 0xffffffff
++            ) >= hold['delta'] * 3
++            checks['cpu0_actual_time_advances_gate_off'] = (
++                (hold['gate_time_end'] - hold['gate_time_start']) & 0xffffffff
++            ) >= 500000
++            checks['cpu0_instructions_advance_gate_off'] = (
++                hold['gate_loops_end'] > hold['gate_loops_start'])
++            send(2)
++            time.sleep(0.02)
++            capture('gate_release_first_instructions')
++            wait_stage(4)
++            gate_release = capture('gate_released_timer_isr')
++            send(3)
++            wait_stage(5)
++            stall_first = capture('runstall_first')
++            wait_stage(6)
++            stall_last = capture('runstall_after_cpu0_600ms')
++            send(4)
++            wait_stage(7)
++            stall_release = capture('runstall_released_timer_isr')
++            reset_before = mmio('readl', 0x60008050)
++            resets = command('qom-get', {'path': '/machine/soc',
++                                        'property': 'diag-cpu1-reset-count'})
++            peripheral_before = {hex(location): mmio('readl', location) for location in
++                                 (0x600c0010, 0x600c0018, 0x600c001c, 0x60023064)}
++            send(5)
++            wait_stage(8)
++            time.sleep(0.02)
++            reset = capture('cpu1_only_reset_cpu0_continues')
++            result['reset_count_before'] = resets
++            result['reset_count_after'] = command('qom-get', {
++                'path': '/machine/soc', 'property': 'diag-cpu1-reset-count'})
++            result['peripherals_before_reset'] = peripheral_before
++            result['peripherals_after_reset'] = {location: mmio('readl', int(location, 16))
++                                                  for location in peripheral_before}
++            result['rtc_before_fixture_marker'] = reset_before
++            result['rtc_after_reset'] = mmio('readl', 0x60008050)
++            g, s, r = (entry['guest'] for entry in (gate_release, stall_release, reset))
++            delta = g['delta']
++            diff = lambda after, before: (after - before) & 0xffffffff
++            checks.update({
++                'gate_counter_known_nonzero': gate_first.get('cpu1_ccount', 0) != 0,
++                'gate_actual_counter_frozen': (
++                    gate_first.get('cpu1_ccount') == gate_last.get('cpu1_ccount') ==
++                    gate_irq.get('cpu1_ccount') and
++                    diff(g['gate_resumed'], g['armed']) < delta),
++                'gate_compare_not_pending': not (
++                    gate_irq.get('cpu1_intset', 0) & (1 << 15)),
++                'gate_compare_no_isr': g['gate_timer_irqs'] == 0,
++                'gate_external_irq_cannot_execute': (
++                    g['gate_external_irqs'] == 0 and
++                    gate_irq['guest']['cpu1_loops'] == gate_first['guest']['cpu1_loops']),
++                'gate_timer_fires_after_remaining_ticks': (
++                    diff(g['gate_timer_at'], g['compare']) < delta // 2 and
++                    diff(g['gate_timer_at'], g['gate_resumed']) >
++                    delta - diff(g['gate_resumed'], g['armed']) - delta // 4),
++                'gate_external_irq_delivered_after_release': g['external_irqs'] == 1,
++                'gate_external_irq_acknowledged': gate_release['from_cpu3'] == 0,
++                'cpu0_counter_advances_gate_off': diff(
++                    g['gate_cpu0_end'], g['gate_cpu0_start']) >= delta * 3,
++                'cpu0_actual_time_advances_gate_off': diff(
++                    g['gate_time_end'], g['gate_time_start']) >= 500000,
++                'cpu0_instructions_advance_gate_off':
++                    g['gate_loops_end'] > g['gate_loops_start'],
++                'physical_clock_cpu1_zero_cpu0_positive':
++                    gate_irq['cpu1_clock_period'] == 0 and
++                    (gate_irq['cpu0_clock_period'] or 0) > 0,
++                'cpu0_actual_clock_unchanged_by_cpu1_lifecycle': (
++                    (gate_irq['cpu0_clock_period'] or 0) > 0 and
++                    all(entry['cpu0_clock_period'] ==
++                        observations['boot_ready']['cpu0_clock_period']
++                        for entry in (gate_first, gate_last, gate_irq,
++                                      gate_release, stall_first, stall_last,
++                                      stall_release, reset))),
++                'cpu1_actual_clock_restored_before_execution': (
++                    (gate_release['cpu1_clock_period'] or 0) > 0 and
++                    gate_release['cpu1_clock_period'] ==
++                    observations['boot_ready']['cpu1_clock_period']),
++                'runstall_clock_enabled': (stall_last['cpu1_clock_period'] or 0) > 0,
++                'runstall_counter_advances': diff(
++                    s['stall_resumed'], s['armed']) >= delta * 3,
++                'runstall_timer_pending': bool(
++                    stall_last.get('cpu1_intset', 0) & (1 << 15)),
++                'runstall_execution_frozen':
++                    stall_first['guest']['cpu1_loops'] == stall_last['guest']['cpu1_loops'],
++                'runstall_isr_waits_for_release': s['stall_timer_irqs'] == 0 and
++                    diff(s['stall_timer_at'], s['armed']) >= delta * 3,
++                'reset_only_cpu1_count': result['reset_count_after'] == resets + 1,
++                'reset_cpu0_continues': diff(
++                    r['reset_cpu0_end'], r['reset_cpu0_start']) > 0,
++                'reset_preserves_peripheral_state':
++                    result['peripherals_after_reset'] == peripheral_before,
++                'reset_preserves_rtc_marker': result['rtc_after_reset'] == 0xc001cafe,
++                'reset_preserves_shared_guest_handshake': r['magic'] == 0xc001cafe,
++            })
++            result['passed'] = all(checks.values())
++            result['classification'] = ('physical-clock-gate-qualified' if result['passed']
++                                        else 'observed-criterion-failure')
++            command('quit')
++            process.wait(timeout=5)
++            assert process.returncode == 0, process.returncode
++    except Exception as error:
++        result['error'] = str(error)
++        result['classification'] = ('observed-criterion-failure'
++                                    if any(value is False for value in checks.values())
++                                    else 'fixture-observation-prerequisite-failure')
++    finally:
++        if process is not None and process.poll() is None:
++            process.kill()
++            process.wait()
++        for sock in sockets:
++            sock.close()
++        (root / 'qmp.json').write_text(json.dumps(transcript, indent=2) + '\n')
++        (root / 'result.json').write_text(json.dumps(result, indent=2) + '\n')
++    return 0 if result['passed'] else 1
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('qemu', type=pathlib.Path)
++    parser.add_argument('evidence', type=pathlib.Path)
++    parser.add_argument('--cold-hold-only', action='store_true')
++    parser.add_argument('--cold-direct-release', action='store_true')
++    parser.add_argument('--counter-elf', type=pathlib.Path)
++    parser.add_argument('--counter-flash', type=pathlib.Path)
++    parser.add_argument('--rom-dir', type=pathlib.Path)
++    args = parser.parse_args()
++    if args.counter_elf or args.counter_flash:
++        assert args.counter_elf and args.counter_flash, 'Counter ELF and flash required'
++        raise SystemExit(counter_main(args))
++    root = args.evidence.resolve()
++    root.mkdir(parents=True, exist_ok=False)
++    qmp_path, qt_path = root / 'qmp.sock', root / 'qtest.sock'
++    trace = root / 'exec.log'
++    transcript = []
++    with (root / 'stderr.log').open('wb') as stderr:
++        process = subprocess.Popen([
++            str(args.qemu.resolve()), '-M', 'esp32s3', '-accel', 'tcg',
++            '-S', '-display', 'none', '-serial', 'null', '-monitor', 'none',
++            '-qmp', f'unix:{qmp_path},server=on,wait=off',
++            '-qtest', f'unix:{qt_path},server=on,wait=off',
++            '-d', 'exec,nochain', '-D', str(trace)], stderr=stderr,
++            stdout=subprocess.DEVNULL)
++        sockets = []
++        try:
++            for path in (qmp_path, qt_path):
++                sock = socket.socket(socket.AF_UNIX)
++                sock.settimeout(5)
++                deadline = time.monotonic() + 5
++                while True:
++                    try:
++                        sock.connect(str(path))
++                        break
++                    except (FileNotFoundError, ConnectionRefusedError):
++                        assert process.poll() is None, 'QEMU exited before sockets'
++                        if time.monotonic() >= deadline:
++                            raise
++                        time.sleep(0.01)
++                sockets.append(sock)
++            qmp, qt = (sock.makefile('rwb', buffering=0) for sock in sockets)
++            assert 'QMP' in json.loads(qmp.readline())
++
++            def command(execute, arguments=None):
++                request = {'execute': execute}
++                if arguments is not None:
++                    request['arguments'] = arguments
++                qmp.write(json.dumps(request).encode() + b'\n')
++                while True:
++                    response = json.loads(qmp.readline())
++                    transcript.append(response)
++                    if 'event' not in response:
++                        assert 'return' in response, response
++                        return response['return']
++
++            command('qmp_capabilities')
++
++            def mmio(operation, address, value=None):
++                request = f'{operation} 0x{address:x}'
++                if value is not None:
++                    request += f' 0x{value:x}'
++                qt.write(request.encode() + b'\n')
++                response = qt.readline().decode().strip()
++                assert response.startswith('OK'), response
++                return int(response.split()[1], 0) if operation == 'readl' else None
++
++            def write(value):
++                mmio('writel', 0x600c0000, value)
++
++            def prop(name):
++                return command('qom-get', {'path': '/machine/soc', 'property': name})
++
++            def registers(cpu):
++                dump = command('human-monitor-command',
++                               {'command-line': f'info registers {cpu}'})
++                # This original lane compares execution state. RUNSTALL with
++                # a positive clock does not freeze CCOUNT; the separate native
++                # SDK lane asserts its actual counter/timer behavior.
++                return re.sub(r'(\bCCOUNT\s*=\s*)(?:0x)?[0-9a-fA-F]+',
++                              r'\1<clock-derived>', dump)
++
++            def run():
++                command('cont')
++                time.sleep(0.02)
++                command('stop')
++
++            assert mmio('readl', 0x600c0000) == 4
++            assert mmio('readl', 0x600c0004) == 0
++            cold = registers(1)
++            vector_match = re.search(r'PC\s*=\s*(?:0x)?([0-9a-fA-F]+)', cold)
++            assert vector_match, cold
++            vector = int(vector_match.group(1), 16)
++            assert vector != 0
++            # Stall CPU0 independently so its ROM cannot release CPU1 or change
++            # the tested registers. CPU1 has not executed even once (-S).
++            options = mmio('readl', 0x60008000)
++            mmio('writel', 0x600080bc, 0x21 << 26)
++            mmio('writel', 0x60008000, (options & ~12) | 8)
++            cpu0 = registers(0)
++            if args.cold_hold_only:
++                run()
++                assert registers(1) == cold, 'Cold-held CPU1 executed'
++                assert registers(0) == cpu0
++                assert prop('diag-cpu1-held') is True
++                assert prop('diag-cpu1-reset-count') == 0
++                command('quit')
++                process.wait(timeout=5)
++                assert process.returncode == 0
++                assert not re.search(r'Trace\s+1:', trace.read_text()), \
++                    'Cold-held CPU1 polled ROM'
++                (root / 'result.json').write_text(json.dumps({
++                    'passed': True, 'checks': ['cold-hold-no-native-execution'],
++                    'rom_vector': hex(vector)}, indent=2) + '\n')
++                return
++            if args.cold_direct_release:
++                write(7)
++                assert prop('diag-cpu1-stalled') is True
++            else:
++                # A pure RUNSTALL edge: no reset callback can clear HALT.
++                # No CPU has executed yet (-S).
++                write(2)
++                write(3)
++                assert prop('diag-cpu1-stalled') is True
++                assert prop('diag-cpu1-halt-pending') is True
++            # Clear RUNSTALL before first CPU execution and
++            # before publishing MESSAGE. A stale HALT request breaks this.
++            write(2)
++            assert prop('diag-cpu1-stalled') is False
++            assert prop('diag-cpu1-halt-pending') is False
++            assert mmio('readl', 0x600c0004) == 0
++            run()
++            live = registers(1)
++            assert live != cold, 'CPU1 never progressed from cold ROM state'
++            assert registers(0) == cpu0, 'CPU0 unexpectedly executed'
++            resets = prop('diag-cpu1-reset-count')
++            for control in (3, 0, 1):
++                write(control)
++                assert prop('diag-cpu1-stalled') is True
++                frozen = registers(1)
++                run()
++                assert registers(1) == frozen, f'CPU1 progressed under CTRL0={control}'
++                assert prop('diag-cpu1-reset-count') == resets
++            write(2)
++            mmio('writel', 0x600080bc, (0x21 << 26) | (0x21 << 20))
++            mmio('writel', 0x60008000, (options & ~15) | 10)
++            assert prop('diag-rtc-cpu1-stall') is True
++            frozen = registers(1)
++            run()
++            assert registers(1) == frozen, 'RTC stall failed to hold CPU1'
++            mmio('writel', 0x600080bc, 0x21 << 26)
++            assert prop('diag-cpu1-stalled') is False
++            # Request the reset while native CPU1 is actually running.
++            command('cont')
++            write(6)
++            command('stop')
++            assert prop('diag-cpu1-reset-count') == resets + 1
++            reset_state = registers(1)
++            match = re.search(r'PC\s*=\s*(?:0x)?([0-9a-fA-F]+)', reset_state)
++            assert match and int(match.group(1), 16) == vector, reset_state
++            write(6)
++            run()
++            assert prop('diag-cpu1-reset-count') == resets + 1
++            assert registers(1) == reset_state
++            assert registers(0) == cpu0
++            write(2)
++            run()
++            assert registers(1) != reset_state, 'CPU1 did not resume after reset'
++            command('quit')
++            process.wait(timeout=5)
++            assert process.returncode == 0
++            text = trace.read_text()
++            cpu1_trace = [line for line in text.splitlines()
++                          if re.search(r'Trace\s+1:', line)]
++            assert cpu1_trace, 'No native CPU1 translated block executed'
++            assert f'{vector:08x}' in cpu1_trace[0].lower(), cpu1_trace[0]
++            (root / 'result.json').write_text(json.dumps({
++                'passed': True, 'rom_vector': hex(vector),
++                'first_cpu1_trace': cpu1_trace[0],
++                'cpu1_trace_blocks': len(cpu1_trace),
++                'reset_count_before': resets,
++                'reset_count_after': resets + 1,
++                'checks': ['cold-release-before-first-execution',
++                           'release-before-message', 'native-ROM-progress',
++                           'gate-and-runstall-freeze-no-reset', 'RTC-independent-OR',
++                           'reset-while-running-CPU1-only', 'same-level-no-reset',
++                           'post-reset-native-ROM-progress']}, indent=2) + '\n')
++        finally:
++            if process.poll() is None:
++                process.kill()
++                process.wait()
++            for sock in sockets:
++                sock.close()
++            (root / 'qmp.json').write_text(json.dumps(transcript, indent=2) + '\n')
++
++
++if __name__ == '__main__':
++    main()

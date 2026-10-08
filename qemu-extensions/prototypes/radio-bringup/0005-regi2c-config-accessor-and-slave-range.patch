@@ -1,0 +1,118 @@
+From 6cc459c7e7a763f2f36ba6bb27517398301d3379 Mon Sep 17 00:00:00 2001
+From: Regi2cWorker <regi2c@esp32s3vm.local>
+Date: Wed, 7 Oct 2026 16:48:47 +0800
+Subject: [PATCH] hw/misc/esp32s3_regi2c: canonical config-storage getter +
+ 7-bit slave index fix
+
+Additive increment on top of the frozen radio-bringup 0001..0004 series.
+
+1. Canonical typed accessor for lanes that must OBSERVE the analog slaves'
+   CONFIG register state (first consumer: the ADC lane's additive 0005,
+   reading the ENCAL_GND/DTEST_RTC/ENT_TSENS routing the ROM RMWs into
+   slave 0x69 reg 7):
+
+     bool esp32s3_regi2c_get_slave_reg(DeviceState *dev, uint8_t slave,
+                                       uint8_t reg, uint8_t *value,
+                                       bool *written);
+
+   CONFIG STORAGE semantics only (see 0003): it returns the slave register
+   file byte and whether the guest ever wrote that register. Measurement
+   surfaces (SAR2 FIFO, TSENS sample, TX-DC done/flags) are NOT exposed and
+   stay fail-closed behind the measurement-provider link. Consumers gate on
+   *written (never-written storage returns 0 = UNKNOWN reset state, not a
+   programmed bit) and treat a false return as invalid args/link, never as
+   measurement-provider unavailable.
+
+2. Guest-reachable index fix (review MUST-FIX): the engine read/write paths
+   indexed the 128-row slave register file with the FULL 8-bit slave byte;
+   a transaction word with slave >= 0x80 indexed past the file into adjacent
+   device state. I2C slaves are 7-bit addressed: REGI2C_ENG_SLAVE_OF now
+   masks to 0x7f (matches the declared register-file geometry).
+
+No runtime behavior change for the evidenced firmware paths (verified: boot
+smoke 3/3; wifi fixture unchanged single SAR2 fail-closed pause, 0
+unimplemented/guest-error lines; tested tree = this content, binary
+f5b98dde3238f5afe76f6bc38a7f0f1b73ac34c7aa297d051880c4e1cbe99fce).
+---
+ hw/misc/esp32s3_regi2c.c              | 15 +++++++++++++++
+ include/hw/misc/esp32s3_regi2c.h      | 13 ++++++++++++-
+ include/hw/misc/esp32s3_regi2c_defs.h |  6 ++++--
+ 3 files changed, 31 insertions(+), 3 deletions(-)
+
+diff --git a/hw/misc/esp32s3_regi2c.c b/hw/misc/esp32s3_regi2c.c
+index 3f58e16..e5daeda 100644
+--- a/hw/misc/esp32s3_regi2c.c
++++ b/hw/misc/esp32s3_regi2c.c
+@@ -343,6 +343,21 @@ static void esp32s3_regi2c_engine_done(void *opaque)
+     }
+     s->regs[e->index] = word;
+ }
++/* Canonical typed accessor -- see the declaration in esp32s3_regi2c.h. */
++bool esp32s3_regi2c_get_slave_reg(DeviceState *dev, uint8_t slave, uint8_t reg,
++                                  uint8_t *value, bool *written)
++{
++    ESP32S3RegI2CState *s;
++
++    if (!dev || !value || !written || slave >= REGI2C_SLAVE_COUNT) {
++        return false;
++    }
++    s = ESP32S3_REGI2C(dev);
++    *value = s->slave_regs[slave][reg];
++    *written = (s->slave_written[slave][reg / 8] & (1u << (reg % 8))) != 0;
++    return true;
++}
++
+ static void esp32s3_regi2c_engine_write(ESP32S3RegI2CState *s, int idx,
+                                         uint32_t value)
+ {
+diff --git a/include/hw/misc/esp32s3_regi2c.h b/include/hw/misc/esp32s3_regi2c.h
+index 575d782..b021120 100644
+--- a/include/hw/misc/esp32s3_regi2c.h
++++ b/include/hw/misc/esp32s3_regi2c.h
+@@ -52,6 +52,18 @@ struct Esp32s3RegI2cMeasProviderInterface {
+     bool (*op_done)(DeviceState *dev, unsigned op, uint32_t arg);
+ };
+ 
++/*
++ * Canonical typed accessor for lanes that must OBSERVE the analog slaves'
++ * CONFIG register state (e.g. the ADC lane reading the ENCAL_GND routing the
++ * ROM programmed into slave 0x69 reg 7). Returns the stored byte and whether
++ * the guest ever wrote that register. CONFIG STORAGE semantics only (patch
++ * 0003): this exposes the slaves' own register file, never measurement data
++ * -- SAR2/TSENS/TX-DC stay fail-closed behind the measurement provider.
++ * Wire it as a typed QOM link to TYPE_ESP32S3_REGI2C set before realize.
++ */
++bool esp32s3_regi2c_get_slave_reg(DeviceState *dev, uint8_t slave, uint8_t reg,
++                                  uint8_t *value, bool *written);
++
+ typedef enum Esp32s3RegI2CSar2Phase {
+     REGI2C_SAR2_IDLE = 0,
+     REGI2C_SAR2_CMD,     /* config transaction on the modeled I2C bus */
+@@ -66,7 +78,6 @@ typedef struct Esp32s3RegI2CEngine {
+ 
+ struct ESP32S3RegI2CState {
+     SysBusDevice parent_obj;
+-
+     /* 0x6000E000 .. 0x6000E0FF (undocumented REGI2C / I2C_MST block) */
+     MemoryRegion iomem;
+     /* 0x60008830 .. 0x60008837 (SENS_SAR_MEAS2_CTRL2 / _MUX force pair).
+diff --git a/include/hw/misc/esp32s3_regi2c_defs.h b/include/hw/misc/esp32s3_regi2c_defs.h
+index ad86882..1f15015 100644
+--- a/include/hw/misc/esp32s3_regi2c_defs.h
++++ b/include/hw/misc/esp32s3_regi2c_defs.h
+@@ -110,8 +110,10 @@ FIELD(SENS_TSENS, CLK_DIV, 14, 8)
+ /* Measurement-provider op ids (Esp32s3RegI2cMeasProviderInterface::op_done) */
+ #define REGI2C_OP_TXDC  1u /* TX-DC calibration op (+0x4c) */
+ 
+-/* Engine word field accessors */
+-#define REGI2C_ENG_SLAVE_OF(w) ((uint8_t)((w) & 0xffu))
++/* Engine word field accessors. I2C slaves are 7-bit addressed: the slave
++ * byte's high bit is unused by the evidenced grammar and MUST be masked
++ * before indexing the register file (guest-reachable index otherwise). */
++#define REGI2C_ENG_SLAVE_OF(w) ((uint8_t)((w) & 0x7fu))
+ #define REGI2C_ENG_REG_OF(w)   ((uint8_t)(((w) >> 8) & 0xffu))
+ #define REGI2C_ENG_BYTE0(w)    ((w) & 0xffu)
+ #define REGI2C_ENG_DATA_OF(w)  ((uint8_t)(((w) >> 16) & 0xffu))
+-- 
+2.43.0
+

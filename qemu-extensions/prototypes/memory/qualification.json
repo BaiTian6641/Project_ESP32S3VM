@@ -1,0 +1,110 @@
+{
+ "schema_version": 1,
+ "status": "CORE04_NATIVE_QUALIFICATION_PASS_ON_aa8b5f8e",
+ "hardware_claim": false,
+ "source_map_sha256": "c136a0d7a79a29f7282610c19d06ecb968de64a2febcdcae2437d56ccdd19082",
+ "positive_source_fingerprint": "aa8b5f8e5c99d4106eaba727fe3d00dde868ec32d3ddc9b6294471d2fd6c236c",
+ "negative_source_fingerprint": "1a8fa5bd6f43c42b5fac202897bcdd7898476cacdb708b7b20bacf8fd0eab553",
+ "positive_manifest_sha256": "1ce30a265cfe69badc3ae9118861c826dbce96e1e91dae48a755656aabc01c16",
+ "negative_manifest_sha256": "acf3fcc54c9f52d016bb760fcff8cf120a605102e51b6eb3ef54d43320e0d3d3",
+ "rom_sha256": "b5c7090cc22efce51c1323cef31ca96fcd673a5b1d1b1017e219d393f2659913",
+ "qualified_native_ranges": [
+  "0x3c000000..0x3dffffff CPU/DBUS window, 512 shared 64KiB MMU entries, committed 8MiB SSI backing only",
+  "private system-physical PSRAM alias 0x30000000..0x307fffff: model-internal IOMMU translation target, not in any guest cache window",
+  "0x3fc88000..0x3fceffff internal descriptors/data, SRAM2 cache ownership 0x3fcf0000..0x3fcfffff respected"
+ ],
+ "implemented_requested_profile": {
+  "capacity_bytes": 8388608,
+  "mode": "STR QPI linear, SPI0 EB/38, 8 command bits, 24 address bits, six effective read dummy clocks, PLL-derived80MHz/2=40MHz",
+  "backing": "One actual SSI PSRAM array on existing SPI1 CS1; finite CPU writeback cache distinct from committed GDMA MMU view",
+  "cpu_and_gdma_window": "0x3c000000..0x3dffffff,64KiB MMU pages; only actual8MiB physical pages accepted",
+  "cache_geometries": "Four ways;32KiB16/32/64-byte lines and64KiB32/64-byte lines",
+  "clock_rule": "Real SYSTEM SPI01 gate/reset bit1 and existing PLL validity; CLOCK_GATE.CLK_EN is register-clock force-on and both0/1 work",
+  "maintenance": "ROM EXTMEM C2M writeback/M2C invalidate/clean; failed writeback retains dirty ownership and reports sync-fault status",
+  "reset": "CPU-only preserves shared cache/MMU; PERIPH discards dirty cache/MMU, retaining external chip bytes/QPI; SPI01 controller reset preserves cached ownership and chip bytes"
+ },
+ "observed_checks": {
+  "candidate": "runtime 6dfa7350906414c4 positive (executable sha256 2917db0b20c6ad513b76e274ea0e955853c411cd07ec2e9c5f82f977016f69b2)",
+  "native_memory_qtests": "12/12 PASS (visibility, alias-remap, boundaries, absent -m0, alignment, reset, spi1-ssi, spi1-high-duplex, spi1-asymmetric, spi0-phases, spi0-clock-reset, cache-geometry) on the exact binary; log build-runtime-state/memory-core04-6dfa7350-2026-10-08/qtests/esp32s3-memory-test.log",
+  "frozen_gdma_qtests": "16/16 PASS (engine unchanged, no GDMA source edits in this candidate); log build-runtime-state/memory-core04-6dfa7350-2026-10-08/qtests/esp32s3-gdma-test.log",
+  "ordinary_sdk_leaves": "4/4 PASS with 3 boots each (initial, QMP system_reset, same-disk process relaunch) and disk phase advance asserted: idf-6.1 psram, idf-6.1 internal, idf-5.5.5 psram, idf-5.5.5 internal; evidence build-runtime-state/memory-core04-6dfa7350-2026-10-08/fixture-runs/",
+  "ordinary_boot_controls": "3/3 PASS (idf-6.1, idf-5.5.5, arduino-idf-5.5.5 frozen merged images, immutable originals hash-verified); evidence build-runtime-state/memory-core04-6dfa7350-2026-10-08/boot-controls/",
+  "spi1_fail_before_pass_after": "positive PASS and negative-spi1 FAIL (test_spi1_transport got != p) for both spi1-high-duplex and spi1-asymmetric; the negative also passes spi1-ssi, so the transport index-bounds fix is isolated to the duplex/asymmetric cases; evidence build-runtime-state/memory-core04-6dfa7350-2026-10-08/spi1-controls/",
+  "cpu_psram_data_path": "CPU PSRAM accesses, IDF startup memory test and cache maintenance now complete on ordinary IDF6.1/5.5.5 quad8MiB firmware with zero panics; the fixture leaf reaches every consumer assertion including the GDMA-unmapped negatives"
+ },
+ "unexercised_acceptance": [
+  "Firmware host bindings for the newly built fixture images (host recomputed 384-byte FNV32/prefix values are validated by the runner itself on every boot, but no separate receipt is recorded here)",
+  "Actual external RGB/CAM captures/ownership/decoder/return-rearm on the camera-capable tree (blocked on the I2C lane restack, unchanged)"
+ ],
+ "external_consumers": {
+  "status": "AUTHORED_NOT_EXERCISED",
+  "source": "tests/firmware/lcd_cam_native/main/lcd_cam_native.c",
+  "source_sha256": "7d9d9fcdc87cb3929f5b3261b6f4bfcbdcb941574c291d8e11434b0046474073",
+  "profiles": [
+   "lcd-rgb-double",
+   "lcd-rgb-bounce",
+   "lcd-camera-rgb565",
+   "lcd-camera-yuv422",
+   "lcd-camera-jpeg"
+  ],
+  "preservation": "Internal defaults/all15 RGB formulas and hardware octal profiles remain separate; locked camera2.1.3/vendor and frozen ELFs untouched",
+  "jpeg_archive_sha256": "6c15edd7f3b74f37d02ab4e74f13276aff4bd0f63dd9b6031bf6ebba5e020c13",
+  "jpeg_source_commit": "746e83ddbea0db9c3d24993a87c4c737a60337ae",
+  "dependency_activation": "Actual Component Manager1 plus exact main project pin and native package discovery; no vendor/header shim"
+ },
+ "current_prerequisites": [
+  "Main schedules Memory full QEMU build only after CPU15 and fullgraph NativeNet verification slots complete; no current job is killed",
+  "Final native-foundations source/profile/compiled-binary receipt is required before external consumer builds/runs; no standalone proof borrowed"
+ ],
+ "explicit_unknown_rows": [
+  "OPI/DDR/DQS",
+  "Other densities/2T/refresh/electrical timing",
+  "Independent PSRAM instruction-cache/XIP visibility",
+  "Preload/autoload/lock/tag assists",
+  "Cache error IRQ routing and silicon stall/timeout/replacement policy",
+  "PSRAM encryption; existing flash/XTS algorithms unchanged"
+ ],
+ "evidence_root": "build-runtime-state/memory-core04-aa8b5f8e-2026-10-08",
+ "receipts": [
+  "final-positive-negative-provenance.json",
+  "firmware-build-results.json",
+  "firmware-host-binding-checks.json",
+  "verification-commands.json",
+  "approved-qtest-inventory.json",
+  "consumer-dependencies/preparation-receipt.json"
+ ],
+ "preserved_evidence_roots": [
+  "build-runtime-state/memory-native-2026-10-07",
+  "build-runtime-state/memory-native-2026-10-08",
+  "build-runtime-state/memory-core04-ede49916-2026-10-08",
+  "build-runtime-state/memory-core04-fcdc47b8-2026-10-08"
+ ],
+ "changelog": [
+  {
+   "date": "2026-10-08",
+   "change": "CORE-04 memory qualification executed on 6dfa7350: 12/12 native memory qtests, 16/16 frozen GDMA cases, 4/4 ordinary SDK leaves (3 boots each), 3/3 boot controls and the SPI1 fail-before/pass-after control all pass. Added host-side runner robustness (native live artifacts, transient drvfs read faults) and the MMU-table-verified unmapped probe; earlier failed runs preserved under their own evidence roots."
+  }
+ ],
+ "qualified_evidence": {
+  "qemu_system_xtensa_sha256": "6edea8ce595fc3b8456a4f9361d59a3f4342a16914211ea90386086f3349e4b8",
+  "native_memory_qtests": "build-runtime-state/memory-core04-6dfa7350-2026-10-08/qtests/esp32s3-memory-test.log",
+  "frozen_gdma_qtests": "build-runtime-state/memory-core04-6dfa7350-2026-10-08/qtests/esp32s3-gdma-test.log",
+  "leaves": {
+   "idf-6.1-psram": "build-runtime-state/memory-core04-aa8b5f8e-2026-10-08/fixture-runs/idf-6.1-psram-20261008T123522-wg6m26an",
+   "idf-6.1-internal": "build-runtime-state/memory-core04-aa8b5f8e-2026-10-08/fixture-runs/idf-6.1-internal-20261008T123528-4i1ipyj7",
+   "idf-5.5.5-psram": "build-runtime-state/memory-core04-aa8b5f8e-2026-10-08/fixture-runs/idf-5.5.5-psram-20261008T123745-d0y5us3_",
+   "idf-5.5.5-internal": "build-runtime-state/memory-core04-aa8b5f8e-2026-10-08/fixture-runs/idf-5.5.5-internal-20261008T123536-ffbgh3aa"
+  },
+  "boot_controls": [
+   "build-runtime-state/memory-core04-6dfa7350-2026-10-08/boot-controls/boot-idf-6.1-gax0e0yz",
+   "build-runtime-state/memory-core04-6dfa7350-2026-10-08/boot-controls/boot-idf-5.5.5-6kbx5l8t",
+   "build-runtime-state/memory-core04-6dfa7350-2026-10-08/boot-controls/boot-arduino-idf-5.5.5-694srp1p"
+  ],
+  "spi1_controls": "build-runtime-state/memory-core04-6dfa7350-2026-10-08/spi1-controls",
+  "runner_binding": "every bound leaf and control records run-native-fixture.py/run-boot-controls.py by path and sha256 in its own result.json provenance",
+  "superseded_runs_preserved": [
+   "build-runtime-state/memory-core04-6dfa7350-2026-10-08/fixture-runs/idf-6.1-internal-20261008T091730-5krljf6_",
+   "build-runtime-state/memory-core04-6dfa7350-2026-10-08/fixture-runs/idf-6.1-psram-20261008T091726-_347sibv"
+  ]
+ }
+}

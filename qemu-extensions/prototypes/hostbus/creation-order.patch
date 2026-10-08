@@ -1,0 +1,17 @@
+diff --git a/system/vl.c b/system/vl.c
+--- a/system/vl.c
++++ b/system/vl.c
+@@ -1904,6 +1904,13 @@ static bool object_create_early(const char *type)
+         return false;
+     }
+ 
++#ifdef CONFIG_TCG
++    /* Reason: the probe's dedicated chardev must exist before completion. */
++    if (g_str_equal(type, "esp32s3-hostbus-probe")) {
++        return false;
++    }
++#endif
++
+ #if defined(CONFIG_VHOST_USER) && defined(CONFIG_LINUX)
+     /* Reason: cryptodev-vhost-user property "chardev" */
+     if (g_str_equal(type, "cryptodev-vhost-user")) {

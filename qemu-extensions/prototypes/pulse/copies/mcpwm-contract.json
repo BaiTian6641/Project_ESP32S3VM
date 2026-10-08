@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "controller": "SOC03 ESP32-S3 MCPWM",
+  "license": "GPL-2.0-or-later",
+  "delivery": "native sysbus model; parent owns machine/build wiring",
+  "type": "esp32s3.mcpwm",
+  "header_destination": "hw/misc/esp32s3_mcpwm.h",
+  "properties": {"group": "uint32, 0 or 1", "gpio": "ESP32S3GPIOState link", "electrical": "DeviceState esp32s3-electrical link", "soc-reset": "DeviceState reset-domain link"},
+  "instances": [
+    {"group": 0, "machine_path": "/machine/soc/mcpwm0", "base": "0x6001e000", "irq_source": 31, "output_signals": [160,161,162,163,164,165], "sync_inputs": [160,161,162], "fault_inputs": [163,164,165], "capture_inputs": [166,167,168], "gate": "ESP32S3_GATE_MCPWM0, EN0[17]", "reset": "ESP32S3_RST_MCPWM0, RST0[17]"},
+    {"group": 1, "machine_path": "/machine/soc/mcpwm1", "base": "0x6002c000", "irq_source": 32, "output_signals": [166,167,168,169,170,171], "sync_inputs": [169,170,171], "fault_inputs": [172,173,174], "capture_inputs": [175,176,177], "gate": "ESP32S3_GATE_MCPWM1, EN0[20]", "reset": "ESP32S3_RST_MCPWM1, RST0[20]"}
+  ],
+  "mmio": {"region_size": "0x1000", "implemented_registers": "0x000..0x124 inclusive, pinned S3 layout", "access": "aligned little-endian 32-bit", "reserved": "read zero, writes ignored", "interrupts": "30 raw sticky events, independent enable/masked status, W1C through INT_RAW or INT_CLR; enabled pending IRQ level is retained across clock gates and dependency pauses; one IRQ per group"},
+  "clocks": {
+    "pll-f160m-clk": "PWM/group/timer/deadtime/carrier source; actual connected frequency only",
+    "apb-clk": "32-bit capture timer source; actual connected frequency only",
+    "clock-enable": "named level GPIO, freezes counters and pending delays; physical source retains output level and OE while gated",
+    "reset-held": "named level GPIO, clears generator state on assertion and blocks MMIO while held; reset output state is driven through actual GPIO matrix/pad OE",
+    "reset": "named rising/high strobe GPIO, unconditional peripheral reset",
+    "soc_reset_policy": "CPU-only reset preserves controller; chip/peripheral reset clears it"
+  },
+  "features": [
+    {"name": "all three timers per group", "implemented": true, "details": ["up/down/up-down/freeze", "16-bit count and next-count direction status", "active prescaler loaded at start", "immediate/TEZ/sync period shadows", "continuous/start-stop-empty/start-stop-full and stop IRQs"]},
+    {"name": "all three operators and six generators per group", "implemented": true, "details": ["independent timer selection", "two compare shadows with full flags and WTC", "direction-qualified TEZ/TEP/TEA/TEB/T0/T1 actions", "per-output event arbitration", "continuous force shadow methods", "toggle-triggered immediate noncontinuous force"]},
+    {"name": "deadtime", "implemented": true, "details": ["RED/FED independent fixed pending slots", "all S0..S8 switch paths including dual-edge cascade and independent swaps", "inversion and bypass", "group/timer source", "immediate/TEZ/TEP/sync delay shadows", "short-pulse cancellation"]},
+    {"name": "carrier", "implemented": true, "details": ["all operators", "prescaler and 1/8 duty steps", "first pulse width", "input/output inversion", "bounded persistent scheduling"]},
+    {"name": "synchronization", "implemented": true, "details": ["three external matrix inputs with inversion", "timer sync-out TEZ/TEP/input propagation/software toggle", "phase and direction reload", "prescaler phase reset", "all timer counters advance before internal sync dispatch", "three-node visited mask bounds guest-created sync cycles", "capture timer hardware/software phase sync"]},
+    {"name": "capture", "implemented": true, "details": ["32-bit wrapping APB timer", "all three channels", "input inversion", "positive-edge prescaler 1..256", "selected positive/negative edges and edge status", "software capture auto-clear", "independent channel IRQs"]},
+    {"name": "fault and brake", "implemented": true, "details": ["three enabled physical faults and active-level selection", "fault detection latches on PWM group clock", "enter/exit IRQs", "independent CBC/OST latches, IRQs and direction actions", "OST activation edge or software trigger; clear rising edge releases ongoing OST without same-level re-arm", "CBC TEZ/TEP refresh after physical fault removal", "software brake enable and force toggles", "fault T0/T1 generator triggers"]},
+    {"name": "strict electrical integration", "implemented": true, "details": ["only esp32s3_electrical_set_matrix_drive owns outputs", "electrical solved-frame validity precedes strict GPIO matrix sample", "disabled consumers do not consume reset bypass routes", "floating/contention/bypass/input-disabled dependencies pause rather than fabricate edges", "clock gate/dependency pause retains real source OE and levels; reset state is physically driven; unrealize releases source", "fixed electrical subscriber, removed before destruction", "reentrant publication uses a finite next timer delta", "unchanged outputs never trigger a physical emission batch; reset forces initial publication"]},
+    {"name": "phase and bounded execution", "implemented": true, "details": ["one persistent QEMUTimer", "fixed three timer/six deadtime/six carrier slots", "source-cycle numerator with 1e9 denominator", "fraction retained across frequency and divider changes", "deadtime cascade and carrier carry rounded-ns overshoot", "capture counter arithmetic handles long idle intervals without per-tick iteration", "no per-edge allocation or unbounded zero-delay loop"]}
+  ],
+  "reference_interpretations": [
+    {"topic": "up-down endpoints", "rule": "UTEZ and DTEP; symmetric cycle uses pinned LL peak convention", "references": ["mcpwm_ll.h:266-273", "TRM 36.3.2.2 and 36.3.3.1"], "conflict": "TRM introductory prose says 2*period+1, while pinned LL and TRM endpoint range note describe [0,period-1]+[period,1]; implementation follows the latter."},
+    {"topic": "deadtime encoding", "rule": "delay clocks = register + 1", "references": ["mcpwm_ll.h:1109-1123"], "conflict": "TRM formula omits the +1 encoded by pinned LL; implementation follows LL used by IDF."},
+    {"topic": "concurrent no-action fields", "rule": "zero action contributes no set/clear/toggle request; highest-priority nonzero request wins independently for each output", "evidence": "[INFERENCE] TRM event priority tables plus ordinary IDF single-comparator configuration, where the unused comparator remains zero and must not suppress TEZ."},
+    {"topic": "non-continuous immediate force", "rule": "Software-force event immediately sets generator output; next active timing event may alter that actual forced output, including toggle. No separate transient output override.", "references": ["TRM v1.8 p1341 event-priority tables", "TRM v1.8 p1348 Software-Force Events and Figure36.3-19", "TRM v1.8 p1376 GEN0_FORCE register"]},
+    {"topic": "one-shot brake clear and handler activation", "rule": "FH_CLR_OST rising edge clears ongoing OST; unchanged active fault level does not re-arm it. A new physical fault activation or newly enabling its OST handler can trigger a new OST.", "references": ["TRM v1.8 p1359 One-Shot action", "TRM v1.8 p1382 FH0_CLR_OST register"], "inference": "Enabling handler on an already-active fault is treated as a new gated fault activation; no physical metrology claim."}
+  ],
+  "provider_boundaries": ["GPIO matrix owns pad routing, inversion, IE and GPIO synchronization; MCPWM does not synthesize a second pad signal store.", "Analog thresholds, power, net contention and settling belong to the electrical owner.", "QEMU virtual nanoseconds expose sub-ns source phase through retained integer remainders, not measured silicon timing."],
+  "remaining_source_blockers": [],
+  "verification": {
+    "build": "not run by this worker",
+    "tests": "authored, not run by this worker",
+    "hardware": "not performed; outside assignment",
+    "qtest": "esp32s3-mcpwm-test.c",
+    "qtest_cases": ["both-groups-six-generators", "shadow-stop-single-cycle", "updown-sync-capture", "deadtime-force-carrier", "fault-cbc-ost-priority", "gate-reset-phase", "down-fractional-divider", "internal-sync-capture-prescale", "negative-physical-inputs", "ost-clear-active-fault", "nci-next-event-toggle"],
+    "parent_actions": ["Wire both groups and their clock/gate/reset/IRQ inputs", "Compile native GPL pulse overlay once ready", "Run esp32s3-mcpwm-test and public pulse_native firmware fixtures", "Qualify claimed behavior from the actual exercised results rather than this implementation manifest"]
+  },
+  "sources": [
+    {"path":"qemu-extensions/prototypes/pulse/copies/esp32s3_mcpwm.c","sha256":"859f51aeb77a61b69af34494178b8b1f1083d86cbfbc4be4f9874d659d679971"},
+    {"path":"qemu-extensions/prototypes/pulse/copies/esp32s3_mcpwm.h","sha256":"676e35c61be2423793d726cd1401e57fae0f0c8aeaaf0a7dbb6758239f270e53"},
+    {"path":"qemu-extensions/prototypes/pulse/copies/esp32s3-mcpwm-test.c","sha256":"c904980f83c88386e700e51c5d40f6c32a099998e476ced1e076e089e92e0637"},
+    {"path":"build-idf-6.1/components/soc/esp32s3/register/soc/mcpwm_reg.h","sha256":"33aaf6ef7acdd3720ac4442b72d0f644c138840ca06a44766eb6b5b2682e7ecc"},
+    {"path":"build-idf-6.1/components/soc/esp32s3/register/soc/mcpwm_struct.h","sha256":"35c12d08c2c55ebb33b375b74b9bba5994c0df2cf241d2346054298026febb9d"},
+    {"path":"build-idf-6.1/components/esp_hal_mcpwm/esp32s3/include/hal/mcpwm_ll.h","sha256":"09127bd68efa6f367dc8eedbb18c93bdf534fee06f722d3b4197ad0663a7d71c"},
+    {"path":"build-idf-6.1/components/esp_hal_mcpwm/esp32s3/mcpwm_periph.c","sha256":"054526aa54ede0cd536e67de56b7d233a9efaf2584269e628b504605cd5c5674"},
+    {"path":"build-idf-6.1/components/soc/esp32s3/include/soc/gpio_sig_map.h","sha256":"f4fe38cc217a2bdcd2c0ec192fa887df1cbbe3506da1c677656506dc3997d758"},
+    {"path":"build-idf-6.1/components/soc/esp32s3/include/soc/interrupts.h","sha256":"ff3368997c620685080642e19c6f0385b190715b639c0c3dd4a5b0fd6ca50744"},
+    {"path":"build-idf-6.1/components/soc/esp32s3/ld/esp32s3.peripherals.ld","sha256":"912cfe67746dd94a019294b27495aa11174bc16c761c2eaa4cb9d321257a05a5"},
+    {"path":"build-idf-6.1/components/esp_driver_mcpwm/src/mcpwm_gen.c","sha256":"85cdcf79cef0303a05b90b150fd3b2d79dbaf03f7ac64eb443dd152643a6f93e"},
+    {"path":"build-idf-6.1/components/esp_driver_mcpwm/src/mcpwm_timer.c","sha256":"8d70f9e698615cce7419944399ec78546a44ff5559fd0f7bd7cf78e83a4f5a93"},
+    {"path":"build-idf-6.1/components/esp_driver_mcpwm/src/mcpwm_cap.c","sha256":"7558f43e9d7f55d67cebe30861a659419be565141f4fc8634c0f45869a76589b"},
+    {"path":"build-idf-6.1/components/esp_driver_mcpwm/src/mcpwm_oper.c","sha256":"14cb4e001dde43fa4f0aea9629932f204d445ebd62376571893ec456b33f043a"},
+    {"path":"qemu-extensions/prototypes/electrical-runtime/copies/esp32s3_electrical.h","sha256":"fb0c24c2ced9a25d281969ad850f46bb817c3d688c8b97c6ece93ec356e59377"},
+    {"path":"qemu-extensions/prototypes/gpio/copies/esp32s3_gpio.h","sha256":"b848cccf81a45f460efd6bfcb58d8224cad51443f12a3a7cb6a6dff7212e8c7d"},
+    {"url":"https://documentation.espressif.com/esp32-s3_technical_reference_manual_en.pdf","version":"1.8","sections":"36.3.2..36.3.4 and Figure 36.3-21","sha256":"4484bf8a69035ec42a731c58c64ada6fbd1f1618c5559409f134d9ea083f444f"}
+  ]
+}

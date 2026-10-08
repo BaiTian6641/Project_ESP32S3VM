@@ -1,0 +1,35 @@
+diff --git a/backends/meson.build b/backends/meson.build
+--- a/backends/meson.build
++++ b/backends/meson.build
+@@ -42,3 +42,5 @@
+ system_ss.add(when: 'CONFIG_SPDM_SOCKET', if_true: files('spdm-socket.c'))
+ 
++system_ss.add(when: 'CONFIG_TCG', if_true: files('hostbus-probe.c'))
++
+ subdir('tpm')
+diff --git a/system/cpus.c b/system/cpus.c
+--- a/system/cpus.c
++++ b/system/cpus.c
+@@ -42,6 +42,9 @@
+ #include "sysemu/replay.h"
+ #include "sysemu/runstate.h"
+ #include "sysemu/cpu-timers.h"
++#ifdef CONFIG_TCG
++#include "sysemu/hostbus-probe.h"
++#endif
+ #include "sysemu/whpx.h"
+ #include "hw/boards.h"
+ #include "hw/hw.h"
+@@ -724,6 +727,12 @@ int vm_prepare_start(bool step_pending)
+     RunState state = vm_was_suspended ? RUN_STATE_SUSPENDED : RUN_STATE_RUNNING;
+     RunState requested;
+ 
++#ifdef CONFIG_TCG
++    if (esp32s3vm_hostbus_resume_blocked()) {
++        return -1;
++    }
++#endif
++
+     qemu_vmstop_requested(&requested);
+     if (runstate_is_running() && requested == RUN_STATE__MAX) {
+         return -1;

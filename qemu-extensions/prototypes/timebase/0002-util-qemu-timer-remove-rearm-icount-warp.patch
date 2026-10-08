@@ -1,0 +1,20 @@
+From: Peter Maydell <peter.maydell@linaro.org>
+Subject: [PATCH] util/qemu-timer.c: Don't warp timer from timerlist_rearm()
+
+Upstream commit (qemu 10.0, Cc: qemu-stable, Resolves: qemu issue #2703),
+applied verbatim to the locked 40edccac4156 base. Original message-id:
+20250210135804.3526943-1-peter.maydell@linaro.org
+
+--- a/util/qemu-timer.c
++++ b/util/qemu-timer.c
+@@ -409,10 +409,6 @@
+ 
+ static void timerlist_rearm(QEMUTimerList *timer_list)
+ {
+-    /* Interrupt execution to force deadline recalculation.  */
+-    if (icount_enabled() && timer_list->clock->type == QEMU_CLOCK_VIRTUAL) {
+-        icount_start_warp_timer();
+-    }
+     timerlist_notify(timer_list);
+ }
+ 

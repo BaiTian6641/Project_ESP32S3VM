@@ -1,0 +1,187 @@
+--- a/hw/misc/meson.build
++++ b/hw/misc/meson.build
+@@ -167,9 +167,12 @@
+   'esp32s3_rtc_cntl.c',
+   'esp32s3_rng.c',
+   'esp32s3_pms.c',
++  'esp32s3_rtc_io.c',
+   'esp32s3_regi2c.c',
+   'esp_hmac.c',
+-  'esp32s3_hmac.c'
++  'esp32s3_hmac.c',
++  'esp32s3_sens.c',
++  'esp32s3_apb_saradc.c'
+ ))
+ 
+ if gcrypt.found()
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -29,6 +29,8 @@
+ #include "target/xtensa/cpu.h"
+ 
+ #include "hw/misc/esp32s3_rtc_cntl.h"
++#include "hw/misc/esp32s3_sens.h"
++#include "hw/misc/esp32s3_apb_saradc.h"
+ #include "hw/xtensa/esp32s3_intc.h"
+ 
+ #include "hw/sd/dwc_sdmmc.h"
+@@ -64,6 +66,8 @@
+ #include "hw/timer/esp32s3_timg.h"
+ #include "hw/timer/esp32s3_systimer.h"
+ #include "hw/gpio/esp32s3_gpio.h"
++#include "hw/gpio/esp32s3_iomux.h"
++#include "hw/misc/esp32s3_rtc_io.h"
+ #include "hw/misc/esp32s3_xts_aes.h"
+ #include "hw/misc/esp32s3_pms.h"
+ #include "hw/net/can/esp32s3_twai.h"
+@@ -131,10 +135,17 @@
+     Esp32s3IntMatrixState intmatrix;
+     ESP32S3UARTState uart[ESP32S3_UART_COUNT];
+     ESP32S3GPIOState gpio;
++    ESP32S3IOMuxState iomux;
++    ESP32S3RtcIoState rtc_io;
+     Esp32s3RngState rng;
+     Esp32S3TWAIState twai;
+ 
+     Esp32s3RtcCntlState rtc_cntl;
++
++    /* ADC-01 lane: SENS + APB_SARADC (REGI2C comes from the radio lane;
++     * SENS is the single SENS owner). */
++    ESP32S3SensState sens;
++    ESP32S3ApbSaradcState apb_saradc;
+ 
+     BusState rtc_bus;
+     BusState periph_bus;
+@@ -805,6 +816,8 @@
+     object_initialize_child(OBJECT(ss), "efuse", &ss->efuse, TYPE_ESP32S3_EFUSE);
+     object_initialize_child(OBJECT(ss), "jtag", &ss->jtag, TYPE_ESP32C3_JTAG);
+     object_initialize_child(OBJECT(ss), "gpio", &ss->gpio, TYPE_ESP32S3_GPIO);
++    object_initialize_child(OBJECT(ss), "iomux", &ss->iomux, TYPE_ESP32S3_IOMUX);
++    object_initialize_child(OBJECT(ss), "rtc-io", &ss->rtc_io, TYPE_ESP32S3_RTC_IO);
+     object_initialize_child(OBJECT(ss), "rng", &ss->rng, TYPE_ESP32S3_RNG);
+ 
+     object_initialize_child(OBJECT(ss), "regi2c", &ss->regi2c, TYPE_ESP32S3_REGI2C);
+@@ -821,6 +834,9 @@
+     object_initialize_child(OBJECT(ss), "timg1", &ss->timg[1], TYPE_ESP32S3_TIMG);
+     object_initialize_child(OBJECT(ss), "systimer", &ss->systimer, TYPE_ESP32S3_SYSTIMER);
+     object_initialize_child(OBJECT(ss), "rgb", &ss->rgb, TYPE_ESP_RGB);
++    object_initialize_child(OBJECT(ss), "sens", &ss->sens, TYPE_ESP32S3_SENS);
++    object_initialize_child(OBJECT(ss), "apb_saradc", &ss->apb_saradc,
++                            TYPE_ESP32S3_APB_SARADC);
+ 
+     /* ---------------------------------------------------------------------
+      * Clock tree and reset-domain wiring, second stage (coreclk lane).
+@@ -1018,11 +1034,35 @@
+     }
+ 
+ 
++    {
++        sysbus_realize(SYS_BUS_DEVICE(&ss->iomux), &error_fatal);
++        MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->iomux), 0);
++        memory_region_add_subregion_overlap(sys_mem, DR_REG_IO_MUX_BASE, mr, 0);
++        object_property_set_link(OBJECT(&ss->gpio), "iomux", OBJECT(&ss->iomux), &error_abort);
++        qdev_connect_gpio_out_named(DEVICE(&ss->iomux), ESP32S3_IOMUX_CHANGE_IRQ, 0,
++                                   qdev_get_gpio_in_named(DEVICE(&ss->gpio),
++                                                         ESP32S3_GPIO_IOMUX_CHANGE, 0));
++    }
++
+     /* GPIO realization */
+     {
+         sysbus_realize(SYS_BUS_DEVICE(&ss->gpio), &error_fatal);
+         MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->gpio), 0);
+         memory_region_add_subregion_overlap(sys_mem, DR_REG_GPIO_BASE, mr, 0);
++        sysbus_connect_irq(SYS_BUS_DEVICE(&ss->gpio), 0,
++                           qdev_get_gpio_in(intmatrix_dev, ETS_GPIO_INTR_SOURCE));
++        qdev_connect_gpio_out_named(DEVICE(&ss->gpio), ESP32S3_GPIO_IRQ_NMI, 0,
++                                   qdev_get_gpio_in(intmatrix_dev, ETS_GPIO_NMI_SOURCE));
++        qdev_connect_gpio_out_named(DEVICE(&ss->gpio), ESP32S3_GPIO_IRQ_APP, 0,
++                                   qdev_get_gpio_in(intmatrix_dev, ETS_GPIO_INTR_SOURCE2));
++        qdev_connect_gpio_out_named(DEVICE(&ss->gpio), ESP32S3_GPIO_IRQ_APP_NMI, 0,
++                                   qdev_get_gpio_in(intmatrix_dev, ETS_GPIO_NMI_SOURCE2));
++    }
++
++    {
++        sysbus_realize(SYS_BUS_DEVICE(&ss->rtc_io), &error_fatal);
++        MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->rtc_io), 0);
++        memory_region_add_subregion_overlap(sys_mem, DR_REG_RTC_IO_MUX_BASE, mr, 0);
+     }
+ 
+     {
+@@ -1119,8 +1159,55 @@
+         memory_region_add_subregion_overlap(sys_mem, esp32s3_memmap[ESP32S3_MEMREGION_FRAMEBUF].base, &ss->rgb.vram, 0);
+     }
+ 
++    /* ADC-01 lane: SENS + APB_SARADC realization.  Wiring is confined to
++     * this block (realize + MMIO + IRQ + clock connects); REGI2C 0x6000E000
++     * registration belongs to the stacked radio lane, whose consumers take
++     * this block's named outputs ("sar2-armed", "tsens-dump-out").  The
++     * sample provider is intentionally unconnected in the machine default
++     * (all samples UNKNOWN -> fail-closed diagnostics); it is linked by
++     * qtest/integration via the runtime-settable "sample-provider" link. */
++    {
++        DeviceState *clk_dev = DEVICE(&ss->clock);
++        NamedClockList *ncl;
++
++
++        /* APB_SARADC digital-side registers + done interrupt mapper. */
++        sysbus_realize(SYS_BUS_DEVICE(&ss->apb_saradc), &error_fatal);
++        memory_region_add_subregion_overlap(sys_mem, DR_REG_APB_SARADC_BASE,
++                sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->apb_saradc), 0), 0);
++        sysbus_connect_irq(SYS_BUS_DEVICE(&ss->apb_saradc), 0,
++                           qdev_get_gpio_in(intmatrix_dev,
++                                            ETS_APB_ADC_INTR_SOURCE));
++
++        /* SENS RTC ADC controller (single owner of 0x60008800..0x89FF). */
++        object_property_set_link(OBJECT(&ss->sens), "apb-saradc",
++                                 OBJECT(&ss->apb_saradc), &error_abort);
++        sysbus_realize(SYS_BUS_DEVICE(&ss->sens), &error_fatal);
++        memory_region_add_subregion_overlap(sys_mem, DR_REG_SENS_BASE,
++                sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->sens), 0), 0);
++
++        /* Clock inputs ("apb-clk"/"rtc-fast-clk").  Connected when the SoC
++         * clock model publishes those outputs (codex/coreclk); the devices
++         * fall back to the documented constants (APB 80 MHz, RTC_FAST
++         * 20 MHz) when unconnected. */
++        QLIST_FOREACH(ncl, &clk_dev->clocks, node) {
++            if (!ncl->output || !ncl->clock) {
++                continue;
++            }
++            if (strcmp(ncl->name, "apb-clk") == 0) {
++                qdev_connect_clock_in(DEVICE(&ss->sens), "apb-clk", ncl->clock);
++                qdev_connect_clock_in(DEVICE(&ss->apb_saradc), "apb-clk",
++                                      ncl->clock);
++            } else if (strcmp(ncl->name, "rtc-fast-clk") == 0) {
++                qdev_connect_clock_in(DEVICE(&ss->sens), "rtc-fast-clk",
++                                      ncl->clock);
++                qdev_connect_clock_in(DEVICE(&ss->apb_saradc), "rtc-fast-clk",
++                                      ncl->clock);
++            }
++        }
++    }
++
+     esp32s3_soc_add_unimp_device(sys_mem, "esp32s3.rmt", DR_REG_RMT_BASE, 0x1000);
+-    esp32s3_soc_add_unimp_device(sys_mem, "esp32s3.iomux", DR_REG_IO_MUX_BASE, 0x2000);
+ 
+     esp32s3_machine_init_sd(ss);
+ 
+--- a/tests/qtest/meson.build
++++ b/tests/qtest/meson.build
+@@ -219,6 +219,9 @@
+ qtests_aspeed64 = \
+   ['ast2700-gpio-test']
+ 
++# ADC-01 lane: SENS/APB_SARADC register-level tests on the esp32s3 machine.
++qtests_xtensa = [ 'esp32s3-adc-test' ]
++
+ qtests_stm32l4x5 = \
+   ['stm32l4x5_exti-test',
+    'stm32l4x5_syscfg-test',
+@@ -344,7 +347,7 @@
+ endif
+ 
+ # ESP32-S3 clock tree / reset domain tests (coreclk lane)
+-qtests_xtensa = [ 'esp32s3-intmatrix-test', 'esp32s3-gdma-test', 'esp32s3-coreclk-test' ]
++qtests_xtensa = [ 'esp32s3-intmatrix-test', 'esp32s3-gdma-test', 'esp32s3-coreclk-test', 'esp32s3-gpio-test' ]
+ 
+ qtests = {
+   'bios-tables-test': [io, 'boot-sector.c', 'acpi-utils.c', 'tpm-emu.c'],

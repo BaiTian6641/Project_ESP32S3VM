@@ -1,0 +1,297 @@
+{
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "gpio_commit": "fdcf5e0 lineage (HEAD; squashed lineage 40edcca\u2192767c647(E1)\u219243713d8\u219297b929c\u219227b158c\u21920cb0cac\u21929cf839a\u2192fdcf5e0)",
+  "status": "prototype-unqualified",
+  "license": "GPL-2.0-or-later",
+  "work_package": "H-NET-02 (NET-02): GPIO/IO_MUX/matrix/RTC pad resolution + IRQ",
+  "patches": {
+    "base": {
+      "file": "integration.patch",
+      "target": "pristine base 40edcca",
+      "sha256": "da3d31e447f24292a1ea52a5cce8155166257afe8f45176cb80ba3188f93844e"
+    },
+    "v3_105a156e": {
+      "file": "integration-v3.patch",
+      "target": "combined-v3 prefix 105a156e (superseded)",
+      "sha256": "66c2b80a9e3ce664b1b43fa1a7c0783cb79dbec5056cdd805b498aa9b66aea22"
+    },
+    "native_foundations": {
+      "file": "integration-native-foundations.patch",
+      "target": "26dbe + core 0010..13 prefix (qemu-runtime-40edccac4156-dbe2a8a5ad4e07a6, provides esp32s3_reset_domain.h)",
+      "sha256": "8c7f04f278a57d4ab008f04fd2b4caed09c1669eebe9931c1122283e65201f6c",
+      "known_conflict_hunks": [
+        "hw/misc/meson.build: insert esp32s3_rtc_io.c after esp32s3_pms.c",
+        "hw/xtensa/esp32s3.c: iomux/rtc-io child init after gpio child + delete esp32s3.iomux add_unimp_device line",
+        "tests/qtest/meson.build: append esp32s3-gpio-test at the tail of the existing qtests_xtensa list"
+      ],
+      "lines": 3274,
+      "qtests_xtensa_after": "['esp32s3-intmatrix-test', 'esp32s3-gdma-test', 'esp32s3-coreclk-test', 'esp32s3-gpio-test'] \u2014 GPIO APPENDED at the tail (not prepended); consumers must also pure-append",
+      "read_semantics": "unpopulated 22-25 and FUN_IE=0 read 0 (no gate); pulls resolve valid; enabled floating pauses under strict profiles; drive_net fabrication advice withdrawn (solver-only validity)",
+      "frozen_e1a45cdb": {
+        "sha256": "e1a45cdb2e8e388fea1e0775a29b7639f236ff226e39dd3ad08f0df9a2a030bf",
+        "bytes": "archived with consumers (prepared486/a427, ADC11967 lineage); owner reconstruction at integration-native-foundations-frozen-e1a45cdb.reconstructed.patch is content-equivalent, byte-format differs (GNU diff hunk offsets)",
+        "frozen_copies_dir": "copies-frozen-e1a45cdb/ (9 files, EXACT old bytes from git 767c647)"
+      }
+    }
+  },
+  "copies": [
+    {
+      "source": "copies/esp32_gpio.h",
+      "destination": "include/hw/gpio/esp32_gpio.h"
+    },
+    {
+      "source": "copies/esp32_gpio.c",
+      "destination": "hw/gpio/esp32_gpio.c"
+    },
+    {
+      "source": "copies/esp32s3_gpio.h",
+      "destination": "include/hw/gpio/esp32s3_gpio.h"
+    },
+    {
+      "source": "copies/esp32s3_gpio.c",
+      "destination": "hw/gpio/esp32s3_gpio.c"
+    },
+    {
+      "source": "copies/esp32s3_iomux.h",
+      "destination": "include/hw/gpio/esp32s3_iomux.h"
+    },
+    {
+      "source": "copies/esp32s3_iomux.c",
+      "destination": "hw/gpio/esp32s3_iomux.c"
+    },
+    {
+      "source": "copies/esp32s3_rtc_io.h",
+      "destination": "include/hw/misc/esp32s3_rtc_io.h"
+    },
+    {
+      "source": "copies/esp32s3_rtc_io.c",
+      "destination": "hw/misc/esp32s3_rtc_io.c"
+    },
+    {
+      "source": "copies/esp32s3-gpio-test.c",
+      "destination": "tests/qtest/esp32s3-gpio-test.c"
+    }
+  ],
+  "binaries": {
+    "base_overlay_qemu_system_xtensa": "e0633a262f488de2390d4ce10d3a371a3e05d55b3473b7f9d2f65f63e7200fda (baseline + both increments; qtest 13/13 + BootSmoke 3/3 verified on this hash)",
+    "native_foundations_26dbe_qemu_system_xtensa": "4c0cd2803d47c2572ad46019b7d78480c780e14ac9ac63bf84b4bdd08810b2a4 (baseline + both increments; qtest 14/14 incl matrix-irq-delivery on this hash)"
+  },
+  "irq_matrix_sources": {
+    "ETS_GPIO_INTR_SOURCE": 16,
+    "ETS_GPIO_NMI_SOURCE": 17,
+    "ETS_GPIO_INTR_SOURCE2": 18,
+    "ETS_GPIO_NMI_SOURCE2": 19
+  },
+  "mmio": {
+    "gpio": "0x60004000",
+    "io_mux": "0x60009000",
+    "rtc_io": "0x60008400"
+  },
+  "electrical_lines": {
+    "gpio-in": 49,
+    "gpio-out": 49,
+    "rtcio-in": 22,
+    "rtcio-out": 22
+  },
+  "key_semantics": {
+    "mcu_sel_gpio_function": "S3 PIN_FUNC_GPIO = 1 (io_mux_reg.h:140); classic ESP32 uses 2; direct functions e.g. U0TXD=0 on GPIO43",
+    "func_oen_sel": "S3 polarity: 0 = OE from routed peripheral signal, 1 = OE from GPIO_ENABLE; simple GPIO out_sel=256 hardwires OE to GPIO_ENABLE (OEN_SEL not applied)",
+    "floating": "never valid low: FLOATING/UNKNOWN diagnostics separate from the sampled bit; strict-unknown property (or solver-owned/attached) pauses consumption via native handler or default main-context BH",
+    "pads": "45 physical (0-21, 26-48); 22-25 unpopulated; no input-only pads (SOC_GPIO_VALID_OUTPUT_GPIO_MASK == VALID_GPIO_MASK)"
+  },
+  "native_peripheral_support": false,
+  "qualification_profile": "qtest 11/11 (base overlay; +1 matrix-irq-delivery on native-foundations) + real IDF 6.1 gpio driver fixture (output loopback PASS; ISR marker blocked on intmatrix->CPU level delivery - owned by IntMatrixWorker, instrumented repro handed over) + BootSmokeTest 3/3",
+  "boundaries": [
+    "no analog voltage on lines (solver volts recorded, inert until analog gate)",
+    "no RTC deep-sleep hold / SLP_* electrical behavior",
+    "no RTC_CNTL interrupt aggregation (RTC_CNTL_INT_ST_RTC_GPIO)",
+    "peripheral matrix output signals not sourced in GPIO (NativeNet electrical.set_matrix_drive is the single desired-output authority)",
+    "direct IO_MUX peripheral functions (MCU_SEL != 1) release the pad; no direct-route tables",
+    "pads 22-25 unpopulated; no input-only pads",
+    "no SDM, no CPU-dedicated GPIO bundles",
+    "contention diag reports raw-vs-solved; analog gate owns resolution",
+    "standalone permissive digital mode (strict-unknown=false) is an unqualified analog boundary"
+  ],
+  "copies_semantics": "All 9 copies/ files are the AUTHORITATIVE POST-INTEGRATION bytes (identical on base-overlay and 26dbe prefixes thanks to __has_include guards for esp32s3_reset_domain.h). Parent pipeline patches-then-copies is safe: the 13-section patch and the copies produce identical file contents; copies always win (final bytes). esp32_gpio.* and esp32s3_gpio.* are modifications of tracked files present in the patch AND copies; the 5 new files (iomux/rtc_io/test) appear as new-file sections in the patch and as copies. For a U3 overlay cut source directly from commit 767c647cf337af6a6e7abe2e8251b981ca4316b1.",
+  "copies_guard_hashes": {
+    "esp32_gpio.c": "3424311facc6836bf065ef788f3e3bf34f75645f995c1b3f06cb90b0ddff1815",
+    "esp32_gpio.h": "a4d67f645cd6883ca4b91836f2fc646a0b98e4a7a67bae35f495225b70f2d2a4",
+    "esp32s3-gpio-test.c": "33ed0c74166a099451229140e08d206b38b70cfea335d8cc8529468f30039b26",
+    "esp32s3_gpio.c": "06e537bfc3a80ac825507f39c82c84ced2793709cc2eadedac5670813679d596",
+    "esp32s3_gpio.h": "b848cccf81a45f460efd6bfcb58d8224cad51443f12a3a7cb6a6dff7212e8c7d",
+    "esp32s3_iomux.c": "489d8133a79300130f3a72203513be73aac272257c29146612291e1b150a0d1f",
+    "esp32s3_iomux.h": "20ea6f5ac56cae31874b97492ce164b7d1ac6df07d28f7e89aeba24b9ad6d9c6",
+    "esp32s3_rtc_io.c": "f1c5c9601f27610073070a8643ccd685bece3219988d53e798f459bb8cbe7609",
+    "esp32s3_rtc_io.h": "1964a278c395a89128ef04f36c65fb91f2758775070093cc83470d628199845f"
+  },
+  "input_semantics_correction": {
+    "file": "pad-input-semantics-correction.patch",
+    "sha256": "120997cde9691d0630e018b08351bbbfd385b7693af4ba41c75aaf633577bb03",
+    "lines": 136,
+    "applies_on": "e1a45cdb content (git 767c647)",
+    "changed_paths": [
+      "hw/gpio/esp32s3_gpio.c",
+      "hw/misc/esp32s3_rtc_io.c",
+      "include/hw/gpio/esp32s3_gpio.h",
+      "include/hw/misc/esp32s3_rtc_io.h"
+    ],
+    "summary": "matrix_sample FUN_IE enforcement (IE-disabled routed pad = unresolved false, no stale sample); unpopulated 22-25 read 0 without uncertainty; per-pad UNKNOWN diagnostic naming pad+remedy; detach_net per-pad solver lifecycle (GPIO+RTC)",
+    "regression": "base-overlay qtest 11/11 unchanged before/after (permissive standalone semantics preserved); native-foundations qtest 12/12 unchanged; false-uncertainty before/after: before, matrix_sample returned a stale sample for an IE-disabled routed pad and unpopulated pads could raise the strict pause \u2014 after, both return/report unresolved-or-zero per documented hardware semantics; storm class regression covered in-test (raise/ack-via-W1TC/lower on cpu-int-out line 6)",
+    "consumer_regression_test": {
+      "file": "pad-input-semantics-correction-tests.patch",
+      "sha256": "ee5becc31f2320ede68991f4818b222ba052e9be67714a2586aada8d0fbac1de",
+      "lines": 68,
+      "applies_on": "native-foundations e1a45cdb-lineage test file",
+      "failing_before_passing_after_PROVEN": {
+        "e1_binary_767c647_content": "strict-unknown-hole-pad FAILS (hole pad 22-25 with FUN_IE paused the VM \u2014 false uncertainty for a physically absent pad); strict-unknown-floating-pause passes",
+        "corrected_binary_43713d8_content": "BOTH pass (hole reads documented 0 with VM running; real floating pad pauses) \u2014 same test binary, A/B on QEMU content only",
+        "e1_test_binary": "/tmp/e1-tree/build/qemu-system-xtensa (767c647 content + identical test file)",
+        "corrected_test_binary": "qemu-gpio-40edccac4156/build/qemu-system-xtensa (43713d8 content)"
+      }
+    }
+  },
+  "canonical_baseline": {
+    "patch": "integration-native-foundations.patch",
+    "sha256": "e1a45cdb2e8e388fea1e0775a29b7639f236ff226e39dd3ad08f0df9a2a030bf",
+    "restored_by": "CombinedVerify (sole baseline restorer) from verified archive build-runtime-state/GPIO-frozen-revision-boundary/20261007T131121Z/verified-original-GPIO-inputs/, receipt: verified-original-GPIO-recovery-receipt.json",
+    "baseline_copies": "the nine OLD copy bytes (pre-correction), restored to copies/ \u2014 PRODUCER READ-ONLY from here"
+  },
+  "separate_increments": [
+    {
+      "file": "pad-input-semantics-correction.patch",
+      "sha256": "120997cde9691d0630e018b08351bbbfd385b7693af4ba41c75aaf633577bb03",
+      "lines": 136,
+      "paths": [
+        "hw/gpio/esp32s3_gpio.c",
+        "hw/misc/esp32s3_rtc_io.c",
+        "include/hw/gpio/esp32s3_gpio.h",
+        "include/hw/misc/esp32s3_rtc_io.h"
+      ],
+      "content": "matrix_sample FUN_IE enforcement; unpopulated 22-25 read 0 without uncertainty gate; per-pad UNKNOWN diagnostic; detach_net lifecycle (GPIO+RTC)"
+    },
+    {
+      "file": "pad-input-semantics-correction-tests.patch",
+      "sha256": "ee5becc31f2320ede68991f4818b222ba052e9be67714a2586aada8d0fbac1de",
+      "lines": 68,
+      "paths": [
+        "tests/qtest/esp32s3-gpio-test.c"
+      ],
+      "content": "strict policy regressions: floating-pause (policy) + hole-pad (failing-before/passing-after, proven A/B: fails on e1a45cdb-lineage binary 767c647 content, passes on corrected)"
+    },
+    {
+      "file": "esp32s3-reset-transaction-fix.reference.patch",
+      "sha256": "39c533e40dd4bcdf65ed6ea901e1d134dfd1ed99edfa3ac53623f0b13c898902",
+      "paths": [
+        "system/runstate.c",
+        "include/sysemu/runstate.h",
+        "hw/xtensa/esp32s3.c (soc_reset prologue)"
+      ],
+      "content": "reset-transaction dispatch-time cause capture + host-override domain gating (CoreClock 0016 candidate)"
+    }
+  ],
+  "composition_policy": "Baseline (E1 patch + nine old copies) is applied/restored first and is producer read-only. The two increments apply after; the parent full profile EXCLUDES the five copy destinations touched by the increments (esp32_gpio.h/.c, esp32s3_gpio.h/.c, esp32s3-gpio-test.c) from the copy-installation step so the old snapshots cannot overwrite the corrected files. copies/ in this prototype dir currently holds POST-INCREMENT bytes; copies-frozen-e1a45cdb/ holds the restored OLD bytes.",
+  "frozen_copies_guard_hashes": {
+    "esp32_gpio.c": "3424311facc6836bf065ef788f3e3bf34f75645f995c1b3f06cb90b0ddff1815",
+    "esp32_gpio.h": "a4d67f645cd6883ca4b91836f2fc646a0b98e4a7a67bae35f495225b70f2d2a4",
+    "esp32s3-gpio-test.c": "33ed0c74166a099451229140e08d206b38b70cfea335d8cc8529468f30039b26",
+    "esp32s3_gpio.c": "06e537bfc3a80ac825507f39c82c84ced2793709cc2eadedac5670813679d596",
+    "esp32s3_gpio.h": "b848cccf81a45f460efd6bfcb58d8224cad51443f12a3a7cb6a6dff7212e8c7d",
+    "esp32s3_iomux.c": "489d8133a79300130f3a72203513be73aac272257c29146612291e1b150a0d1f",
+    "esp32s3_iomux.h": "20ea6f5ac56cae31874b97492ce164b7d1ac6df07d28f7e89aeba24b9ad6d9c6",
+    "esp32s3_rtc_io.c": "f1c5c9601f27610073070a8643ccd685bece3219988d53e798f459bb8cbe7609",
+    "esp32s3_rtc_io.h": "1964a278c395a89128ef04f36c65fb91f2758775070093cc83470d628199845f"
+  },
+  "reset_transaction_fix": {
+    "file": "esp32s3-reset-transaction-fix.reference.patch",
+    "sha256": "39c533e40dd4bcdf65ed6ea901e1d134dfd1ed99edfa3ac53623f0b13c898902",
+    "applies_after": "integration-native-foundations.patch"
+  },
+  "pad_hold_sleep_semantics_increment": {
+    "file": "pad-hold-sleep-semantics.patch",
+    "sha256": "405e4361ab798089d4ff0648250c7b7bbb6d3957951be051096afb7d1d5b2983",
+    "lines": null,
+    "applies_on": "frozen E1 (e1a45cdb) + pad-input-semantics-correction (120997cd) + tests (ee5becc3)",
+    "order": "1) integration-native-foundations.patch (E1+9 copies canonical baseline, CombinedVerify-restored) -> 2) pad-input-semantics-correction.patch -> 3) pad-input-semantics-correction-tests.patch -> 4) pad-hold-sleep-semantics.patch -> 5) esp32s3-reset-transaction-fix.reference.patch (CoreClock 0016)",
+    "targets": [
+      "hw/misc/esp32s3_rtc_cntl.c",
+      "include/hw/misc/esp32s3_rtc_cntl.h",
+      "hw/gpio/esp32s3_gpio.c",
+      "include/hw/gpio/esp32s3_gpio.h",
+      "include/hw/misc/esp32s3_rtc_io.h",
+      "hw/misc/esp32s3_rtc_io.c",
+      "hw/xtensa/esp32s3.c (rtc-cntl/hold-change consumer glue only \u2014 NO reset logic)",
+      "tests/qtest/esp32s3-gpio-test.c"
+    ],
+    "content": "RTC_CNTL STATE0 (0x18) SLEEP_EN bit31 latch (sleep_requested, cleared by SW_SYS_RESET); hold registers 0xd8 (RTC pads 0-21) / 0xdc (digital 0-31), RTC-domain resident surviving digital resets, pad-hold-change notify, getters; GPIO frozen-DRIVE hold semantics (latched output bit/OE/OD/pulls + matrix-route flag captured at hold-set; input/net validity NOT mutated; solver-owned pads keep solver validity even held; released held pads follow the net; floating held pads stay UNKNOWN under strict; latched peripheral routes strict-unsupported at consumption); sleep-effective SLEEP_EN x SLP_SEL config selection (SLP_SEL config alone while awake = raw state, FUN fully effective); RTC_IO hold + sleep-effective receivers; strict policy regressions (floating-pause, hole-pad A/B proven)",
+    "public_api": [
+      "bool esp32s3_gpio_sleep_active(ESP32S3GPIOState*)",
+      "bool esp32s3_gpio_hold_active(ESP32S3GPIOState*,unsigned pad)",
+      "bool esp32s3_gpio_hold_level(ESP32S3GPIOState*,unsigned pad)",
+      "bool esp32s3_rtc_cntl_sleep_requested(Esp32s3RtcCntlState*)",
+      "uint32_t esp32s3_rtc_cntl_dig_pad_hold(Esp32s3RtcCntlState*)",
+      "uint32_t esp32s3_rtc_cntl_rtc_pad_hold(Esp32s3RtcCntlState*)",
+      "bool esp32s3_rtc_io_hold_active(ESP32S3RtcIoState*,unsigned pad)",
+      "bool esp32s3_rtc_io_hold_level(ESP32S3RtcIoState*,unsigned pad)",
+      "void esp32s3_gpio_detach_net(ESP32S3GPIOState*,unsigned pad) [in 120997cd lineage]",
+      "void esp32s3_rtc_io_detach_net(ESP32S3RtcIoState*,unsigned pad)"
+    ],
+    "excludes": "reset transaction logic (CoreClock 0016 8d098677/f1a3 territory; runstate.c/h untouched)",
+    "note": "pre-correction increment (contains detach_net + runstate content later superseded); preserved as-published for forensics; the canonical corrected artifact is pad-hold-source-authority-correction.patch which REPLACES this increment entirely (apply correction instead of this)",
+    "supersedes": "2595fcc0 (held-authority defect: net mutation + resolved-level latch; missing machine wiring) \u2014 corrected in 442e9510"
+  },
+  "pad_hold_sleep_semantics_correction": {
+    "file": "pad-hold-source-authority-correction.patch",
+    "sha256": "11a8cb5c4f4b6d27582a6e931e235bcb5c282a224fa47965d2977273601c5655",
+    "lines": 418,
+    "applies_after": "pad-hold-sleep-semantics.patch (2595fcc0 lineage)",
+    "content": "held-authority fix (hold no longer mutates net.valid/level/sample; solver-owned pads keep solver validity even held; released held follow solver/net; floating held UNKNOWN under strict); hold latches DESIRED DRIVE config at hold-set (output bit/OE/OD/awake pulls/matrix-route flag); frozen drive authoritative for emitted view (CONTENTION on solver conflict); rtc_cntl hold-change notify split x2 and machine-wired to GPIO+RTC_IO; sleep-effective SLEEP_EN x SLP_SEL selection (SLP_SEL awake = raw state, FUN effective); unpopulated 22-25 FUN_IE reads 0 no gate; strict regressions floating-pause/hole-pad + sleep-effective/sleep-hold tests",
+    "applies_on": "E1+120997cd+ee5becc3 directly (SELF-CONTAINED: includes the sleep/hold content AND the held-authority fixes; replaces the pre-correction increment entirely)",
+    "replaces": "pad-hold-sleep-semantics.patch (do not apply both)"
+  },
+  "canonical_self_contained_increment": {
+    "file": "gpio-sleep-hold-self-contained.patch",
+    "sha256": "442e9510a31074a23ad5952116a949e724cdcfad299413afa85e427df22d2465",
+    "lines": 949,
+    "applies_on": "git 767c647cf337af6a6e7abe2e8251b981ca4316b1 (the E1+corrections+tests content tree) \u2014 apply-clean verified",
+    "targets": "full delta: RTC_CNTL C/H (STATE0 SLEEP_EN latch, hold regs, pad-hold-change notify, getters), GPIO C/H (hold consumption via rtc-cntl link, sleep-effective SLEEP_EN\u00d7SLP_SEL selection, strict-unknown publication-vs-consumption split, consume_unknown, detach_net, snapshots with slp_*/hold/sleep_active, strict policy regressions), RTC_IO H/C (hold consumption via rtc-cntl link, sleep-effective receivers, rtc-cntl link), esp32s3.c (rtc-cntl/hold-change consumer glue \u2014 NO reset logic), tests/meson",
+    "note": "This single patch IS the complete GPIO lane increment; the previously published integration-native-foundations.patch (e1a45cdb) remains the canonical E1 baseline and is NOT modified by this patch (no runstate/E1 reset content)."
+  },
+  "canonical_gpio_increment": {
+    "file": "gpio-c6fc-whole-feature.patch",
+    "sha256": "722b9e315b3e3e5959ac6a62591976721641daf4dcb570f38c5d14dfa74b558c",
+    "lines": 3804,
+    "file_sections": 8,
+    "form": "whole-file unified diffs (single -U99999 hunk per file) from the ACTUAL readonly canonical c6fc tree /home/polar/.cache/esp32s3vm/qemu-runtime-40edccac4156-c6fc647bdb0c9524 (E1+120997+ee5+coreclk0001-0015+CPU1+ADC+electrical+hostbus+gdma/intc/radio/simd), no guessed lineage",
+    "files": [
+      "hw/gpio/esp32s3_gpio.c",
+      "include/hw/gpio/esp32s3_gpio.h",
+      "hw/misc/esp32s3_rtc_io.c",
+      "include/hw/misc/esp32s3_rtc_io.h",
+      "hw/misc/esp32s3_rtc_cntl.c",
+      "include/hw/misc/esp32s3_rtc_cntl.h",
+      "tests/qtest/esp32s3-gpio-test.c",
+      "hw/xtensa/esp32s3.c (targeted glue hunk only)"
+    ],
+    "preserved_from_c6fc": [
+      "RTC_CNTL XTAL clock-input block (single qdev_init_clock_in xtal-clk)",
+      "coreclk 0013 rc_fast_powered/bbpll_powered fields",
+      "reset-domain guard (guarded __has_include form)",
+      "electrical-lane ESP32S3GpioDriveSnapshot.analog_owned consumer member (restored: explicit false on digital pads)",
+      "all other-lane esp32s3.c content (untouched; glue hunk only)",
+      "iomux + esp32_gpio files byte-identical (excluded from patch)"
+    ],
+    "adds": "ALL GPIO/RTC feature content (struct fields, getters, callbacks, tests): hold regs 0xd8/0xdc + STATE0 SLEEP_EN latch + sleep_requested + state-owned hold_change_out[2]; GPIO hold consumption + sleep-effective selection + strict-unknown split + detach_net + refresh-before-early-return; RTC_IO hold consumption + sleep-effective receivers; full qtest set (16) + board glue",
+    "verification": {
+      "apply": "patch -p1 --fuzz=0 = 0 failures on fresh c6fc copy",
+      "build": "ninja OK (c6fc full lane set)",
+      "qtest": "16/16 incl sleep-effective, sleep-hold-latch, matrix-irq-delivery",
+      "binary": "16534b0afbc43b13...",
+      "boot_smoke_on_own_binary": "3/3"
+    }
+  },
+  "superseded": {
+    "gpio-sleep-hold-self-contained.patch 442e9510": "superseded; retained as forensic",
+    "pad-hold-sleep-semantics.patch afb3af61": "superseded; retained as forensic",
+    "gpio-source-authority-complete-correction.patch 2065e4de": "delta vs 27b158c feature predecessor \u2014 NOT complete vs canonical c6fc; superseded by gpio-c6fc-whole-feature.patch fa013cb5; retained as forensic"
+  }
+}

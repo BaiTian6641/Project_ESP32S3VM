@@ -1,0 +1,1106 @@
+From 98ff9f3ddc253bf696a50775becf721e515468ef Mon Sep 17 00:00:00 2001
+From: Regi2cWorker <regi2c@esp32s3vm.local>
+Date: Wed, 7 Oct 2026 10:41:56 +0800
+Subject: [PATCH 3/4] hw/misc/esp32s3_regi2c: model REGI2C analog I2C master +
+ SAR2/PWDT sequencer
+
+SEQUENCING-ONLY, FAIL-CLOSED (rev B). Undocumented block
+0x6000E000-0x6000E0FF, decoded from the rev0 ROM (esp32s3_rev0_rom.elf)
+and MMIO write traces of unmodified Wi-Fi/BLE calibration runs:
+
+- Parallel engine transaction words +0x00/+0x04: BIT24 start, BIT25 busy
+  self-clearing after the modeled I2C wire time (APB 80 MHz / +0x58
+  divider, 37 bits); func ids 0/1 evidenced, others diagnosed.
+- Analog I2C slave register FILE for config storage: writes latch bytes,
+  reads return stored state -- the ROM grammar is read-modify-write
+  everywhere (rom_chip_i2c_readReg_org, rom_i2c_readReg_Mask), including
+  the bootloader early-boot RMWs (slave 0x69 reg 7 = I2C_SAR_ADC
+  DTEST/ENT_TSENS/ENCAL_REF). Reset defaults UNKNOWN, modeled 0;
+  never-written reads diagnosed once. NOT measurement data.
+- SAR2/PWDT sequencer (+0x50/0x5c/0x60, FIFO +0x80..+0x9c) phase-sequenced
+  CMD->SAMPLING->idle, armed by the SENS SAR2 force pair
+  0x60008830/0x60008834; +0x50[26:24] reports the phase (idle 7).
+- TX-DC word +0x4c (command BIT0 starts a timed op).
+- SENS_SAR_TCTRL 0x60008850 TSENS dump_out/ready contract.
+- FAIL-CLOSED: SAR2 result words, TSENS samples and TX-DC done/flags
+  require a measurement provider (QOM link meas-provider, interface
+  esp32s3-regi2c-meas-provider). Without one the device reports the exact
+  unavailable dependency ONCE and pauses the VM from a bottom half
+  (vm_stop(RUN_STATE_PAUSED), never inside a timerlist run); no DONE+0,
+  no filler values, no automatic resume. Exploratory fail-open runs of
+  rev A are preserved unqualified under
+  build-runtime-state/regi2c-2026-10-07/exploratory/.
+
+Effect on fixtures: all sequencing stages complete (boot smoke 3/3; wifi
+records through esp_wifi_start enter; ble through esp_bt_controller_enable
+enter) and both pause at the first measurement consumption (SAR2/PWDT
+conversion #1) with a single precise diagnostic.
+---
+ hw/misc/esp32s3_regi2c.c              | 753 ++++++++++++++++++++++++++
+ hw/misc/meson.build                   |   1 +
+ hw/xtensa/esp32s3.c                   |  19 +
+ include/hw/misc/esp32s3_regi2c.h      | 112 ++++
+ include/hw/misc/esp32s3_regi2c_defs.h | 109 ++++
+ 5 files changed, 994 insertions(+)
+ create mode 100644 hw/misc/esp32s3_regi2c.c
+ create mode 100644 include/hw/misc/esp32s3_regi2c.h
+ create mode 100644 include/hw/misc/esp32s3_regi2c_defs.h
+
+diff --git a/hw/misc/esp32s3_regi2c.c b/hw/misc/esp32s3_regi2c.c
+new file mode 100644
+index 0000000..02577ad
+--- /dev/null
++++ b/hw/misc/esp32s3_regi2c.c
+@@ -0,0 +1,753 @@
++/*
++ * ESP32-S3 REGI2C / I2C_MST analog master + SAR2/PWDET sequencer
++ *
++ * SPDX-License-Identifier: GPL-2.0-or-later
++ *
++ * MATURITY: SEQUENCING-ONLY, FAIL-CLOSED (rev B).
++ *
++ * The analog I2C master block at 0x6000E000-0x6000E0FF is undocumented for
++ * ESP32-S3 (no TRM chapter, absent from the official memory map). This model
++ * implements the transaction SURFACE evidenced from the rev0 ROM
++ * (esp32s3_rev0_rom.elf, esp-rom-elfs 20241011,
++ * sha256 c0ce0f338d1de1bdc6efbef1591779a2a42c1ab7d759d3c6ae8ae63a7dd34cfd)
++ * and MMIO write traces of unmodified Wi-Fi/BLE calibration runs:
++ *
++ *   rom_i2c_paral_write  0x40035684 / rom_i2c_paral_read 0x40035614
++ *     - two parallel engine transaction words at +0x00 and +0x04:
++ *       [7:0] slave, [15:8] reg, [23:16] data, BIT24 = write/start,
++ *       BIT25 = BUSY (RO, self-clearing), [27:26] func id (0 and 1 seen).
++ *   rom_chip_i2c_readReg_org 0x400354fc: same encoding through +0x00.
++ *   rom_i2c_paral_set_read 0x400355d8 / rom_i2c_paral_set_mst0 0x40035594 /
++ *   rom_get_i2c_hostid 0x400354bc: RMW of +0x44 / +0x48 (public names in
++ *     regi2c_defs.h).
++ *   rom_i2cmst_reg_init 0x400389f0: programs +0x40, +0x50, +0x54, +0x58,
++ *     +0x5c, +0x60, +0xc4 (observed values 0x0f0f / 100 / 0xff0000 / 0xaaaa
++ *     / 0x08 on the bring-up trace).
++ *   rom_pwdet_sar2_init 0x40036470 / rom_pkdet_vol_start 0x40036a18 /
++ *   rom_read_sar_dout 0x40036aa4: the SAR2/PWDT flow -- +0x5c BIT23 start
++ *     (armed by the SENS force pair), poll +0x50[26:24] == 7, +0x50 BIT1
++ *     toggle, 8x13-bit codes from +0x80..+0x9c.
++ *   Blob txdc_cal_v70 (libphy.a): command word +0x4c, poll BIT24.
++ *   temperature_sensor_ll.h: SENS_SAR_TCTRL 0x60008850 dump_out/ready/out.
++ *
++ * FAIL-CLOSED CONTRACT
++ * --------------------
++ * Timing and status are derived from modeled engine state (never constants).
++ * MEASUREMENT DATA is NOT modeled: SAR2 result words, TSENS samples and
++ * TX-DC done/flags require a configured measurement provider (QOM link
++ * "meas-provider", interface TYPE_ESP32S3_REGI2C_MEAS_PROVIDER). Without a
++ * provider the device FAILS CLOSED at the moment such data would be handed
++ * to firmware: it never presents DONE-with-data, never latches filler
++ * values, reports the exact unavailable dependency and pauses the VM
++ * (bottom half + vm_stop(RUN_STATE_PAUSED), never from inside a timerlist
++ * run; resume only via explicit user action). A provider returning real
++ * (e.g. hardware-captured) samples permits completion; its absence must
++ * remain unavailable.
++ *
++ * ANALOG I2C SLAVE REGISTER FILE (config storage, NOT measurement data):
++ * the ROM grammar is read-modify-write everywhere (rom_chip_i2c_readReg /
++ * rom_i2c_readReg_Mask consumers), so engine reads return the addressed
++ * slave register's stored state -- writes latch the data byte, reset
++ * defaults are UNKNOWN and modeled as 0, and reads of never-written pairs
++ * are diagnosed once. This models the slaves' own config storage (e.g.
++ * slave 0x69 = I2C_SAR_ADC DTEST/ENT_TSENS/ENCAL_REF bits, slave 0x67 =
++ * BBPLL config), which the bootloader RMWs during early boot; it does not
++ * fabricate measurement results.
++ *
++ * Exploratory fail-open runs (rev A, zeros latched with UNKNOWN logging) are
++ * preserved UNQUALIFIED under build-runtime-state/regi2c-2026-10-07/
++ * exploratory/ and must not be used as behavioral evidence of the model.
++ */
++#include "qemu/osdep.h"
++#include "qemu/log.h"
++#include "qemu/module.h"
++#include "qemu/timer.h"
++#include "qemu/main-loop.h"
++#include "qemu/error-report.h"
++#include "qapi/error.h"
++#include "sysemu/runstate.h"
++#include "hw/sysbus.h"
++#include "hw/misc/esp32s3_regi2c.h"
++
++#include "hw/misc/esp32s3_regi2c_defs.h"
++
++#define REGI2C_DEBUG   0
++#define REGI2C_WARNING 0
++
++/* Modeled clocks and derived timing.
++ *
++ * I2C SCL: derived from the +0x58 low byte (ROM programs 100, observed
++ * trace; true field semantics UNKNOWN). APB 80 MHz / 100 = 800 kHz. A
++ * 3-byte I2C transaction (start + addr/ack + reg/ack + data/ack + stop) is
++ * 37 bits on the wire.
++ *
++ * SAR2 conversion: 8 samples x 32 SAR cycles at a modeled 2 MHz SAR clock.
++ * TSENS: 32 cycles x (clk_div + 1) at a modeled 1 MHz tsens clock. All
++ * base clocks UNKNOWN; durations are bounded sequencing placeholders only
++ * (data production is fail-closed regardless of duration). */
++#define REGI2C_APB_CLK_HZ        80000000ull
++#define REGI2C_I2C_BITS_XFER     37u
++#define REGI2C_I2C_DIV_DEFAULT   100u
++#define REGI2C_SAR_CLK_HZ        2000000ull
++#define REGI2C_SAR_CYCLES_SAMPLE 32u
++#define REGI2C_SAR2_SAMPLES      8u
++#define REGI2C_TSENS_CLK_HZ      1000000ull
++#define REGI2C_TSENS_CYCLES      32u
++
++#define R_IDX(a) ((a) / 4)
++
++static uint64_t esp32s3_regi2c_engine_duration_ns(ESP32S3RegI2CState *s)
++{
++    uint32_t div = FIELD_EX32(s->regs[R_IDX(A_REGI2C_MST_CFG1)],
++                              REGI2C_MST_CFG1, DIV);
++    uint64_t scl_hz;
++
++    if (div == 0) {
++        div = REGI2C_I2C_DIV_DEFAULT;
++    }
++    scl_hz = REGI2C_APB_CLK_HZ / div;
++    return (uint64_t)REGI2C_I2C_BITS_XFER * 1000000000ull / scl_hz;
++}
++
++static uint64_t esp32s3_regi2c_sar2_duration_ns(void)
++{
++    return (uint64_t)REGI2C_SAR2_SAMPLES * REGI2C_SAR_CYCLES_SAMPLE *
++           1000000000ull / REGI2C_SAR_CLK_HZ;
++}
++
++/* Fail-closed: report the exact unavailable dependency once and pause the
++ * VM from a bottom half (never from inside a timerlist run -- see the
++ * hostbus probe pattern). The dependency stays paused; an explicit external
++ * "cont" is required to resume, and consumption fails again immediately
++ * unless a measurement provider is attached. */
++static void esp32s3_regi2c_pause_bh(void *opaque)
++{
++    if (!runstate_is_running()) {
++        return; /* already paused by us or someone else */
++    }
++    if (vm_stop(RUN_STATE_PAUSED) < 0) {
++        error_report("esp32s3.regi2c: unable to pause VM on unavailable "
++                     "measurement dependency");
++    }
++}
++
++static void G_GNUC_PRINTF(2, 3)
++esp32s3_regi2c_unavailable(ESP32S3RegI2CState *s, const char *fmt, ...)
++{
++    va_list ap;
++    char detail[192];
++
++    if (s->unavailable) {
++        qemu_bh_schedule(s->pause_bh);
++        return;
++    }
++    s->unavailable = true;
++
++    va_start(ap, fmt);
++    vsnprintf(detail, sizeof(detail), fmt, ap);
++    va_end(ap);
++    error_report("esp32s3.regi2c: measurement/data dependency unavailable, "
++                 "failing closed BEFORE firmware consumption: %s -- attach "
++                 "a measurement provider (QOM link \"meas-provider\", "
++                 "interface %s) with real samples; VM paused, explicit "
++                 "resume required", detail,
++                 TYPE_ESP32S3_REGI2C_MEAS_PROVIDER);
++    qemu_bh_schedule(s->pause_bh);
++}
++
++static void esp32s3_regi2c_sar2_set_phase(ESP32S3RegI2CState *s,
++                                          Esp32s3RegI2CSar2Phase phase,
++                                          int64_t duration_ns)
++{
++    static const uint32_t phase_status[] = {
++        [REGI2C_SAR2_IDLE] = REGI2C_SAR2_STATUS_IDLE,
++        [REGI2C_SAR2_CMD] = 1u << 24,
++        [REGI2C_SAR2_SAMPLING] = 2u << 24,
++    };
++
++    s->sar2_phase = phase;
++    s->regs[R_IDX(A_REGI2C_SAR2_STATUS)] &= ~REGI2C_SAR2_STATUS_MASK;
++    s->regs[R_IDX(A_REGI2C_SAR2_STATUS)] |= phase_status[phase];
++    if (phase != REGI2C_SAR2_IDLE) {
++        timer_mod(s->sar2_timer, qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) +
++                                 duration_ns);
++    }
++}
++
++/* Start one sequenced SAR2/PWDET measurement cycle. Requires the SENS SAR2
++ * RTC force arming written by rom_pwdet_sar2_init: SENS_SAR_MEAS2_CTRL2
++ * SENS_SAR2_EN_PAD_FORCE (BIT31) set and SENS_SAR_MEAS2_MUX
++ * SENS_SAR2_RTC_FORCE (BIT31) clear. Without arming the trigger is ignored
++ * (sequencer stays idle) -- conservative: never fake progress. */
++static void esp32s3_regi2c_sar2_start(ESP32S3RegI2CState *s)
++{
++    if (s->sar2_phase != REGI2C_SAR2_IDLE) {
++        return; /* cycle already in flight */
++    }
++    if (!(s->sens_ctrl2 & SENS_SAR_MEAS2_CTRL2_EN_PAD_FORCE) ||
++        (s->sens_mux & SENS_SAR_MEAS2_MUX_RTC_FORCE)) {
++        qemu_log_mask(LOG_GUEST_ERROR,
++                      "esp32s3.regi2c: SAR2 start ignored: RTC path not "
++                      "armed (SENS_SAR_MEAS2_CTRL2=0x%08x "
++                      "SENS_SAR_MEAS2_MUX=0x%08x)\n",
++                      s->sens_ctrl2, s->sens_mux);
++        return; /* SAR2 RTC path not armed: no conversion, no progress */
++    }
++
++    s->sar2_conv_count++;
++    /* Phase 1: the REGI2C master serializes the SAR2 config transaction
++     * (slave/reg from +0x5c[15:0]) at the divider-derived SCL. */
++    esp32s3_regi2c_sar2_set_phase(s, REGI2C_SAR2_CMD,
++                                  esp32s3_regi2c_engine_duration_ns(s));
++}
++
++static void esp32s3_regi2c_sar2_advance(void *opaque)
++{
++    ESP32S3RegI2CState *s = ESP32S3_REGI2C(opaque);
++    Esp32s3RegI2cMeasProviderInterface *p = NULL;
++    int i;
++
++    switch (s->sar2_phase) {
++    case REGI2C_SAR2_CMD:
++        /* Phase 2: 8 SAR2 conversions filling the result FIFO window. */
++        esp32s3_regi2c_sar2_set_phase(s, REGI2C_SAR2_SAMPLING,
++                                      esp32s3_regi2c_sar2_duration_ns());
++        break;
++    case REGI2C_SAR2_SAMPLING:
++        /* Conversion window elapsed. Results require a real measurement
++         * provider; without one the sequencer NEVER completes and the VM
++         * pauses before firmware could consume anything. */
++        if (s->meas_provider) {
++            p = ESP32S3_REGI2C_MEAS_PROVIDER_GET_CLASS(s->meas_provider);
++        }
++        if (!p || !p->sar2_word) {
++            esp32s3_regi2c_unavailable(s,
++                "SAR2/PWDT conversion #%u results (FIFO +0x80..+0x9c, "
++                "8x13-bit codes consumed by rom_read_sar_dout/"
++                "rom_read_sar2_code); real PWDET sampling semantics "
++                "unknown", s->sar2_conv_count);
++            return; /* sequencer stops in SAMPLING; VM pauses */
++        }
++        for (i = 0; i < REGI2C_SAR2_SAMPLES; i++) {
++            uint32_t value;
++            if (!p->sar2_word(s->meas_provider, s->sar2_conv_count, i,
++                              &value)) {
++                esp32s3_regi2c_unavailable(s,
++                    "SAR2/PWDT conversion #%u word %u not provided by "
++                    "measurement provider", s->sar2_conv_count, i);
++                return;
++            }
++            s->regs[R_IDX(A_REGI2C_SAR2_DATA0) + i] = value & 0x1fff;
++        }
++        esp32s3_regi2c_sar2_set_phase(s, REGI2C_SAR2_IDLE, 0);
++        break;
++    default:
++        esp32s3_regi2c_sar2_set_phase(s, REGI2C_SAR2_IDLE, 0);
++        break;
++    }
++}
++
++static void esp32s3_regi2c_txdc_done(void *opaque)
++{
++    ESP32S3RegI2CState *s = ESP32S3_REGI2C(opaque);
++    Esp32s3RegI2cMeasProviderInterface *p = NULL;
++
++    /* The DONE bit reports completion of an analog-side measurement whose
++     * direction flags (BIT30/BIT31) the blob consumes -- no provider, no
++     * completion. */
++    if (s->meas_provider) {
++        p = ESP32S3_REGI2C_MEAS_PROVIDER_GET_CLASS(s->meas_provider);
++    }
++    if (!p || !p->op_done ||
++        !p->op_done(s->meas_provider, REGI2C_OP_TXDC,
++                    s->regs[R_IDX(A_REGI2C_TXDC_STATUS)])) {
++        esp32s3_regi2c_unavailable(s,
++            "TX-DC calibration operation (+0x4c cmd=0x%08x, polled DONE/"
++            "direction flags consumed by txdc_cal_v70); flag semantics "
++            "unknown",
++            s->regs[R_IDX(A_REGI2C_TXDC_STATUS)]);
++        return; /* DONE never set */
++    }
++    s->regs[R_IDX(A_REGI2C_TXDC_STATUS)] |= REGI2C_TXDC_DONE;
++}
++
++static void esp32s3_regi2c_engine_done(void *opaque)
++{
++    Esp32s3RegI2CEngine *e = opaque;
++    ESP32S3RegI2CState *s = e->parent;
++    uint32_t word = s->regs[e->index];
++
++    word &= ~REGI2C_ENG_BUSY;
++    if (word & REGI2C_ENG_START) {
++        /* Write transaction: latch the data byte into the analog slave's
++         * register file (config storage; read-back feeds the ROM's RMW
++         * pattern). */
++        s->slave_regs[REGI2C_ENG_SLAVE_OF(word)][REGI2C_ENG_REG_OF(word)] =
++            (uint8_t)REGI2C_ENG_DATA_OF(word);
++        s->slave_written[REGI2C_ENG_SLAVE_OF(word)][REGI2C_ENG_REG_OF(word) / 8] |=
++            1u << (REGI2C_ENG_REG_OF(word) % 8);
++    } else {
++        /* Read transaction: the result byte [23:16] is the analog slave's
++         * register value. The ROM grammar is read-modify-write everywhere
++         * (rom_chip_i2c_readReg_org / rom_i2c_readReg_Mask consumers), so
++         * reads return the slave register file's stored state (reset
++         * default 0, UNKNOWN). Reads of never-written pairs are diagnosed
++         * once. Measurement data is NOT served from here: SAR2/TSENS/
++         * TX-DC stay behind the measurement provider. A provider, when
++         * attached, overrides the stored state. */
++        uint8_t slave = REGI2C_ENG_SLAVE_OF(word);
++        uint8_t reg = REGI2C_ENG_REG_OF(word);
++        Esp32s3RegI2cMeasProviderInterface *p = NULL;
++        uint8_t value;
++
++        if (s->meas_provider) {
++            p = ESP32S3_REGI2C_MEAS_PROVIDER_GET_CLASS(s->meas_provider);
++        }
++        if (p && p->engine_read_byte) {
++            if (!p->engine_read_byte(s->meas_provider, slave, reg,
++                                     &value)) {
++                esp32s3_regi2c_unavailable(s,
++                    "analog I2C read (engine %d, word 0x%08x: slave "
++                    "0x%02x reg 0x%02x): provider has no sample",
++                    e->index, word, slave, reg);
++                s->regs[e->index] = word & ~REGI2C_ENG_BUSY;
++                return;
++            }
++        } else {
++            value = s->slave_regs[slave][reg];
++            if (!(s->slave_written[slave][reg / 8] & (1u << (reg % 8)))) {
++                qemu_log_mask(LOG_UNIMP,
++                              "esp32s3.regi2c: read of never-written "
++                              "analog slave register (slave 0x%02x reg "
++                              "0x%02x) -- returning reset state 0 "
++                              "(reset defaults UNKNOWN)\n", slave, reg);
++            }
++        }
++        word &= ~REGI2C_ENG_DATA;
++        word |= (uint32_t)value << 16;
++    }
++    s->regs[e->index] = word;
++}
++static void esp32s3_regi2c_engine_write(ESP32S3RegI2CState *s, int idx,
++                                        uint32_t value)
++{
++    Esp32s3RegI2CEngine *e = &s->eng[idx];
++    uint32_t word = value;
++    uint32_t func = FIELD_EX32(word, REGI2C_ENG, FUNC);
++
++    if (word & REGI2C_ENG_BUSY) {
++        /* BUSY is engine-owned (RO on silicon evidence); software writes
++         * setting it are unsupported. */
++        qemu_log_mask(LOG_GUEST_ERROR,
++                      "esp32s3.regi2c: engine %d: unsupported write with "
++                      "BUSY set: 0x%08x (ignored)\n", idx, word);
++        return;
++    }
++    if (func > 1) {
++        /* Evidenced func ids are 0 and 1 (baseline trace: rom_i2c_paral_*
++         * words carry func 1, direct phy-lib words like 0x011b016b carry
++         * func 0). Ids 2/3 have never been observed. */
++        qemu_log_mask(LOG_GUEST_ERROR,
++                      "esp32s3.regi2c: engine %d: unsupported func id %u "
++                      "in word 0x%08x (ignored)\n", idx, func, word);
++        return;
++    }
++
++    if (word & (REGI2C_ENG_START | REGI2C_ENG_FUNC_MASK)) {
++        /* Transaction start (write or read shape): BUSY self-clears after
++         * the modeled wire time. */
++        word |= REGI2C_ENG_BUSY;
++        s->regs[idx] = word;
++        timer_mod(e->timer,
++                  qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) +
++                  esp32s3_regi2c_engine_duration_ns(s));
++        return;
++    }
++    s->regs[idx] = word;
++}
++
++static bool esp32s3_regi2c_is_evidenced(uint32_t idx)
++{
++    switch (idx) {
++    case R_IDX(A_REGI2C_ENG0_WORD):
++    case R_IDX(A_REGI2C_ENG1_WORD):
++    case R_IDX(A_REGI2C_ANA_CONF0):
++    case R_IDX(A_REGI2C_ANA_CONFIG):
++    case R_IDX(A_REGI2C_ANA_CONFIG2):
++    case R_IDX(A_REGI2C_TXDC_STATUS):
++    case R_IDX(A_REGI2C_SAR2_STATUS):
++    case R_IDX(A_REGI2C_MST_CFG0):
++    case R_IDX(A_REGI2C_MST_CFG1):
++    case R_IDX(A_REGI2C_SAR2_CFG):
++    case R_IDX(A_REGI2C_SAR2_CFG2):
++    case R_IDX(A_REGI2C_UNK_CFG):
++        return true;
++    default:
++        return idx >= R_IDX(A_REGI2C_SAR2_DATA0) &&
++               idx < R_IDX(A_REGI2C_SAR2_DATA0) + REGI2C_SAR2_SAMPLES;
++    }
++}
++
++static uint64_t esp32s3_regi2c_read(void *opaque, hwaddr addr, unsigned int size)
++{
++    ESP32S3RegI2CState *s = ESP32S3_REGI2C(opaque);
++    uint32_t idx = addr / 4;
++    uint64_t r = 0;
++
++    if (addr >= ESP32S3_REGI2C_REG_SIZE || (addr % 4) != 0) {
++        qemu_log_mask(LOG_GUEST_ERROR,
++                      "esp32s3.regi2c: unaligned/out-of-range read 0x%03x\n",
++                      (unsigned)addr);
++        return 0;
++    }
++
++    switch (addr) {
++    case A_REGI2C_SAR2_STATUS:
++        /* [26:24] reflects the current sequencer phase, updated at phase
++         * transitions (idle 7; CMD/SAMPLING encodings UNKNOWN). */
++        r = s->regs[idx];
++        break;
++    default:
++        r = s->regs[idx];
++        break;
++    }
++
++    if (!esp32s3_regi2c_is_evidenced(idx)) {
++        qemu_log_mask(LOG_UNIMP,
++                      "esp32s3.regi2c: read of non-evidenced register "
++                      "0x%02x\n", (unsigned)addr);
++    }
++#if REGI2C_DEBUG
++    info_report("[REGI2C] read 0x%02x -> 0x%08x", (unsigned)addr,
++                (unsigned)r);
++#endif
++    return r;
++}
++
++static void esp32s3_regi2c_write(void *opaque, hwaddr addr, uint64_t value,
++                                 unsigned int size)
++{
++    ESP32S3RegI2CState *s = ESP32S3_REGI2C(opaque);
++    uint32_t idx = addr / 4;
++
++    if (addr >= ESP32S3_REGI2C_REG_SIZE || (addr % 4) != 0) {
++        qemu_log_mask(LOG_GUEST_ERROR,
++                      "esp32s3.regi2c: unaligned/out-of-range write 0x%03x "
++                      "<= 0x%08llx\n", (unsigned)addr,
++                      (unsigned long long)value);
++        return;
++    }
++
++#if REGI2C_DEBUG
++    info_report("[REGI2C] write 0x%02x <= 0x%08x", (unsigned)addr,
++                (unsigned)value);
++#endif
++
++    switch (addr) {
++    case A_REGI2C_ENG0_WORD:
++    case A_REGI2C_ENG1_WORD:
++        esp32s3_regi2c_engine_write(s, addr / 4, (uint32_t)value);
++        return;
++    case A_REGI2C_SAR2_CFG: {
++        uint32_t old = s->regs[idx];
++
++        s->regs[idx] = (uint32_t)value;
++        /* Rising edge of the start bit (BIT23) begins a timed conversion.
++         * This is the rom_pkdet_vol_start trigger; UNKNOWN whether silicon
++         * also treats BIT19 as a mode selector (stored only). */
++        if (!(old & REGI2C_SAR2_CFG_START) &&
++            (value & REGI2C_SAR2_CFG_START)) {
++            esp32s3_regi2c_sar2_start(s);
++        }
++        return;
++    }
++    case A_REGI2C_SAR2_STATUS:
++        s->regs[idx] = (uint32_t)value;
++        /* Rising edge of BIT1 re-runs the sequencer (rom_pkdet_vol_start
++         * toggles it between its two polls). UNKNOWN true semantics;
++         * conservative stateful choice, not a completion constant. */
++        if (value & 0x2) {
++            esp32s3_regi2c_sar2_start(s);
++        }
++        return;
++    case A_REGI2C_TXDC_STATUS:
++        s->regs[idx] = (uint32_t)value & ~REGI2C_TXDC_DONE;
++        if (value & REGI2C_TXDC_CMD_START) {
++            /* Command write starts a bounded analog-side operation whose
++             * completion (DONE + direction flags) requires a measurement
++             * provider; see esp32s3_regi2c_txdc_done. */
++            timer_mod(s->txdc_timer,
++                      qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) +
++                      esp32s3_regi2c_engine_duration_ns(s));
++        }
++        return;
++    default:
++        s->regs[idx] = (uint32_t)value;
++        break;
++    }
++
++    if (!esp32s3_regi2c_is_evidenced(idx)) {
++        qemu_log_mask(LOG_UNIMP,
++                      "esp32s3.regi2c: write to non-evidenced register "
++                      "0x%02x <= 0x%08x\n", (unsigned)addr,
++                      (unsigned)value);
++    }
++}
++
++static const MemoryRegionOps esp32s3_regi2c_ops = {
++    .read = esp32s3_regi2c_read,
++    .write = esp32s3_regi2c_write,
++    .endianness = DEVICE_LITTLE_ENDIAN,
++    .valid = {
++        .min_access_size = 4,
++        .max_access_size = 4,
++    },
++};
++
++/* Minimal SENS SAR2 RTC-force surface (0x60008830/0x60008834).
++ *
++ * Only these two SENS offsets are evidenced in the calibration path
++ * (rom_pwdet_sar2_init; sens_reg.h SENS_SAR_MEAS2_CTRL2_REG /
++ * SENS_SAR_MEAS2_MUX_REG). They gate the modeled SAR2 conversion (force
++ * enable set, RTC force clear). INTEGRATION NOTE: the final machine must
++ * have exactly ONE SENS owner; when the full SENS controller
++ * (0x60008800-0x600089FF) lands, these two words and the TCTRL region
++ * below move under it and this device consumes the agreed GPIO inputs
++ * ("sar2-armed", "tsens-dump-out") instead -- contract agreed with the
++ * ADC lane. */
++static uint64_t esp32s3_sens_sar2_read(void *opaque, hwaddr addr,
++                                       unsigned int size)
++{
++    ESP32S3RegI2CState *s = ESP32S3_REGI2C(opaque);
++
++    switch (addr) {
++    case 0x0:
++        return s->sens_ctrl2;
++    case 0x4:
++        return s->sens_mux;
++    default:
++        qemu_log_mask(LOG_GUEST_ERROR,
++                      "esp32s3.sens_sar2: out-of-range read 0x%02x\n",
++                      (unsigned)addr);
++        return 0;
++    }
++}
++
++static void esp32s3_sens_sar2_write(void *opaque, hwaddr addr, uint64_t value,
++                                    unsigned int size)
++{
++    ESP32S3RegI2CState *s = ESP32S3_REGI2C(opaque);
++
++    switch (addr) {
++    case 0x0:
++        s->sens_ctrl2 = (uint32_t)value;
++        return;
++    case 0x4:
++        s->sens_mux = (uint32_t)value;
++        return;
++    default:
++        qemu_log_mask(LOG_GUEST_ERROR,
++                      "esp32s3.sens_sar2: out-of-range write 0x%02x\n",
++                      (unsigned)addr);
++        return;
++    }
++}
++
++static const MemoryRegionOps esp32s3_sens_sar2_ops = {
++    .read = esp32s3_sens_sar2_read,
++    .write = esp32s3_sens_sar2_write,
++    .endianness = DEVICE_LITTLE_ENDIAN,
++    .valid = {
++        .min_access_size = 4,
++        .max_access_size = 4,
++    },
++};
++
++/* SENS_SAR_TCTRL (0x60008850): temperature sensor control/data.
++ *
++ * Evidenced by the fixture's temperature_sensor_ll_get_raw_value and the
++ * phy init writes traced at 0x60008850 (dump_out and power bits). Rising
++ * TSENS_DUMP_OUT starts a timed conversion; TSENS_READY/TSENS_OUT are only
++ * produced by a measurement provider -- without one the device fails
++ * closed before firmware consumes a value. */
++static void esp32s3_regi2c_tsens_done(void *opaque)
++{
++    ESP32S3RegI2CState *s = ESP32S3_REGI2C(opaque);
++    Esp32s3RegI2cMeasProviderInterface *p = NULL;
++    uint32_t value;
++
++    if (s->meas_provider) {
++        p = ESP32S3_REGI2C_MEAS_PROVIDER_GET_CLASS(s->meas_provider);
++    }
++    if (!p || !p->tsens_sample ||
++        !p->tsens_sample(s->meas_provider, &value)) {
++        esp32s3_regi2c_unavailable(s,
++            "TSENS sample (SENS_SAR_TCTRL tsens_out [7:0], consumed by "
++            "temperature_sensor_hal_get_raw_value); real tsens mapping "
++            "unknown");
++        return; /* READY never set, OUT never latched */
++    }
++    s->sens_tctrl = (s->sens_tctrl & ~SENS_TSENS_OUT) |
++                    (value & SENS_TSENS_OUT);
++    s->sens_tctrl |= SENS_TSENS_READY;
++}
++
++static void esp32s3_sens_tctrl_write(ESP32S3RegI2CState *s, uint32_t value)
++{
++    bool start = !(s->sens_tctrl & SENS_TSENS_DUMP_OUT) &&
++                 (value & SENS_TSENS_DUMP_OUT);
++    uint32_t div = FIELD_EX32(value, SENS_TSENS, CLK_DIV);
++
++    s->sens_tctrl = value & ~(SENS_TSENS_READY | SENS_TSENS_OUT);
++    if (start) {
++        s->sens_tctrl &= ~SENS_TSENS_READY;
++        timer_mod(s->tsens_timer,
++                  qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) +
++                  (int64_t)REGI2C_TSENS_CYCLES * 1000000000ull *
++                  (div + 1) / REGI2C_TSENS_CLK_HZ);
++    }
++}
++
++static uint64_t esp32s3_sens_tctrl_read(void *opaque, hwaddr addr,
++                                        unsigned int size)
++{
++    ESP32S3RegI2CState *s = ESP32S3_REGI2C(opaque);
++
++    if (addr != 0) {
++        qemu_log_mask(LOG_GUEST_ERROR,
++                      "esp32s3.sens_tctrl: out-of-range read 0x%02x\n",
++                      (unsigned)addr);
++        return 0;
++    }
++    return s->sens_tctrl;
++}
++
++static void esp32s3_sens_tctrl_mmio_write(void *opaque, hwaddr addr,
++                                          uint64_t value, unsigned int size)
++{
++    ESP32S3RegI2CState *s = ESP32S3_REGI2C(opaque);
++
++    if (addr != 0) {
++        qemu_log_mask(LOG_GUEST_ERROR,
++                      "esp32s3.sens_tctrl: out-of-range write 0x%02x\n",
++                      (unsigned)addr);
++        return;
++    }
++    esp32s3_sens_tctrl_write(s, (uint32_t)value);
++}
++
++static const MemoryRegionOps esp32s3_sens_tctrl_ops = {
++    .read = esp32s3_sens_tctrl_read,
++    .write = esp32s3_sens_tctrl_mmio_write,
++    .endianness = DEVICE_LITTLE_ENDIAN,
++    .valid = {
++        .min_access_size = 4,
++        .max_access_size = 4,
++    },
++};
++
++static void esp32s3_regi2c_reset_hold(Object *obj, ResetType type)
++{
++    ESP32S3RegI2CState *s = ESP32S3_REGI2C(obj);
++
++    memset(s->regs, 0, sizeof(s->regs));
++
++    /* +0x50[26:24] idles at 7 (nearest public descendant: ESP32-C6
++     * LP_I2C_ANA_MST I2C0_STATUS[31:24] power-on default 7). */
++    s->regs[R_IDX(A_REGI2C_SAR2_STATUS)] = REGI2C_SAR2_STATUS_IDLE;
++    /* +0x58 low byte divider: true reset value UNKNOWN; modeled as 100 to
++     * match the only observed value (rom_i2cmst_reg_init). */
++    s->regs[R_IDX(A_REGI2C_MST_CFG1)] = REGI2C_I2C_DIV_DEFAULT;
++
++    s->sens_ctrl2 = 0;
++    s->sens_mux = 0;
++    s->sens_tctrl = 0;
++    s->sar2_conv_count = 0;
++    s->sar2_phase = REGI2C_SAR2_IDLE;
++    s->unavailable = false;
++    memset(s->slave_regs, 0, sizeof(s->slave_regs));
++    memset(s->slave_written, 0, sizeof(s->slave_written));
++
++    timer_del(s->eng[0].timer);
++    timer_del(s->eng[1].timer);
++    timer_del(s->sar2_timer);
++    timer_del(s->txdc_timer);
++    timer_del(s->tsens_timer);
++}
++
++static void esp32s3_regi2c_realize(DeviceState *dev, Error **errp)
++{
++    ESP32S3RegI2CState *s = ESP32S3_REGI2C(dev);
++    SysBusDevice *sbd = SYS_BUS_DEVICE(dev);
++
++    memory_region_init_io(&s->iomem, OBJECT(s), &esp32s3_regi2c_ops, s,
++                          "esp32s3.regi2c", ESP32S3_REGI2C_REG_SIZE);
++    sysbus_init_mmio(sbd, &s->iomem);
++
++    memory_region_init_io(&s->sens_iomem, OBJECT(s), &esp32s3_sens_sar2_ops, s,
++                          "esp32s3.sens_sar2", 0x8);
++    sysbus_init_mmio(sbd, &s->sens_iomem);
++
++    memory_region_init_io(&s->tctrl_iomem, OBJECT(s), &esp32s3_sens_tctrl_ops,
++                          s, "esp32s3.sens_tctrl", 0x4);
++    sysbus_init_mmio(sbd, &s->tctrl_iomem);
++}
++
++static void esp32s3_regi2c_init(Object *obj)
++{
++    ESP32S3RegI2CState *s = ESP32S3_REGI2C(obj);
++    int i;
++
++    for (i = 0; i < 2; i++) {
++        s->eng[i].parent = s;
++        s->eng[i].index = i;
++        s->eng[i].timer = timer_new_ns(QEMU_CLOCK_VIRTUAL,
++                                       esp32s3_regi2c_engine_done, &s->eng[i]);
++    }
++    s->sar2_timer = timer_new_ns(QEMU_CLOCK_VIRTUAL,
++                                 esp32s3_regi2c_sar2_advance, s);
++    s->txdc_timer = timer_new_ns(QEMU_CLOCK_VIRTUAL,
++                                 esp32s3_regi2c_txdc_done, s);
++    s->tsens_timer = timer_new_ns(QEMU_CLOCK_VIRTUAL,
++                                  esp32s3_regi2c_tsens_done, s);
++    s->pause_bh = qemu_bh_new(esp32s3_regi2c_pause_bh, s);
++
++    object_property_add_link(obj, "meas-provider",
++                             TYPE_ESP32S3_REGI2C_MEAS_PROVIDER,
++                             (Object **)&s->meas_provider,
++                             object_property_allow_set_link,
++                             OBJ_PROP_LINK_STRONG);
++}
++
++static void esp32s3_regi2c_class_init(ObjectClass *klass, void *data)
++{
++    DeviceClass *dc = DEVICE_CLASS(klass);
++    ResettableClass *rc = RESETTABLE_CLASS(klass);
++
++    rc->phases.hold = esp32s3_regi2c_reset_hold;
++    dc->realize = esp32s3_regi2c_realize;
++    dc->desc = "ESP32-S3 REGI2C analog I2C master + SAR2/PWDT sequencer "
++               "(sequencing-only, fail-closed)";
++}
++
++static const TypeInfo esp32s3_regi2c_info = {
++    .name = TYPE_ESP32S3_REGI2C,
++    .parent = TYPE_SYS_BUS_DEVICE,
++    .instance_size = sizeof(ESP32S3RegI2CState),
++    .instance_init = esp32s3_regi2c_init,
++    .class_init = esp32s3_regi2c_class_init,
++};
++
++static const TypeInfo esp32s3_regi2c_meas_provider_info = {
++    .name = TYPE_ESP32S3_REGI2C_MEAS_PROVIDER,
++    .parent = TYPE_INTERFACE,
++    .class_size = sizeof(Esp32s3RegI2cMeasProviderInterface),
++};
++
++static void esp32s3_regi2c_register_types(void)
++{
++    type_register_static(&esp32s3_regi2c_info);
++    type_register_static(&esp32s3_regi2c_meas_provider_info);
++}
++
++type_init(esp32s3_regi2c_register_types);
+diff --git a/hw/misc/meson.build b/hw/misc/meson.build
+index 4c2b5b3..e606a1b 100644
+--- a/hw/misc/meson.build
++++ b/hw/misc/meson.build
+@@ -167,6 +167,7 @@ system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files(
+   'esp32s3_rtc_cntl.c',
+   'esp32s3_rng.c',
+   'esp32s3_pms.c',
++  'esp32s3_regi2c.c',
+   'esp_hmac.c',
+   'esp32s3_hmac.c'
+ ))
+diff --git a/hw/xtensa/esp32s3.c b/hw/xtensa/esp32s3.c
+index d320736..ac8991e 100644
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -54,6 +54,7 @@
+ #include "hw/xtensa/esp32s3_clk.h"
+ #include "hw/xtensa/esp32s3_reset_domain.h"
+ #include "hw/qdev-clock.h"
++#include "hw/misc/esp32s3_regi2c.h"
+ #include "hw/dma/esp32s3_gdma.h"
+ #include "hw/misc/esp32s3_sha.h"
+ #include "hw/misc/esp32s3_aes.h"
+@@ -162,6 +163,7 @@ typedef struct Esp32s3SocState {
+     DWCSDMMCState sdmmc;
+     DeviceState *eth;
+     SsiPsramState *psram;
++    ESP32S3RegI2CState regi2c;
+ 
+     uint32_t requested_reset;
+ } Esp32s3SocState;
+@@ -830,6 +832,7 @@ static void esp32s3_machine_init(MachineState *machine)
+     object_initialize_child(OBJECT(ss), "gpio", &ss->gpio, TYPE_ESP32S3_GPIO);
+     object_initialize_child(OBJECT(ss), "rng", &ss->rng, TYPE_ESP32S3_RNG);
+ 
++    object_initialize_child(OBJECT(ss), "regi2c", &ss->regi2c, TYPE_ESP32S3_REGI2C);
+     object_initialize_child(OBJECT(ss), "gdma", &ss->gdma, TYPE_ESP32S3_GDMA);
+     object_initialize_child(OBJECT(ss), "sha", &ss->sha, TYPE_ESP32S3_SHA);
+     object_initialize_child(OBJECT(ss), "aes", &ss->aes, TYPE_ESP32S3_AES);
+@@ -943,6 +946,22 @@ static void esp32s3_machine_init(MachineState *machine)
+                            qdev_get_gpio_in(intmatrix_dev, ETS_FROM_CPU_INTR0_SOURCE + i));
+         }
+     }
++    /* REGI2C / I2C_MST analog master + SAR2/PWDET sequencer realization */
++    {
++        sysbus_realize(SYS_BUS_DEVICE(&ss->regi2c), &error_fatal);
++        MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->regi2c), 0);
++        /* Undocumented REGI2C window at 0x6000E000 (no public S3 base name;
++         * owner identified from ROM/blob access traces). Priority 1: this
++         * device OWNS the window and must outrank any superseded temporary
++         * bridge mapped over the same base later in init (coreclk 0007). */
++        memory_region_add_subregion_overlap(sys_mem, 0x6000E000, mr, 1);
++        mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->regi2c), 1);
++        /* SENS SAR2 force pair (SENS_SAR_MEAS2_CTRL2_REG / _MUX_REG) */
++        memory_region_add_subregion_overlap(sys_mem, 0x60008830, mr, 0);
++        mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->regi2c), 2);
++        /* SENS SAR TCTRL at 0x60008850 (temperature sensor control/data) */
++        memory_region_add_subregion_overlap(sys_mem, 0x60008850, mr, 0);
++    }
+     /* Timer Groups realization */
+     /* TIMG clock wiring (coreclk lane): time-base source is APB or XTAL per
+      * timer (TIMG_TxCONFIG.USE_XTAL) and the SYSTEM PERIP_CLK_EN0 aggregated
+diff --git a/include/hw/misc/esp32s3_regi2c.h b/include/hw/misc/esp32s3_regi2c.h
+new file mode 100644
+index 0000000..bb731bc
+--- /dev/null
++++ b/include/hw/misc/esp32s3_regi2c.h
+@@ -0,0 +1,112 @@
++/*
++ * ESP32-S3 REGI2C / I2C_MST analog master (undocumented block 0x6000E000)
++ *
++ * SPDX-License-Identifier: GPL-2.0-or-later
++ *
++ * SEQUENCING-ONLY, FAIL-CLOSED model: transaction grammar and timed engine
++ * state are modeled; every measurement/data production requires a configured
++ * measurement provider (see Esp32s3RegI2cMeasProviderInterface). See
++ * hw/misc/esp32s3_regi2c.c for the evidence trail.
++ */
++#ifndef HW_MISC_ESP32S3_REGI2C_H
++#define HW_MISC_ESP32S3_REGI2C_H
++
++#include "qemu/main-loop.h"
++#include "hw/sysbus.h"
++#include "qemu/timer.h"
++#include "qom/object.h"
++#include "hw/misc/esp32s3_regi2c_defs.h"
++
++#define TYPE_ESP32S3_REGI2C "esp32s3.regi2c"
++OBJECT_DECLARE_SIMPLE_TYPE(ESP32S3RegI2CState, ESP32S3_REGI2C)
++
++/*
++ * Measurement provider interface.
++ *
++ * Implementors hand REAL samples to the REGI2C device (e.g. values captured
++ * on hardware during the same calibration flow). Without a linked provider
++ * every data-producing operation in esp32s3.regi2c fails closed: the device
++ * never presents DONE-with-data, reports the exact unavailable dependency
++ * and pauses the VM. All methods return true + *out when a real sample is
++ * available; false means "not available" (device fails closed).
++ */
++#define TYPE_ESP32S3_REGI2C_MEAS_PROVIDER "esp32s3-regi2c-meas-provider"
++typedef struct Esp32s3RegI2cMeasProviderInterface Esp32s3RegI2cMeasProviderInterface;
++DECLARE_CLASS_CHECKERS(Esp32s3RegI2cMeasProviderInterface,
++                       ESP32S3_REGI2C_MEAS_PROVIDER,
++                       TYPE_ESP32S3_REGI2C_MEAS_PROVIDER)
++
++struct Esp32s3RegI2cMeasProviderInterface {
++    ObjectClass parent;
++
++    /* SAR2/PWDT result FIFO word (13-bit code) for conversion @cycle,
++     * FIFO index @word (+0x80 + 4*word). */
++    bool (*sar2_word)(DeviceState *dev, uint32_t cycle, unsigned word,
++                      uint32_t *value);
++    /* Temperature sensor raw count [7:0] (SENS_SAR_TCTRL tsens_out). */
++    bool (*tsens_sample)(DeviceState *dev, uint32_t *value);
++    /* Analog I2C slave read-data byte ([23:16] of the transaction word). */
++    bool (*engine_read_byte)(DeviceState *dev, uint8_t slave, uint8_t reg,
++                             uint8_t *value);
++    /* Analog-side operation completion + flags (op ids in _defs.h). */
++    bool (*op_done)(DeviceState *dev, unsigned op, uint32_t arg);
++};
++
++typedef enum Esp32s3RegI2CSar2Phase {
++    REGI2C_SAR2_IDLE = 0,
++    REGI2C_SAR2_CMD,     /* config transaction on the modeled I2C bus */
++    REGI2C_SAR2_SAMPLING /* 8 SAR2 conversions filling the result FIFO */
++} Esp32s3RegI2CSar2Phase;
++
++typedef struct Esp32s3RegI2CEngine {
++    QEMUTimer *timer;
++    struct ESP32S3RegI2CState *parent;
++    int index;
++} Esp32s3RegI2CEngine;
++
++struct ESP32S3RegI2CState {
++    SysBusDevice parent_obj;
++
++    /* 0x6000E000 .. 0x6000E0FF (undocumented REGI2C / I2C_MST block) */
++    MemoryRegion iomem;
++    /* 0x60008830 .. 0x60008837 (SENS_SAR_MEAS2_CTRL2 / _MUX force pair).
++     * INTEGRATION: moves under the single SENS owner once the full SENS
++     * controller lands; this device then consumes the agreed GPIO inputs
++     * (contract with the ADC lane). */
++    MemoryRegion sens_iomem;
++    /* 0x60008850 .. 0x60008853 (SENS_SAR_TCTRL, temperature sensor) */
++    MemoryRegion tctrl_iomem;
++
++    Esp32s3RegI2CEngine eng[2];
++    QEMUTimer *sar2_timer;
++    QEMUTimer *txdc_timer;
++    QEMUTimer *tsens_timer;
++    QEMUBH *pause_bh;
++
++    /* Measurement provider (optional; absent => fail closed). */
++    DeviceState *meas_provider;
++    bool unavailable; /* a dependency failure was reported this run */
++
++    /* Word-indexed register file, see esp32s3_regi2c_defs.h */
++    uint32_t regs[ESP32S3_REGI2C_REG_SIZE / 4];
++
++    /* Analog I2C slave register file (config storage). The ROM grammar is
++     * read-modify-write everywhere (rom_chip_i2c_readReg_org /
++     * rom_i2c_readReg_Mask consumers), so reads must return prior writes;
++     * reset defaults are UNKNOWN and modeled as 0. Measurement surfaces
++     * (SAR2 FIFO, TSENS OUT, TX-DC flags) are NOT part of this file -- they
++     * stay fail-closed behind the measurement provider. */
++    uint8_t slave_regs[REGI2C_SLAVE_COUNT][REGI2C_SLAVE_REGS];
++    uint8_t slave_written[REGI2C_SLAVE_COUNT][REGI2C_SLAVE_REGS / 8];
++
++    /* SENS SAR2 force registers (evidenced offsets only) */
++    uint32_t sens_ctrl2; /* SENS_SAR_MEAS2_CTRL2_REG 0x60008830 */
++    uint32_t sens_mux;   /* SENS_SAR_MEAS2_MUX_REG   0x60008834 */
++    uint32_t sens_tctrl; /* SENS_SAR_TCTRL_REG (sar_tctrl) 0x60008850 */
++
++    /* SAR2/PWDET sequencer bookkeeping (virtual clock) */
++    uint32_t sar2_conv_count;
++    uint8_t sar2_phase; /* Esp32s3RegI2CSar2Phase */
++};
++
++#endif /* HW_MISC_ESP32S3_REGI2C_H */
+diff --git a/include/hw/misc/esp32s3_regi2c_defs.h b/include/hw/misc/esp32s3_regi2c_defs.h
+new file mode 100644
+index 0000000..f8767b0
+--- /dev/null
++++ b/include/hw/misc/esp32s3_regi2c_defs.h
+@@ -0,0 +1,109 @@
++/*
++ * ESP32-S3 REGI2C / I2C_MST analog master register definitions
++ *
++ * SPDX-License-Identifier: GPL-2.0-or-later
++ *
++ * Offsets 0x00/0x04/0x40/0x44/0x48 carry public IDF names for parts of
++ * their fields (components/soc/esp32s3/include/soc/regi2c_defs.h). The
++ * remaining offsets have NO public S3 names; they are named here after
++ * their evidenced role, with the source function cited per field. All
++ * semantics marked UNKNOWN are intentionally stored/read-back only.
++ */
++#ifndef HW_MISC_ESP32S3_REGI2C_DEFS_H
++#define HW_MISC_ESP32S3_REGI2C_DEFS_H
++
++#include "qemu/bitops.h"
++#include "hw/registerfields.h"
++
++#define ESP32S3_REGI2C_REG_SIZE 0x100
++
++/* Parallel engine transaction words (rom_i2c_paral_write 0x40035684 /
++ * rom_i2c_paral_read 0x40035614 / rom_chip_i2c_readReg_org 0x400354fc) */
++#define A_REGI2C_ENG0_WORD   0x00
++#define A_REGI2C_ENG1_WORD   0x04
++#define REGI2C_ENG_SLAVE     0x000000ffu /* [7:0] slave address */
++#define REGI2C_ENG_REG       0x0000ff00u /* [15:8] slave register */
++#define REGI2C_ENG_DATA      0x00ff0000u /* [23:16] write data / read result */
++#define REGI2C_ENG_START     BIT(24)     /* write/start flag (reads omit it) */
++#define REGI2C_ENG_BUSY      BIT(25)     /* RO, self-clearing */
++#define REGI2C_ENG_FUNC_MASK 0x0c000000u /* [27:26] func id (ROM uses 1) */
++FIELD(REGI2C_ENG, FUNC, 26, 2)
++
++/* Public regi2c_defs.h names */
++#define A_REGI2C_ANA_CONF0   0x40 /* I2C_MST_ANA_CONF0_REG (BBPLL bits) */
++#define A_REGI2C_ANA_CONFIG  0x44 /* ANA_CONFIG_REG (slave enable mask) */
++#define A_REGI2C_ANA_CONFIG2 0x48 /* ANA_CONFIG2_REG (mst0 select) */
++
++/* SAR2/PWDET sequencer status + control (no public name; rom_pkdet_vol_start
++ * 0x40036a18 polls [26:24] == 7 and toggles BIT1 between two polls) */
++#define A_REGI2C_SAR2_STATUS    0x50
++#define REGI2C_SAR2_STATUS_MASK 0x07000000u
++#define REGI2C_SAR2_STATUS_IDLE (7u << 24)
++
++/* Master bring-up config words (rom_i2cmst_reg_init 0x400389f0) */
++#define A_REGI2C_MST_CFG0    0x54 /* ROM writes 0x0f0f into [15:0] */
++#define A_REGI2C_MST_CFG1    0x58 /* ROM writes 100 into [7:0], 0xff into
++                                   * [23:16]; role of [7:0] modeled as the
++                                   * I2C SCL divider (semantics UNKNOWN) */
++FIELD(REGI2C_MST_CFG1, DIV, 0, 8)
++
++/* TX DC calibration status/command (no public name; blob txdc_cal_v70 in
++ * libphy.a: RMW keeps [31:24], commands 0x113cf1/0x113cf3 into [20:0],
++ * then polls BIT24 (bnone at 0x42013ead); BIT30/BIT31 steer the search
++ * direction -- semantics UNKNOWN) */
++#define A_REGI2C_TXDC_STATUS   0x4c
++#define REGI2C_TXDC_CMD_START  BIT(0)    /* both observed commands set it */
++#define REGI2C_TXDC_DONE       BIT(24)   /* RO, self-setting after the
++                                          * modeled operation time */
++#define REGI2C_TXDC_FLAG30     BIT(30)   /* UNKNOWN */
++
++/* SAR2/PWDET config (rom_pwdet_sar2_init 0x40036470 /
++ * rom_pkdet_vol_start / rom_get_sar2_vol 0x40036afc) */
++#define A_REGI2C_SAR2_CFG       0x5c /* [7:0] slave (0x6a), [15:8] reg,
++                                      * BIT19 mode (UNKNOWN), BIT23 start */
++#define REGI2C_SAR2_CFG_START   BIT(23)
++#define A_REGI2C_SAR2_CFG2      0x60 /* BIT5 (pwdet_sar2_init clears),
++                                      * [4:3] attenuation select
++                                      * (rom_get_sar2_vol), other bits
++                                      * stored (UNKNOWN) */
++
++/* SAR2/PWDET result window: 8 consecutive 13-bit codes
++ * (rom_read_sar_dout 0x40036aa4 reads +0x80..+0x9c) */
++#define A_REGI2C_SAR2_DATA0     0x80
++
++/* Stored config word (rom_i2cmst_reg_init sets bits 30, 24, 22, 17,
++ * clears 29; semantics UNKNOWN) */
++#define A_REGI2C_UNK_CFG        0xc4
++
++/* SENS SAR2 force bits (sens_reg.h) */
++#define SENS_SAR_MEAS2_CTRL2_EN_PAD_FORCE BIT(31) /* 0x60008830 */
++#define SENS_SAR_MEAS2_MUX_RTC_FORCE      BIT(31) /* 0x60008834 */
++
++/* SENS_SAR_TCTRL (sar_tctrl, 0x60008854) TSENS fields (sens_struct.h,
++ * esp_hal_ana_conv/esp32s3 temperature_sensor_ll.h contract: SW sets
++ * TSENS_DUMP_OUT, polls TSENS_READY, reads TSENS_OUT) */
++#define SENS_TSENS_OUT        0x000000ffu /* [7:0] RO data */
++#define SENS_TSENS_READY      BIT(8)      /* [8] RO ready */
++#define SENS_TSENS_CLK_DIV    0x003fc000u /* [21:14] divider */
++FIELD(SENS_TSENS, CLK_DIV, 14, 8)
++#define SENS_TSENS_POWER_UP   BIT(22)
++#define SENS_TSENS_DUMP_OUT   BIT(24)
++/* Modeled TSENS conversion: 32 cycles of a 1 MHz tsens clock scaled by the
++ * evidenced clk_div field (base clock UNKNOWN; bounded choice). */
++#define REGI2C_TSENS_CLK_HZ   1000000ull
++#define REGI2C_TSENS_CYCLES   32u
++
++/* Measurement-provider op ids (Esp32s3RegI2cMeasProviderInterface::op_done) */
++#define REGI2C_OP_TXDC  1u /* TX-DC calibration op (+0x4c) */
++
++/* Engine word field accessors */
++#define REGI2C_ENG_SLAVE_OF(w) ((uint8_t)((w) & 0xffu))
++#define REGI2C_ENG_REG_OF(w)   ((uint8_t)(((w) >> 8) & 0xffu))
++#define REGI2C_ENG_BYTE0(w)    ((w) & 0xffu)
++#define REGI2C_ENG_DATA_OF(w)  ((uint8_t)(((w) >> 16) & 0xffu))
++
++/* Analog I2C slave register file geometry (7-bit slaves, 8-bit regs) */
++#define REGI2C_SLAVE_COUNT 128u
++#define REGI2C_SLAVE_REGS  256u
++
++#endif /* HW_MISC_ESP32S3_REGI2C_DEFS_H */
+-- 
+2.43.0
+

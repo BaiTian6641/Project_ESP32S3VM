@@ -1,0 +1,136 @@
+diff --git a/hw/gpio/esp32s3_gpio.c b/hw/gpio/esp32s3_gpio.c
+index debc5e4..41b99df 100644
+--- a/hw/gpio/esp32s3_gpio.c
++++ b/hw/gpio/esp32s3_gpio.c
+@@ -124,6 +124,13 @@ static bool esp32s3_gpio_matrix_active(ESP32S3GPIOState *s, int n)
+ 
+ static int esp32s3_gpio_input_enable(ESP32S3GPIOState *s, int n)
+ {
++    /* Pads 22-25 are unpopulated on the ESP32-S3 chip: there is no pad,
++     * the input buffer never drives the bank and reads return 0 with no
++     * uncertainty (documented hardware read semantics, not a floating
++     * indeterminate). */
++    if (n >= 22 && n <= 25) {
++        return 0;
++    }
+     if (s->iomux == NULL) {
+         return 1;
+     }
+@@ -793,6 +800,16 @@ void esp32s3_gpio_set_solver_owned(ESP32S3GPIOState *s, bool owned)
+     s->solver_owned = owned;
+ }
+ 
++void esp32s3_gpio_detach_net(ESP32S3GPIOState *s, unsigned pad)
++{
++    if (pad >= ESP32S3_GPIO_COUNT) {
++        return;
++    }
++    s->solver_attached[pad] = false;
++    esp32s3_gpio_update_pad(s, (int)pad);
++    esp32s3_gpio_update_irq(s);
++}
++
+ void esp32s3_gpio_set_unknown_handler(ESP32S3GPIOState *s,
+                                       ESP32S3GpioUnknownFn fn, void *opaque)
+ {
+@@ -807,11 +824,13 @@ static void esp32s3_gpio_unknown_bh(void *opaque)
+      * auto-resume); the pad policy/provenance is reported once. */
+     ESP32S3GPIOState *s = ESP32S3_GPIO(opaque);
+ 
+-    if (!s->unknown_paused_reported) {
+-        s->unknown_paused_reported = true;
+-        warn_report("esp32s3.gpio: solver-owned pad(s) sampled UNKNOWN; "
+-                    "VM paused (strict profile; resume explicitly after "
+-                    "the net resolves)");
++    if (!s->unknown_pad_reported) {
++        s->unknown_pad_reported = true;
++        warn_report("esp32s3.gpio: pad %u sampled UNKNOWN (enabled input, "
++                    "no resolved net: attach a physical pull/source via "
++                    "the electrical layer); VM paused (strict profile; "
++                    "resume explicitly after the net resolves)",
++                    s->unknown_first_pad);
+     }
+     vm_stop(RUN_STATE_PAUSED);
+ }
+@@ -827,6 +846,9 @@ static void esp32s3_gpio_unknown_use(ESP32S3GPIOState *s, int n)
+     if (!s->unknown_bh) {
+         s->unknown_bh = qemu_bh_new(esp32s3_gpio_unknown_bh, s);
+     }
++    if (!s->unknown_pad_reported) {
++        s->unknown_first_pad = (unsigned)n;
++    }
+     qemu_bh_schedule(s->unknown_bh);
+ }
+ 
+@@ -954,7 +976,7 @@ static void esp32s3_gpio_reset_hold(Object *obj, ResetType type)
+ 
+     for (int i = 0; i < ESP32S3_GPIO_COUNT; i++) {
+         s->gpio_pin[i] = 0;
+-        s->unknown_paused_reported = false;
++        s->unknown_pad_reported = false;
+         memset(&s->net[i], 0, sizeof(s->net[i]));
+         s->net[i].diag = ESP32S3_GPIO_PAD_FLOATING;
+         s->solver_attached[i] = false;
+diff --git a/hw/misc/esp32s3_rtc_io.c b/hw/misc/esp32s3_rtc_io.c
+index edca6d5..bfe554f 100644
+--- a/hw/misc/esp32s3_rtc_io.c
++++ b/hw/misc/esp32s3_rtc_io.c
+@@ -362,6 +362,15 @@ void esp32s3_rtc_io_set_solver_owned(ESP32S3RtcIoState *s, bool owned)
+     s->solver_owned = owned;
+ }
+ 
++void esp32s3_rtc_io_detach_net(ESP32S3RtcIoState *s, unsigned pad)
++{
++    if (pad >= ESP32S3_RTC_IO_GPIO_COUNT) {
++        return;
++    }
++    s->solver_attached[pad] = false;
++    esp32s3_rtc_io_update_pad(s, (int)pad);
++}
++
+ static void esp32s3_rtc_io_notify_observer(ESP32S3RtcIoState *s)
+ {
+     if (s->drive_observer) {
+diff --git a/include/hw/gpio/esp32s3_gpio.h b/include/hw/gpio/esp32s3_gpio.h
+index ace8dbe..cad6eb1 100644
+--- a/include/hw/gpio/esp32s3_gpio.h
++++ b/include/hw/gpio/esp32s3_gpio.h
+@@ -280,7 +280,8 @@ typedef struct ESP32S3GPIOState {
+     ESP32S3GpioUnknownFn unknown_handler;       /* strict pause hook */
+     void *unknown_opaque;
+     struct QemuBH *unknown_bh;                  /* main-context pause */
+-    bool unknown_paused_reported;
++    bool unknown_pad_reported;                  /* first diagnostic sent */
++    unsigned unknown_first_pad;
+     ESP32S3GpioDriveObserver drive_observer;    /* raw-truth change wake */
+     void *observer_opaque;
+     uint8_t line_out[ESP32S3_GPIO_COUNT];       /* last level on gpio-out */
+@@ -384,6 +385,16 @@ bool esp32s3_gpio_solver_attached(ESP32S3GPIOState *s, unsigned pad);
+  */
+ void esp32s3_gpio_set_solver_owned(ESP32S3GPIOState *s, bool owned);
+ 
++/*
++ * Detach the solver from pad @pad: the pad returns to standalone digital
++ * resolution (own driver / IO_MUX pulls / floating) immediately.  This is
++ * the per-pad lifecycle complement to drive_net — use it when a topology
++ * change removes the pad from the solver-owned set, so previously touched
++ * pads do not stay gated as UNKNOWN forever.  RTC_IO twin:
++ * esp32s3_rtc_io_detach_net.
++ */
++void esp32s3_gpio_detach_net(ESP32S3GPIOState *s, unsigned pad);
++
+ /*
+  * Unknown-consumption hook (strict gate, native owns the pause): invoked
+  * whenever a sample is consumed while the solver owns the pad and reports
+diff --git a/include/hw/misc/esp32s3_rtc_io.h b/include/hw/misc/esp32s3_rtc_io.h
+index 0808c16..ac98638 100644
+--- a/include/hw/misc/esp32s3_rtc_io.h
++++ b/include/hw/misc/esp32s3_rtc_io.h
+@@ -224,4 +224,7 @@ void esp32s3_rtc_io_get_drive_snapshot(ESP32S3RtcIoState *s, unsigned pad,
+ void esp32s3_rtc_io_set_drive_observer(ESP32S3RtcIoState *s,
+                                    ESP32S3RtcIoDriveObserver fn, void *opaque);
+ bool esp32s3_rtc_io_solver_attached(ESP32S3RtcIoState *s, unsigned pad);
++
++/* Per-pad detach: return the RTC pad to standalone resolution. */
++void esp32s3_rtc_io_detach_net(ESP32S3RtcIoState *s, unsigned pad);
+ void esp32s3_rtc_io_set_solver_owned(ESP32S3RtcIoState *s, bool owned);

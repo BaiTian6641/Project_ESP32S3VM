@@ -1,0 +1,55 @@
+From 494ccf1e9fb60b5bac3f90650e83591f6159f386 Mon Sep 17 00:00:00 2001
+From: ESP32S3VM intc <intc@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 12:22:29 +0800
+Subject: [PATCH 3/3] tests/qtest: wire intmatrix test and align coreclk
+ reset-value check
+
+Stacked-integration fixes for 40edccac + coreclk 0001..0007:
+
+- meson: the coreclk series assigns qtests_xtensa = [ coreclk ] which
+  overrides the intmatrix lane wiring; run both ESP32-S3 suites
+  (esp32s3-intmatrix-test and esp32s3-coreclk-test).
+- esp32s3-coreclk-test: the intmatrix MAP reset value is the documented
+  0x10 (IDF interrupt_core{0,1}_reg.h field defaults) since the intc
+  lane rework, not the legacy 6; 0x10 is an internal CPU interrupt and
+  therefore unrouted, preserving the intent of the assertion.
+
+No device change in this commit.
+---
+ tests/qtest/esp32s3-coreclk-test.c | 6 ++++--
+ tests/qtest/meson.build            | 2 +-
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/tests/qtest/esp32s3-coreclk-test.c b/tests/qtest/esp32s3-coreclk-test.c
+index ba4f0a4..e41d127 100644
+--- a/tests/qtest/esp32s3-coreclk-test.c
++++ b/tests/qtest/esp32s3-coreclk-test.c
+@@ -295,8 +295,10 @@ static void test_sw_system_reset_clears_periph_keeps_rtc(void)
+     g_assert_cmphex(qtest_readl(qts, R_GDMA_OUT_CONF0_CH0), ==, 0);
+     /* SYSTIMER interrupt enables cleared */
+     g_assert_cmphex(qtest_readl(qts, R_ST_INT_ENA), ==, 0);
+-    /* Interrupt matrix map entry back to the unassigned value 6 */
+-    g_assert_cmphex(qtest_readl(qts, INTMATRIX_BASE + 4), ==, 6);
++    /* Interrupt matrix map entry back to the documented reset value 0x10
++     * (intc lane: MAP registers reset to 0x10 per IDF interrupt_core*_reg.h
++     * defaults; 0x10 is an internal CPU interrupt, i.e. unrouted) */
++    g_assert_cmphex(qtest_readl(qts, INTMATRIX_BASE + 4), ==, 0x10);
+ 
+     /* RTC domain survived: scratch register and the SW reset cause */
+     g_assert_cmphex(qtest_readl(qts, R_RTC_STORE0), ==, 0xDEADBEEF);
+diff --git a/tests/qtest/meson.build b/tests/qtest/meson.build
+index 70d82af..454bcae 100644
+--- a/tests/qtest/meson.build
++++ b/tests/qtest/meson.build
+@@ -344,7 +344,7 @@ if gnutls.found()
+ endif
+ 
+ # ESP32-S3 clock tree / reset domain tests (coreclk lane)
+-qtests_xtensa = [ 'esp32s3-coreclk-test', 'esp32s3-gdma-test' ]
++qtests_xtensa = [ 'esp32s3-intmatrix-test', 'esp32s3-gdma-test', 'esp32s3-coreclk-test' ]
+ 
+ qtests = {
+   'bios-tables-test': [io, 'boot-sector.c', 'acpi-utils.c', 'tpm-emu.c'],
+-- 
+2.43.0
+

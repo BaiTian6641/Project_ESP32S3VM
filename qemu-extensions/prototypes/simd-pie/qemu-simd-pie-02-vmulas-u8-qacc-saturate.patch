@@ -1,0 +1,49 @@
+target/xtensa: saturate ESP32-S3 ee.vmulas.u8.qacc lanes at 0xfffff
+
+The unsigned 8-bit MAC accumulated into a 20-bit lane whose container
+value was produced by the sign-extending load_qacc(), so any preloaded
+accumulator lane >= 0x80000 became a large uint32_t (raw 0xffff5 ->
+0xfffffff5). Adding the 255*255 = 65025 product wrapped the container
+back below 0x100000, the `> 0xfffff` test was false, and the wrapped
+value (e.g. 0xfdf6 = 65014) was stored as the lane result.
+
+Hardware arbitrates saturating behaviour: for ee.vmulas.u8.qacc seqs
+2-12 the physical ESP32-S3 (rev 0.2) returns all-0xff packed bytes,
+i.e. every overflowing 20-bit lane saturates at 0xfffff (golden:
+build-hardware-host/run-2026-10-07-rebaselined/simd/capture/records.json).
+
+Reduce the lane modulo 2^20 before accumulating -- undoing load_qacc's
+sign extension, an identity for lanes < 0x80000 -- and clamp at
+0xfffff. This also defines the previously unarbitrated clamp branch:
+the old `= -0xfffff` stored into uint32_t produced 0xfff00001 whose
+packed 20-bit form was 0xf0001 (983041), matching neither two's-complement
+wrap nor silicon; no vector in the 84-vector catalogue ever exercised
+that branch, and the arbitrated overflow lanes now produce the
+hardware-observed saturate value instead.
+---
+ target/xtensa/translate_tie_esp32s3.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/target/xtensa/translate_tie_esp32s3.c b/target/xtensa/translate_tie_esp32s3.c
+index 1111111..2222222 100644
+--- a/target/xtensa/translate_tie_esp32s3.c
++++ b/target/xtensa/translate_tie_esp32s3.c
+@@ -1967,10 +1967,10 @@ void HELPER(vmulas_qacc_s3)(CPUXtensaState *env, uint32_t qx, uint32_t qy, uint3
+     } else if (vmul_u8 == (vmul_type)op_type)
+     {
+         for (int i = 0; i < 8; i++)
+         {
+-            q_req_l.u20[i] += (uint32_t)tie->Q[qx].u8[i]*(uint32_t)tie->Q[qy].u8[i];
+-            if (q_req_l.u20[i] > 0xfffff) q_req_l.u20[i] = -0xfffff;
+-            q_req_h.u20[i] += (uint32_t)tie->Q[qx].u8[i + 8]*(uint32_t)tie->Q[qy].u8[i + 8];
+-            if (q_req_h.u20[i] > 0xfffff) q_req_h.u20[i] = -0xfffff;
++            q_req_l.u20[i] = (q_req_l.u20[i] & 0xfffff) + (uint32_t)tie->Q[qx].u8[i]*(uint32_t)tie->Q[qy].u8[i];
++            if (q_req_l.u20[i] > 0xfffff) q_req_l.u20[i] = 0xfffff;
++            q_req_h.u20[i] = (q_req_h.u20[i] & 0xfffff) + (uint32_t)tie->Q[qx].u8[i + 8]*(uint32_t)tie->Q[qy].u8[i + 8];
++            if (q_req_h.u20[i] > 0xfffff) q_req_h.u20[i] = 0xfffff;
+         }
+         save_qacc20(&q_req_l, tie->ACCQ[0].u8);
+         save_qacc20(&q_req_h, tie->ACCQ[1].u8);
+-- 
+2.43.0
+

@@ -1,0 +1,27 @@
+diff --git a/hw/ssi/meson.build b/hw/ssi/meson.build
+--- a/hw/ssi/meson.build
++++ b/hw/ssi/meson.build
+@@ -14,3 +14,4 @@
+ system_ss.add(when: 'CONFIG_RISCV_ESP32C3', if_true: files('esp32c3_spi.c'))
+ system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files('esp32s3_spi.c'))
+ system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files('esp32s3_spi_service.c'))
++system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files('esp32s3_spi_binding.c'))
+diff --git a/hw/xtensa/esp32s3.c b/hw/xtensa/esp32s3.c
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -48,5 +48,6 @@
+ #include "hw/ssi/esp32s3_spi.h"
+ #include "hw/misc/esp32s3_gpspi.h"
++#include "hw/ssi/esp32s3_spi_binding.h"
+ #include "hw/misc/esp32s3_cache.h"
+ #include "hw/char/esp32s3_uart.h"
+ #include "hw/misc/esp32s3_rng.h"
+@@ -1215,2 +1216,8 @@
+         esp32s3_electrical_create(OBJECT(ss), &ss->gpio, &ss->rtc_io,
+                                 &ss->sens);
++        {
++            Object *electrical_object = object_resolve_path_component(OBJECT(ss), "electrical");
++            g_assert(electrical_object);
++            esp32s3_spi_bind_electrical(&ss->gpspi[0], &ss->gpspi[1], &ss->gpio,
++                                       DEVICE(electrical_object));
++        }

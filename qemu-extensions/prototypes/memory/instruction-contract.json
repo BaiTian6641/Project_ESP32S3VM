@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "scope": "ESP32-S3 external DCache maintenance, exact official QEMU and native SDK primary-source contract; research evidence, not runtime qualification",
+  "decision": {
+    "target_xtensa_patch": null,
+    "machine_cpu_callback": null,
+    "reason": "The actual ESP32-S3 configured ISA does not expose the standard Xtensa cache maintenance instructions. Parent requested ROM/EXTMEM-only cutover after this finding; no unused generic hook or cache-instructions.patch is retained."
+  },
+  "pins": {
+    "qemu_commit": "40edccac415693c5130f91c01d84176ae6008566",
+    "idf_5_5_5_commit": "b774170ff46c393eeb5e495ea37936038d3f4f4f",
+    "idf_6_1_commit": "fff9895c82d744c7237be8847347bdd1b07c6643",
+    "rom": {
+      "path": "build-qemu-official-base/pc-bios/esp32s3_rev0_rom.bin",
+      "url": "https://github.com/espressif/qemu/blob/40edccac415693c5130f91c01d84176ae6008566/pc-bios/esp32s3_rev0_rom.bin",
+      "sha256": "b5c7090cc22efce51c1323cef31ca96fcd673a5b1d1b1017e219d393f2659913",
+      "mapping_base": "0x40000000",
+      "disassembler": "xtensa-esp32s3-elf-objdump esp-14.2.0_20260121, binary -m xtensa --adjust-vma=0x40000000"
+    }
+  },
+  "primary_sources": [
+    {
+      "url": "https://github.com/espressif/qemu/blob/40edccac415693c5130f91c01d84176ae6008566/target/xtensa/core-esp32s3/core-isa.h#L241-L250",
+      "finding": "XCHAL_DCACHE_SIZE=0, IS_WRITEBACK=0; the core-local Xtensa cache configuration is not the external EXTMEM cache."
+    },
+    {
+      "url": "https://github.com/espressif/qemu/blob/40edccac415693c5130f91c01d84176ae6008566/target/xtensa/core-esp32s3/xtensa-modules.inc.c",
+      "finding": "Configured opcode metadata contains no DHI/DHWB/DHWBI or their index/.b forms (case-insensitive targeted search). Generic translator opcode rows do not prove an instruction is supported by this configured core."
+    },
+    {
+      "url": "https://github.com/espressif/qemu/blob/40edccac415693c5130f91c01d84176ae6008566/target/xtensa/translate.c#L1489-L1497",
+      "finding": "Generic translate_dcache emits an otherwise unused byte-load. Generic opcode rows at2977-3018 map dhi/dhwb/dhwbi to that load, .b/index forms to no-op, and diwbui.p to address increment. These remain untouched."
+    },
+    {
+      "url": "https://github.com/espressif/qemu/blob/40edccac415693c5130f91c01d84176ae6008566/target/xtensa/cpu.h#L509-L552",
+      "finding": "Inspected actual CPUArchState, helper.h and op_helper.c for optional hook design; no change is necessary for the actual S3 ISA."
+    },
+    {
+      "url": "https://github.com/espressif/qemu/blob/40edccac415693c5130f91c01d84176ae6008566/target/xtensa/cpu.c#L96-L138",
+      "finding": "CPU reset updates selected state without memset(env); external cache reset remains machine/device owned, not an invented CPU helper."
+    },
+    {
+      "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/esp_rom/esp32s3/include/esp32s3/rom/cache.h#L353-L365",
+      "finding": "DCache ways argument documents only CACHE_4WAYS_ASSOC works; MIN/MAX_DCACHE_WAYS are both4 at32-33. Shared enum exposes8ways but that is not evidence of a DCache8way mode."
+    },
+    {
+      "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/esp_system/port/soc/esp32s3/Kconfig.cache#L89-L104",
+      "finding": "Kconfig offers/defaults8ways, conflicting with the target-specific ROM contract. Actual pinned ROM ignores the ways argument."
+    },
+    {
+      "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/soc/esp32s3/register/soc/extmem_reg.h#L15-L34",
+      "finding": "DCache control bits4:3 line size, bit2 capacity, bit0 enable. No public DCache way bit1."
+    },
+    {
+      "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/soc/esp32s3/register/soc/extmem_reg.h#L161-L206",
+      "finding": "Sync ctrl bits0 invalidate,1 writeback,2 clean,3 done; SyncSize bits22:0 count cache blocks, not bytes."
+    },
+    {
+      "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/esp_rom/esp32s3/ld/esp32s3.rom.ld#L348-L365",
+      "finding": "Pins exported ROM jump-table addresses used below."
+    },
+    {
+      "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/esp_rom/patches/esp_rom_cache_esp32s2_esp32s3.c#L94-L154",
+      "finding": "Public Cache_WriteBack_Addr treats size as bytes, zero bytes as success/no operation; handles unaligned edge lines through cache_writeback_items_freeze and aligned interior through rom_Cache_WriteBack_Addr."
+    },
+    {
+      "url": "https://github.com/espressif/esp-idf/blob/fff9895c82d744c7237be8847347bdd1b07c6643/components/esp_rom/esp32s3/include/esp32s3/rom/cache.h#L353-L365",
+      "finding": "Second pinned SDK agrees on only4 DCache ways; its register and core-ISA definitions also agree on block counts and core-local DCACHE_SIZE=0."
+    }
+  ],
+  "cache_mode": {
+    "supported_external_data_ways": 4,
+    "way_select_bit": null,
+    "bit1": "Not a validated DCache way selector; do not infer from ICache/shared enums or Kconfig.",
+    "size_bit": 2,
+    "size_bytes": [
+      32768,
+      65536
+    ],
+    "line_bits": [
+      3,
+      4
+    ],
+    "line_bytes": [
+      16,
+      32,
+      64
+    ],
+    "rom_evidence": {
+      "export": "0x4000162c",
+      "body": "0x4004e2ec",
+      "size_update": "0x4004e2f7-0x4004e309 sets/clears mask4 using a2",
+      "line_update": "0x4004e30e-0x4004e32d clears0x18 then ORs0/8/16 using a4",
+      "ways_argument": "a3 is never read in complete body0x4004e2ec-0x4004e32f; bit1 never changed."
+    }
+  },
+  "maintenance": {
+    "registers": {
+      "ctrl": "0x600c4028",
+      "addr": "0x600c402c",
+      "size": "0x600c4030"
+    },
+    "operations": {
+      "invalidate": 1,
+      "writeback": 2,
+      "clean": 4,
+      "done": 8
+    },
+    "size_unit": "Configured external DCache blocks; byte span = items * configured line_bytes for nonzero item commands.",
+    "whole_cache_command": {
+      "addr": 0,
+      "items": 0,
+      "evidence": "Cache_Invalidate_DCache_All export0x400016e0 literal target0x4004eac4: at0x4004eaca/0x4004eace sets both outgoing arguments0 then invokes invalidate-items dispatch slot+20 at0x4004ead0/0x4004ead2. Zero-sized item command must not be treated as an empty byte-range."
+    },
+    "zero_byte_api": "Public patched Cache_WriteBack_Addr(addr,0) returns0 before emitting a command; distinguish API zero bytes from MMIO item-count0 whole-cache command.",
+    "rom_bodies": [
+      {
+        "name": "Cache_Invalidate_DCache_Items",
+        "export": "0x40001680",
+        "body": "0x4004e514",
+        "evidence": "0x4004e520 writes addr;0x4004e530 masks items0x7fffff;0x4004e539 writes count;0x4004e53e loads1;0x4004e54b writes ctrl;0x4004e550-555 polls done8."
+      },
+      {
+        "name": "Cache_WriteBack_Items",
+        "export": "0x40001698",
+        "body": "0x4004e5a4",
+        "evidence": "0x4004e5b0 writes addr;0x4004e5c0 masks items0x7fffff;0x4004e5c9 writes count;0x4004e5ce loads2;0x4004e5db writes ctrl;0x4004e5e0-5e5 polls done8."
+      },
+      {
+        "name": "Cache_Invalidate_Addr",
+        "export": "0x400016b0",
+        "body": "0x4004e9ac",
+        "evidence": "Checks start/end through cached-address dispatch, gets configured line size, then invokes Cache_Op_Addr dispatch with caller size unchanged as bytes at0x4004ea0c."
+      },
+      {
+        "name": "rom_Cache_WriteBack_Addr",
+        "export": "0x400016c8",
+        "body": "0x4004ea64",
+        "evidence": "Gets DCache line size through dispatch, passes caller byte-size at0x4004eaa4 to Cache_Op_Addr dispatch."
+      },
+      {
+        "name": "Cache_Op_Addr",
+        "body": "0x4004e5f0",
+        "evidence": "0x4004e5f5-609 rounds span outward to configured line boundaries,0x4004e644/654 divides chunk bytes by line size before invoking items callback."
+      }
+    ]
+  },
+  "instruction_rows": [
+    {
+      "forms": [
+        "dhi",
+        "dhwb",
+        "dhwbi"
+      ],
+      "status": "Unsupported by actual S3 configured ISA; generic target implementation is not a native consumer contract."
+    },
+    {
+      "forms": [
+        "dhi.b",
+        "dhwb.b",
+        "dhwbi.b"
+      ],
+      "status": "Unsupported by actual S3 configured ISA; no invented block semantics or callback."
+    },
+    {
+      "forms": [
+        "dii",
+        "diwb",
+        "diwbi",
+        "diwbui.p",
+        "dhu",
+        "diu"
+      ],
+      "status": "Unsupported by actual S3 configured ISA; external MMIO cache set/way selection cannot be inferred from generic core-local index instructions."
+    }
+  ],
+  "unknown_rows": [
+    {
+      "feature": "EXTMEM preload, occupy, lock/unlock, freeze, autoload assist side effects",
+      "status": "Not qualified by this instruction-contract research; no claim of full emulation. Public SDK writeback edge workaround uses freeze, so fixture must exercise it against the parent implementation."
+    },
+    {
+      "feature": "DCache8way hardware geometry or bit1 selector",
+      "status": "No primary evidence for support; pinned ROM/header instead establish4ways. Do not advertise8ways."
+    },
+    {
+      "feature": "Zero item count with a nonzero start address and mixed command bits",
+      "status": "Whole-cache addr0/items0 is pinned. Arbitrary nonzero-address zero-count and mixed command arbitration not separately established here."
+    }
+  ],
+  "verification": {
+    "builds": false,
+    "tests": false,
+    "linters": false,
+    "patch_apply": false,
+    "research_only": [
+      "Pinned local public-source inspection",
+      "ROM SHA256",
+      "Targeted binary disassembly"
+    ],
+    "recommended_native_checks": [
+      "ROM Cache_Set_DCache_Mode with both way arguments stays4ways; capacity/line mode writes are honored.",
+      "Ordinary Cache_WriteBack_Addr and Cache_Invalidate_Addr visibility through CPU cache and same-MMU DMA bypass, including unaligned patched SDK calls.",
+      "Cache_Invalidate_DCache_All uses zero item count and discards dirty lines without writing external storage."
+    ]
+  }
+}

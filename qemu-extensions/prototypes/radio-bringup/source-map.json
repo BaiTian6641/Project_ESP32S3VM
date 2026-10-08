@@ -1,0 +1,89 @@
+{
+  "schema_version": 4,
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "status": "prototype-unqualified",
+  "maturity": "sequencing-only (fail-closed on measurement/data)",
+  "license": "GPL-2.0-or-later",
+  "lane": "radio-bringup (BLE controller bring-up slice) + regi2c-sar (REGI2C/SAR2 analog lane)",
+  "source_checkout": "/home/polar/.cache/esp32s3vm/qemu-radio-40edccac4156",
+  "branch": "codex/regi2c-sar (on top of codex/radio-bringup)",
+  "build_dir": "build-radio",
+  "configure": "--target-list=xtensa-softmmu --enable-gcrypt --enable-slirp --disable-docs --disable-werror --disable-user --disable-tools --disable-guest-agent --disable-gtk --disable-sdl --disable-vnc --disable-opengl --disable-capstone",
+  "patches": [
+    {
+      "name": "0001-hw-xtensa-esp32s3_clk-store-SYSTEM_BT_LPCK-divider-r.patch",
+      "sha256": "0a1d32af3218d6c97d669413160650cab09d29cc806dc17d93b600547a94aad6",
+      "core_paths": [
+        "include/hw/xtensa/esp32s3_clk.h",
+        "hw/xtensa/esp32s3_clk.c"
+      ],
+      "behavior": "SYSTEM_BT_LPCK_DIV_INT_REG (0x600C0028) and SYSTEM_BT_LPCK_DIV_FRAC_REG (0x600C002C) become stored R/W registers with IDF-documented reset defaults; writes masked to documented fields"
+    },
+    {
+      "name": "0002-hw-xtensa-esp32s3-map-undocumented-BT-modem-EM-RAM-w.patch",
+      "sha256": "ea36fdc3feb47a43433a399380c35e08e0cee3deadc42f718bc5a64bed9560a7",
+      "core_paths": [
+        "hw/xtensa/esp32s3.c"
+      ],
+      "behavior": "Bounded 64 KiB RAM window at 0x3FC00000 (undocumented BT modem/EM); NOT aliased to DRAM; true silicon extent UNKNOWN"
+    },
+    {
+      "name": "0003-hw-misc-esp32s3_regi2c-model-REGI2C-analog-I2C-maste.patch",
+      "sha256": "845217d8483f5dc9e5b455c30cfbd1c94e203b593af292b889e50f126c12904a",
+      "core_paths": [
+        "hw/misc/esp32s3_regi2c.c",
+        "include/hw/misc/esp32s3_regi2c.h",
+        "include/hw/misc/esp32s3_regi2c_defs.h",
+        "hw/xtensa/esp32s3.c",
+        "hw/misc/meson.build"
+      ],
+      "behavior": "REGI2C/I2C_MST analog master at 0x6000E000-0x6000E0FF as a timed SEQUENCING engine: parallel engine words +0x00/+0x04 (BIT25 busy self-clears after divider-derived I2C wire time, func 0/1), analog-slave config register FILE (RMW read-back incl. bootloader early-boot slave 0x69 reg 7), SAR2/PWDT phase sequencer (+0x50/0x5c/0x60, FIFO +0x80..+0x9c) armed by the SENS force pair, TX-DC +0x4c timed op, TSENS 0x60008850 dump_out/ready. FAIL-CLOSED: SAR2 words / TSENS sample / TX-DC done require a measurement provider (QOM link meas-provider, interface esp32s3-regi2c-meas-provider); absence reports the exact dependency once and pauses the VM via main-BH vm_stop(RUN_STATE_PAUSED) BEFORE firmware consumption -- no DONE+0, no filler values, no automatic resume. regi2c_wifi_analog_modeled=false: no analog/radio data model exists."
+    },
+    {
+      "name": "0004-hw-misc-esp32s3_regi2c-model-BBPLL_CAL_DONE-0x40-BIT.patch",
+      "sha256": "b7224516d494b8d941c0874a709c5226c43c96ef99fb702dda83c180dda1f6b1",
+      "core_paths": [
+        "hw/misc/esp32s3_regi2c.c",
+        "include/hw/misc/esp32s3_regi2c.h",
+        "include/hw/misc/esp32s3_regi2c_defs.h"
+      ],
+      "behavior": "BBPLL_CAL_DONE (0x6000E040 BIT24, I2C_MST_ANA_CONF0) as TIMED ENGINE STATUS, superseding the temporary coreclk read-only bridge (coreclk 0007): clk_ll_bbpll_calibration_start pattern (STOP_FORCE_HIGH BIT2 clear + STOP_FORCE_LOW BIT3 set, two RMW steps) clears BIT24 and starts a modeled 40 us calibration window (true duration UNKNOWN, bounded; completion is engine STATUS, not data -- no provider needed); clk_ll_bbpll_calibration_stop leaves it set until the next start (recalib re-runs); reset leaves it clear (no constant DONE). Verified on the combined profile (coreclk 0001-0005 + this patch, 0007 dropped): from-reset write trace shows start (0x6000e040 <- 0x0, <- 0x8), BBPLL config RMWs (slave 0x66), then calibration_stop reading back the modeled DONE=1 (0x6000e040 <- 0x1000000); boot smoke 3/3. Without this patch that profile spins in the poll (coreclk evidence)."
+    },
+    {
+      "name": "0005-regi2c-config-accessor-and-slave-range.patch",
+      "sha256": "d1d4966b5185ffcec53a15db5a19375e6ca0b9b34a6c9edd4c142075bf444719",
+      "core_paths": [
+        "hw/misc/esp32s3_regi2c.c",
+        "include/hw/misc/esp32s3_regi2c.h",
+        "include/hw/misc/esp32s3_regi2c_defs.h"
+      ],
+      "behavior": "ADDITIVE increment on the frozen 0001..0004 series: (1) canonical typed config-storage getter esp32s3_regi2c_get_slave_reg(dev, slave, reg, &value, &written) for the ADC lane (ENCAL_GND/DTEST/ENT_TSENS observation via typed QOM link to TYPE_ESP32S3_REGI2C set before realize; storage semantics only, measurement surfaces stay fail-closed behind meas-provider; consumers gate on *written, false return = fail closed); (2) guest-reachable index fix: REGI2C_ENG_SLAVE_OF masks the slave byte to the 7-bit I2C address space (&0x7f) before indexing the 128-row register file (review MUST-FIX; was OOB into adjacent device state for slave bytes >= 0x80). No runtime behavior change for evidenced firmware paths (boot smoke 3/3, wifi unchanged single SAR2 fail-closed pause, 0 unimplemented/guest-error lines)."
+    }
+  ],
+  "new_files": [
+    "hw/misc/esp32s3_regi2c.c",
+    "include/hw/misc/esp32s3_regi2c.h",
+    "include/hw/misc/esp32s3_regi2c_defs.h"
+  ],
+  "native_peripheral_support": false,
+  "regi2c_wifi_analog_modeled": false,
+  "binary_sha256": "f5b98dde3238f5afe76f6bc38a7f0f1b73ac34c7aa297d051880c4e1cbe99fce",
+  "sens_ownership": "FINAL MACHINE MUST HAVE ONE SENS OWNER. Contract agreed with the ADC lane: their full SENS controller (0x60008800-0x600089FF) provides storage and named GPIO outputs ('sar2-armed', 'tsens-dump-out'); this device's temporary sub-regions 0x60008830-0x60008837 and 0x60008850-0x60008853 move under it at integration and the sequencer/TSENS timers consume the GPIO inputs instead.",
+  "exploratory_evidence_unqualified": "build-runtime-state/regi2c-2026-10-07/exploratory/ (rev A fail-open runs: zeros latched with UNKNOWN logging; preserved for discovery only -- NOT behavioral evidence)",
+  "unknowns": [
+    "4-entry LPCLK select table values written by btdm_lpclk_select_src (only the main-XTAL write 0x04000000 is observed)",
+    "true extent/decode of the 0x3FC00000 window (only offsets 0x100..0x128 evidenced)",
+    "persistence semantics of undocumented RF windows 0x60031078 / 0x60042000 (catch-all)",
+    "REGI2C +0x50/0x54/0x58/0x5c/0x60/0xc4 true field maps; [26:24] busy encodings UNKNOWN (idle 7 evidenced); +0x58[7:0] modeled as I2C divider (semantics UNKNOWN)",
+    "analog slave register FILE reset defaults (modeled 0; only write-then-read-back semantics evidenced); never-written config reads are STORAGE semantics -- they return the modeled reset state, they are not measured values; measurement surfaces (SAR2/TSENS/TX-DC) stay fail-closed behind the provider",
+    "SAR2/PWDT measurement codes (8x13-bit per conversion) -- UNKNOWN analog values; provider interface ready",
+    "TSENS raw counts and their tsens-DAC dependence -- UNKNOWN; provider interface ready",
+    "TX-DC +0x4c BIT30/BIT31 direction-flag semantics and true op duration -- UNKNOWN",
+    "0x6000e130 (2 traced writes) outside the modeled region; extent UNKNOWN",
+    "NEXT BLOCKER (discovery, unqualified): ram_iq_est_enable polls 0x60006174 BIT16 in unmodeled modem window 0x60006000-0x60007fff (also holds pll_cal flags whose 2ms timeouts the blob tolerates)"
+  ],
+  "evidence": "build-runtime-state/regi2c-2026-10-07/",
+  "stack_dependency": "STACKED SERIES: this radio-bringup 0001..0004 series is regenerated on TOP of the coreclk series (qemu-extensions/prototypes/coreclk/ 0001..0007, git am --keep-cr order: coreclk first, then radio-bringup). 0003 carries the formalized esp32s3.c integration resolutions (include block, regi2c child placement, regi2c realize block) and maps its 0x6000E000 window at overlap priority 1 so the owning model outranks the superseded coreclk 0007 read-only bridge regardless of insertion order. Verified: mechanical pipeline simulation (coreclk stack + git am 0001..0004) applies clean and is tree-identical to the verified stacked build; boot smoke 3/3 with coreclk 0007 present AND dropped.",
+  "stacked_verification": "build-runtime-state/regi2c-2026-10-07-stacked/ (boot smoke 3/3 with coreclk 0007 present and dropped; wifi fail-closed unchanged; combined-profile trace re-verified on formalized commits)",
+  "adc_coordination": "ADC lane (additive 0005, owned by AdcWorker) consumes the canonical typed getter esp32s3_regi2c_get_slave_reg(dev, slave, reg, &value, &written) declared in include/hw/misc/esp32s3_regi2c.h -- CONFIG STORAGE semantics only (slave register file incl. slave 0x69 reg 7 ENCAL_GND/DTEST/ENT_TSENS bits the ROM RMWs); wire a typed QOM link to TYPE_ESP32S3_REGI2C set before realize. Measurement surfaces stay fail-closed behind meas-provider; no self-cal provider hack, no id-string shim. REVIEWED (Regi2cGetterReview): getter honesty/API/regression CLEAN; consumer discipline: gate on *written (never-written storage 0 = UNKNOWN reset state), false return = fail closed, never conflated with provider-unavailable. PACKAGING NOTE: radio-bringup 0001..0004 are FROZEN inputs (exact bytes restored after an accidental regeneration; sha256s above are the authoritative frozen ones). The getter + 7-bit slave-index fix are published ADDITIVELY as 0005-regi2c-config-accessor-and-slave-range.patch applied AFTER frozen radio 0004. Pipeline simulation: pristine -> coreclk 0001..0007 -> am radio 0001..0004 -> am 0005 applies clean and is tree-identical to the tested build f5b98dde\u2026."
+}

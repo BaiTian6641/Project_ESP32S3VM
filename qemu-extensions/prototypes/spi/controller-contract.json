@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "work_packages": [
+    "SPI-01",
+    "SPI-02",
+    "CORE-04",
+    "NET-02",
+    "NET-03",
+    "NET-04",
+    "NET-05",
+    "NET-06"
+  ],
+  "license": "GPL-2.0-or-later",
+  "prefix": {
+    "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+    "fingerprint": "dbe2a8a5ad4e07a607e76ab751e77ac85fe3bf30974359bd25a69354499f9b32",
+    "record": "build-runtime-state/runtime-dbe2a8a5ad4e07a6-source.json"
+  },
+  "controller": {
+    "SPI2": {
+      "base": "0x60024000",
+      "irq_source": 21,
+      "gdma_peripheral": 0,
+      "cs_signals": [
+        110,
+        111,
+        112,
+        113,
+        114,
+        115
+      ],
+      "sclk_signal": 101,
+      "mosi_signal": 103,
+      "miso_signal": 102
+    },
+    "SPI3": {
+      "base": "0x60025000",
+      "irq_source": 22,
+      "gdma_peripheral": 1,
+      "cs_signals": [
+        71,
+        72,
+        127
+      ],
+      "sclk_signal": 66,
+      "mosi_signal": 68,
+      "miso_signal": 67
+    }
+  },
+  "execution": "One virtual timer callback advances one electrical half-clock edge. Absolute source tick accumulation preserves divider/duty durations and bounded work. Command/address/dummy/data phases are independent. PIO TX uses the start snapshot while RX writes independently sampled bits. DMA streams one byte through canonical persistent descriptor cursors only when the hardware shifter needs/receives it, without fixed 4096-byte storage or descriptor restart.",
+  "clock_contract": "SPI_CLK_GATE bit2 selects actual PLL_CLK_80M versus XTAL, not APB. Bits0/1 and SYSTEM SPI2/SPI3 gates determine eligibility. Source/gate/reset changes cancel scheduled completion; controller reset does not erase external NOR storage.",
+  "timing_encoding": "CS_SETUP_TIME encodes cycles-minus-one; CS_HOLD_TIME encodes raw cycles, so enabled hold zero appends no cycle.",
+  "full_duplex_rx_prefix": "MS_DLEN defines clocked TX/data length. An ordinary driver may arm a smaller clean terminal RX inlink to retain only a prefix; later actual sampled MISO bytes are discarded without writing beyond the completed inlink. Halted/owner/reset/nonterminal shortages remain errors; this is not an RX echo or payload fallback.",
+  "reference": "https://docs.espressif.com/projects/esp-idf/en/release-v6.0/esp32s3/api-reference/peripherals/spi_master.html#spi-transactions; pinned build-idf-6.1 spi_ll.h and spi_hal_iram.c define the register encoding and full-duplex common counter.",
+  "strict_sampling": "Disconnected/floating/contention/unknown MISO pauses before sampling, retaining CMD.USR and without TRANS_DONE or invented RX. No graph provider is never a favorable RX source. TX-only absent receiver still completes its hardware shifter: SPI has no synthetic ACK. Unsupported operational modes pause with an explicit native diagnostic rather than fake completion.",
+  "dma_rx_end": {
+    "patch": "0001-gdma-peripheral-rx-packet-end.patch",
+    "sha256": "d0a472c53f444304e29dbd4c979d60840e73a42bfbc935277041deec6b8ad422",
+    "api": "bool esp_gdma_finish_rx_channel(ESPGdmaState *, uint32_t chan)",
+    "semantics": "Actual bytes-only terminal EOF writes exact partial length, owner0/suc_eof1, IN_DONE/IN_SUC_EOF, exact EOF descriptor pointer, and parks only the specified IN channel. Full-boundary completion marks the last actually received descriptor, never the empty preloaded next. Repeat successful end is idempotent. Zero bytes/halted/reset returns false without writes or IRQ. STOP keeps a finalizable cursor; channel reset/disarm discards it. RESTART follows the last completed descriptor DW2."
+  },
+  "native_nor_profile": {
+    "type": "spi-nor-1m",
+    "parameters": {},
+    "required_roles": [
+      "mosi",
+      "miso",
+      "sclk",
+      "cs",
+      "vdd",
+      "gnd"
+    ],
+    "capacity_bytes": 1048576,
+    "jedec_id": [
+      239,
+      64,
+      20
+    ],
+    "page_bytes": 256,
+    "sector_bytes": 4096,
+    "block_bytes": 65536,
+    "powered_delta_v_range": [
+      2.7,
+      3.6
+    ],
+    "miso_resistance_ohm": 40,
+    "program_ns": 700000,
+    "sector_erase_ns": 45000000,
+    "block_erase_ns": 150000000,
+    "chip_erase_ns": 2000000000,
+    "modes": [
+      0,
+      3
+    ],
+    "power_loss": "Atomic abort of not-yet-committed operation; preserves committed bytes. This is a simulation profile, not physical power-failure fidelity."
+  },
+  "canonical_gates": [
+    "SPI0/1 official flash path remains unchanged",
+    "Slave remains SPI-03 unqualified",
+    "Dual/quad/octal/DDR remain SPI-03 unqualified",
+    "PSRAM/EDMA addresses are explicitly unsupported until CORE-04 reachable-memory qualification",
+    "No claimed fast/edge equivalence or replay until both paths are truly exercised",
+    "NOR mode1/2 unsupported; controller mode1/2 qualifies separately through actual loopback wire",
+    "ESP32-S3 half-duplex both TX and RX data phases are unsupported by the pinned target capability/ordinary driver"
+  ],
+  "evidence": "build-runtime-state/spi-native-2026-10-07/",
+  "qualification": "Implementation availability is not runtime qualification; exact delegated binary/test/fixture results are recorded separately.",
+  "late_virtual_edge_profile": "Normal edge/timing qualification traverses current virtual deadlines chronologically. A callback delivered overdue emits only its actual current-time edge, then schedules remaining overdue phases forward at >=1ns; no backdated electrical samples or counter-only DONE. Exact late SCLK rate/fast-edge/host-load equivalence are unqualified pending NET04 icount/deadline horizon.",
+  "strict_pause_context": "Unresolved sampling holds BUSY/data immediately and defers VM stop through canonical main-context BH; reset/gate/abort cancels a queued controller stop.",
+  "qtest_time_contract": "QEMU_CLOCK_VIRTUAL must be enabled through CONT. Enabled qtest_clock_step already traverses every due deadline; the prior overdue799 inference is invalid. All25 cases use real enabled chronological traversal including49-to799-to800/cancellation. Real continuousguest overdue horizon remains unqualified pending NET04 proof."
+}

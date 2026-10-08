@@ -1,0 +1,27 @@
+--- a/meson.build
++++ b/meson.build
+@@ -4244,6 +4244,23 @@
+                  include_directories: target_inc,
+                  c_args: c_args,
+                  build_by_default: false)
+ 
++  # Native UART-03 controller vectors use the SAME configured system objects
++  # and link dependencies as the Xtensa emulator, excluding system/main.c.
++  # No memory/IRQ/reset/DMA stubs or reconstructed object allowlist.
++  if target == 'xtensa-softmmu' and 'CONFIG_XTENSA_ESP32S3' in config_target and host_os == 'linux'
++    uhci_unit = executable('test-esp32s3-uhci',
++               files('tests/unit/test-esp32s3-uhci.c'),
++               c_args: c_args,
++               include_directories: target_inc,
++               dependencies: arch_deps + [sdl],
++               objects: lib.extract_all_objects(recursive: true),
++               link_depends: [block_syms, qemu_syms],
++               link_args: link_args,
++               build_by_default: false)
++    test('esp32s3-uhci-native', uhci_unit, args: ['--tap', '-k'],
++         protocol: 'tap', timeout: 60, suite: ['unit', 'esp32s3'])
++  endif
++
+   if target.endswith('-softmmu')
+     execs = [{
+       'name': 'qemu-system-' + target_name,

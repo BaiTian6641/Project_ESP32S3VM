@@ -1,0 +1,46 @@
+From 9a339e03e868ef7950977654be6139a4332756de Mon Sep 17 00:00:00 2001
+From: ESP32S3VM gdma <gdma@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 11:41:58 +0800
+Subject: [PATCH 2/3] hw/dma/esp32s3_gdma: validate GDMA_PERI_SEL peripheral
+ set
+
+Fill the NULL is_periph_invalid hook with the real ESP32-S3 pairing
+set: TRM chapter 3 table 3.4-1 allows PERI_SEL 0..9 (SPI2, SPI3, UHCI0,
+I2S0, I2S1, LCD/CAM, AES, SHA, ADC, RMT) and marks 10..63 invalid.
+---
+ hw/dma/esp32s3_gdma.c | 16 ++++++++++++++--
+ 1 file changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/hw/dma/esp32s3_gdma.c b/hw/dma/esp32s3_gdma.c
+index 91b9251..a541b88 100644
+--- a/hw/dma/esp32s3_gdma.c
++++ b/hw/dma/esp32s3_gdma.c
+@@ -145,11 +145,23 @@ static void esp32s3_gdma_init(Object *obj)
+ }
+ 
+ 
++/*
++ * ESP32-S3 peripherals that can be connected to a GDMA channel,
++ * TRM chapter 3 table 3.4-1 ("Selecting Peripherals via Register
++ * Configuration") and IDF components/esp_hal_dma/esp32s3/include/hal/
++ * gdma_channel.h (SOC_GDMA_TRIG_PERIPH_*). Values 10 to 63 are invalid.
++ */
++static bool esp32s3_gdma_is_periph_invalid(ESPGdmaState *s, GdmaPeripheral per)
++{
++    (void)s;
++    return per > GDMA_RMT;
++}
++
+ static void esp32s3_gdma_class_init(ObjectClass *klass, void *data)
+ {
+     ESPGdmaClass* class = ESP_GDMA_CLASS(klass);
+-    /* Make sure all the peripherals are valid */
+-    class->is_periph_invalid = NULL;
++    /* Enforce the ESP32-S3 GDMA_PERI_SEL valid range (TRM table 3.4-1) */
++    class->is_periph_invalid = esp32s3_gdma_is_periph_invalid;
+ 
+     class->m_channel_count = ESP32S3_GDMA_CHANNEL_COUNT;
+ }
+-- 
+2.43.0
+

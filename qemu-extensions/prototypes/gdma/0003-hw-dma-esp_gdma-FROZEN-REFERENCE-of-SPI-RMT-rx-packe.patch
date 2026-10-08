@@ -1,0 +1,148 @@
+From 9743fb2ed5aa398afbdaa982c3a1b0b234c37cea Mon Sep 17 00:00:00 2001
+From: ESP32S3VM spi <spi@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 15:12:21 +0800
+Subject: [PATCH 3/5] hw/dma/esp_gdma: FROZEN REFERENCE of SPI/RMT
+ rx-packet-end overlay
+
+Verbatim application of qemu-extensions/prototypes/spi/
+0001-gdma-peripheral-rx-packet-end.patch (sha256 d0a472c53f444304e29dbd4c979d60840e73a42bfbc935277041deec6b8ad422),
+owned by SpiNativeWorker. Committed locally only so the UART lane can
+author its additive overlay on the exact frozen bytes; not part of the
+gdma series.
+---
+ hw/dma/esp_gdma.c         | 64 +++++++++++++++++++++++++++++++++++++++
+ include/hw/dma/esp_gdma.h |  8 +++++
+ 2 files changed, 72 insertions(+)
+
+diff --git a/hw/dma/esp_gdma.c b/hw/dma/esp_gdma.c
+index 91a8ecd..98b1c12 100644
+--- a/hw/dma/esp_gdma.c
++++ b/hw/dma/esp_gdma.c
+@@ -239,6 +239,9 @@ static void esp_gdma_fsm_reset(DmaConfigState* st)
+     st->cur_buf_off = 0;
+     st->cur_buf_cap = 0;
+     st->cur_suc_eof = false;
++    st->rx_last_desc_addr = 0;
++    st->rx_last_prev_addr = 0;
++    st->rx_packet_ended = false;
+     st->walk_count = 0;
+     st->idle_count = 0;
+     st->fsm_active = false;
+@@ -503,6 +506,11 @@ static void esp_gdma_arm_chain(ESPGdmaState *s, uint32_t chan, uint32_t dir, boo
+         esp_gdma_fsm_reset(st);
+     }
+ 
++    if (dir == ESP_GDMA_IN_IDX) {
++        st->rx_last_desc_addr = 0;
++        st->rx_last_prev_addr = 0;
++        st->rx_packet_ended = false;
++    }
+     st->fsm_active = true;
+     if (!esp_gdma_load_descriptor(s, chan, dir, addr)) {
+         /* esp_gdma_load_descriptor flagged DSCR_ERR and halted the channel */
+@@ -715,6 +723,9 @@ static void esp_gdma_channel_disarm(ESPGdmaState *s, uint32_t chan)
+         esp_gdma_park(st);
+         st->pending_start = false;
+         st->pending_restart = false;
++        st->rx_last_desc_addr = 0;
++        st->rx_last_prev_addr = 0;
++        st->rx_packet_ended = false;
+     }
+ }
+ 
+@@ -1117,6 +1128,8 @@ bool esp_gdma_write_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uin
+             }
+             st->cur_buf_off += take;
+             consumed += take;
++            st->rx_last_desc_addr = st->cur_desc_addr;
++            st->rx_last_prev_addr = st->bfr_bfr_desc_addr;
+             st->idle_count = 0;
+         }
+ 
+@@ -1161,6 +1174,57 @@ bool esp_gdma_write_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uin
+     return consumed == size && !st->halted;
+ }
+ 
++bool esp_gdma_finish_rx_channel(ESPGdmaState *s, uint32_t chan)
++{
++    if (!s || chan >= ESP_GDMA_GET_CLASS(s)->m_channel_count) {
++        return false;
++    }
++    DmaConfigState *st = &s->ch_conf[ESP_GDMA_IN_IDX][chan];
++    if (st->halted || !st->rx_last_desc_addr) {
++        return false;
++    }
++    if (st->rx_packet_ended) {
++        return true;
++    }
++    if (st->cur_desc_addr == st->rx_last_desc_addr &&
++        st->cur_buf_off > 0 && st->cur_buf_off < st->cur_buf_cap) {
++        esp_gdma_writeback_in(s, chan, true);
++        if (st->halted) {
++            return false;
++        }
++        /* RESTART follows DW2 after terminal EOF, not unused allocation. */
++        st->cur_buf_off = st->cur_buf_cap;
++    } else {
++        /* Never mark the preloaded, empty next descriptor as packet EOF. */
++        GdmaLinkedList d;
++        if (!esp_gdma_read_descr(s, st->rx_last_desc_addr, &d)) {
++            esp_gdma_desc_error(s, chan, ESP_GDMA_IN_IDX, st->rx_last_desc_addr);
++            return false;
++        }
++        d.config.val |= GDMA_DESC_SUC_EOF_MASK;
++        if (!esp_gdma_write_descr(s, st->rx_last_desc_addr, &d)) {
++            esp_gdma_desc_error(s, chan, ESP_GDMA_IN_IDX, st->rx_last_desc_addr);
++            return false;
++        }
++        st->cur_desc_addr = st->rx_last_desc_addr;
++        st->cur_dw0 = d.config.val;
++        st->cur_buf_addr = d.buf_addr;
++        st->cur_next_addr = d.next_addr;
++        st->cur_buf_cap = st->cur_buf_off = d.config.length;
++        st->bfr_desc_addr = st->rx_last_desc_addr;
++        st->bfr_bfr_desc_addr = st->rx_last_prev_addr;
++        st->desc_addr = d.next_addr;
++        st->state = d.next_addr & R_GDMA_OUT_STATE_LINK_DSCR_ADDR_MASK;
++    }
++    st->rx_packet_ended = true;
++    st->suc_eof_desc_addr = st->rx_last_desc_addr;
++    esp_gdma_park(st);
++    esp_gdma_set_status(&st->int_state,
++                        R_GDMA_INTERRUPT_IN_DONE_MASK |
++                        R_GDMA_INTERRUPT_IN_SUC_EOF_MASK);
++    return true;
++}
++
+ static Property esp_gdma_properties[] = {
+     DEFINE_PROP_LINK("soc_mr", ESPGdmaState, soc_mr, TYPE_MEMORY_REGION, MemoryRegion*),
+     DEFINE_PROP_LINK("soc-reset", ESPGdmaState, soc_reset, TYPE_DEVICE, DeviceState *),
+diff --git a/include/hw/dma/esp_gdma.h b/include/hw/dma/esp_gdma.h
+index c8e9943..7acea78 100644
+--- a/include/hw/dma/esp_gdma.h
++++ b/include/hw/dma/esp_gdma.h
+@@ -151,6 +151,9 @@ typedef struct {
+     uint32_t cur_buf_off;   /* Byte cursor inside the current descriptor buffer */
+     uint32_t cur_buf_cap;   /* Capacity of the current descriptor (OUT: length, IN: size) */
+     bool cur_suc_eof;       /* suc_eof flag of the current descriptor */
++    uint32_t rx_last_desc_addr; /* Last descriptor that actually received bytes */
++    uint32_t rx_last_prev_addr; /* Its previous descriptor, before prefetch */
++    bool rx_packet_ended;      /* Terminal peripheral EOF already committed */
+     uint32_t walk_count;    /* Descriptors fetched since the chain was armed */
+     uint32_t idle_count;    /* Consecutive fetches that moved no byte (cycle detection) */
+     bool fsm_active;        /* Chain armed and unfinished; LINK.PARK reads !fsm_active */
+@@ -209,6 +212,11 @@ bool esp_gdma_get_channel_periph(ESPGdmaState *s, GdmaPeripheral periph, int dir
+ 
+ bool esp_gdma_read_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uint32_t size);
+ bool esp_gdma_write_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uint32_t size);
++/* Actual peripheral RX frame end. Writes exact partial length, clears owner,
++ * marks the last received descriptor EOF and parks only this IN channel.
++ * No bytes/halted/reset cursor => false, no write/IRQ; repeat end => true.
++ * STOP keeps a finalizable cursor; reset discards it without writeback. */
++bool esp_gdma_finish_rx_channel(ESPGdmaState *s, uint32_t chan);
+ 
+ 
+ /**
+-- 
+2.43.0
+

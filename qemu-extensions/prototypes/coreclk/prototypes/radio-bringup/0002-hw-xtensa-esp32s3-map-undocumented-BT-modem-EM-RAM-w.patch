@@ -1,0 +1,74 @@
+From e5e47feeeb649b92119c0a0410f7256e66fa4af5 Mon Sep 17 00:00:00 2001
+From: ESP32S3VM radio-bringup <radio-bringup@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 09:17:30 +0800
+Subject: [PATCH 2/4] hw/xtensa/esp32s3: map undocumented BT modem/EM RAM
+ window at 0x3FC00000
+
+Map a bounded RAM window at 0x3FC00000 (64 KiB) as a child of system
+memory. The BLE controller ROM/blob stores through this window during
+controller init: r_rf_em_init calls its platform-function table entry 47
+with offset 0x100 and memcpy()s a 40-byte RF/EM table to the returned
+address; on official QEMU that copy faults with LoadStorePIFAddrError
+(EXCCAUSE 0x0f) at EXCVADDR 0x3fc00100, while real silicon accepts it
+(same firmware completes controller init/enable/bluedroid on rev 0.2
+silicon, run-2026-10-07-rebaselined BLE capture).
+
+The window is absent from every public ESP32-S3 address map (TRM v1.2,
+official memory-map PDF, IDF memory.ld.in); only offsets 0x100..0x128
+are evidenced, so the true extent is UNKNOWN and the model is bounded at
+64 KiB. It is deliberately NOT aliased to DRAM (DRAM starts at
+0x3FC80000 and has no overlap). Plain memory_region_init_ram: zero
+filled, covered by default RAM migration, not reset on machine reset.
+---
+ hw/xtensa/esp32s3.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/hw/xtensa/esp32s3.c b/hw/xtensa/esp32s3.c
+index 64bee30..d320736 100644
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -88,6 +88,7 @@ enum {
+     ESP32S3_MEMREGION_RTCSLOW,
+     ESP32S3_MEMREGION_RTCFAST,
+     ESP32S3_MEMREGION_FRAMEBUF,
++    ESP32S3_MEMREGION_BT_EM,
+ };
+ 
+ static const struct MemmapEntry {
+@@ -102,6 +103,10 @@ static const struct MemmapEntry {
+     [ESP32S3_MEMREGION_ICACHE] = { 0x42000000, ESP32S3_EXTMEM_REGION_SIZE },
+     [ESP32S3_MEMREGION_RTCSLOW] = { 0x50000000, 0x2000 },
+     [ESP32S3_MEMREGION_RTCFAST] = { 0x600fe000, 0x2000 },
++    /* Undocumented BT modem/EM window: not in any public ESP32-S3 address
++     * map. Only offsets 0x100..0x128 are observed (BLE controller init);
++     * the full silicon extent is UNKNOWN, 64 KiB is a bounded model. */
++    [ESP32S3_MEMREGION_BT_EM] = { 0x3FC00000, 0x10000 },
+     /* Virtual Framebuffer, used for the graphical interface */
+     [ESP32S3_MEMREGION_FRAMEBUF] = { 0x20000000, ESP_RGB_MAX_VRAM_SIZE },
+ };
+@@ -787,6 +792,22 @@ static void esp32s3_machine_init(MachineState *machine)
+                            memmap[ESP32S3_MEMREGION_DRAM].size, &error_fatal);
+     memory_region_add_subregion(sys_mem, memmap[ESP32S3_MEMREGION_DRAM].base, dram);
+ 
++    /* Undocumented BT modem/EM (exchange memory) data window at 0x3FC00000.
++     *
++     * The BLE controller ROM/blob stores through this window (observed: a
++     * 40-byte ROM memcpy to 0x3FC00000 + 0x100 driven by r_rf_em_init through
++     * its platform-function table; real silicon accepts the access, official
++     * QEMU without this region raises LoadStorePIFAddrError EXCCAUSE 0x0f at
++     * EXCVADDR 0x3fc00100). It is a distinct window, deliberately NOT aliased
++     * to DRAM. Its true extent is UNKNOWN (absent from public address maps;
++     * only offsets 0x100..0x128 are evidenced), so the model is bounded to
++     * 64 KiB. Plain RAM block: zero-filled at power-on, included in default
++     * RAM migration, contents not reset on machine reset (same as dram). */
++    MemoryRegion *bt_em_ram = g_new(MemoryRegion, 1);
++    memory_region_init_ram(bt_em_ram, NULL, "esp32s3.bt_em_ram",
++                           memmap[ESP32S3_MEMREGION_BT_EM].size, &error_fatal);
++    memory_region_add_subregion(sys_mem, memmap[ESP32S3_MEMREGION_BT_EM].base, bt_em_ram);
++
+ 
+     memory_region_init_io(&ss->iomem, OBJECT(&ss->cpu[0]), &esp32s3_io_ops,
+                           NULL, "esp32s3.iomem", 0xd1000);
+-- 
+2.43.0
+

@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "prefix_fingerprint": "486cb408a31afae28b1a93896efd0a2909de13300f6fc050c696f10269fa2a92",
+  "license": "GPL-2.0-or-later",
+  "status": "blocked-coherent-corrected-fullgraph-receipt",
+  "blockers": ["Main is composing corrected GPIO/truthful pad projection; current source-only Parent486+ADC/eAD receipts are not final coherent graph qualification", "Native compilation awaits Main's later authorized slot after CPU15 exclusive lease"],
+  "source_checkout": "/home/polar/.cache/esp32s3vm/qemu-pulse-40edccac4156-486cb408a31afae2",
+  "evidence": "build-runtime-state/pulse-native-2026-10-07/",
+  "foundation_prefix": {
+    "record": "build-runtime-state/runtime-486cb408a31afae2-source.json",
+    "record_sha256": "baed1c57e279bb4ce8cb1d62cc85e478e711e7cc7ffa1071a602091c4f6f9654",
+    "content": "Actual immutable Parent33 includes frozen26 + coreclk0010..14 + canonical GPIOe1 + radio5; never replay these overlays twice or consume sibling worktrees",
+    "historical_clock_prefix_proof": "build-runtime-state/pulse-native-2026-10-07/prepare-clock-prefix-result.json"
+  },
+  "preparation_order": [
+    {"kind":"patch","source":"prototypes/adc/integration-native-foundations-adc.patch","sha256":"21dbb41996ec5450aa2bcd43d1cf9801f15d3103ac1f3ffc915df5e0bb09eefd"},
+    {"kind":"copy","source":"prototypes/adc/copies/esp32s3_adc_provider.h","destination":"include/hw/misc/esp32s3_adc_provider.h","sha256":"63530e845df5830b6ec61f165f68fbf174c57373d9947969eb57399ee3530fd0"},
+    {"kind":"copy","source":"prototypes/adc/copies/esp32s3_sens.h","destination":"include/hw/misc/esp32s3_sens.h","sha256":"e32e19e2c3aa854f39ff05e272aceae98d47ea14aec26f08f8fd52ca97e70c10"},
+    {"kind":"copy","source":"prototypes/adc/copies/esp32s3_sens.c","destination":"hw/misc/esp32s3_sens.c","sha256":"56ad19a7b0ef36d8b0bd8f43a593a2cca819b160546c0ebbc753cf9760b7251c"},
+    {"kind":"copy","source":"prototypes/adc/copies/esp32s3_apb_saradc.h","destination":"include/hw/misc/esp32s3_apb_saradc.h","sha256":"28d3fd635d21a0943a0d0f117f0a89842ff72bb3ddf9dd26fd1758ce0bb82713"},
+    {"kind":"copy","source":"prototypes/adc/copies/esp32s3_apb_saradc.c","destination":"hw/misc/esp32s3_apb_saradc.c","sha256":"be0c55b24b4ff213ed6941e42def288be9d7e17b3ccb9383cdaa484e6ae24248"},
+    {"kind":"copy","source":"prototypes/adc/copies/esp32s3_adc_net_provider.c","destination":"hw/adc/esp32s3_adc_net_provider.c","sha256":"41e78fa5b94ec9f58e7f0de60575c727f906d853584e5e4d2e3b0c2bc799241b"},
+    {"kind":"copy","source":"prototypes/adc/copies/esp32s3-adc-test.c","destination":"tests/qtest/esp32s3-adc-test.c","sha256":"693acac556f0040459e733962cb8c6e8579cb39c9ca9513de75ba07a847c1977"},
+    {"kind":"patch","source":"prototypes/electrical-runtime/0001-native-v3-electrical-boundary.patch","sha256":"7acb418f96e3410f12f3e20f8a4d84bc7de028769043aef849c09e4f81c6b504"},
+    {"kind":"copy","source":"prototypes/electrical-runtime/copies/esp32s3_project.c","destination":"hw/adc/esp32s3_project.c","sha256":"b290c386860a3722fdc681e3a2bde4c6bab2574def0c508f960c9cd0088b2563"},
+    {"kind":"copy","source":"prototypes/electrical-runtime/copies/esp32s3_project.h","destination":"hw/adc/esp32s3_project.h","sha256":"e2bb939783a9d86050089b6622a35f43376cc94e2e9097915ba46cb76fac4b88"},
+    {"kind":"copy","source":"prototypes/electrical-runtime/copies/esp32s3_electrical.c","destination":"hw/adc/esp32s3_electrical.c","sha256":"03209b9420b7fa3d43fef652ae6a9733ceb5697ba1f13274f800ec39d47be972"},
+    {"kind":"copy","source":"prototypes/electrical-runtime/copies/esp32s3_electrical.h","destination":"include/hw/misc/esp32s3_electrical.h","sha256":"1138a4d75ef38cc77308a16b836515e9e456bb6e56ee084f22a16f3020712fa7"},
+    {"kind":"copy","source":"prototypes/electrical-runtime/copies/esp32s3_electrical_internal.h","destination":"hw/adc/esp32s3_electrical_internal.h","sha256":"40b7e621d62031d6ed1d3c447ee839ad9afdbcb8a4f939f90773d0221ab0794b"},
+    {"kind":"copy","source":"prototypes/electrical-runtime/copies/esp32s3_electrical_models.c","destination":"hw/adc/esp32s3_electrical_models.c","sha256":"5c6a09c9f924bb032c1e4ada124642b65fdbe78e9883fae721b808ead5010336"},
+    {"kind":"copy","source":"prototypes/electrical-runtime/copies/esp32s3_electrical_observers.c","destination":"hw/adc/esp32s3_electrical_observers.c","sha256":"7f767943ca32aff419904979089cd718ee56ccb2919e832dad55c0ef3600d0b5"},
+    {"kind":"copy","source":"prototypes/electrical-runtime/copies/esp32s3_electrical_observers.h","destination":"hw/adc/esp32s3_electrical_observers.h","sha256":"fcdeecf87e9ff5d67b64d3f47b8b91cf47142b4bb79ae4cd209171ad7424cdb6"},
+    {"kind":"copy","source":"prototypes/electrical-runtime/copies/esp32s3-electrical-test.c","destination":"tests/qtest/esp32s3-electrical-test.c","sha256":"7450eb5def7cc6b3a5acff7da48f87d2edda92f49086b781aec90c1b3576665b"},
+    {"kind":"copy","source":"electrical/net-dc.c","destination":"hw/adc/net-dc.c","sha256":"63ee6c60cea2e77a7c33b31a8af4db8a4ecc2b76079453322cf335e5c49e1e69"},
+    {"kind":"copy","source":"electrical/net-dc.h","destination":"hw/adc/net-dc.h","sha256":"578bc7c05ae6ee53b9819624674fbc31cd5d40ab0ddf223fdcf2eb9de8d738eb"},
+    {"kind":"copy","source":"electrical/net-adapter.c","destination":"hw/adc/net-adapter.c","sha256":"66eb8bd9e7f79f9fabf92a275ee4e2eea4bd73408f276674abf1840b7b652afa"},
+    {"kind":"copy","source":"electrical/net-adapter.h","destination":"hw/adc/net-adapter.h","sha256":"34f242959690719d9b55c60a64ba763a80d166a41016d2b26203dba00b7d017f"},
+    {"kind":"copy","source":"electrical/net-rc.c","destination":"hw/adc/net-rc.c","sha256":"f5cd58f53086ea875d5f59da9b52523012b75774f151fe556708a17d421cb09b"},
+    {"kind":"copy","source":"electrical/net-rc.h","destination":"hw/adc/net-rc.h","sha256":"457b579295cb981bf6d4307a0a7b7a92f84f6e79d3c23f7f620d9cfe6ed383fb"}
+  ],
+  "qualification_evidence": {
+    "firmware_compiler": {"status": "PASS", "configurations": 12, "flash_merges": 12, "idf_commit": "fff9895c82d744c7237be8847347bdd1b07c6643", "source_identity": "895853e3df46dd3a657061d2c113565adb9aa559d8334bf7641b5141c7c2add0", "record": "build-runtime-state/pulse-native-2026-10-07/firmware-verification/native-complete.json", "boundary": "Compiler/linker/software flash merge only; no firmware execution or native controller qualification"},
+    "fixture_structure": {"status": "PASS", "record": "build-runtime-state/pulse-native-2026-10-07/firmware-verification/final-source-checks.json", "boundary": "Python syntax, manifest and actual v3 graph checks; no native Apply/runtime"},
+    "sdm_mathematics": {"status": "PASS", "densities": 256, "ticks_per_density": 65536, "bounded_orbits": 256, "record": "build-runtime-state/pulse-native-2026-10-07/firmware-verification/sdm-reference.log", "boundary": "Independent named-profile mathematical oracle only; not silicon bitstream or native physical pulses"},
+    "native_runtime": {"status": "prepare-failed-prefix-copy-order-fixed; full-graph-receipt-and-authorized-slot-pending", "source_freeze": "qemu-extensions/prototypes/electrical-runtime/source-freeze.json", "failure_evidence": "build-runtime-state/pulse-native-2026-10-07/prepare-result.json", "physical_qualification": false},
+    "connected_adc": {"status": "pending-owner-provider-ready-provenance"}
+  },
+  "pulse_operations": [
+    {"kind":"copy","source":"prototypes/pulse/copies/esp32s3_ledc.c","destination":"hw/misc/esp32s3_ledc.c","sha256":"c7c9e50e3ee588945c46cf7678db907c47f3addbf03b18b586eeb7c387f189aa"},
+    {"kind":"copy","source":"prototypes/pulse/copies/esp32s3_ledc.h","destination":"include/hw/misc/esp32s3_ledc.h","sha256":"0c696c2c1e17b2454e6cdf697946ee9309bc62238ec34143fa7b5b4560f89e07"},
+    {"kind":"copy","source":"prototypes/pulse/copies/esp32s3-ledc-test.c","destination":"tests/qtest/esp32s3-ledc-test.c","sha256":"ff15a4a817f8113c14d37d43592fa58a174ff8df40333f743f92864543d2f6b5"},
+    {"kind":"copy","source":"prototypes/pulse/copies/esp32s3_pcnt.c","destination":"hw/misc/esp32s3_pcnt.c","sha256":"9908316acca7a02b58b2cd7d6d963d26b3782b92e0cc897c88c85ce97ba1900b"},
+    {"kind":"copy","source":"prototypes/pulse/copies/esp32s3_pcnt.h","destination":"include/hw/misc/esp32s3_pcnt.h","sha256":"f1b50dce3844219087c8f99779b5fc564b50762e7fcd2bc7137c9505988e1396"},
+    {"kind":"copy","source":"prototypes/pulse/copies/esp32s3-pcnt-test.c","destination":"tests/qtest/esp32s3-pcnt-test.c","sha256":"e3279526078f9c7b6f4b832c0ab0e66f7cc0614d928d671201fde515aac01e97"},
+    {"kind":"copy","source":"prototypes/pulse/copies/esp32s3_mcpwm.c","destination":"hw/misc/esp32s3_mcpwm.c","sha256":"859f51aeb77a61b69af34494178b8b1f1083d86cbfbc4be4f9874d659d679971"},
+    {"kind":"copy","source":"prototypes/pulse/copies/esp32s3_mcpwm.h","destination":"include/hw/misc/esp32s3_mcpwm.h","sha256":"676e35c61be2423793d726cd1401e57fae0f0c8aeaaf0a7dbb6758239f270e53"},
+    {"kind":"copy","source":"prototypes/pulse/copies/esp32s3-mcpwm-test.c","destination":"tests/qtest/esp32s3-mcpwm-test.c","sha256":"c904980f83c88386e700e51c5d40f6c32a099998e476ced1e076e089e92e0637"},
+    {"kind":"copy","source":"prototypes/pulse/copies/esp32s3_sdm.c","destination":"hw/misc/esp32s3_sdm.c","sha256":"07713d4440c269978d8047a40ea177e9639fd294b0e93c19db4d3e62ce89619e"},
+    {"kind":"copy","source":"prototypes/pulse/copies/esp32s3_sdm.h","destination":"include/hw/misc/esp32s3_sdm.h","sha256":"aa64ffd83cadbab92c0a801fceaecca52196360d8b3050d9b0b22155d03487fd"},
+    {"kind":"copy","source":"prototypes/pulse/copies/esp32s3-sdm-test.c","destination":"tests/qtest/esp32s3-sdm-test.c","sha256":"e8944cb93278b3e2adfb2a0a5e569e2443e91c9a73befcc61eee56ad358c082b"},
+    {"kind":"patch","source":"prototypes/pulse/0001-pulse-machine-integration.patch","sha256":"573f7b27f8487be7e32a49e56f1fbe366e7ded3ef88fcac91dd619f923b445a3"},
+    {"kind":"patch","source":"prototypes/pulse/0002-pulse-build-integration.patch","sha256":"c37737e2180df8d13c967d0d641cfcf9803f4f48288d4fffad6a08981ebb20f6"},
+    {"kind":"patch","source":"prototypes/pulse/0003-sdm-functional-profile-integration.patch","sha256":"7feaa6110367b79911d0cfa776a18dbf85c105d0dc5657388bb6b3d14dd6fb32"},
+    {"kind":"patch","source":"prototypes/pulse/0004-pulse-qtest-integration.patch","sha256":"981fec727ea25cb017d48bf5f46a88f69f10bf834b802950856799e64f54c4fb"}
+  ],
+  "wiring_regions": [
+    {"file": "hw/xtensa/esp32s3.c", "anchors": ["SYSTIMER include", "PMS state and initialization", "peripheral-reset DS/default cases", "before esp32s3_machine_init_sd"], "ownership": "Pulse device declarations, clock/level-reset/IRQ links and actual MMIO regions only; no clock-tree IDs or common owner initialization changes"},
+    {"file": "hw/misc/meson.build", "anchor": "CONFIG_LASI final entry", "ownership": "Add four native GPL pulse translation units"},
+    {"file": "tests/qtest/meson.build", "anchor": "before qtests dependency dictionary", "ownership": "Add four pulse qtest targets"}
+  ],
+  "runtime_capabilities": {
+    "SOC-01": {"controller": "LEDC", "features": ["8 channels", "4 timers", "routed physical PWM", "fractional divisor and duty carry", "shadow commits", "fade", "overflow/fade IRQ", "source/gate/reset"], "qualification": "native-implementation-unqualified", "contract": "copies/ledc-contract.json"},
+    "SOC-02": {"controller": "PCNT", "features": ["4 units / 2 channels", "resolved external pulse/control edges", "signed actions", "glitch filter", "watchpoint and limit IRQ", "stop/reset/gate"], "qualification": "native-implementation-unqualified", "contract": "pcnt-contract.json"},
+    "SOC-03": {"controller": "MCPWM", "features": ["2 groups", "3 timers/operators per group", "generators", "compare", "deadtime", "sync", "capture", "fault/brake", "actual matrix waveforms", "source/gate/reset"], "qualification": "native-implementation-unqualified", "contract": "copies/mcpwm-contract.json"},
+    "SOC-16": {"controller": "SDM", "waveform_profile": "s3-sdm-second-order-transfer-v1", "silicon_bit_exact": false, "physical_qualification": false, "features": ["8 independent raw PDM pulse sources", "signed density", "prescale", "GPIO matrix inversion/OE", "shared function clock", "reset", "external passive-RC solver separation"], "qualification": "functional-profile-unqualified; exact-hardware-pulse-sequence-source-blocked", "contract": "sdm-contract.json", "qom": {"path": "/machine/soc/sdm", "profile": "waveform-profile", "assumptions": "waveform-assumptions"}}
+  },
+  "qualification": "No generic PWM supported flag. Source availability and authored tests do not imply exercised native, firmware, ADC, boot or physical qualification."
+}

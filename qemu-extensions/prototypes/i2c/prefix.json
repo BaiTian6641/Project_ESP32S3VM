@@ -1,0 +1,166 @@
+{
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "combined_v3_fingerprint": "105a156e5dec5fc63f347cc1d989c1d11ab402c63668d8426869462d6387b999",
+  "prefix_commit": "2b0e49021de6cb5e91dc1dc0b1a8804334a1c083",
+  "source_checkout": "/home/polar/.cache/esp32s3vm/qemu-i2c-40edccac4156",
+  "dependency_copies": [
+    {
+      "source": "prototypes/gpio/copies/esp32s3_iomux.h",
+      "destination": "include/hw/gpio/esp32s3_iomux.h",
+      "sha256": "8e34703ace0f56203c734bdc6266c34987fa5a777e0fe7273743fe1dc12fb6fc"
+    },
+    {
+      "source": "prototypes/gpio/copies/esp32s3_iomux.c",
+      "destination": "hw/gpio/esp32s3_iomux.c",
+      "sha256": "ceeb8b6a4cf8b6e189fca0fff184e9c59e990e2069393fd3beaddf93d076ee31"
+    },
+    {
+      "source": "prototypes/gpio/copies/esp32s3_rtc_io.h",
+      "destination": "include/hw/misc/esp32s3_rtc_io.h",
+      "sha256": "e9239a281af1e30e538efc36864819cd9f890e834b4ab0f707c7423b02b9f595"
+    },
+    {
+      "source": "prototypes/gpio/copies/esp32s3_rtc_io.c",
+      "destination": "hw/misc/esp32s3_rtc_io.c",
+      "sha256": "ff6e2b240f5f0dfdaa7b290f53c99c9ed3262b6b780d1c4f882e010f85ae2a19"
+    },
+    {
+      "source": "prototypes/gpio/copies/esp32s3-gpio-test.c",
+      "destination": "tests/qtest/esp32s3-gpio-test.c",
+      "sha256": "b3a7178c0beb1f2cf40ba6d67b71ce8fd84954cfb62e6b175b2fc964cbbba696"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_adc_provider.h",
+      "destination": "include/hw/misc/esp32s3_adc_provider.h",
+      "sha256": "4b5d33cd0dbe6653b83e859154315d07f53f6ca7c86706ae4d20b9220701eda6"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_sens.h",
+      "destination": "include/hw/misc/esp32s3_sens.h",
+      "sha256": "751ef3cf9a1b92a0b455b7428d69ca533d8cf1685753bfeb8bb6201cbd357022"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_sens.c",
+      "destination": "hw/misc/esp32s3_sens.c",
+      "sha256": "d260161cc24d8d98a6395a0f845fc96333d3de4a62da363efeecc24d0d5e56f5"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_apb_saradc.h",
+      "destination": "include/hw/misc/esp32s3_apb_saradc.h",
+      "sha256": "28d3fd635d21a0943a0d0f117f0a89842ff72bb3ddf9dd26fd1758ce0bb82713"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_apb_saradc.c",
+      "destination": "hw/misc/esp32s3_apb_saradc.c",
+      "sha256": "be0c55b24b4ff213ed6941e42def288be9d7e17b3ccb9383cdaa484e6ae24248"
+    },
+    {
+      "source": "prototypes/adc/copies/net-dc.c",
+      "destination": "hw/adc/net-dc.c",
+      "sha256": "488b0df85566597173a3ee7266d1c9a22e09de4f18e0dc996219bafa40537c88"
+    },
+    {
+      "source": "prototypes/adc/copies/net-dc.h",
+      "destination": "hw/adc/net-dc.h",
+      "sha256": "accfcafb209e7f0a7904f90962643cb36de454b01f6160604a4c569813d427a9"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_adc_net_provider.c",
+      "destination": "hw/adc/esp32s3_adc_net_provider.c",
+      "sha256": "a3c1f2fd1b04538bb09c99754bbebb1103ceb38678a9baf1640cdd782f683145"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3-adc-test.c",
+      "destination": "tests/qtest/esp32s3-adc-test.c",
+      "sha256": "a47004331db9349c7ccf283856add11253ebe82ce36f7f047c9ce49ea2a7b328"
+    }
+  ],
+  "integration_note": "GPIO and ADC original base patches manually restacked at documented overlapping machine/meson hunks",
+  "checkpoint_note": "prefix_commit and dependency_copies describe original immutable2b0e490 inputs, not current repo file hashes; current working inputs are separately recorded below and in dependencies.json",
+  "current_dependency_inputs": [
+    {
+      "source": "prototypes/gpio/copies/esp32s3_iomux.h",
+      "destination": "include/hw/gpio/esp32s3_iomux.h",
+      "sha256": "8e34703ace0f56203c734bdc6266c34987fa5a777e0fe7273743fe1dc12fb6fc"
+    },
+    {
+      "source": "prototypes/gpio/copies/esp32s3_iomux.c",
+      "destination": "hw/gpio/esp32s3_iomux.c",
+      "sha256": "ceeb8b6a4cf8b6e189fca0fff184e9c59e990e2069393fd3beaddf93d076ee31"
+    },
+    {
+      "source": "prototypes/gpio/copies/esp32s3_rtc_io.h",
+      "destination": "include/hw/misc/esp32s3_rtc_io.h",
+      "sha256": "e9239a281af1e30e538efc36864819cd9f890e834b4ab0f707c7423b02b9f595"
+    },
+    {
+      "source": "prototypes/gpio/copies/esp32s3_rtc_io.c",
+      "destination": "hw/misc/esp32s3_rtc_io.c",
+      "sha256": "3df3d7846d266e0144fef94e3aa13890bbc3596ca2566f43b43635d8903a038d"
+    },
+    {
+      "source": "prototypes/gpio/copies/esp32s3-gpio-test.c",
+      "destination": "tests/qtest/esp32s3-gpio-test.c",
+      "sha256": "606f33323365a138ecae1b85741e7de628c7fd6e5c06afdd2e51ad51f6ccffe6"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_adc_provider.h",
+      "destination": "include/hw/misc/esp32s3_adc_provider.h",
+      "sha256": "4b5d33cd0dbe6653b83e859154315d07f53f6ca7c86706ae4d20b9220701eda6"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_sens.h",
+      "destination": "include/hw/misc/esp32s3_sens.h",
+      "sha256": "751ef3cf9a1b92a0b455b7428d69ca533d8cf1685753bfeb8bb6201cbd357022"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_sens.c",
+      "destination": "hw/misc/esp32s3_sens.c",
+      "sha256": "d260161cc24d8d98a6395a0f845fc96333d3de4a62da363efeecc24d0d5e56f5"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_apb_saradc.h",
+      "destination": "include/hw/misc/esp32s3_apb_saradc.h",
+      "sha256": "28d3fd635d21a0943a0d0f117f0a89842ff72bb3ddf9dd26fd1758ce0bb82713"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_apb_saradc.c",
+      "destination": "hw/misc/esp32s3_apb_saradc.c",
+      "sha256": "be0c55b24b4ff213ed6941e42def288be9d7e17b3ccb9383cdaa484e6ae24248"
+    },
+    {
+      "source": "prototypes/adc/copies/net-dc.c",
+      "destination": "hw/adc/net-dc.c",
+      "sha256": "488b0df85566597173a3ee7266d1c9a22e09de4f18e0dc996219bafa40537c88"
+    },
+    {
+      "source": "prototypes/adc/copies/net-dc.h",
+      "destination": "hw/adc/net-dc.h",
+      "sha256": "accfcafb209e7f0a7904f90962643cb36de454b01f6160604a4c569813d427a9"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_adc_net_provider.c",
+      "destination": "hw/adc/esp32s3_adc_net_provider.c",
+      "sha256": "a3c1f2fd1b04538bb09c99754bbebb1103ceb38678a9baf1640cdd782f683145"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3-adc-test.c",
+      "destination": "tests/qtest/esp32s3-adc-test.c",
+      "sha256": "a47004331db9349c7ccf283856add11253ebe82ce36f7f047c9ce49ea2a7b328"
+    }
+  ],
+  "clock_prerequisites": [
+    {
+      "source": "prototypes/coreclk/0008-hw-timer-esp_timg-hardware-divider-field-encoding-and-exact.patch",
+      "sha256": "efb0abff632616d3944e86cdcc86a8cfa5b555f61edd6425a649c6cd69632869"
+    },
+    {
+      "source": "prototypes/coreclk/0009-hw-timer-esp_timg-exact-rational-tick-conversion.patch",
+      "sha256": "07a207555a82e7f8ac8e0ced5c7a9ec9c19e451fc1fe599889d52e5f83fd9031"
+    },
+    {
+      "source": "prototypes/coreclk/0010-hw-xtensa-esp32s3_clk-common-clock-ports-for-SPI2-3.patch",
+      "sha256": "e8b1487b941f7f80c3920da9d56723bcb39b34fa0dedb2dd98c4b80deb88bf4d"
+    }
+  ]
+}

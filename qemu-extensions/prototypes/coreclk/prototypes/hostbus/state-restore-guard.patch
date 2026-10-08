@@ -1,0 +1,110 @@
+diff --git a/migration/savevm.c b/migration/savevm.c
+--- a/migration/savevm.c
++++ b/migration/savevm.c
+@@ -59,6 +59,9 @@
+ #include "io/channel-file.h"
+ #include "sysemu/replay.h"
+ #include "sysemu/runstate.h"
++#ifdef CONFIG_TCG
++#include "sysemu/hostbus-probe.h"
++#endif
+ #include "sysemu/sysemu.h"
+ #include "sysemu/xen.h"
+ #include "migration/colo.h"
+@@ -3246,6 +3249,13 @@
+     int ret;
+     MigrationIncomingState *mis = migration_incoming_get_current();
+ 
++#ifdef CONFIG_TCG
++    if (esp32s3vm_hostbus_present()) {
++        error_setg(errp, "Hostbus probe cannot restore snapshots with external-peer state");
++        return false;
++    }
++#endif
++
+     if (!bdrv_all_can_snapshot(has_devices, devices, errp)) {
+         return false;
+     }
+@@ -3519,6 +3529,13 @@
+ {
+     SnapshotJob *s;
+ 
++#ifdef CONFIG_TCG
++    if (esp32s3vm_hostbus_present()) {
++        error_setg(errp, "Hostbus probe cannot restore snapshots with external-peer state");
++        return;
++    }
++#endif
++
+     s = job_create(job_id, &snapshot_load_job_driver, NULL,
+                    qemu_get_aio_context(), JOB_MANUAL_DISMISS,
+                    NULL, NULL, errp);
+diff --git a/migration/migration.c b/migration/migration.c
+--- a/migration/migration.c
++++ b/migration/migration.c
+@@ -23,6 +23,9 @@
+ #include "file.h"
+ #include "socket.h"
+ #include "sysemu/runstate.h"
++#ifdef CONFIG_TCG
++#include "sysemu/hostbus-probe.h"
++#endif
+ #include "sysemu/sysemu.h"
+ #include "sysemu/cpu-throttle.h"
+ #include "rdma.h"
+@@ -657,6 +660,13 @@
+     MigrationAddress *addr = NULL;
+     MigrationIncomingState *mis = migration_incoming_get_current();
+ 
++#ifdef CONFIG_TCG
++    if (esp32s3vm_hostbus_present()) {
++        error_setg(errp, "Hostbus probe cannot accept incoming restore with external-peer state");
++        return;
++    }
++#endif
++
+     /*
+      * Having preliminary checks for uri and channel
+      */
+@@ -1823,6 +1833,13 @@
+     static bool once = true;
+     MigrationIncomingState *mis = migration_incoming_get_current();
+ 
++#ifdef CONFIG_TCG
++    if (esp32s3vm_hostbus_present()) {
++        error_setg(errp, "Hostbus probe cannot accept incoming restore with external-peer state");
++        return;
++    }
++#endif
++
+     if (!once) {
+         error_setg(errp, "The incoming migration has already been started");
+         return;
+diff --git a/migration/migration-hmp-cmds.c b/migration/migration-hmp-cmds.c
+--- a/migration/migration-hmp-cmds.c
++++ b/migration/migration-hmp-cmds.c
+@@ -28,6 +28,9 @@
+ #include "qemu/error-report.h"
+ #include "qemu/sockets.h"
+ #include "sysemu/runstate.h"
++#ifdef CONFIG_TCG
++#include "sysemu/hostbus-probe.h"
++#endif
+ #include "ui/qemu-spice.h"
+ #include "sysemu/sysemu.h"
+ #include "options.h"
+@@ -370,6 +373,14 @@
+     const char *name = qdict_get_str(qdict, "name");
+     Error *err = NULL;
+ 
++#ifdef CONFIG_TCG
++    if (esp32s3vm_hostbus_present()) {
++        error_setg(&err, "Hostbus probe cannot restore snapshots with external-peer state");
++        hmp_handle_error(mon, err);
++        return;
++    }
++#endif
++
+     vm_stop(RUN_STATE_RESTORE_VM);
+ 
+     if (load_snapshot(name, NULL, false, NULL, &err)) {

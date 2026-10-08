@@ -1,0 +1,91 @@
+target/xtensa: fix ESP32-S3 vadds/vsubs signed negative saturation rails
+
+HELPER(vadds_s3)/HELPER(vsubs_s3) clamped signed lane results to
+[-(2^(n-1) - 1), 2^(n-1) - 1] instead of the representable signed range
+[-2^(n-1), 2^(n-1) - 1], so negative overflow stopped one short of the
+true minimum (s8: -0x7f instead of -0x80; likewise s16, s32).
+
+Physical ESP32-S3 rev 0.2 arbitration (build-hardware-host/
+run-2026-10-07-rebaselined/simd/capture/records.json vs
+tests/firmware/simd_reference/build/runs/grace-official-01/capture,
+identical flash image sha256 c4263180bd9f6531408707c2ba2d628b98359d82f
+b012916b2d71a3e20a3caeb) shows the chip clamps to the true minimum:
+52 lanes transition 0x81 -> 0x80 across ee.vadds.s8 / ee.vadds.s8
+.alias_q0 / ee.vsubs.s8, and 9 lanes transition 0x01 -> 0x00 in
+ee.vadds.s16.alias_q1. Positive rails already match hardware and are
+unchanged by this patch.
+
+The s32 literal is spelled -0x80000000LL: unsuffixed 0x80000000 is
+unsigned int in C, so both the comparison and the assignment would
+operate on +2147483648 and the rail would never fire.
+---
+ target/xtensa/translate_tie_esp32s3.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/target/xtensa/translate_tie_esp32s3.c b/target/xtensa/translate_tie_esp32s3.c
+index 1111111..2222222 100644
+--- a/target/xtensa/translate_tie_esp32s3.c
++++ b/target/xtensa/translate_tie_esp32s3.c
+@@ -1464,8 +1464,8 @@ void HELPER(vadds_s3)(CPUXtensaState *env, uint32_t qz, uint32_t qx, uint32_t qy
+         for (int i = 0; i < 16; i++)
+         {
+             int16_t result = (int16_t)tie->Q[qx].s8[i] + (int16_t)tie->Q[qy].s8[i];
+             if (result > 0x7f) result = 0x7f;
+-            if (result < -0x7f) result = -0x7f;
++            if (result < -0x80) result = -0x80;
+             tie->Q[qz].s8[i] = result;
+         }
+     } else if (ldqa_s16 == (ldqa_type)op_type)
+@@ -1473,8 +1473,8 @@ void HELPER(vadds_s3)(CPUXtensaState *env, uint32_t qz, uint32_t qx, uint32_t qy
+         for (int i = 0; i < 8; i++)
+         {
+             int32_t result = (int32_t)tie->Q[qx].s16[i] + (int32_t)tie->Q[qy].s16[i];
+             if (result > 0x7fff) result = 0x7fff;
+-            if (result < -0x7fff) result = -0x7fff;
++            if (result < -0x8000) result = -0x8000;
+             tie->Q[qz].s16[i] = result;
+         }
+     } else if (ldqa_s32 == (ldqa_type)op_type)
+@@ -1482,8 +1482,8 @@ void HELPER(vadds_s3)(CPUXtensaState *env, uint32_t qz, uint32_t qx, uint32_t qy
+         for (int i = 0; i < 4; i++)
+         {
+             int64_t result = (int64_t)tie->Q[qx].s32[i] + (int64_t)tie->Q[qy].s32[i];
+             if (result > 0x7fffffff) result = 0x7fffffff;
+-            if (result < -0x7fffffff) result = -0x7fffffff;
++            if (result < -0x80000000LL) result = -0x80000000LL;
+             tie->Q[qz].s32[i] = result;
+         }
+     } else if (ldqa_u8 == (ldqa_type)op_type)
+@@ -1521,8 +1521,8 @@ void HELPER(vsubs_s3)(CPUXtensaState *env, uint32_t qz, uint32_t qx, uint32_t qy
+         for (int i = 0; i < 16; i++)
+         {
+             int16_t result = (int16_t)tie->Q[qx].s8[i] - (int16_t)tie->Q[qy].s8[i];
+             if (result > 0x7f) result = 0x7f;
+-            if (result < -0x7f) result = -0x7f;
++            if (result < -0x80) result = -0x80;
+             tie->Q[qz].s8[i] = result;
+         }
+     } else if (ldqa_s16 == (ldqa_type)op_type)
+@@ -1530,8 +1530,8 @@ void HELPER(vsubs_s3)(CPUXtensaState *env, uint32_t qz, uint32_t qx, uint32_t qy
+         for (int i = 0; i < 8; i++)
+         {
+             int32_t result = (int32_t)tie->Q[qx].s16[i] - (int32_t)tie->Q[qy].s16[i];
+             if (result > 0x7fff) result = 0x7fff;
+-            if (result < -0x7fff) result = -0x7fff;
++            if (result < -0x8000) result = -0x8000;
+             tie->Q[qz].s16[i] = result;
+         }
+     } else if (ldqa_s32 == (ldqa_type)op_type)
+@@ -1539,8 +1539,8 @@ void HELPER(vsubs_s3)(CPUXtensaState *env, uint32_t qz, uint32_t qx, uint32_t qy
+         for (int i = 0; i < 4; i++)
+         {
+             int64_t result = (int64_t)tie->Q[qx].s32[i] - (int64_t)tie->Q[qy].s32[i];
+             if (result > 0x7fffffff) result = 0x7fffffff;
+-            if (result < -0x7fffffff) result = -0x7fffffff;
++            if (result < -0x80000000LL) result = -0x80000000LL;
+             tie->Q[qz].s32[i] = result;
+         }
+     } else if (ldqa_u8 == (ldqa_type)op_type)
+-- 
+2.43.0
+

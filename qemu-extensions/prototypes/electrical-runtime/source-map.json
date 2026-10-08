@@ -1,0 +1,41 @@
+{
+  "schema_version": 4,
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "license": "GPL-2.0-or-later",
+  "status": "source-implementation-awaiting-native-verification",
+  "work_package": "NET-01/NET-03 actual v3 native electrical graph boundary",
+  "source_checkout_policy": "Use the canonical content-addressed source path published by final parent preparation; never mutate historical checkouts.",
+  "build_dir": "build-runtime",
+  "evidence": "build-runtime-state/electrical-runtime-2026-10-07/",
+  "native_peripheral_support": false,
+  "copies": [
+    {"source":"copies/esp32s3_project.c","destination":"hw/adc/esp32s3_project.c"},
+    {"source":"copies/esp32s3_project.h","destination":"hw/adc/esp32s3_project.h"},
+    {"source":"copies/esp32s3_electrical.c","destination":"hw/adc/esp32s3_electrical.c"},
+    {"source":"copies/esp32s3_electrical.h","destination":"include/hw/misc/esp32s3_electrical.h"},
+    {"source":"copies/esp32s3_electrical_internal.h","destination":"hw/adc/esp32s3_electrical_internal.h"},
+    {"source":"copies/esp32s3_electrical_models.c","destination":"hw/adc/esp32s3_electrical_models.c"},
+    {"source":"copies/esp32s3_electrical_observers.c","destination":"hw/adc/esp32s3_electrical_observers.c"},
+    {"source":"copies/esp32s3_electrical_observers.h","destination":"hw/adc/esp32s3_electrical_observers.h"},
+    {"source":"copies/esp32s3-electrical-test.c","destination":"tests/qtest/esp32s3-electrical-test.c"}
+  ],
+  "shared_kernels": [
+    {"extension_source":"electrical/net-dc.c","destination":"hw/adc/net-dc.c","sha256":"63ee6c60cea2e77a7c33b31a8af4db8a4ecc2b76079453322cf335e5c49e1e69","note":"Compile exactly once; no ADC vendored duplicate"},
+    {"extension_source":"electrical/net-dc.h","destination":"hw/adc/net-dc.h","sha256":"578bc7c05ae6ee53b9819624674fbc31cd5d40ab0ddf223fdcf2eb9de8d738eb"},
+    {"extension_source":"electrical/net-adapter.c","destination":"hw/adc/net-adapter.c","sha256":"00eea258dee763b4ae8ff064f32db1fcb5ee49cceacc60aa6261a3f533d7a8b1","note":"Standalone GNU/Clang format checking annotates diagnostic format argument6 and variadic argument7; no QEMU/GLib dependency"},
+    {"extension_source":"electrical/net-adapter.h","destination":"hw/adc/net-adapter.h","abi":2},
+    {"extension_source":"electrical/net-rc.c","destination":"hw/adc/net-rc.c","sha256":"f5cd58f53086ea875d5f59da9b52523012b75774f151fe556708a17d421cb09b"},
+    {"extension_source":"electrical/net-rc.h","destination":"hw/adc/net-rc.h","sha256":"457b579295cb981bf6d4307a0a7b7a92f84f6e79d3c23f7f620d9cfe6ed383fb"}
+  ],
+  "patches":[{"name":"0001-native-v3-electrical-boundary.patch","core_paths":["hw/adc/meson.build","hw/xtensa/esp32s3.c","tests/qtest/meson.build"]}],
+  "stack_dependency":"Frozen parent prefix/E1; CPU15/e66 after clock14 and reset-transaction0016/f1a3 after CPU15; existing GPIO120997/ee5becc corrections, whole-feature722 based on actual c6fc, then GPIO hold correction68fa against722; no regenerated E1 or obsolete copied snapshots. Seven ADC copies include requested-aperture SENS b1eb/provider b956; nine electrical copies include core7a4c/test7b8; six kernels include adapter00ee. New source preparation and complete same-new-image running-clock ADC verification required; immutable a45/02462e8e is historical partial evidence only.",
+  "prefix_reference":"build-runtime-state/runtime-486cb408a31afae2-source.json",
+  "qom":{"path":"/machine/soc/electrical","apply":"project-json","snapshot":"snapshot-json","property_type":"string","snapshot_abi":1,"apply_run_states":["paused","prelaunch"],"counter_transport":"lossless decimal strings","project_pad_array":"pads","physical_pad_array":"physical_pads","physical_pad_count":45,"invented_terminal_ids":false},
+  "numeric_patch_boundary":"The included coreclk/0016-system-capture-reset-entry-cause-gate-S3-reset.patch is reset-transaction0016/f1a3. The unrelated proposed SYSTEM storage0016 is absent. Numeric suffix alone never identifies a patch.",
+  "acquisition_time_contract":"Consume and echo the caller's pinned acquisition timestamp. Voltage getters solve at that requested instant, reject genuinely stale requests, and never substitute a later clock read; fixed-clock-only PASS does not qualify native running-clock acquisition.",
+  "native_modes":{"awake_sleep_configuration":true,"active_sleep":false,"hold":false,"availability":"Authoritative GPIO and RTC-IO links to the same real RTC_CNTL device are required; no inferred awake mode or held resolved-sample source."},
+  "profile":{"id":"s3-explicit-finite-v1","output_resistance_ohm":40,"enabled_native_pull_resistance_ohm":45000,"vil_fraction":0.25,"vih_fraction":0.75,"implicit_supply_ground_pull":false,"silicon_characterized":false},
+  "limits":{"project_json_bytes":1048576,"nodes":64,"primitives_including_native_drives":128,"components":256,"terminals":512,"nets":256,"registered_devices":32,"delta_cycles":16,"observers":32,"rc_sample_horizon_ns":100000},
+  "registered_device_models":["sht21","24c02","spi-nor-1m","i2s-sample-peer","i2c-scripted-master","ws2812-functional-3v3","nec-envelope-source","st7789-i80","rgb-panel","ov2640-dvp"],
+  "qualification_boundary":"Actual source implementation is not native qualification. Independent native lane verifier must build this exact frozen prefix and exercise GPIO IRQ/disconnect, finite drivers/open-drain/floating, malformed/no-op Apply, reset/source/charge and actual ADC provider paths. New registered service kinds require their actual factories and separate owning-lane evidence. No GUI kernel linking, physical-board operations, input injection or fake ADC data."
+}

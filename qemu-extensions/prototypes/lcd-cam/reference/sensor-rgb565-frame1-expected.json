@@ -1,0 +1,14 @@
+{
+  "component_id": "D", "frame": 1,
+  "width": 160, "height": 120, "format": "RGB565-BE",
+  "pattern": {
+    "source": "color-bars", "scene": [400, 296],
+    "crop": [0, 0, 400, 296], "mirror": false, "flip": false
+  },
+  "metadata": {
+    "format": "rgb565", "width": 160, "height": 120,
+    "source": "color-bars", "timing_profile": "ov2640-functional-dvp-v1",
+    "byte_count": 38400, "line_bytes": 320, "line_count": 120,
+    "image_mode": 8, "mirror": false, "flip": false
+  }
+}

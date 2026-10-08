@@ -1,0 +1,37 @@
+diff --git a/hw/timer/meson.build b/hw/timer/meson.build
+--- a/hw/timer/meson.build
++++ b/hw/timer/meson.build
+@@ -41,7 +41,11 @@ system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files(
+     'esp_timg.c',
+     'esp32s3_timg.c',
+     'esp_systimer.c',
+-    'esp32s3_systimer.c'
++    'esp32s3_systimer.c',
++    'esp32s3_rmt.c',
++    'esp32s3_rmt_ws2812.c',
++    'esp32s3_rmt_nec.c',
++    'esp32s3_rmt_peers.c'
+ ))
+ specific_ss.add(when: 'CONFIG_IBEX', if_true: files('ibex_timer.c'))
+ system_ss.add(when: 'CONFIG_SIFIVE_PWM', if_true: files('sifive_pwm.c'))
+diff --git a/hw/timer/trace-events b/hw/timer/trace-events
+--- a/hw/timer/trace-events
++++ b/hw/timer/trace-events
+@@ -130,1 +130,8 @@
+ hpet_ram_write_counter_written(uint8_t reg_off, uint64_t value, uint64_t counter) "HPET counter + %" PRIu8 "written. crt = 0x%" PRIx64 " -> 0x%" PRIx64
++
++# esp32s3_rmt.c: modeled virtual ns, never host trace prefix timestamps
++esp32s3_rmt_edge(unsigned ch, bool enabled, bool level, int64_t ns) "ch=%u enabled=%u level=%u ns=%" PRId64
++esp32s3_rmt_input(unsigned ch, bool valid, bool level, int64_t ns) "ch=%u valid=%u level=%u ns=%" PRId64
++esp32s3_rmt_rx_symbol(unsigned ch, unsigned index, uint32_t value, int64_t ns) "ch=%u index=%u value=0x%08x ns=%" PRId64
++esp32s3_rmt_tx_start(unsigned ch, int64_t ns) "ch=%u ns=%" PRId64
++esp32s3_rmt_tx_stop(unsigned ch, int64_t ns) "ch=%u ns=%" PRId64
+diff --git a/tests/qtest/meson.build b/tests/qtest/meson.build
+--- a/tests/qtest/meson.build
++++ b/tests/qtest/meson.build
+@@ -348,3 +348,5 @@
+ 
++qtests_xtensa += ['esp32s3-rmt-test']
++
+ qtests = {
+   'bios-tables-test': [io, 'boot-sector.c', 'acpi-utils.c', 'tpm-emu.c'],

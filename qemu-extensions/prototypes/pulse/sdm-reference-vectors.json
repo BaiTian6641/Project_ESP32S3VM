@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "work_id": "SOC-16",
+  "waveform_profile": "s3-sdm-second-order-transfer-v1",
+  "qualification": "analytical profile vectors, not physical S3 capture",
+  "derivation": {
+    "transfer": "y[n] = x[n-1] + e[n] - 2*e[n-1] + e[n-2]",
+    "error_definition": "e[n] = y[n] - v[n]",
+    "independent_state": "D[n] = sum(y[k]-x[k-1]); A[n] = sum(D[k]); zero initial errors imply D[n]=e[n]-e[n-1], A[n]=e[n]",
+    "quantizer": "y[n] = +128 iff A[n-1]+D[n-1] <= x[n-1]; otherwise -128",
+    "output_bit": "1 iff y[n]=+128; pulse interval is APB/(prescale_field+1)",
+    "reset": "A=D=0, delayed input seeded from density, output initially low",
+    "density_change": "A=D=0, delayed input seeded from new density; previous output holds until next tick",
+    "divider_source_gate": "preserve errors and fractional cycle progress",
+    "boundedness": "A repeated integer (D,A) certifies the constant-input reachable orbit; no repeat only certifies a finite prefix, not boundedness or silicon width"
+  },
+  "analytical_vectors": [
+    {"density": -128, "prefix16": "0000000000000000", "cycle_period": 1, "reason": "y=x=-128 gives D=A=0 forever"},
+    {"density": 0, "prefix16": "1001100110011001", "cycle_period": 4, "reason": "(D,A) visits (128,128),(0,128),(-128,0),(0,0)"},
+    {"density": 127, "prefix16": "1111111111111110", "reason": "After m initial highs D=m,A=m(m+1)/2; m(m+3)/2<=127 admits m=14, not m=15"},
+    {"density": -127, "prefix16": "0000000000000001", "reason": "Initial lows yield D=-m,A=-m(m+1)/2; threshold first crosses at m=15"}
+  ],
+  "physical_fixture": {
+    "project_document_version": 3,
+    "driver_profile": "s3-explicit-finite-v1",
+    "supply_v": 3.3,
+    "pulse_period_ns": 1000,
+    "clock_source": "SYSTEM XTAL 40MHz / (PRE_DIV_CNT=0 + 1), APB 40MHz",
+    "prescale_field": 39,
+    "RC": {"R_ohm": 1000, "driver_R_ohm": 40, "C_f": 1e-9, "initial_voltage_v": 0, "observation": "physical filtered net MCU input pad, not GPIO average"},
+    "IDF_resource_tests": "owned by ordinary IDF pulse_native fixture; no fake allocation model here"
+  },
+  "blocked_rows": [
+    {"id": "actual-s3-bitstream-comparison", "status": "blocked", "missing": "Measured hardware capture plus actual S3 hidden state widths, quantizer ties, overflow, reset and update pipeline specification", "physical_qualification": false}
+  ]
+}

@@ -1,0 +1,10 @@
+diff --git a/tests/qtest/meson.build b/tests/qtest/meson.build
+--- a/tests/qtest/meson.build
++++ b/tests/qtest/meson.build
+@@ -348,3 +348,6 @@
+ 
++qtests_xtensa += ['esp32s3-ledc-test', 'esp32s3-pcnt-test',
++                  'esp32s3-mcpwm-test', 'esp32s3-sdm-test']
++
+ qtests = {
+   'bios-tables-test': [io, 'boot-sector.c', 'acpi-utils.c', 'tpm-emu.c'],

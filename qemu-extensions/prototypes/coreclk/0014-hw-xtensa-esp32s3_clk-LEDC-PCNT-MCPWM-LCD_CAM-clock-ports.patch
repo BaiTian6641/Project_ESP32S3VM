@@ -1,0 +1,109 @@
+From 2b00e17e4183f84b42b12051c67e4f06162a1c52 Mon Sep 17 00:00:00 2001
+From: ESP32S3VM coreclk <coreclk@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 16:34:21 +0800
+Subject: [PATCH] hw/xtensa/esp32s3_clk: LEDC/PCNT/MCPWM/LCD_CAM clock ports
+
+Extends the common clock port bundles for the pulse and LCD_CAM overlay
+lanes: gate levels ESP32S3_GATE_LEDC/PCNT/MCPWM0/MCPWM1 (SYSTEM_PERIP_
+CLK_EN0 LEDC [11], PCNT [10], PWM0 [17], PWM1 [20]) and ESP32S3_GATE_
+LCD_CAM (SYSTEM_PERIP_CLK_EN1 LCD_CAM [8]); reset strobes and raw
+periph-rst-level lines for the same bits. LCD_CAM consumers take the
+existing pll-f160m-clk / pll-f240m-clk / xtal-clk outputs.
+---
+ hw/xtensa/esp32s3_clk.c         | 35 +++++++++++++++++++++++++++++++++
+ include/hw/xtensa/esp32s3_clk.h | 12 +++++++++++
+ 2 files changed, 47 insertions(+)
+
+diff --git a/hw/xtensa/esp32s3_clk.c b/hw/xtensa/esp32s3_clk.c
+index b62e7f2..315fe06 100644
+--- a/hw/xtensa/esp32s3_clk.c
++++ b/hw/xtensa/esp32s3_clk.c
+@@ -157,6 +157,16 @@ static void esp32s3_clock_update_gates(ESP32S3ClockState *s)
+                  s->perip_clk_en1 & R_SYSTEM_PERIP_CLK_EN1_UART2_CLK_EN_MASK);
+     qemu_set_irq(s->gate_irqs[ESP32S3_GATE_UHCI0],
+                  en0 & R_SYSTEM_PERIP_CLK_EN0_UHCI0_CLK_EN_MASK);
++    qemu_set_irq(s->gate_irqs[ESP32S3_GATE_LEDC],
++                 en0 & R_SYSTEM_PERIP_CLK_EN0_LEDC_CLK_EN_MASK);
++    qemu_set_irq(s->gate_irqs[ESP32S3_GATE_PCNT],
++                 en0 & R_SYSTEM_PERIP_CLK_EN0_PCNT_CLK_EN_MASK);
++    qemu_set_irq(s->gate_irqs[ESP32S3_GATE_MCPWM0],
++                 en0 & R_SYSTEM_PERIP_CLK_EN0_PWM0_CLK_EN_MASK);
++    qemu_set_irq(s->gate_irqs[ESP32S3_GATE_MCPWM1],
++                 en0 & R_SYSTEM_PERIP_CLK_EN0_PWM1_CLK_EN_MASK);
++    qemu_set_irq(s->gate_irqs[ESP32S3_GATE_LCD_CAM],
++                 s->perip_clk_en1 & R_SYSTEM_PERIP_CLK_EN1_LCD_CAM_CLK_EN_MASK);
+ }
+ 
+ /* Mirror the raw SYSTEM_PERIP_RST_EN0/1 levels per Esp32s3PeriphRstReq index
+@@ -197,6 +207,16 @@ static void esp32s3_clock_update_rst_levels(ESP32S3ClockState *s)
+                  (en0 & R_SYSTEM_PERIP_RST_EN0_I2S1_RST_MASK) != 0);
+     qemu_set_irq(s->rst_level_irqs[ESP32S3_RST_UHCI0],
+                  (en0 & R_SYSTEM_PERIP_RST_EN0_UHCI0_RST_MASK) != 0);
++    qemu_set_irq(s->rst_level_irqs[ESP32S3_RST_LEDC],
++                 (en0 & R_SYSTEM_PERIP_RST_EN0_LEDC_RST_MASK) != 0);
++    qemu_set_irq(s->rst_level_irqs[ESP32S3_RST_PCNT],
++                 (en0 & R_SYSTEM_PERIP_RST_EN0_PCNT_RST_MASK) != 0);
++    qemu_set_irq(s->rst_level_irqs[ESP32S3_RST_MCPWM0],
++                 (en0 & R_SYSTEM_PERIP_RST_EN0_PWM0_RST_MASK) != 0);
++    qemu_set_irq(s->rst_level_irqs[ESP32S3_RST_MCPWM1],
++                 (en0 & R_SYSTEM_PERIP_RST_EN0_PWM1_RST_MASK) != 0);
++    qemu_set_irq(s->rst_level_irqs[ESP32S3_RST_LCD_CAM],
++                 (en1 & R_SYSTEM_PERIP_RST_EN1_LCD_CAM_RST_MASK) != 0);
+     qemu_set_irq(s->rst_level_irqs[ESP32S3_RST_GDMA],
+                  (en1 & R_SYSTEM_PERIP_RST_EN1_DMA_RST_MASK) != 0);
+     qemu_set_irq(s->rst_level_irqs[ESP32S3_RST_UART2],
+@@ -288,6 +308,21 @@ static void esp32s3_clock_strobe_rst(ESP32S3ClockState *s, uint32_t risen0,
+     if (risen0 & R_SYSTEM_PERIP_RST_EN0_UHCI0_RST_MASK) {
+         qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_UHCI0]);
+     }
++    if (risen0 & R_SYSTEM_PERIP_RST_EN0_LEDC_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_LEDC]);
++    }
++    if (risen0 & R_SYSTEM_PERIP_RST_EN0_PCNT_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_PCNT]);
++    }
++    if (risen0 & R_SYSTEM_PERIP_RST_EN0_PWM0_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_MCPWM0]);
++    }
++    if (risen0 & R_SYSTEM_PERIP_RST_EN0_PWM1_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_MCPWM1]);
++    }
++    if (risen1 & R_SYSTEM_PERIP_RST_EN1_LCD_CAM_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_LCD_CAM]);
++    }
+ }
+ 
+ static uint32_t esp32s3_read_cpu_intr(ESP32S3ClockState *s, uint32_t index)
+diff --git a/include/hw/xtensa/esp32s3_clk.h b/include/hw/xtensa/esp32s3_clk.h
+index af0b855..4ff787c 100644
+--- a/include/hw/xtensa/esp32s3_clk.h
++++ b/include/hw/xtensa/esp32s3_clk.h
+@@ -64,6 +64,12 @@ enum Esp32s3PeriphClkGate {
+     ESP32S3_GATE_UART1,         /* SYSTEM_PERIP_CLK_EN0: UART1_CLK_EN [5]    */
+     ESP32S3_GATE_UART2,         /* SYSTEM_PERIP_CLK_EN1: UART2_CLK_EN [9]    */
+     ESP32S3_GATE_UHCI0,         /* SYSTEM_PERIP_CLK_EN0: UHCI0_CLK_EN [8]    */
++    /* Pulse/LCD_CAM port extensions (0014) */
++    ESP32S3_GATE_LEDC,          /* SYSTEM_PERIP_CLK_EN0: LEDC_CLK_EN [11]    */
++    ESP32S3_GATE_PCNT,          /* SYSTEM_PERIP_CLK_EN0: PCNT_CLK_EN [10]    */
++    ESP32S3_GATE_MCPWM0,        /* SYSTEM_PERIP_CLK_EN0: PWM0_CLK_EN [17]    */
++    ESP32S3_GATE_MCPWM1,        /* SYSTEM_PERIP_CLK_EN0: PWM1_CLK_EN [20]    */
++    ESP32S3_GATE_LCD_CAM,       /* SYSTEM_PERIP_CLK_EN1: LCD_CAM_CLK_EN [8]  */
+     ESP32S3_GATE_COUNT
+ };
+ 
+@@ -96,6 +102,12 @@ enum Esp32s3PeriphRstReq {
+     ESP32S3_RST_I2S0,       /* I2S0_RST [4]                           */
+     ESP32S3_RST_I2S1,       /* I2S1_RST [21]                          */
+     ESP32S3_RST_UHCI0,      /* UHCI0_RST [8]                          */
++    /* Pulse/LCD_CAM port extensions (0014) */
++    ESP32S3_RST_LEDC,       /* LEDC_RST [11]                          */
++    ESP32S3_RST_PCNT,       /* PCNT_RST [10]                          */
++    ESP32S3_RST_MCPWM0,     /* PWM0_RST [17]                          */
++    ESP32S3_RST_MCPWM1,     /* PWM1_RST [20]                          */
++    ESP32S3_RST_LCD_CAM,    /* LCD_CAM_RST (EN1 [8])                  */
+     ESP32S3_RST_COUNT
+ };
+ 
+-- 
+2.43.0
+

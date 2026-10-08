@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "status": "SOURCE_READY_NOT_EXERCISED",
+  "runner": "qemu-extensions/prototypes/memory/run-lcd-cam-consumers.py",
+  "oracle": "qemu-extensions/prototypes/memory/lcd_cam_consumer_oracle.py",
+  "ownership": "Runner and this contract only. The sibling owns the pure oracle; Main owns preparation, ordinary memory-runner standard-record migration, compilation, the real aggregate memory receipt and execution.",
+  "verification_performed": [],
+  "profiles": {
+    "lcd-rgb-double": "rgb-double",
+    "lcd-rgb-bounce": "rgb-bounce",
+    "lcd-camera-rgb565": "camera-rgb565",
+    "lcd-camera-yuv422": "camera-yuv422",
+    "lcd-camera-jpeg": "camera-jpeg"
+  },
+  "required_arguments": {
+    "--qemu": "Actual integrated native executable, within its own prepared checkout.",
+    "--qemu-source": "Actual integrated checkout, not the initial memory-only candidate.",
+    "--runtime-manifest": "Actual tools/runtime-manifest.py schema1 output binding this executable, source HEAD/tracked state and every merged firmware image to be selected.",
+    "--prepared-source-record": "Actual STANDARD tools/prepare-qemu-runtime.py schema1 record: source, base_commit, fingerprint, profile, inputs and applied_files. Prefix-plus-delta prepared-source.json is rejected, not used as a fallback.",
+    "--native-fixture": "The selected SDK's read-only source workspace project_path from the dependency preparation receipt, not the live repository fixture.",
+    "--build-dir": "Selected SDK generated_build_root/profile on the canonical ext4 filesystem.",
+    "--sdk-metadata": "Actual locked native sdk-manifest.json; SDK5.5.5 or SDK6.1.",
+    "--merged-flash": "Actual ordinary 4MiB merged image built from this profile's inputs. Every flasher_args input and embedded ELF SHA must match.",
+    "--preparation-receipt": "Actual dependency preparation-receipt.json with sibling fixture-receipt.json, package-receipt.json and source-inventory.json.",
+    "--memory-qualification-receipt": "NEW actual passing same-final-binary receipt with the explicit schema below. A source-ready contract or old-prefix receipt is not runtime evidence.",
+    "--profile": "Exactly one of the five profile names above.",
+    "--evidence": "Writable evidence parent. Each invocation creates a unique retained directory; inputs are never overwritten."
+  },
+  "optional_arguments": {
+    "--watchdog-seconds": "Default300, allowed1..1800. Diagnostic host-time bound only; expiration is failure, not a guest timeout PASS. There is one QEMU launch, no functional retry or relaxed fallback."
+  },
+  "provenance": {
+    "runtime": [
+      "Verify actual executable SHA/path/machine and source HEAD/tracked-state against runtime-manifest.",
+      "Verify standard prepared profile/input fingerprint, exact target set and every applied target SHA. Require LCD_CAM, real panel, real OV2640, GDMA, SSI PSRAM and cache targets; a memory-only binary fails before execution.",
+      "Verify all current reviewed preparation inputs using the preparer's actual LF copy normalization and verbatim patch-byte policy.",
+      "Reject unexpected, staged or renamed source changes; preserve actual tracked/base file SHA inventory and tracked binary diff hash.",
+      "Require runtime-manifest to bind the exact supplied merged image; record and recheck all pinned inputs after capture."
+    ],
+    "firmware": [
+      "Bind SDK5.5.5 b774170ff46c393eeb5e495ea37936038d3f4f4f or SDK6.1 fff9895c82d744c7237be8847347bdd1b07c6643, actual clean tracked/submodule state, tools-manifest SHA and actual submodule HEADs.",
+      "Bind dependency receipt SHA, full source inventory, immutable snapshot and selected SDK workspace byte-for-byte/read-only; require canonical native build path and observed ext4 filesystem.",
+      "Require project_description lcd_cam_native/esp32s3 to name this workspace/build/SDK and exact base, selected mode, quad40 defaults order.",
+      "Require explicit initialized quad40 PSRAM caps-heap/memtest/cache32 configuration without missing-memory fallback, octal, ECC, XIP or read-only input conversion.",
+      "Retain sdkconfig, CMakeCache, project_description, compile_commands, full compiled source hashes/commands, ELF hash, app embedded ELF SHA and every merged input byte comparison.",
+      "Bind official camera2.1.3 b3c2aa273a88c7debf2b1683448933ca2b28aad9 to the immutable source inventory.",
+      "Bind public esp_jpeg1.3.1 archive6c15edd7f3b74f37d02ab4e74f13276aff4bd0f63dd9b6031bf6ebba5e020c13, commit746e83ddbea0db9c3d24993a87c4c737a60337ae and every real package member SHA; require actual dependencies.lock local resolution to that package and actual built camera public managed REQUIRES edge.",
+      "JPEG requires actual compiled non-ROM software decoder. Marker presence alone is never decode qualification."
+    ]
+  },
+  "memory_qualification_receipt_schema": {
+    "status": "This is the NEW producer interface, not a claim that a receipt exists. Root schema_version must be1 and status must bePASS.",
+    "file_reference": "Every reference is an actual absolute native path plus sha256 over the retained file bytes. The runner resolves it strictly, hashes it and preserves the reference; no fabricated or flags-only evidence.",
+    "root_required_fields": {
+      "schema_version": "integer1",
+      "status": "literal PASS",
+      "qemu": "{path,sha256}; must exactly equal --qemu",
+      "prepared_source_record": "{path,sha256}; must exactly equal --prepared-source-record",
+      "runtime_manifest": "{path,sha256}; must exactly equal --runtime-manifest",
+      "qtest": "The complete12-memory-test run record described below.",
+      "sdk_consumers": "Exactly FOUR ordinary memory run records: each locked SDK times modeinternal and modepsram.",
+      "spi1_controls": "Exactly FOUR real control records: phasebefore/after times testspi1-high-duplex/spi1-asymmetric.",
+      "boot_control": "Exactly THREE {profile,status:'PASS',result_path,result_sha256} references to real frozen GUI boot-smoke result records: idf-5.5.5, idf-6.1 and arduino-idf-5.5.5."
+    },
+    "qtest_fields": {
+      "command": "Actual argv array beginning with the native esp32s3-memory-test executable inside the final prepared checkout.",
+      "environment": "{QTEST_QEMU_BINARY: actual final executable path}",
+      "binary_sha256": "Actual memory-test executable SHA",
+      "source_sha256": "Actual final tests/qtest/esp32s3-memory-test.c SHA",
+      "returncode": "integer0",
+      "stdout": "{path,sha256} actual TAP stdout",
+      "stderr": "{path,sha256} actual stderr"
+    },
+    "qtest_acceptance": "Require actual1..12 TAP plan, all12 unique approved /esp32s3-memory/ registered names with the canonical Xtensa prefix, sequential1..12 result IDs, no skip/TODO/not-ok/bailout and final-binary environment binding. The names are visibility, alias-remap, boundaries, absent, alignment, reset, spi1-ssi, spi1-high-duplex, spi1-asymmetric, spi0-phases, spi0-clock-reset and cache-geometry.",
+    "sdk_consumer_fields": {
+      "idf_profile": "idf-5.5.5 or idf-6.1",
+      "mode": "internal or psram",
+      "result": "{path,sha256} actual run-native-fixture.py result.json",
+      "uart_logs": "Nonempty array of {path,sha256} actual complete per-boot UART logs retained by that result."
+    },
+    "sdk_consumer_acceptance": "Require actual result statusPASS, matching mode/SDK, unchanged original flash, exact locked SDK commit, provenance.artifacts final-QEMU SHA and actual qemu-source-identity.json matching every STANDARD prepared target hash. Reuse existing run-native-fixture.validate_uart for EVERY referenced boot log and the actual mode/SDK; this exercises the real required internal checks or quadSSI/C2M/M2C committed-data/alignment/MMU/GDMA checks, not request flags. Each log must be retained in result.evidence_sha256. The existing ordinary memory runner's old-prefix-only provenance must be migrated by Main before it can produce acceptable final integrated results.",
+    "spi1_control_fields": {
+      "phase": "before or after",
+      "test": "spi1-high-duplex or spi1-asymmetric",
+      "command": "Actual argv array beginning with esp32s3-memory-test and including the matching -p test selection.",
+      "environment": "{QTEST_QEMU_BINARY: actual selected binary path}",
+      "binary": "{path,sha256} actual selected binary; after must be the same final binary, before must be the real separate pre-fix control.",
+      "test_binary_sha256": "Actual selected memory-test executable SHA",
+      "returncode": "Observed command exit status; before nonzero, after0.",
+      "stdout": "{path,sha256}",
+      "stderr": "{path,sha256}"
+    },
+    "spi1_control_acceptance": "Before controls require actual nonzero assertion/not-ok/bailout/error diagnostic, not an invented successful transport. After controls require actual selected-test TAP ok without skips/failures and final-binary identity. Retain every failed command/output as evidence.",
+    "boot_control_fields": {
+      "record_reference": "Root boot_control entries contain exactly profile,status:'PASS',result_path,result_sha256. Load the actual per-run JSON result at that path/hash; its required fields follow.",
+      "profile": "idf-5.5.5, idf-6.1 or arduino-idf-5.5.5",
+      "status": "literal PASS",
+      "command": "Actual argv beginning with the real gui_esp32s3_boot_smoke_test executable.",
+      "test_binary_sha256": "Actual smoke executable SHA",
+      "environment": "{ESP32S3_QEMU_BIN: final executable path, ESP32S3_BOOT_FIRMWARE: actual preserved image path}",
+      "returncode": "integer0",
+      "firmware": "{path,sha256} actual original frozen merged image",
+      "original_after_sha256": "Observed original post-run SHA, equal to firmware.sha256",
+      "stdout": "{path,sha256}",
+      "stderr": "{path,sha256}"
+    },
+    "boot_control_acceptance": "Require actual BootSmokeTest::bootsRealFirmware PASS line, no Qt FAIL!/SKIP rows, final QEMU environment path, supplied frozen-image identity and unchanged original SHA. This reuses the real boot/TICK/QMP/snapshot/resume/reset fixture; no new smoke test or invented boot API."
+  },
+  "capture_protocol": {
+    "startup": "One fresh retained writable flash copy, cache=writethrough, -m8M, ordinary esp32s3 machine, -S and QMP. No snapshot=on, persistence shortcut, payload injection, MMIO writes, private API, qtest clock_step, GUI redraw completion or hardware operation.",
+    "discovery": "Public qom-list must expose /machine/soc/electrical, /machine/soc/lcd_cam, /machine/soc/lcd-panels and /machine/soc/ov2640-sensors plus their exact real properties. Missing public objects/properties is a prerequisite failure, never a fallback.",
+    "graph": "Import actual pinned native-fixture/graph_vectors.py project(scenario); apply exact ordinary native_lcd_panel/native_camera attribute graph through electrical project-json before the first cont, verify applied project and retain actual electrical snapshot.",
+    "observation": "Retain every running controller/panel/sensor status, all QMP commands/responses/events and host monotonic times. On observed completed source-frame, observed UART ownership milestone, first actual in-flight controller progress or final END, issue public QMP stop and confirm paused. Record actual UART prefix at that pause; a late observed row never becomes a forged pre-return observation.",
+    "pause_boundary": "A stop is host-observed and not an exact hardware/physical edge-time measurement. After lease collection, public cont resumes actual execution. Host paused time is not fabricated guest cadence or guest driver timeout.",
+    "panel_metadata_request": "Exactly {componentId:'D',offset:uint,count:1..64}; actual immutable capture-json history. Uncollected ring eviction fails explicitly.",
+    "panel_bytes_request": "Exactly {componentId:'D',sequence:uint,offset:uint,count:1..65536}; only actual latest or previously frozen frame is available. Retain exact framebuffer-json windows and actual joined RGB888 bytes, verify immutable identity/dimensions/fullSHA. Record earlier metadata-only sequences with unavailable bytes explicitly; never reconstruct those bytes or treat their SHA as a full byte capture.",
+    "required_panel_frames": "Actual complete frame0 and frame1 RGB565-derived physical RGB888 bytes for double; actual complete frame0 for bounce. Actual stable1MHz and500kHz physical timing captures must satisfy the independent oracle. Invalid, error or mixed-cadence captures are retained and passed to the oracle, not silently filtered or converted into passing frames.",
+    "sensor_request": "Exactly {component_id:'D',frame:uint,offset:uint,count:0..4096}; count0 metadata establishes the current completed frame while stopped, then ALL4096-byte windows through actual byte_count. Getter capture-json is a lease on the current frame, not a copied snapshot.",
+    "sensor_identity": "Every window must match actual component/config identity, frame, power epoch, generation, dimensions, format/image mode, source/crop/mirror/flip, byte_count/hash, frame_start/end, half_period, line geometry and timing profile. Save all actual bytes and sample timestamps. Record skipped source frame IDs explicitly.",
+    "camera_rx_boundary": "A real sensor color-bars capture is source evidence only. Oracle must correlate guest GET/full length/FNV/head/tail/external buffer/cache/hold/return/rearm timestamps with actual controller CAM byte/frame counters and read-only peri5 IN descriptor/producer state. Static hashes alone do not prove actual CAM RX or exclude identical-value physical overwrites.",
+    "jpeg_boundary": "Call actual software fmt2rgb888 in guest; retain observed success/output hash/tags from UART. Independently decode real captured JPEG through the existing Pillow reference. Do not claim independent comparison to guest decoded RGB888 bytes, which the current public fixture does not export."
+  },
+  "read_only_gdma": {
+    "transport": "Public QMP human-monitor-command with HMP xp only. Parse exact address-ordered 32-bit words; retain raw requests/replies in qmp.jsonl.",
+    "geometry": "Five channels, base0x6003f000 +channel*0xc0 +OUT*0x60. Read CONF0/CONF1/INT_RAW0x00..08, LINK/STATE/SUC_EOF/ERR_EOF/DESC/BF0/BF1 0x20..38 and PERI_SEL0x48. Never POP/PUSH0x1c or W1C writes0x14; no payload/cache reads or maintenance injection.",
+    "encoding": "IN.PARK24/STOP21, OUT.PARK23/STOP20; PERI_SEL low6 must be5. LINK root0x3fc00000|low20. Three internal descriptor words: DW0 size0:11,length12:23,EOF30,OWNER31; DW1 payload; DW2 internal next.",
+    "walk": "At each stopped observation retain all10 IN/OUT register sets; for actual peri5, walk LINK/BF0/next/success-EOF/prior roots with a finite1024-unique-node bound and explicit internal/aligned address validation. Preserve actual raw words plus derived fields; do not invent register values. Stop walking after actual successful driver delete/deinit to avoid freed descriptor storage.",
+    "ownership": "Require actual live peri5 node observations covering both public external framebuffers or both internal bounce spans. Camera additionally requires real completed owner0 descriptors, a current UART-prefix CAM_TWO_HELD pre-first-RETURN observation with producer parked, then actual return/recovery controller progress. Missing a short ownership interval is a diagnostic failure, not an inferred successful interval.",
+    "continuous_trace_limit": "Stopped snapshots prove observed instants and ordinary ownership/park/restart state, not an unobserved continuous physical write-address trace. The exact final-binary memory foundation supplies separately exercised committed SSI/cache/GDMA and C2M/M2C data proof."
+  },
+  "oracle_interface": {
+    "call": "verify(profile, uart_text, panel_frames, sensor_captures, controller_snapshots) -> dict; RuntimeError on required observation failure.",
+    "panel_item": "{metadata: exact framebuffer-json, rgb888: actual bytes, windows: exact framebuffer-json window list, capture: exact capture-json binding the selected sequence}",
+    "sensor_item": "{metadata: exact count0 capture-json, data: actual joined bytes, windows: all exact capture-json windows, lease_status: exact stopped status object}",
+    "controller_item": "Exact raw LCD_CAM status fields at root, plus _host_observation={phase,host_monotonic_ns,uart_prefix,uart_bytes,paused,gdma:{channels:[{channel,direction:'IN'|'OUT',registers:{conf0,conf1,int_raw,link,state,suc_eof_desc,err_eof_desc,desc,bf0_desc,bf1_desc,peri_sel},descriptors:[{address,words:[DW0,DW1,DW2],...}],...}]}}. Derived host keys never replace raw status fields.",
+    "result": "Preserve exact oracle result in oracle-proof.json and result.json, including precise unclaimed stronger comparisons/continuous-write limits. Only explicit oracle PASS after all actual same-binary prerequisites is exit0; QUALIFIED_LIMITED is not relabeled PASS."
+  },
+  "retained_evidence": [
+    "commands.json and provenance-commands.jsonl with actual argv/times/returncodes/stdout/stderr",
+    "runtime/prepared/SDK/fixture/package/source inventory receipts and input hashes",
+    "compiled-source-identity.json, project_description, compile_commands, sdkconfig, CMakeCache, dependencies.lock and merged input hashes",
+    "memory-qualification-receipt.json and validated real same-binary referenced evidence hashes",
+    "qemu-source-identity.json, applied project, public object/property discovery and electrical snapshots",
+    "writable-flash.bin plus original immutable flash before/after SHA and scratch final SHA",
+    "uart.log, stdout.log, stderr.log, guest-errors.log and complete QMP/HMP JSONL",
+    "running-status.jsonl, status-snapshots.jsonl, controller-snapshots.json and pause-boundaries.jsonl",
+    "pause UART prefixes, raw panel histories/windows/RGB888 binaries and raw sensor metadata/windows/binaries",
+    "oracle-proof.json on success; failure-traceback.log and complete result.json on failure",
+    "No giant byte/address dump is printed; console output is compact status/profile/evidence/error JSON."
+  ],
+  "exit_codes": {
+    "0": "Actual oracle PASS with every required real provenance and same-binary prerequisite satisfied; native minimum scope only, not hardware qualification.",
+    "1": "Actual firmware/capture/provenance/watchdog/oracle failure; evidence retained.",
+    "2": "Exact unavailable prerequisite, or oracle QUALIFIED_LIMITED. Never a passing source-only or inferred runtime result."
+  },
+  "future_commands": {
+    "policy": "Not executed by this author. Main first produces the actual final integrated executable, STANDARD prepared source record, runtime manifest containing all selected firmware, passing memory receipt and ordinary compiled merged profile artifacts. Variables below must identify those real artifacts, not a guessed build path or an initial-prefix binary. Prepare no new SDK/vendor tree and perform no hardware operation.",
+    "required_parent_bindings": "Set QEMU_SOURCE and QEMU_BINARY to the actual final STANDARD prepared checkout/executable; RUNTIME_MANIFEST and PREPARED_SOURCE_RECORD to their actual retained tool records; MEMORY_QUALIFICATION_RECEIPT to the actual passing renewed receipt. The exact future commands require these variables and fail if any is unset. No executable/receipt path or runtime result is fabricated by this source-only delivery.",
+    "idf_5_5_5_all_five": "root=$PWD; source /home/polar/.cache/esp32s3vm/idf/idf-5.5.5-b774170ff46c393eeb5e495ea37936038d3f4f4f/activate.sh; : \"${QEMU_SOURCE:?actual final standard checkout}\" \"${QEMU_BINARY:?actual final binary}\" \"${RUNTIME_MANIFEST:?actual final runtime manifest}\" \"${PREPARED_SOURCE_RECORD:?actual standard prepared source record}\" \"${MEMORY_QUALIFICATION_RECEIPT:?actual passing same-binary memory receipt}\"; P=/home/polar/.cache/esp32s3vm/qemu-memory-components/workspaces/a2dfebcaaa1dda667f7a3bc3ad2d994427fb30c5b9b51e833011f85c1b37b91a/idf-5.5.5/source/tests/firmware/lcd_cam_native; for PROFILE in lcd-rgb-double lcd-rgb-bounce lcd-camera-rgb565 lcd-camera-yuv422 lcd-camera-jpeg; do B=$ESP32S3_IDF_BUILD_ROOT/memory-lcd-cam-a2dfebcaaa1dda667f7a3bc3ad2d994427fb30c5b9b51e833011f85c1b37b91a/$PROFILE; python \"$root/qemu-extensions/prototypes/memory/run-lcd-cam-consumers.py\" --qemu \"$QEMU_BINARY\" --qemu-source \"$QEMU_SOURCE\" --runtime-manifest \"$RUNTIME_MANIFEST\" --prepared-source-record \"$PREPARED_SOURCE_RECORD\" --native-fixture \"$P\" --build-dir \"$B\" --sdk-metadata \"$ESP32S3_IDF_METADATA\" --merged-flash \"$B/lcd-cam-native.merged.bin\" --preparation-receipt \"$root/build-runtime-state/memory-native-2026-10-07/consumer-dependencies/preparation-receipt.json\" --memory-qualification-receipt \"$MEMORY_QUALIFICATION_RECEIPT\" --profile \"$PROFILE\" --evidence \"$root/build-runtime-state/memory-native-2026-10-07/consumer-captures\" || break; done",
+    "idf_6_1_all_five": "root=$PWD; source /home/polar/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/activate.sh; : \"${QEMU_SOURCE:?actual final standard checkout}\" \"${QEMU_BINARY:?actual final binary}\" \"${RUNTIME_MANIFEST:?actual final runtime manifest}\" \"${PREPARED_SOURCE_RECORD:?actual standard prepared source record}\" \"${MEMORY_QUALIFICATION_RECEIPT:?actual passing same-binary memory receipt}\"; P=/home/polar/.cache/esp32s3vm/qemu-memory-components/workspaces/a2dfebcaaa1dda667f7a3bc3ad2d994427fb30c5b9b51e833011f85c1b37b91a/idf-6.1/source/tests/firmware/lcd_cam_native; for PROFILE in lcd-rgb-double lcd-rgb-bounce lcd-camera-rgb565 lcd-camera-yuv422 lcd-camera-jpeg; do B=$ESP32S3_IDF_BUILD_ROOT/memory-lcd-cam-a2dfebcaaa1dda667f7a3bc3ad2d994427fb30c5b9b51e833011f85c1b37b91a/$PROFILE; python \"$root/qemu-extensions/prototypes/memory/run-lcd-cam-consumers.py\" --qemu \"$QEMU_BINARY\" --qemu-source \"$QEMU_SOURCE\" --runtime-manifest \"$RUNTIME_MANIFEST\" --prepared-source-record \"$PREPARED_SOURCE_RECORD\" --native-fixture \"$P\" --build-dir \"$B\" --sdk-metadata \"$ESP32S3_IDF_METADATA\" --merged-flash \"$B/lcd-cam-native.merged.bin\" --preparation-receipt \"$root/build-runtime-state/memory-native-2026-10-07/consumer-dependencies/preparation-receipt.json\" --memory-qualification-receipt \"$MEMORY_QUALIFICATION_RECEIPT\" --profile \"$PROFILE\" --evidence \"$root/build-runtime-state/memory-native-2026-10-07/consumer-captures\" || break; done",
+    "merged_image_filename": "The command intentionally selects the same lcd-cam-native.merged.bin output name as the authored ordinary merge recipe. Main must merge real build inputs to that name before the final runtime manifest and memory receipt are frozen; it must not rename a borrowed old image.",
+    "source_epoch": "The concrete workspace/build paths above are the already materialized a2dfebcaaa1dda667f7a3bc3ad2d994427fb30c5b9b51e833011f85c1b37b91a epoch. Any accepted fixture edit requires a NEW source inventory/workspace/preparation receipt and correspondingly updated caller paths; the runner itself reads receipt fields, not this fixed epoch."
+  },
+  "changelog": [
+    {
+      "date": "2026-10-07",
+      "change": "Authored complete actual QMP/HMP five-profile capture runner, immutable provenance/writable flash/failure retention, real stopped source leases, bounded read-only peri5 descriptor observations and explicit same-final-binary memory receipt producer interface. No build, test, lint, format, runtime or hardware verification performed."
+    }
+  ]
+}

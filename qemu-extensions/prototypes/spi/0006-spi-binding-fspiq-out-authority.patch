@@ -1,0 +1,45 @@
+From: SpiNativeWorker <spi-native@localhost>
+Date: Wed, 8 Oct 2026 00:00:00 +0000
+Subject: [PATCH] spi: register FSPIQ_OUT released native provider at bind
+
+Additive increment on top of the 0e2ab32b overlay restack; frozen copy
+copies/esp32s3_spi_binding.c is NOT rewritten. The ordinary IDF6.1
+master routes the MISO pad output from FSPIQ (out_sel=102/67,
+FUNC_OEN_SEL=0: OE sourced from the peripheral output signal) and sets
+the GPIO_ENABLE bank bit. The electrical owner requires a registered
+native drive provider for any OE-capable routed pad; without one the
+Apply-time projection strict-paused with "GPIO13 matrix signal 102 has
+no native drive provider" (SPI3: GPIO37 signal 67) before any transfer
+(evidence: build-runtime-state/spi-native-2026-10-07/*-20261008T04*).
+
+The controller is the signal authority for FSPIQ_OUT. In every
+qualified master full-duplex path it never drives FSPIQ, so the signal
+OE stays deasserted and the MISO pad output buffer remains open; this
+matches the GPIO register engine semantics (esp32s3_gpio_resolve_pad:
+OEN_SEL=0 releases the pad for an un-driven peripheral signal).
+Slave/half-duplex FSPIQ drive remains SPI-03 unqualified.
+
+First real-graph exercise of the frozen fixture matrix; no controller,
+service, NOR or qtest semantics change.
+---
+--- a/hw/ssi/esp32s3_spi_binding.c
++++ b/hw/ssi/esp32s3_spi_binding.c
+@@ -344,6 +344,18 @@
+     S3SPIProvider provider = {.opaque = binding, .drive = drive, .sample = sample, .end = end};
+     esp32s3_gpspi_bind(a, &provider);
+     esp32s3_gpspi_bind(b, &provider);
++    /* The controller is also the signal authority for FSPIQ_OUT. In every
++     * qualified master full-duplex path it never drives FSPIQ, so the
++     * signal OE stays deasserted. The ordinary IDF master routes the MISO
++     * pad output from FSPIQ with FUNC_OEN_SEL=0 (OE sourced from the
++     * peripheral signal), hence a released provider is the physical truth:
++     * the MISO pad output buffer remains open and never contends with the
++     * native device drive. Registering present/released also satisfies the
++     * electrical owner's native-provider requirement for the routed pad. */
++    for (unsigned c = 0; c < 2; c++) {
++        esp32s3_electrical_set_matrix_drive(electrical, miso_signal[c],
++                                           false, false, false);
++    }
+     if (!esp32s3_electrical_subscribe(electrical, physical_frame, binding)) {
+         error_report("SPI native service electrical observer capacity unavailable");
+         exit(1);

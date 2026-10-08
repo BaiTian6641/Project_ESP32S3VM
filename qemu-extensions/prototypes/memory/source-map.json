@@ -1,0 +1,202 @@
+{
+ "schema_version": 1,
+ "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+ "prefix_fingerprint": "dbe2a8a5ad4e07a607e76ab751e77ac85fe3bf30974359bd25a69354499f9b32",
+ "status": "superseded",
+ "preparation_order": [
+  {
+   "kind": "patch",
+   "source": "prototypes/coreclk/0010-hw-xtensa-esp32s3_clk-common-clock-ports-for-SPI2-3.patch",
+   "sha256": "e8b1487b941f7f80c3920da9d56723bcb39b34fa0dedb2dd98c4b80deb88bf4d"
+  },
+  {
+   "kind": "patch",
+   "source": "prototypes/coreclk/0011-hw-xtensa-esp32s3_clk-UHCI0-clock-gate-and-reset-lines.patch",
+   "sha256": "c1ebe584a6dbe178743da9874bbcb25880afac10242c16f8f1bb043362b47606"
+  },
+  {
+   "kind": "patch",
+   "source": "prototypes/coreclk/0012-hw-xtensa-esp32s3_clk-publish-the-0010-0011-gate-levels.patch",
+   "sha256": "6b1e8f79f0e4194213c67d309c5a88930bcb13b396fb118232945e3697434f66"
+  },
+  {
+   "kind": "patch",
+   "source": "prototypes/coreclk/0013-hw-xtensa-esp32s3-BBPLL-power-validity-decoupled-from.patch",
+   "sha256": "2203d4cca82a1ff4a62400517ff2fe1ff6d98e0e53417f16a5f5c7a65c5a8081"
+  },
+  {
+   "kind": "patch",
+   "source": "prototypes/coreclk/0014-hw-xtensa-esp32s3_clk-LEDC-PCNT-MCPWM-LCD_CAM-clock-ports.patch",
+   "sha256": "0e7a5c62e8a62e2425073ea5474bfea1068b970da2b007b6c84f10be295c67f3"
+  },
+  {
+   "kind": "copy",
+   "source": "prototypes/memory/copies/ssi_psram.c",
+   "destination": "hw/misc/ssi_psram.c",
+   "sha256": "ec635997d67a0fb3e820e521b8d3c52c34feb721ee7ecce057957731d36f8719"
+  },
+  {
+   "kind": "copy",
+   "source": "prototypes/memory/copies/ssi_psram.h",
+   "destination": "include/hw/misc/ssi_psram.h",
+   "sha256": "b42bafed212ac922b6e8a36cd5fbfb0f730c1c3d4b462d8dcab9f5b7e04ee6ad"
+  },
+  {
+   "kind": "copy",
+   "source": "prototypes/memory/copies/esp32s3_cache.c",
+   "destination": "hw/misc/esp32s3_cache.c",
+   "sha256": "707dffda451134fc000b6927f046ec84b5bdc9725f767bacdfa7333280663e70"
+  },
+  {
+   "kind": "copy",
+   "source": "prototypes/memory/copies/esp32s3_cache.h",
+   "destination": "include/hw/misc/esp32s3_cache.h",
+   "sha256": "f2dde7c2b1ad8358a0cbca539907e630790defc16815356025834ec1e6986cb5"
+  },
+  {
+   "kind": "copy",
+   "source": "prototypes/memory/copies/esp32s3_psram_cache.c",
+   "destination": "hw/misc/esp32s3_psram_cache.c",
+   "sha256": "cf238d3d00f7742bc3944c999cb6e8bd064362c26c6a3f6b3063222ecfc7e75f"
+  },
+  {
+   "kind": "copy",
+   "source": "prototypes/memory/copies/esp32s3-memory-test.c",
+   "destination": "tests/qtest/esp32s3-memory-test.c",
+   "sha256": "656c947d9307a00892197d32601e9dfb6b16569483fce3296e2c01583278df0e"
+  },
+  {
+   "kind": "patch",
+   "source": "prototypes/memory/machine-integration.patch",
+   "sha256": "e57a9d3cb7e9ce0b1b500fbbeeb3222178c05ad18742eb6084d8fb0bc4a8be11"
+  },
+  {
+   "kind": "patch",
+   "source": "prototypes/memory/spi1-transport.patch",
+   "sha256": "f8849d7d5db8cd140bb0c80384d23105358e5af2cab0d375a76288070171c725"
+  },
+  {
+   "kind": "patch",
+   "source": "prototypes/memory/spi0-cache-phases.patch",
+   "sha256": "8238b21fb729c0eb43a85fe6b6ca9521679517516525f0d81ef47f7273ea0e2b"
+  },
+  {
+   "kind": "patch",
+   "source": "prototypes/memory/qtest-integration.patch",
+   "sha256": "3cf7dc0f4ad90fb7778c88549e077a3e7211c14b28f60fd98cd1208e5f7fac55"
+  }
+ ],
+ "input_resolution": "Frozen prefix and retired clock10..14 source names resolve only from the hash-pinned immutable prefix snapshot pack, never a sibling worktree. Prepared manifests retain every consumed snapshot and final target digest; runners bind the actual frozen record hash and validate these snapshots.",
+ "configuration": {
+  "machine": "esp32s3",
+  "external_capacity_bytes": 8388608,
+  "qemu_arguments": [
+   "-m",
+   "8M"
+  ],
+  "internal_leaf_arguments": [
+   "-m",
+   "0"
+  ],
+  "mode": "SPI1 byte-SSI SPI/QPI protocol; actual SPI0 STR QPI linear8MiB EB/38/24-bit-address/six-read-dummy at80MHz PLL-derived core divided2=40MHz. OPI/DDR rejected; no cycle/electrical claim.",
+  "cpu_window": "0x3c000000..0x3dffffff shared64KiB MMU table; only actual8MiB physical backing permitted",
+  "gdma_window": "same CPU DBUS addresses, MMU translation directly to committed SSI backing; never CPU cache data",
+  "descriptors": "internal only, canonical GDMA validator unchanged",
+  "sram2_ownership": "32KiB DCache reserves0x3fcf8000..0x3fcfffff;64KiB reserves0x3fcf0000..0x3fcfffff; actualCPU/GDMA bus faults",
+  "cache_geometry": "four ways;32KiB with16/32/64B lines or64KiB with32/64B lines; deterministicfunctionalLRU not exactsiliconreplacement",
+  "maintenance": "actual ROM EXTMEM assists; SyncSize cacheblockcount;zeroitems wholecache;WB commitsdirty,CLEAN clearsdirtywithoutcommit,INV discardsdirty; failedSPI0WB retainsdirtyownership and latches syncfaultbit2/W1C",
+  "reset": "CPU-onlyreset preserves sharedcache/MMU/dirtydata. PERIPH/cache reset discardsdirtyCPUstate/invalidatestranslations; externalSSIarray andwarmprotocolmode retained. SharedSPI01controllerreset clearsSPI0phases but retainscachehits/dirtyownership andchipQPI/data.",
+  "availability": "actual programmed SPI0 phases, CS1/chipQPI, sharedSYSTEMSPI01gate/reset andexistingPLLvalidity gatephysicalcachemiss/WB/GDMA requests; cachedhits remainretained. CLOCK_GATE bit0 is register-clock force-on, not a functional gate; bothvalues work. Unsupported/unavailablebus configurations fault, not fake data."
+ },
+ "gdma_contract": {
+  "engine_changes": false,
+  "container": "esp32s3.gdma.memory via existing soc_mr link",
+  "internal": "0x3fc80000..0x3fceffff directDRAM;SRAM2 occupancy-filtered IO alias",
+  "external": "cache.psram_dma translates MMU type/invalid/capacity and returns MEMTX_DECODE_ERROR for fault =>canonical DSCR_ERR/halt",
+  "burst_alignment": "canonical IN bufferaddress andsize aligned16/32/64 per IN_EXT_MEM_BK_SIZE;length exempt;OUT noextraalignment"
+ },
+ "sources": [
+  {
+   "url": "https://documentation.espressif.com/esp32-s3_technical_reference_manual_en.pdf",
+   "sha256": "4484bf8a69035ec42a731c58c64ada6fbd1f1618c5559409f134d9ea083f444f",
+   "version": "1.8",
+   "sections": [
+    "3.4.9",
+    "4.3.3.1",
+    "4.3.3.2",
+    "4.3.3.3",
+    "4.3.4"
+   ]
+  },
+  {
+   "url": "https://docs.espressif.com/projects/esp-idf/en/v5.5.5/esp32s3/api-reference/system/mm_sync.html",
+   "claim": "CPU cache is not coherent with DMA; explicit C2M writeback/M2C invalidate required"
+  },
+  {
+   "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/soc/esp32s3/register/soc/extmem_reg.h",
+   "claim": "externalDMA MMU faultcodes6/7;cache geometry andsync registers"
+  },
+  {
+   "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/heap/port/esp32s3/memory_layout.c",
+   "claim": "actualcacheSRAM2reserved/free ranges"
+  }
+ ],
+ "contracts": [
+  "ssi-contract.json",
+  "spi0-contract.json",
+  "instruction-contract.json",
+  "qtest-contract.json",
+  "../../../tests/firmware/memory_native/qualification.json"
+ ],
+ "unqualified_rows": [
+  {
+   "row": "cache error IRQ delivery and gated-request silicon stall/timeout",
+   "status": "unqualified",
+   "reason": "Native profile exposes actual data refusal/dirty retention, syncfaultstatus and GDMA DSCR_ERR; no silicon interrupt/timing/stall claim."
+  },
+  {
+   "row": "OPI DDR/DQS/register-latency",
+   "status": "rejected, not silently removed",
+   "reason": "byteSSI lacks required edges/DQS/DM; primaryAP datasheet pinned inssi-contract"
+  },
+  {
+   "row": "PSRAM instruction cache independentvisibility/XIP",
+   "status": "unqualified",
+   "reason": "officialsharedIOMMU path retained; no independentIcachePSRAM consumerproof"
+  },
+  {
+   "row": "preload/autoload/lock/tagassist exactbehavior",
+   "status": "unqualified",
+   "reason": "minimum nativeconsumer proof targetsactualwriteback/clean/invalidate/geometry; no newfake completedfeatureclaims"
+  },
+  {
+   "row": "exactreplacementpolicy/cyclelatency/electricalmeasurements",
+   "status": "notclaimed",
+   "reason": "functionalLRU/no hardwareoperations"
+  },
+  {
+   "row": "otherPSRAMcapacities/2T/refresh/electrical",
+   "status": "unsupported",
+   "reason": "actualsupportedcapacity8MiB only"
+  }
+ ],
+ "qualification": {
+  "implementation": "authored source-ready only",
+  "evidence_record": "qualification.json",
+  "checks_run": [],
+  "initial_candidate": "exactfrozen26+clock10..14+memory overlay; must qualify its own binary",
+  "final_consumers": "realRGB/CAM fixtures wait for exactparentnativefoundations source-ready candidate; initial standalone proof never borrowed",
+  "preservation": "official SPI1 remains samecontroller withminimalindexboundsfix;flash/XTS algorithms untouched; all3ordinaryboot/flashpartition/NVSpersist/reset/unmappedcontrols required on each qualifiedbinary"
+ },
+ "changelog": [
+  {
+   "date": "2026-10-07",
+   "change": "Newactual8MiBSSIbacking andseparatefiniteCPUwritebackcache/GDMAcommittedMMUview;realcachemaintenance,SRAMcacheownership,busfaults/resetretention;minimalSPI1transferindexboundsfix;authoredordinaryIDFmemoryconsumer andnativeqtests."
+  },
+  {
+   "date": "2026-10-08",
+   "change": "Marked superseded after the CORE-04 corrected candidate (6dfa7350) qualified; inputs are intentionally frozen at the pre-fix hashes and preparation refuses them."
+  }
+ ],
+ "superseded_by": "source-map-native-foundations.json (CORE-04 memory qualification on runtime 6dfa7350906414c4); this map's copy/patch hashes predate the PSRAM CPU data-path, qtest address and fixture probe corrections and can no longer be prepared - the preparer refuses it instead of building a stale tree"
+}

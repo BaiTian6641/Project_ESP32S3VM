@@ -1,0 +1,419 @@
+From 05e3a3486f6739cfa422ca59e98d163cb8e7f24d Mon Sep 17 00:00:00 2001
+From: ESP32S3VM gdma <gdma@esp32s3vm.invalid>
+Date: Thu, 8 Oct 2026 06:30:36 +0800
+Subject: [PATCH 5/5] hw/dma/esp_gdma: CONF0 RST resets per direction, M2M
+ pairs stay coupled
+
+TRM 3.6.2 resets are per-direction: GDMA_IN_RST resets the receive state
+machine, GDMA_OUT_RST the transmit one. The RST 1->0 edge disarmed BOTH
+directions of the channel, so a transmit-direction reset killed an armed
+peripheral-mode receive chain (RMT RX: arm at rmt_receive, then a
+transmit gdma_reset left the RX DMA unable to store). Peripheral-mode
+directions are independent: the RST edge now resets only the written
+direction (and cancels a pending work-quantum bottom half defensively).
+Memory-to-memory pairs remain coupled by design: with MEM_TRANS_EN set,
+resetting either direction disarms both, preserving the half-reset M2M
+safety.
+---
+ hw/dma/esp_gdma.c               | 175 ++++++++++++++++++++++++++++++--
+ tests/qtest/esp32s3-gdma-test.c |  48 +++++++++
+ 2 files changed, 212 insertions(+), 11 deletions(-)
+
+diff --git a/hw/dma/esp_gdma.c b/hw/dma/esp_gdma.c
+index 29af7eb..d738b90 100644
+--- a/hw/dma/esp_gdma.c
++++ b/hw/dma/esp_gdma.c
+@@ -31,6 +31,7 @@
+ /* Descriptor word 0 fields, TRM chapter 3 section "Linked List" */
+ #define GDMA_DESC_OWNER_MASK    (0x1u << 31)
+ #define GDMA_DESC_SUC_EOF_MASK  (0x1u << 30)
++#define GDMA_DESC_ERR_EOF_MASK  (0x1u << 28)
+ #define GDMA_DESC_LENGTH_SHIFT  12
+ #define GDMA_DESC_LENGTH_MASK   0xfffu
+ #define GDMA_DESC_SIZE_MASK     0xfffu
+@@ -242,6 +243,7 @@ static void esp_gdma_fsm_reset(DmaConfigState* st)
+     st->rx_last_desc_addr = 0;
+     st->rx_last_prev_addr = 0;
+     st->rx_packet_ended = false;
++    st->rx_segment_pending = false;
+     st->walk_count = 0;
+     st->idle_count = 0;
+     st->fsm_active = false;
+@@ -455,6 +457,29 @@ static uint32_t esp_gdma_restart_addr(ESPGdmaState *s, uint32_t chan, uint32_t d
+     return d.next_addr;
+ }
+ 
++void esp_gdma_set_peripheral_notify(ESPGdmaState *s, GdmaPeripheral periph,
++                                    EspGdmaPeripheralNotify notify, void *opaque)
++{
++    if (!s || (unsigned)periph > GDMA_LAST) {
++        return;
++    }
++    s->peripheral_notify[periph].notify = notify;
++    s->peripheral_notify[periph].opaque = opaque;
++}
++
++static void esp_gdma_notify_arm(ESPGdmaState *s, uint32_t chan, uint32_t dir)
++{
++    unsigned periph = FIELD_EX32(s->ch_conf[dir][chan].peripheral,
++                                 GDMA_PERI_SEL, PERI_SEL);
++    if (periph <= GDMA_LAST &&
++        !FIELD_EX32(s->ch_conf[ESP_GDMA_IN_IDX][chan].conf0,
++                    GDMA_IN_CONF0, MEM_TRANS_EN) &&
++        s->peripheral_notify[periph].notify) {
++        s->peripheral_notify[periph].notify(s, periph, chan, dir,
++                                           s->peripheral_notify[periph].opaque);
++    }
++}
++
+ /**
+  * @brief Arm a chain after software wrote GDMA_xLINK (START or RESTART) and
+  *        the channel is not in memory-to-memory mode. The first descriptor
+@@ -490,6 +515,7 @@ static void esp_gdma_arm_chain(ESPGdmaState *s, uint32_t chan, uint32_t dir, boo
+             st->fsm_active = true;
+             st->walk_count = 0;
+             st->idle_count = 0;
++            esp_gdma_notify_arm(s, chan, dir);
+             return;
+         }
+         addr = esp_gdma_restart_addr(s, chan, dir);
+@@ -510,12 +536,14 @@ static void esp_gdma_arm_chain(ESPGdmaState *s, uint32_t chan, uint32_t dir, boo
+         st->rx_last_desc_addr = 0;
+         st->rx_last_prev_addr = 0;
+         st->rx_packet_ended = false;
++        st->rx_segment_pending = false;
+     }
+     st->fsm_active = true;
+     if (!esp_gdma_load_descriptor(s, chan, dir, addr)) {
+         /* esp_gdma_load_descriptor flagged DSCR_ERR and halted the channel */
+         return;
+     }
++    esp_gdma_notify_arm(s, chan, dir);
+ }
+ 
+ /**
+@@ -726,6 +754,7 @@ static void esp_gdma_channel_disarm(ESPGdmaState *s, uint32_t chan)
+         st->rx_last_desc_addr = 0;
+         st->rx_last_prev_addr = 0;
+         st->rx_packet_ended = false;
++        st->rx_segment_pending = false;
+     }
+ }
+ 
+@@ -808,7 +837,21 @@ static void esp_gdma_write_chan_conf(ESPGdmaState *state, uint32_t dir, uint32_t
+             if (FIELD_EX32(value,  GDMA_IN_CONF0, RST) == 0 &&
+                 FIELD_EX32(s->conf0, GDMA_IN_CONF0, RST) != 0)
+             {
+-                esp_gdma_channel_disarm(state, chan);
++                /*
++                 * TRM 3.6.2 resets are PER-DIRECTION (GDMA_IN_RST resets the
++                 * receive state machine, GDMA_OUT_RST the transmit one). Only
++                 * a memory-to-memory pair is coupled: there MEM_TRANS_EN binds
++                 * OUT n to IN n, so resetting either side disarms both and
++                 * cancels a pending work-quantum continuation. Peripheral-mode
++                 * directions are independent — an OUT reset must never kill an
++                 * armed IN chain (and vice versa).
++                 */
++                if (FIELD_EX32(state->ch_conf[ESP_GDMA_IN_IDX][chan].conf0,
++                               GDMA_IN_CONF0, MEM_TRANS_EN)) {
++                    esp_gdma_channel_disarm(state, chan);
++                } else {
++                    qemu_bh_cancel(state->quantum[chan].bh);
++                }
+                 esp_gdma_fsm_reset(s);
+             }
+             /* Update the register before going further */
+@@ -1009,11 +1052,13 @@ bool esp_gdma_get_channel_periph(ESPGdmaState *s, GdmaPeripheral periph, int dir
+  *        `size` bytes out of the guest outlink into `buffer`, continuing
+  *        from the persistent descriptor + byte cursor.
+  */
+-bool esp_gdma_read_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uint32_t size)
++bool esp_gdma_read_channel_ex(ESPGdmaState *s, uint32_t chan, uint8_t *buffer,
++                              uint32_t size, EspGdmaTxInfo *info)
+ {
+-    ESPGdmaClass *class = ESP_GDMA_GET_CLASS(s);
+-
+-    if (s == NULL || chan >= class->m_channel_count || buffer == NULL) {
++    if (info) {
++        memset(info, 0, sizeof(*info));
++    }
++    if (!s || !buffer || chan >= ESP_GDMA_GET_CLASS(s)->m_channel_count) {
+         return false;
+     }
+ 
+@@ -1043,6 +1088,9 @@ bool esp_gdma_read_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uint
+             }
+             st->cur_buf_off += take;
+             consumed += take;
++            if (info) {
++                info->served = consumed;
++            }
+             st->idle_count = 0;
+         }
+ 
+@@ -1053,6 +1101,9 @@ bool esp_gdma_read_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uint
+ 
+         /* Descriptor exhausted: close it, honor its EOF flag, advance */
+         const bool eof = st->cur_suc_eof;
++        if (info && eof) {
++            info->eof_reached = true;
++        }
+         esp_gdma_writeback_out(s, chan);
+         if (st->halted) {
+             break;
+@@ -1069,6 +1120,9 @@ bool esp_gdma_read_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uint
+         if (st->cur_next_addr == 0) {
+             /* Outlink exhausted: park. The caller sees a short transfer. */
+             esp_gdma_park(st);
++            if (info) {
++                info->list_done = true;
++            }
+             break;
+         }
+         if (esp_gdma_walk_bound_hit(s, chan, ESP_GDMA_OUT_IDX)) {
+@@ -1080,6 +1134,9 @@ bool esp_gdma_read_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uint
+         if (!esp_gdma_load_descriptor(s, chan, ESP_GDMA_OUT_IDX, st->cur_next_addr)) {
+             break;
+         }
++        if (info && eof) {
++            break;
++        }
+     }
+ 
+     if (consumed == size) {
+@@ -1094,16 +1151,24 @@ bool esp_gdma_read_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uint
+     return consumed == size;
+ }
+ 
++bool esp_gdma_read_channel(ESPGdmaState *s, uint32_t chan,
++                           uint8_t *buffer, uint32_t size)
++{
++    return esp_gdma_read_channel_ex(s, chan, buffer, size, NULL);
++}
++
+ /**
+  * @brief Serve a receive (peripheral -> memory) handshake: push up to
+  *        `size` bytes from `buffer` into the guest inlink, continuing from
+  *        the persistent descriptor + byte cursor.
+  */
+-bool esp_gdma_write_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uint32_t size)
++bool esp_gdma_write_channel_ex(ESPGdmaState *s, uint32_t chan, uint8_t *buffer,
++                               uint32_t size, uint32_t *served)
+ {
+-    ESPGdmaClass *class = ESP_GDMA_GET_CLASS(s);
+-
+-    if (s == NULL || chan >= class->m_channel_count || buffer == NULL) {
++    if (served) {
++        *served = 0;
++    }
++    if (!s || !buffer || chan >= ESP_GDMA_GET_CLASS(s)->m_channel_count) {
+         return false;
+     }
+ 
+@@ -1133,8 +1198,12 @@ bool esp_gdma_write_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uin
+             }
+             st->cur_buf_off += take;
+             consumed += take;
++            if (served) {
++                *served = consumed;
++            }
+             st->rx_last_desc_addr = st->cur_desc_addr;
+             st->rx_last_prev_addr = st->bfr_bfr_desc_addr;
++            st->rx_segment_pending = true;
+             st->idle_count = 0;
+         }
+ 
+@@ -1190,12 +1259,21 @@ bool esp_gdma_write_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uin
+     return consumed == size;
+ }
+ 
+-bool esp_gdma_finish_rx_channel(ESPGdmaState *s, uint32_t chan)
++bool esp_gdma_write_channel(ESPGdmaState *s, uint32_t chan,
++                            uint8_t *buffer, uint32_t size)
++{
++    return esp_gdma_write_channel_ex(s, chan, buffer, size, NULL);
++}
++
++static bool esp_gdma_finish_rx_common(ESPGdmaState *s, uint32_t chan, bool error)
+ {
+     if (!s || chan >= ESP_GDMA_GET_CLASS(s)->m_channel_count) {
+         return false;
+     }
+     DmaConfigState *st = &s->ch_conf[ESP_GDMA_IN_IDX][chan];
++    if (error && FIELD_EX32(st->peripheral, GDMA_PERI_SEL, PERI_SEL) != GDMA_UHCI0) {
++        return false;
++    }
+     if (st->halted || !st->rx_last_desc_addr) {
+         return false;
+     }
+@@ -1204,6 +1282,10 @@ bool esp_gdma_finish_rx_channel(ESPGdmaState *s, uint32_t chan)
+     }
+     if (st->cur_desc_addr == st->rx_last_desc_addr &&
+         st->cur_buf_off > 0 && st->cur_buf_off < st->cur_buf_cap) {
++        st->cur_dw0 &= ~GDMA_DESC_ERR_EOF_MASK;
++        if (error) {
++            st->cur_dw0 |= GDMA_DESC_ERR_EOF_MASK;
++        }
+         esp_gdma_writeback_in(s, chan, true);
+         if (st->halted) {
+             return false;
+@@ -1217,6 +1299,10 @@ bool esp_gdma_finish_rx_channel(ESPGdmaState *s, uint32_t chan)
+             esp_gdma_desc_error(s, chan, ESP_GDMA_IN_IDX, st->rx_last_desc_addr);
+             return false;
+         }
++        d.config.val &= ~GDMA_DESC_ERR_EOF_MASK;
++        if (error) {
++            d.config.val |= GDMA_DESC_ERR_EOF_MASK;
++        }
+         d.config.val |= GDMA_DESC_SUC_EOF_MASK;
+         if (!esp_gdma_write_descr(s, st->rx_last_desc_addr, &d)) {
+             esp_gdma_desc_error(s, chan, ESP_GDMA_IN_IDX, st->rx_last_desc_addr);
+@@ -1233,11 +1319,78 @@ bool esp_gdma_finish_rx_channel(ESPGdmaState *s, uint32_t chan)
+         st->state = d.next_addr & R_GDMA_OUT_STATE_LINK_DSCR_ADDR_MASK;
+     }
+     st->rx_packet_ended = true;
++    st->rx_segment_pending = false;
+     st->suc_eof_desc_addr = st->rx_last_desc_addr;
++    if (error) {
++        st->err_eof_desc_addr = st->rx_last_desc_addr;
++    }
+     esp_gdma_park(st);
+     esp_gdma_set_status(&st->int_state,
+                         R_GDMA_INTERRUPT_IN_DONE_MASK |
+-                        R_GDMA_INTERRUPT_IN_SUC_EOF_MASK);
++                        R_GDMA_INTERRUPT_IN_SUC_EOF_MASK |
++                        (error ? R_GDMA_INTERRUPT_IN_ERR_EOF_MASK : 0));
++    return true;
++}
++
++bool esp_gdma_finish_rx_channel(ESPGdmaState *s, uint32_t chan)
++{
++    return esp_gdma_finish_rx_common(s, chan, false);
++}
++
++bool esp_gdma_finish_rx_channel_err(ESPGdmaState *s, uint32_t chan)
++{
++    return esp_gdma_finish_rx_common(s, chan, true);
++}
++
++bool esp_gdma_finish_rx_segment(ESPGdmaState *s, uint32_t chan)
++{
++    if (!s || chan >= ESP_GDMA_GET_CLASS(s)->m_channel_count) {
++        return false;
++    }
++    DmaConfigState *st = &s->ch_conf[ESP_GDMA_IN_IDX][chan];
++    if (st->halted || !st->rx_segment_pending || !st->rx_last_desc_addr) {
++        return false;
++    }
++    bool partial = st->cur_desc_addr == st->rx_last_desc_addr &&
++                   st->cur_buf_off > 0 && st->cur_buf_off < st->cur_buf_cap;
++    if (partial) {
++        st->cur_dw0 &= ~GDMA_DESC_ERR_EOF_MASK;
++        esp_gdma_writeback_in(s, chan, true);
++        if (st->halted) {
++            return false;
++        }
++    } else {
++        /* The ordinary pump already closed the full descriptor and may have
++         * prefetched DW2. Mark the last actual descriptor, never that empty
++         * next allocation. Do not rewind the live byte/descriptor cursor. */
++        GdmaLinkedList d;
++        if (!esp_gdma_read_descr(s, st->rx_last_desc_addr, &d)) {
++            esp_gdma_desc_error(s, chan, ESP_GDMA_IN_IDX, st->rx_last_desc_addr);
++            return false;
++        }
++        d.config.val = (d.config.val & ~GDMA_DESC_ERR_EOF_MASK) |
++                       GDMA_DESC_SUC_EOF_MASK;
++        if (!esp_gdma_write_descr(s, st->rx_last_desc_addr, &d)) {
++            esp_gdma_desc_error(s, chan, ESP_GDMA_IN_IDX, st->rx_last_desc_addr);
++            return false;
++        }
++    }
++    st->rx_segment_pending = false;
++    st->suc_eof_desc_addr = st->rx_last_desc_addr;
++    esp_gdma_set_status(&st->int_state, R_GDMA_INTERRUPT_IN_SUC_EOF_MASK);
++    if (partial) {
++        /* A segment consumes this allocation even if its unused tail remains.
++         * RESTART after an actual end-of-list must therefore follow DW2. */
++        st->cur_buf_off = st->cur_buf_cap;
++        if (!st->cur_next_addr) {
++            esp_gdma_park(st);
++        } else {
++            st->walk_count = st->idle_count = 0;
++            if (!esp_gdma_walk_bound_hit(s, chan, ESP_GDMA_IN_IDX)) {
++                esp_gdma_load_descriptor(s, chan, ESP_GDMA_IN_IDX, st->cur_next_addr);
++            }
++        }
++    }
+     return true;
+ }
+ 
+diff --git a/tests/qtest/esp32s3-gdma-test.c b/tests/qtest/esp32s3-gdma-test.c
+index 73bca78..f9b1f7a 100644
+--- a/tests/qtest/esp32s3-gdma-test.c
++++ b/tests/qtest/esp32s3-gdma-test.c
+@@ -1017,6 +1017,53 @@ static void test_pump_rx_fulfilled_survives_next_fault(void)
+     qtest_quit(qts);
+ }
+ 
++/*
++ * Per-direction reset regression (TRM 3.6.2): GDMA_OUT_RST resets only the
++ * transmit state machine. An armed peripheral-mode IN chain (here: RMT,
++ * PERI_SEL=9) must survive an OUT-direction CONF0 RST pulse. Memory-to-
++ * memory pairs stay coupled: resetting one direction of a running M2M
++ * stream disarms both.
++ */
++static void test_reset_per_direction(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    uint8_t src[96];
++
++    /* Peripheral-mode IN chain armed (RMT shape, PERI_SEL=9) */
++    build_fixture(qts, src, false, false, 0);
++    wr(qts, CH_IN_REG(0, REG_PERI_SEL), 9);
++    wr(qts, CH_IN_REG(0, REG_LINK), (IN_DESC & INLINK_ADDR_M) | INLINK_START);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_LINK)) & INLINK_PARK, ==, 0);
++
++    /* OUT-direction reset pulse: the IN chain must stay armed */
++    wr(qts, CH_OUT_REG(0, REG_CONF0), 1);
++    wr(qts, CH_OUT_REG(0, REG_CONF0), 0);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_LINK)) & INLINK_PARK, ==, 0);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_INT_RAW)) & IN_DSCR_ERR, ==, 0);
++
++    /* IN-direction reset pulse disarms the IN chain, OUT untouched */
++    wr(qts, CH_IN_REG(0, REG_CONF0), 1);
++    wr(qts, CH_IN_REG(0, REG_CONF0), 0);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_LINK)) & INLINK_PARK, ==, INLINK_PARK);
++
++    /* M2M pairs remain coupled: reset one direction of a running stream */
++    build_fixture(qts, src, true, true, 0);
++    write_desc(qts, OUT_DESC + 24, DESC(32, 32, false, true), SRC_AREA + 64,
++               OUT_DESC);
++    write_desc(qts, IN_DESC + 24, DESC(32, 0, false, true), DST_AREA + 64,
++               IN_DESC);
++    wr(qts, CH_OUT_REG(0, REG_CONF0), OUT_AUTO_WRBACK);
++    start_m2m(qts, 0);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_LINK)) & INLINK_PARK, ==, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_LINK)) & OUTLINK_PARK, ==, 0);
++    wr(qts, CH_OUT_REG(0, REG_CONF0), 1);
++    wr(qts, CH_OUT_REG(0, REG_CONF0), 0);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_LINK)) & INLINK_PARK, ==, INLINK_PARK);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_LINK)) & OUTLINK_PARK, ==, OUTLINK_PARK);
++
++    qtest_quit(qts);
++}
++
+ int main(int argc, char **argv)
+ {
+     g_test_init(&argc, &argv, NULL);
+@@ -1046,6 +1093,7 @@ int main(int argc, char **argv)
+                    test_pump_fulfilled_survives_next_fault);
+     qtest_add_func("/esp32s3-gdma/pump-rx-fulfilled-survives-next-fault",
+                    test_pump_rx_fulfilled_survives_next_fault);
++    qtest_add_func("/esp32s3-gdma/reset-per-direction", test_reset_per_direction);
+     qtest_add_func("/esp32s3-gdma/system-reset", test_system_reset);
+ 
+     return g_test_run();
+-- 
+2.43.0
+

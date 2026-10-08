@@ -1,0 +1,91 @@
+From b6367131a0f3efe9137395a6a9f141ad66ce6bc3 Mon Sep 17 00:00:00 2001
+From: ESP32S3VM intc <intc@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 11:33:57 +0800
+Subject: [PATCH 2/3] tests/qtest/esp32s3-intmatrix-test: drive matrix
+ OR/remap/reset
+
+QTest against the real esp32s3 machine (no firmware): peripheral source
+inputs are driven through the matrix GPIO inputs and the CPU interrupt
+lines are observed by intercepting the cpu-int-out outputs, covering
+
+- reset defaults (DATE 0x02012300, CLOCK_GATE 1, MAP 0x10, status 0),
+- single-source routing and per-CPU-file INTR_STATUS,
+- two sources on one CPU interrupt (wired-OR; clearing one keeps the
+  line asserted; negative case),
+- remapping an asserted source (old route clears, new rises, disabled
+  route drops with the level still pending),
+- internal-interrupt map values 6/7/11/15/16/29 routing nowhere and MAP
+  write masking to the 5-bit field (0x1f -> CPU int 31),
+- independent PRO/APP register files routing one source to both CPUs,
+- status boundary: source 98 drives INTR_STATUS_3 bit 2 only, asserted
+  inputs 200/511 leave status and lines untouched,
+- machine reset restoring defaults and clearing lines,
+- CLOCK_GATE gating (writes ignored, outputs/status frozen, latch on
+  re-enable).
+
+Wired into tests/qtest/meson.build for CONFIG_XTENSA_ESP32S3 targets.
+---
+ tests/qtest/esp32s3-intmatrix-test.c | 40 ++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+diff --git a/tests/qtest/esp32s3-intmatrix-test.c b/tests/qtest/esp32s3-intmatrix-test.c
+index 63e52f6..ca09f90 100644
+--- a/tests/qtest/esp32s3-intmatrix-test.c
++++ b/tests/qtest/esp32s3-intmatrix-test.c
+@@ -329,6 +329,44 @@ static void test_machine_reset(void)
+     esp32s3_intmatrix_teardown();
+ }
+ 
++static void test_status_boundary_sources(void)
++{
++    esp32s3_intmatrix_setup();
++
++    /* Last documented source (98) drives INTR_STATUS_3 bit 2 (word 3 only
++     * carries the last 3 sources per TRM Table 9.3-1) and its route. */
++    map_source(0, 98, 4);
++    drive_source(98, 1);
++    g_assert_true(out_level(0, 4));
++    g_assert_cmphex(qtest_readl(global_qtest, STATUS_REG(0, 3)), ==, 1u << 2);
++    drive_source(98, 0);
++    g_assert_cmphex(qtest_readl(global_qtest, STATUS_REG(0, 3)), ==, 0);
++
++    /* An input beyond the documented source count has no status bit and no
++     * routable MAP slot: asserting it must leave status registers and all
++     * lines untouched (no out-of-bounds snapshot write). */
++    map_source(0, 98, 4); /* unrelated live route stays armed below */
++    map_source(1, 98, 5);
++    drive_source(200, 1);
++    drive_source(511, 1);
++    g_assert_cmphex(qtest_readl(global_qtest, STATUS_REG(0, 3)), ==, 0);
++    g_assert_cmphex(qtest_readl(global_qtest, STATUS_REG(1, 3)), ==, 0);
++    for (unsigned n = 0; n < 3; ++n) {
++        g_assert_cmpuint(qtest_readl(global_qtest, STATUS_REG(0, n)), ==, 0);
++        g_assert_cmpuint(qtest_readl(global_qtest, STATUS_REG(1, n)), ==, 0);
++    }
++    g_assert_all_lines_low();
++
++    /* The device still works normally afterwards. */
++    drive_source(98, 1);
++    g_assert_true(out_level(0, 4));
++    drive_source(98, 0);
++    drive_source(200, 0);
++    drive_source(511, 0);
++
++    esp32s3_intmatrix_teardown();
++}
++
+ static void test_clock_gate_freeze(void)
+ {
+     esp32s3_intmatrix_setup();
+@@ -376,6 +414,8 @@ int main(int argc, char **argv)
+     qtest_add_func("esp32s3-intmatrix/disabled-and-masked-map-writes",
+                    test_disabled_and_masked_map_writes);
+     qtest_add_func("esp32s3-intmatrix/dual-cpu-files", test_dual_cpu_files);
++    qtest_add_func("esp32s3-intmatrix/status-boundary-sources",
++                   test_status_boundary_sources);
+     qtest_add_func("esp32s3-intmatrix/machine-reset", test_machine_reset);
+     qtest_add_func("esp32s3-intmatrix/clock-gate-freeze",
+                    test_clock_gate_freeze);
+-- 
+2.43.0
+

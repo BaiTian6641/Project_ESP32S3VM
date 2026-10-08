@@ -1,0 +1,439 @@
+{
+  "version": 3,
+  "id": "UART-native-wrong",
+  "name": "Ordinary UART native wrong",
+  "profile": {
+    "chip": "esp32s3",
+    "board": "esp32-s3-devkitc-1",
+    "module": "esp32-s3-wroom-1"
+  },
+  "firmware": {},
+  "runtime": {
+    "electrical": {
+      "driver_profile": "s3-explicit-finite-v1",
+      "mode": "dc"
+    }
+  },
+  "components": [
+    {
+      "id": "U1",
+      "name": "U1",
+      "kind": "mcu",
+      "type": "mcu",
+      "terminals": [
+        {
+          "id": "U1.vdd",
+          "name": "vdd",
+          "role": "vdd",
+          "domain": "power",
+          "direction": "input"
+        },
+        {
+          "id": "U1.gnd",
+          "name": "gnd",
+          "role": "gnd",
+          "domain": "ground",
+          "direction": "input"
+        },
+        {
+          "id": "U1.io4",
+          "name": "io4",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 4
+        },
+        {
+          "id": "U1.io5",
+          "name": "io5",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 5
+        },
+        {
+          "id": "U1.io10",
+          "name": "io10",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 10
+        },
+        {
+          "id": "U1.io11",
+          "name": "io11",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 11
+        },
+        {
+          "id": "U1.io12",
+          "name": "io12",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 12
+        },
+        {
+          "id": "U1.io13",
+          "name": "io13",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 13
+        },
+        {
+          "id": "U1.io14",
+          "name": "io14",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 14
+        },
+        {
+          "id": "U1.io15",
+          "name": "io15",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 15
+        },
+        {
+          "id": "U1.io16",
+          "name": "io16",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 16
+        },
+        {
+          "id": "U1.io17",
+          "name": "io17",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 17
+        },
+        {
+          "id": "U1.io18",
+          "name": "io18",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 18
+        },
+        {
+          "id": "U1.io19",
+          "name": "io19",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 19
+        },
+        {
+          "id": "U1.io20",
+          "name": "io20",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 20
+        },
+        {
+          "id": "U1.io21",
+          "name": "io21",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 21
+        },
+        {
+          "id": "U1.io43",
+          "name": "io43",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 43
+        },
+        {
+          "id": "U1.io44",
+          "name": "io44",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 44
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "G",
+      "name": "G",
+      "kind": "ground",
+      "type": "ground",
+      "terminals": [
+        {
+          "id": "G.ref",
+          "name": "ref",
+          "role": "ref",
+          "domain": "ground",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "V",
+      "name": "V",
+      "kind": "voltage-source",
+      "type": "voltage-source",
+      "terminals": [
+        {
+          "id": "V.p",
+          "name": "p",
+          "role": "p",
+          "domain": "power",
+          "direction": "output"
+        },
+        {
+          "id": "V.n",
+          "name": "n",
+          "role": "n",
+          "domain": "ground",
+          "direction": "input"
+        }
+      ],
+      "parameters": {
+        "voltage": {
+          "value": 3.3,
+          "unit": "V"
+        }
+      }
+    },
+    {
+      "id": "RP0",
+      "name": "RP0",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "RP0.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "RP0.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "RP1",
+      "name": "RP1",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "RP1.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "RP1.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "RP2",
+      "name": "RP2",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "RP2.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "RP2.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "RGATE",
+      "name": "RGATE",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "RGATE.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "RGATE.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 1000,
+          "unit": "ohm"
+        }
+      }
+    }
+  ],
+  "nets": [
+    {
+      "id": "vdd",
+      "name": "vdd",
+      "endpoints": [
+        "V.p",
+        "U1.vdd",
+        "RP0.b",
+        "RP1.b",
+        "RP2.b"
+      ]
+    },
+    {
+      "id": "gnd",
+      "name": "gnd",
+      "endpoints": [
+        "G.ref",
+        "V.n",
+        "U1.gnd",
+        "RGATE.b"
+      ]
+    },
+    {
+      "id": "uart0_physical_loopback",
+      "name": "uart0_physical_loopback",
+      "endpoints": [
+        "U1.io4",
+        "U1.io5"
+      ]
+    },
+    {
+      "id": "uart1_rts_to_uart2_cts",
+      "name": "uart1_rts_to_uart2_cts",
+      "endpoints": [
+        "U1.io11",
+        "U1.io14"
+      ]
+    },
+    {
+      "id": "uart2_rts_or_gpio_to_uart1_cts",
+      "name": "uart2_rts_or_gpio_to_uart1_cts",
+      "endpoints": [
+        "U1.io13",
+        "U1.io12"
+      ]
+    },
+    {
+      "id": "alternate_rx_known_idle",
+      "name": "alternate_rx_known_idle",
+      "endpoints": [
+        "U1.io21",
+        "RP2.a"
+      ]
+    },
+    {
+      "id": "host_pause_gate",
+      "name": "host_pause_gate",
+      "endpoints": [
+        "U1.io10",
+        "RGATE.a"
+      ]
+    },
+    {
+      "id": "console_tx_only",
+      "name": "console_tx_only",
+      "endpoints": [
+        "U1.io43"
+      ]
+    },
+    {
+      "id": "console_rx_no_external_peer",
+      "name": "console_rx_no_external_peer",
+      "endpoints": [
+        "U1.io44"
+      ]
+    },
+    {
+      "id": "uart1_tx_wrong_pad",
+      "name": "uart1_tx_wrong_pad",
+      "endpoints": [
+        "U1.io17",
+        "U1.io19"
+      ]
+    },
+    {
+      "id": "uart2_tx_wrong_pad",
+      "name": "uart2_tx_wrong_pad",
+      "endpoints": [
+        "U1.io18",
+        "U1.io20"
+      ]
+    },
+    {
+      "id": "uart1_rx_no_peer",
+      "name": "uart1_rx_no_peer",
+      "endpoints": [
+        "U1.io15",
+        "RP0.a"
+      ]
+    },
+    {
+      "id": "uart2_rx_no_peer",
+      "name": "uart2_rx_no_peer",
+      "endpoints": [
+        "U1.io16",
+        "RP1.a"
+      ]
+    }
+  ],
+  "geometry": {
+    "components": {},
+    "nets": {}
+  }
+}

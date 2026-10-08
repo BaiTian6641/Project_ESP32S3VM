@@ -1,0 +1,77 @@
+From 44a4c729948d4a70c9e01c125ac03e7ddca8c2ac Mon Sep 17 00:00:00 2001
+From: ESP32S3VM coreclk <coreclk@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 11:52:39 +0800
+Subject: [PATCH 07/14] hw/xtensa/esp32s3: TEMPORARY I2C_MST BBPLL cal-done
+ bridge
+
+SUPERSEDED-BY-REGI2C: drop this patch when the REGI2C lane model of the
+analog I2C master (0x6000E000-0x6000E0FF) is in the integrated tree; the
+two collide on the same MMIO window.
+
+With the real SYSTEM clock semantics active, an ordinary IDF 6.1 boot
+reaches rtc_clk_bbpll_configure() (recalib_bbpll path in esp_clk_init)
+which polls I2C_MST 0x6000E040 bit24 (I2C_BBPLL_CAL_DONE); evidence:
+exactly one poll per boot-smoke run, and without this window the boot
+spins there forever. This read-only bridge answers that single bit (1,
+calibration treated as instantaneous) and returns 0 for the rest of the
+4 KiB window; writes fall through to the SoC catch-all.
+---
+ hw/xtensa/esp32s3.c | 35 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+
+diff --git a/hw/xtensa/esp32s3.c b/hw/xtensa/esp32s3.c
+index b81b620..64bee30 100644
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -344,6 +344,31 @@ static void esp32s3_periph_rst_req(void *opaque, int n, int level)
+     }
+ }
+ 
++static uint64_t esp32s3_i2c_mst_read(void *opaque, hwaddr addr, unsigned int size)
++{
++    /*
++     * coreclk-lane bridge for the analog I2C master block (I2C_MST,
++     * DR_REG 0x6000E000, TRM ch.10 "regi2c"): rtc_clk_bbpll_configure()
++     * polls I2C_MST_ANA_CONF0 (0x6000E040) bit 24 (I2C_BBPLL_CAL_DONE)
++     * after a BBPLL reconfiguration. This model treats analog BBPLL
++     * calibration as instantaneous, which is the observable behavior of
++     * the real chip after a successful regi2c sequence. The regi2c lane
++     * supersedes this bridge with a full analog-I2C model.
++     */
++    if (addr == 0x040) {
++        return 1u << 24;
++    }
++    return 0;
++}
++
++static void esp32s3_io_write(void *opaque, hwaddr addr, uint64_t value, unsigned int size);
++
++static const MemoryRegionOps esp32s3_i2c_mst_ops = {
++    .read = esp32s3_i2c_mst_read,
++    .write = esp32s3_io_write,
++    .endianness = DEVICE_LITTLE_ENDIAN,
++};
++
+ static void esp32s3_soc_add_periph_device(MemoryRegion *dest, void* dev, hwaddr dport_base_addr)
+ {
+     MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 0);
+@@ -1082,6 +1107,16 @@ static void esp32s3_machine_init(MachineState *machine)
+     esp32s3_soc_add_unimp_device(sys_mem, "esp32s3.rmt", DR_REG_RMT_BASE, 0x1000);
+     esp32s3_soc_add_unimp_device(sys_mem, "esp32s3.iomux", DR_REG_IO_MUX_BASE, 0x2000);
+ 
++    /* coreclk-lane bridge: analog I2C master (I2C_MST) BBPLL cal-done poll,
++     * see esp32s3_i2c_mst_read(); superseded by the regi2c lane model. */
++    {
++        MemoryRegion *i2c_mst_mem = g_new(MemoryRegion, 1);
++        memory_region_init_io(i2c_mst_mem, OBJECT(ss), &esp32s3_i2c_mst_ops, ss,
++                              "esp32s3.i2c-mst-bridge", 0x1000);
++        memory_region_add_subregion_overlap(sys_mem, 0x6000E000, i2c_mst_mem, 0);
++    }
++
++    
+     esp32s3_machine_init_sd(ss);
+ 
+     /* Need MMU initialized prior to ELF loading,
+-- 
+2.43.0
+

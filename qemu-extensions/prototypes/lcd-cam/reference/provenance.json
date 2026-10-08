@@ -1,0 +1,138 @@
+{
+  "version": 1,
+  "status": "Source-only independent reference; no build, test, simulator run or capture comparison has been exercised by its author.",
+  "scope": "New independent host reference only. No controller, sensor encoder, panel service, frozen runtime checkout, aggregate profile, hardware or Qt edits.",
+  "sources": [
+    {
+      "url": "https://dl.espressif.com/dl/schematics/ST7789V_SPEC_V1.0.pdf",
+      "identity": "Sitronix ST7789V v1.0, 2013-10",
+      "sections": "8.2/8.3 (pages 49-52), 8.8.3 (69), 8.8.10 (75), 8.12 (121-122), 9.1.20-22 (195-199), 9.1.28 (212), 9.1.32 (221)",
+      "rules": "CS active-low; WR rising-edge samples command with DC=0 or parameter/pixel with DC=1. RGB565 high byte first on eight-bit bus; one word on sixteen-bit bus. CASET/RASET inclusive; RAMWR starts at window origin and wraps. MADCTL exchanges axes and mirrors native RAM; RGB/BGR swap. COLMOD selects 565 or 666. Functional decoder intentionally does not qualify analog setup/hold or silicon reset/sleep delays."
+    },
+    {
+      "url": "https://files.seeedstudio.com/wiki/SeeedStudio-XIAO-ESP32S3/res/OV2640_datasheet.pdf",
+      "identity": "OmniVision OV2640 preliminary datasheet v1.6, 2006-02-28",
+      "sections": "Output formatter/compression engine page 5, DVP page 8, DSP CTRL0/IMAGE_MODE pages 18-19, COM7/COM10 sensor register tables",
+      "rules": "IMAGE_MODE DA[0]=0 selects RGB565 high-byte-first and YUYV (CTRL0 C2[4]=0) or YVYU (C2[4]=1); DA[0]=1 selects low-byte-first, UYVY or VYUY. DA[3:2]=10 RGB565; DA[4] enables JPEG. COM7 bit1 selects colorbar test. DVP pixel values are latched opposite the configured update edge."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/torvalds/linux/master/drivers/media/i2c/ov2640.c",
+      "sections": "CTRL0, IMAGE_MODE and COM7 definitions",
+      "rules": "Independent corroboration of YUYV/YVYU/UYVY/VYUY register ordering and COM7 colorbar enable; URL is upstream, not a frozen source identity."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/torvalds/linux/v6.13/Documentation/userspace-api/media/v4l/colorspaces-details.rst",
+      "sections": "SMPTE170M / V4L2_YCBCR_ENC_601",
+      "rules": "BT.601 primed RGB-to-YCbCr and limited-range quantization. Native v1 uses explicitly declared rounded integer approximation, not a claim of undocumented OV2640 silicon coefficients."
+    },
+    {
+      "url": "https://www.w3.org/Graphics/JPEG/itu-t81.pdf",
+      "identity": "ITU-T T.81 / ISO IEC 10918-1, 1992",
+      "sections": "Annex B marker syntax; baseline sequential SOF0/SOS, entropy FF00 stuffing and restart markers",
+      "rules": "Bounded independent marker parser checks baseline eight-bit three-component image dimensions, segments, scan and EOI; Pillow independently decodes DCT/quantization/Huffman data. The sensor encoder is never imported or used as an expected-byte oracle."
+    },
+    {
+      "url": "https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#jpeg",
+      "rules": "Explicit optional host JPEG decoding dependency, listed in requirements.txt. Raw formats need only Python standard library."
+    },
+    {
+      "url": "https://github.com/espressif/esp32-camera/blob/b3c2aa273a88c7debf2b1683448933ca2b28aad9/sensors/ov2640.c",
+      "identity": "espressif/esp32-camera v2.1.3, b3c2aa273a88c7debf2b1683448933ca2b28aad9",
+      "sections": "set_framesize / set_window / set_pixformat",
+      "rules": "Ordinary QQVGA 160x120 selects CIF source scene 400x296, crop 400x296 for the 4:3 ratio. Expected scene comes from driver setup and declared functional source contract, never from image bytes being compared."
+    },
+    {
+      "url": "https://github.com/espressif/esp-idf/blob/v5.5.5/components/esp_lcd/rgb/esp_lcd_panel_rgb.c#L303",
+      "identity": "ESP-IDF v5.5.5",
+      "sections": "esp_lcd_panel_rgb.c line303; lines596..598",
+      "rules": "The SDK distinguishes framebuffer/output bits per pixel from physical data_width for serial RGB. Horizontal active timing is h_res*output_bits_per_pixel/data_width; pulse and porch values remain wire-clock periods. Vertical active timing remains logical rows. This reference does not copy the SDK's missing-bpp default: native RGB bits_per_pixel is REQUIRED integer8|16|24."
+    },
+    {
+      "path": "tests/firmware/lcd_cam_native/main/lcd_cam_native.c",
+      "sections": "rgb_pixel_bytes, rgb_fill, bounce, rgb_pattern_log, run_rgb",
+      "rules": "Observed actual firmware source writes RGB332 packed R3:G3:B2 bytes, RGB565 low-byte then high-byte, or RGB888 R then G then B bytes with no row padding. These explicit fixture-memory declarations are not universal LCD display formats. Firmware hashes/logs the actual filled buffers; bounce hashes actual callback-produced bytes."
+    }
+  ],
+  "functional_source_contract": {
+    "provenance": "Explicit interface coordination with LcdCamNativeWorker.CamSensorService; deterministic test-image scene is a functional service contract, not a vendor image dump or asserted measured silicon pattern.",
+    "color_bars": "white,yellow,cyan,green,magenta,red,blue,black; source scene bin=floor(8*x/scene_width)",
+    "testimage": "R=floor(255*x/(scene_width-1)); G=floor(255*y/(scene_height-1)); B=255 iff ((floor(x/8) XOR floor(y/8)) AND 1), else 0",
+    "scene_mapping": "Mirror/flip OUTPUT coordinate first; scene_x=crop_x+floor(output_x*crop_width/output_width), scene_y likewise. Scene sizes UXGA1600x1200, SVGA800x600, CIF400x296.",
+    "limited601": "Y=16+floor((66R+129G+25B+128)/256); U=128+floor((-38R-74G+112B+128)/256); V=128+floor((112R-94G-18B+128)/256); clamp each to0..255. Pair shared chroma=(c0+c1+1)//2.",
+    "lcd_fixture": "RGB565 word=(((x+frame*3)&31)<<11)|(((y*3+frame)&63)<<5)|((x XOR y XOR frame)&31), frame0..2. Fixture memory is little-endian, I80 wire is big-endian. Expected RGB888 uses bit replication, not rounded linear scaling.",
+    "timing": "ov2640-functional-dvp-v1: PCLK period=2*half_period_ns; row_span=line_bytes+16; byte k latch=start_ns+((8+floor(k/line_bytes))*row_span+(k%line_bytes))*period; end_ns=start_ns+((line_count+8)*row_span-1)*period. Eight prefix rows include4VSYNC+4blank. Last JPEG row emits only actual remaining bytes, no fake padding. This is an exact functional timing profile, not a silicon cadence claim.",
+    "jpeg": "Native service declares baseline full-range JPEG444 with data-derived DCT and quantization. Host reference computes independent expected RGB then decodes actual JPEG with Pillow. Proposed default limits max channel error12 and mean channel error3 have NOT been exercised or calibrated; caller may explicitly select bounds up to max64/mean16. Actual compressed SHA256 is reported for artifact integrity, never compared to an encoder-produced expected JPEG.",
+    "rgb332_fixture": "byte=(((x+frame*3)&7)<<5)|(((y*3+frame)&7)<<2)|((x XOR y XOR frame)&3), frame0..2. Independently normalized R/G expand three-bit c as(c<<5)|(c<<2)|(c>>1); B expands two-bit c as c*85.",
+    "rgb888_fixture": "Actual firmware raw row-major memory bytes are R=(x+3*frame)&255,G=(3*y+frame)&255,B=(x XOR y XOR frame)&255, frame0..2. Normalized panel expected RGB888 is computed directly from this coordinate formula, not by repacking observed wire bytes.",
+    "rgb_wire_order": "Declared fixture profiles only: RGB332 byte, RGB565 little-byte stream, RGB888 R,G,B memory stream. On bus16 the controller's actual DMA word cycles determine physical lane/byte order. For pixel24, each little-word carries the next two bytes of the stream; words cross logical pixel boundaries (R0|G0<<8, B0|R1<<8, G1|B1<<8), not one pixel per word. The reference makes no universal byte-order assertion beyond these firmware declarations.",
+    "rgb_timing": "Required bus_width8|16 and bits_per_pixel8|16|24; bus16 permits only16|24. Require width*bits_per_pixel%bus_width==0. h_active_wire_cycles=width*bits_per_pixel/bus_width; line_cycles=hsync_pulse_width+h_back_porch+h_active_wire_cycles+h_front_porch; frame_lines=vsync_pulse_width+v_back_porch+height+v_front_porch; pclk_samples=line_cycles*frame_lines; duration_ns=pclk_samples*pclk_period_ns. Logical pixels=width*height; observed_width=logical completed pixels per active row; observed_wire_width=DE-active wire cycles per active row. HSYNC pulse duration=pulse_width*PCLK period; VSYNC duration=vsync_pulse_width*line_cycles*PCLK period. No porches are multiplied by bits_per_pixel."
+  },
+  "acquisition": {
+    "restriction": "Only the host runner writes evidence files. No project-directed capture_path or controller DMA payload bypass exists here. Save actual unmodified returned QOM JSON values or complete qom-get return wrappers.",
+    "panel_bundle": "{capture: actual capture-json value, windows:[actual framebuffer-json values]}. /soc/lcd-panels capture-request-json uses {componentId,offset,count1..64}; framebuffer-request-json uses {componentId,sequence,offset,count1..65536}. Every window must preserve selected immutable sequence/identity/hash/timing. Initial sequence must be available as the latest frame when freeze requested; collect subsequent windows of same frozen sequence. Stop VM when acquiring if required by runner.",
+    "sensor_bundle": "{windows:[actual capture-json values]}. /soc/ov2640-sensors capture-request-json uses {component_id,offset,count0..4096,frame optional}. Count0 discovers metadata; actual completed frame number is an identity selector, not the guest frame number. Preserve explicit frame lease or stop VM while collecting all windows. Every byte has its actual resolved latch timestamp. Source emission comparison by itself is never CAM RX qualification.",
+    "limits": "Raw payload<=16MiB, JSON artifact<=32MiB, UART<=8MiB; dimensions<=1600x1200; panel<=128 windows, sensor<=4096 windows; optional resolved-wire artifact<=100000 WR events and64 completed frames. Files above these explicit capture bounds are rejected rather than truncated.",
+    "selectors": "Expected JSON examples are PROPOSED acceptance contracts, not captured result data. Select sequence/frame from actual retained identities, and expected fixture frame from independently tracked submission/ownership order. Do not change pattern, byte order, dimensions, cadence or tolerances to fit an observed mismatch. For RGB startup/discontinuity select an explicitly complete stable frame; the sequence0 example does not waive incomplete scanout.",
+    "rgb_qmp_parameters": {
+      "owner": "Parent native capture runner; this independent reference never launches a VM, injects data or manufactures captures.",
+      "object_path": "/soc/lcd-panels",
+      "metadata_request": {"property": "capture-request-json", "value": {"componentId": "D", "offset": 0, "count": 1}},
+      "metadata_read": {"property": "capture-json"},
+      "pixel_request": {"property": "framebuffer-request-json", "value": {"componentId": "D", "sequence": 0, "offset": 0, "count": 9216}},
+      "pixel_read": {"property": "framebuffer-json"},
+      "identity_selection": "offset/sequence0 is an EXAMPLE, not a manufactured identity. The runner must select an actual retained complete stable frame of independently tracked fixture frame0 before the1MHz->500kHz transition. A changed selector in expected JSON must derive from actual acquisition/submission order, never fitting mismatched pixels. Freeze VM while acquiring latest sequence if necessary.",
+      "bounds": "Metadata count1..64, pixel-window count1..65536; byte offset must be contiguous0..width*height*3. All profiles here return9216 normalized RGB888 bytes, regardless of raw-memory byte count. Preserve unmodified qom-get values/wrappers, status config_identity, bus_width,bits_per_pixel,observed_wire_width and immutable record metadata in every window. Save {capture,windows}; compare only actual saved files."
+    }
+  },
+  "evidence_contracts": {
+    "image": "Exact bytes, SHA256 and FNV1a32 for explicitly selected RGB332/RGB888/RGB565/all four YUV422 orders. JPEG independent decode dimensions/colorvalues plus max/mean error and decoded RGB hash.",
+    "panel": "Immutable contiguous bounded QOM windows, full-canvas bytes/hash, validity/visibility/errors, selected sequence, expected metadata counts and optional exact/bounded frame duration. Optional real UART validates I80 submit->ISR EOF->completion timestamps and hashes, or RGB cumulative callbacks/ownership release. RGB UART timestamp is log time, not falsely labelled ISR time; QOM provides physical scan timing.",
+    "cam_rx": "Optional actual CAM UART requires selected GET_BEGIN->FRAME->RETURN with monotonic guest times, format/dimensions/length/FNV/head/tail matching actual emission bytes. This is hash/count correlation, not a collision-free exact guest-byte capture or proof of arbitrary DMA memory contents. A raw real guest buffer capture can separately use the image command for exact raw comparison.",
+    "fault_bundle": "{before: actual single-panel status JSON,after:actual single-panel status JSON}. panel-fault expected contract contains fault=wrong-dc|wrong-bus|disconnect,component_id,captures_delta,start_ns,end_ns,error_deltas:{actual_service_category:{min,max}}. Requires positive error delta and actual error_last_ns inside recorded fault interval, same config identity/power epoch, expected completed-capture delta and consistent error totals. Categories include unknown_dc,unknown_data,unsupported_command,parameter_count,address_window; do NOT pretend every known miswire emits unknown_dc. A known wrong bus can produce valid but WRONG pixels; panel-qom must reject those bytes instead of suppressing them.",
+    "evidence_plan": "{version:1,documents:{name:relative_actual_JSON_file},assertions:[{document:name,path:slash/key/path,equals:exact_value} or {document:name,path:path,min:N,max:M}],time_relations:[{from:{document,path},to:{document,path},min_delta:N,max_delta:M}]}. This checks actual controller EOF/overflow/ownership/status counts and timestamps with exact callsite-selected field paths; no mock document is created.",
+    "wire": "Optional actual resolved-edge input {version:1,events:[{timestamp_ns,dc,value,known_mask,cs,reset,rd}]}; events are WR rising-edge samples from an external real recorder. The QOM panel API does NOT claim to supply this wire trace. Independent ST7789 decoder rejects unknown/disconnected bus, wrong DC incomplete parameters/pixels, unsupported/wrong bus commands, bad windows and partial EOF; completed frame bytes must match independently tracked fixture frame0..2."
+  },
+  "rgb_profile_parameters": [
+    {"suffix": "parallel16-rgb565-existing", "bus_width": 16, "bits_per_pixel": 16, "memory_format": "RGB565-LE", "raw_bytes": 6144, "normalized_rgb888_bytes": 9216, "h_active_wire_cycles": 64, "line_cycles": 74, "frame_lines": 54, "pclk_samples": 3996, "duration_ns_at_1mhz": 3996000, "double_contract": "rgb-frame0-1mhz-expected.json", "bounce_contract": "rgb-bounce-frame0-1mhz-expected.json", "demand_contract": "rgb-demand-frame0-1mhz-expected.json"},
+    {"suffix": "serial8-rgb332", "bus_width": 8, "bits_per_pixel": 8, "memory_format": "RGB332", "raw_bytes": 3072, "normalized_rgb888_bytes": 9216, "h_active_wire_cycles": 64, "line_cycles": 74, "frame_lines": 54, "pclk_samples": 3996, "duration_ns_at_1mhz": 3996000, "double_contract": "rgb-serial8-rgb332-frame0-1mhz-expected.json", "bounce_contract": "rgb-bounce-serial8-rgb332-frame0-1mhz-expected.json", "demand_contract": "rgb-demand-serial8-rgb332-frame0-1mhz-expected.json"},
+    {"suffix": "serial8-rgb565", "bus_width": 8, "bits_per_pixel": 16, "memory_format": "RGB565-LE", "raw_bytes": 6144, "normalized_rgb888_bytes": 9216, "h_active_wire_cycles": 128, "line_cycles": 138, "frame_lines": 54, "pclk_samples": 7452, "duration_ns_at_1mhz": 7452000, "double_contract": "rgb-serial8-rgb565-frame0-1mhz-expected.json", "bounce_contract": "rgb-bounce-serial8-rgb565-frame0-1mhz-expected.json", "demand_contract": "rgb-demand-serial8-rgb565-frame0-1mhz-expected.json"},
+    {"suffix": "serial8-rgb888", "bus_width": 8, "bits_per_pixel": 24, "memory_format": "RGB888", "raw_bytes": 9216, "normalized_rgb888_bytes": 9216, "h_active_wire_cycles": 192, "line_cycles": 202, "frame_lines": 54, "pclk_samples": 10908, "duration_ns_at_1mhz": 10908000, "double_contract": "rgb-serial8-rgb888-frame0-1mhz-expected.json", "bounce_contract": "rgb-bounce-serial8-rgb888-frame0-1mhz-expected.json", "demand_contract": "rgb-demand-serial8-rgb888-frame0-1mhz-expected.json"},
+    {"suffix": "parallel16-rgb888", "bus_width": 16, "bits_per_pixel": 24, "memory_format": "RGB888", "raw_bytes": 9216, "normalized_rgb888_bytes": 9216, "h_active_wire_cycles": 96, "line_cycles": 106, "frame_lines": 54, "pclk_samples": 5724, "duration_ns_at_1mhz": 5724000, "double_contract": "rgb-parallel16-rgb888-frame0-1mhz-expected.json", "bounce_contract": "rgb-bounce-parallel16-rgb888-frame0-1mhz-expected.json", "demand_contract": "rgb-demand-parallel16-rgb888-frame0-1mhz-expected.json"}
+  ],
+  "verification_commands_not_run": [
+    "python -m pip install -r qemu-extensions/prototypes/lcd-cam/reference/requirements.txt",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-qom artifacts/lcd-cam/i80-frame0.json --expected qemu-extensions/prototypes/lcd-cam/reference/i80-frame0-expected.json --uart artifacts/lcd-cam/i80-uart.log",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-qom artifacts/lcd-cam/rgb-stable-frame0-1mhz.json --expected qemu-extensions/prototypes/lcd-cam/reference/rgb-frame0-1mhz-expected.json --uart artifacts/lcd-cam/rgb-double-uart.log",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-qom artifacts/lcd-cam/rgb-double-serial8-rgb332.json --expected qemu-extensions/prototypes/lcd-cam/reference/rgb-serial8-rgb332-frame0-1mhz-expected.json --uart artifacts/lcd-cam/rgb-double-serial8-rgb332-uart.log",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-qom artifacts/lcd-cam/rgb-double-serial8-rgb565.json --expected qemu-extensions/prototypes/lcd-cam/reference/rgb-serial8-rgb565-frame0-1mhz-expected.json --uart artifacts/lcd-cam/rgb-double-serial8-rgb565-uart.log",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-qom artifacts/lcd-cam/rgb-double-serial8-rgb888.json --expected qemu-extensions/prototypes/lcd-cam/reference/rgb-serial8-rgb888-frame0-1mhz-expected.json --uart artifacts/lcd-cam/rgb-double-serial8-rgb888-uart.log",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-qom artifacts/lcd-cam/rgb-double-parallel16-rgb888.json --expected qemu-extensions/prototypes/lcd-cam/reference/rgb-parallel16-rgb888-frame0-1mhz-expected.json --uart artifacts/lcd-cam/rgb-double-parallel16-rgb888-uart.log",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-qom artifacts/lcd-cam/rgb-bounce.json --expected qemu-extensions/prototypes/lcd-cam/reference/rgb-bounce-frame0-1mhz-expected.json --uart artifacts/lcd-cam/rgb-bounce-uart.log",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-qom artifacts/lcd-cam/rgb-demand.json --expected qemu-extensions/prototypes/lcd-cam/reference/rgb-demand-frame0-1mhz-expected.json --uart artifacts/lcd-cam/rgb-demand-uart.log",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-qom artifacts/lcd-cam/rgb-bounce-serial8-rgb332.json --expected qemu-extensions/prototypes/lcd-cam/reference/rgb-bounce-serial8-rgb332-frame0-1mhz-expected.json --uart artifacts/lcd-cam/rgb-bounce-serial8-rgb332-uart.log",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-qom artifacts/lcd-cam/rgb-demand-serial8-rgb332.json --expected qemu-extensions/prototypes/lcd-cam/reference/rgb-demand-serial8-rgb332-frame0-1mhz-expected.json --uart artifacts/lcd-cam/rgb-demand-serial8-rgb332-uart.log",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-qom artifacts/lcd-cam/rgb-bounce-serial8-rgb565.json --expected qemu-extensions/prototypes/lcd-cam/reference/rgb-bounce-serial8-rgb565-frame0-1mhz-expected.json --uart artifacts/lcd-cam/rgb-bounce-serial8-rgb565-uart.log",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-qom artifacts/lcd-cam/rgb-demand-serial8-rgb565.json --expected qemu-extensions/prototypes/lcd-cam/reference/rgb-demand-serial8-rgb565-frame0-1mhz-expected.json --uart artifacts/lcd-cam/rgb-demand-serial8-rgb565-uart.log",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-qom artifacts/lcd-cam/rgb-bounce-serial8-rgb888.json --expected qemu-extensions/prototypes/lcd-cam/reference/rgb-bounce-serial8-rgb888-frame0-1mhz-expected.json --uart artifacts/lcd-cam/rgb-bounce-serial8-rgb888-uart.log",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-qom artifacts/lcd-cam/rgb-demand-serial8-rgb888.json --expected qemu-extensions/prototypes/lcd-cam/reference/rgb-demand-serial8-rgb888-frame0-1mhz-expected.json --uart artifacts/lcd-cam/rgb-demand-serial8-rgb888-uart.log",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-qom artifacts/lcd-cam/rgb-bounce-parallel16-rgb888.json --expected qemu-extensions/prototypes/lcd-cam/reference/rgb-bounce-parallel16-rgb888-frame0-1mhz-expected.json --uart artifacts/lcd-cam/rgb-bounce-parallel16-rgb888-uart.log",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-qom artifacts/lcd-cam/rgb-demand-parallel16-rgb888.json --expected qemu-extensions/prototypes/lcd-cam/reference/rgb-demand-parallel16-rgb888-frame0-1mhz-expected.json --uart artifacts/lcd-cam/rgb-demand-parallel16-rgb888-uart.log",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py sensor-qom artifacts/lcd-cam/rgb565-sensor-frame1.json --expected qemu-extensions/prototypes/lcd-cam/reference/sensor-rgb565-frame1-expected.json --uart artifacts/lcd-cam/camera-rgb565-uart.log --guest-frame 0 --guest-format 0",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py sensor-qom artifacts/lcd-cam/yuv422-sensor-frame1.json --expected qemu-extensions/prototypes/lcd-cam/reference/sensor-yuv422-frame1-expected.json --uart artifacts/lcd-cam/camera-yuv422-uart.log --guest-frame 0 --guest-format 1",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py sensor-qom artifacts/lcd-cam/jpeg-sensor-frame1.json --expected qemu-extensions/prototypes/lcd-cam/reference/sensor-jpeg-frame1-expected.json --uart artifacts/lcd-cam/camera-jpeg-uart.log --guest-frame 0 --guest-format 4",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py image artifacts/lcd-cam/actual-guest-rgb565.bin --width 160 --height 120 --format RGB565-BE --pattern qemu-extensions/prototypes/lcd-cam/reference/qqvga-color-bars-pattern.json",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-fault artifacts/lcd-cam/wrong-dc-status.json --expected artifacts/lcd-cam/wrong-dc-contract.json",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-fault artifacts/lcd-cam/wrong-bus-status.json --expected artifacts/lcd-cam/wrong-bus-contract.json",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py panel-fault artifacts/lcd-cam/disconnect-status.json --expected artifacts/lcd-cam/disconnect-contract.json",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py evidence artifacts/lcd-cam/controller-eof-ownership-plan.json",
+    "python qemu-extensions/prototypes/lcd-cam/reference/capture_reference.py i80 artifacts/lcd-cam/actual-wr-edges.json --width 64 --height 48 --bus-width 8 --frames 3"
+  ],
+  "changelog": [
+    "Added independent bounded ST7789 physical-edge decoder and panel immutable QOM snapshot comparison.",
+    "Added independent RGB565/color-bars/testimage/crop/mirror/YUV422 formula oracles and JPEG marker parser plus explicit Pillow decoder dependency.",
+    "Added actual sensor per-byte timing/hash checks, real UART EOF/ownership correlation, and explicit fault/status/timestamp assertions.",
+    "2026-10-07 independent verifier reproduced malformed JPEG scan component acceptance and tightened SOS IDs against SOF0 plus baseline Huffman selector bounds. Reference-only executed evidence is separately recorded in build-runtime-state/lcd-cam-native-2026-10-07/reference/reference-results.json; it is not native capture qualification.",
+    "2026-10-07 RGB width migration: required independent bits_per_pixel; explicit proven RGB332/RGB565-LE/RGB888 firmware memory profiles; independent normalized RGB888 formulas and wire-cycle cadence;15 expected lane/width contracts; actual immutable QOM width/identity/timing comparisons and actual RGB payload/ownership log correlations. Pre-migration verifier hashes/results do not qualify these changes. No new captures or authored comparison runs.",
+    "No test/build/formatter or authored capture execution was performed; listed commands require real host-saved evidence artifacts."
+  ]
+}

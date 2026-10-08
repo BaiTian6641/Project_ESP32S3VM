@@ -1,0 +1,596 @@
+From 6947489a11906abb3782a4c766ede2c72b9f23de Mon Sep 17 00:00:00 2001
+From: ESP32S3VM coreclk <coreclk@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 11:52:21 +0800
+Subject: [PATCH 4/7] hw: gate digital peripheral holds by the ESP32-S3 reset
+ domain
+
+GDMA, the interrupt matrix, UART, SPI1, TWAI and the AES/SHA/RSA/HMAC/DS
+engines take a soc-reset link and skip their clearing hold phase when the
+pending ESP32-S3 reset only covers a CPU (PROCPU/APPCPU). The blanket
+QEMU device reset previously wiped this guest-visible state on every
+reset request, which made the existing CPU-only software resets
+destructive; the ESP32-S3 keeps digital peripherals alive across CPU
+resets (TRM v1.8 ch.7 7.1). Machines without the link keep the previous
+behavior.
+---
+ hw/char/esp32_uart.c             |  7 +++++++
+ hw/dma/esp_gdma.c                |  7 +++++++
+ hw/misc/esp_aes.c                | 15 +++++++++++++++
+ hw/misc/esp_ds.c                 | 14 ++++++++++++++
+ hw/misc/esp_hmac.c               | 14 ++++++++++++++
+ hw/misc/esp_rsa.c                | 14 ++++++++++++++
+ hw/misc/esp_sha.c                | 14 ++++++++++++++
+ hw/net/can/esp32s3_twai.c        | 18 +++++++++++++++++-
+ hw/net/can/esp32s3_twai.h        |  2 ++
+ hw/ssi/esp32s3_spi.c             |  8 ++++++++
+ hw/xtensa/esp32s3_intc.c         |  9 +++++++++
+ include/hw/char/esp32_uart.h     |  3 +++
+ include/hw/dma/esp_gdma.h        |  2 ++
+ include/hw/misc/esp_aes.h        |  3 +++
+ include/hw/misc/esp_ds.h         |  3 +++
+ include/hw/misc/esp_hmac.h       |  3 +++
+ include/hw/misc/esp_rsa.h        |  3 +++
+ include/hw/misc/esp_sha.h        |  3 +++
+ include/hw/ssi/esp32s3_spi.h     |  3 +++
+ include/hw/xtensa/esp32s3_intc.h |  2 ++
+ 20 files changed, 146 insertions(+), 1 deletion(-)
+
+diff --git a/hw/char/esp32_uart.c b/hw/char/esp32_uart.c
+index 41de9cf..a421d6d 100644
+--- a/hw/char/esp32_uart.c
++++ b/hw/char/esp32_uart.c
+@@ -23,6 +23,7 @@
+ #include "hw/qdev-properties.h"
+ #include "hw/qdev-properties-system.h"
+ #include "hw/char/esp32_uart.h"
++#include "hw/xtensa/esp32s3_reset_domain.h"
+ #include "trace.h"
+ 
+ 
+@@ -313,6 +314,11 @@ static void esp32_uart_reset_hold(Object *obj, ResetType type)
+ {
+     ESP32UARTState *s = ESP32_UART(obj);
+ 
++    /* PERIPH reset domain: CPU-only resets keep the UART registers and FIFOs */
++    if (s->soc_reset && !esp32s3_reset_covers_periph(s->soc_reset)) {
++        return;
++    }
++
+     memset(s->reg, 0, sizeof(s->reg));
+     s->reg[R_UART_RXD_CNT] = 0;
+     s->reg[R_UART_INT_ST] = 0;
+@@ -372,6 +378,7 @@ static void esp32_uart_init(Object *obj)
+ 
+ static Property esp32_uart_properties[] = {
+     DEFINE_PROP_CHR("chardev", ESP32UARTState, chr),
++    DEFINE_PROP_LINK("soc-reset", ESP32UARTState, soc_reset, TYPE_DEVICE, DeviceState *),
+     DEFINE_PROP_END_OF_LIST(),
+ };
+ 
+diff --git a/hw/dma/esp_gdma.c b/hw/dma/esp_gdma.c
+index 6640fca..97727d9 100644
+--- a/hw/dma/esp_gdma.c
++++ b/hw/dma/esp_gdma.c
+@@ -16,6 +16,7 @@
+ #include "hw/dma/esp_gdma.h"
+ #include "hw/qdev-properties.h"
+ #include "hw/qdev-properties-system.h"
++#include "hw/xtensa/esp32s3_reset_domain.h"
+ #include "qemu/error-report.h"
+ 
+ #define GDMA_WARNING 0
+@@ -932,6 +933,7 @@ uint64_t esp_gdma_read_register(ESPGdmaState* s, DmaRegister reg)
+ 
+ static Property esp_gdma_properties[] = {
+     DEFINE_PROP_LINK("soc_mr", ESPGdmaState, soc_mr, TYPE_MEMORY_REGION, MemoryRegion*),
++    DEFINE_PROP_LINK("soc-reset", ESPGdmaState, soc_reset, TYPE_DEVICE, DeviceState *),
+     DEFINE_PROP_END_OF_LIST(),
+ };
+ 
+@@ -941,6 +943,11 @@ static void esp_gdma_reset_hold(Object *obj, ResetType type)
+     ESPGdmaState *s = ESP_GDMA(obj);
+     ESPGdmaClass *klass = ESP_GDMA_GET_CLASS(obj);
+ 
++    /* PERIPH reset domain: CPU-only resets leave the GDMA channel state */
++    if (s->soc_reset && !esp32s3_reset_covers_periph(s->soc_reset)) {
++        return;
++    }
++
+     for (int dir = 0; dir < ESP_GDMA_CONF_COUNT; dir++) {
+         for (int chan = 0; chan < klass->m_channel_count; chan++) {
+             /* Backup IRQ since it's going to be erased by the `memset` */
+diff --git a/hw/misc/esp_aes.c b/hw/misc/esp_aes.c
+index 1a92ffa..c1f2ca2 100644
+--- a/hw/misc/esp_aes.c
++++ b/hw/misc/esp_aes.c
+@@ -9,11 +9,14 @@
+  */
+ #include "qemu/osdep.h"
+ #include "hw/sysbus.h"
++#include "hw/qdev-properties.h"
+ #include "hw/misc/esp_aes.h"
+ #include "qemu/error-report.h"
+ #include <gcrypt.h>
+ #include "qemu/bswap.h"
+ #include "hw/irq.h"
++#include "hw/misc/esp_aes.h"
++#include "hw/xtensa/esp32s3_reset_domain.h"
+ #include "crypto/aes.h"
+ 
+ #define AES_WARNING 0
+@@ -411,6 +414,12 @@ static const MemoryRegionOps esp_aes_ops = {
+ static void esp_aes_reset_hold(Object *obj, ResetType type)
+ {
+     ESPAesState *s = ESP_AES(obj);
++
++    /* PERIPH reset domain: CPU-only resets keep the AES engine state */
++    if (s->soc_reset && !esp32s3_reset_covers_periph(s->soc_reset)) {
++        return;
++    }
++
+     memset(s->key, 0, ESP_AES_KEY_REG_CNT * sizeof(uint32_t));
+     memset(s->text_in, 0, ESP_AES_TEXT_REG_CNT * sizeof(uint32_t));
+     memset(s->text_out, 0, ESP_AES_TEXT_REG_CNT * sizeof(uint32_t));
+@@ -446,6 +455,11 @@ static void esp_aes_init(Object *obj)
+     sysbus_init_irq(sbd, &s->irq);
+ }
+ 
++static Property esp_aes_properties[] = {
++    DEFINE_PROP_LINK("soc-reset", ESPAesState, soc_reset, TYPE_DEVICE, DeviceState *),
++    DEFINE_PROP_END_OF_LIST(),
++};
++
+ static void esp_aes_class_init(ObjectClass *klass, void *data)
+ {
+     DeviceClass *dc = DEVICE_CLASS(klass);
+@@ -454,6 +468,7 @@ static void esp_aes_class_init(ObjectClass *klass, void *data)
+ 
+     dc->realize = esp_aes_realize;
+     rc->phases.hold = esp_aes_reset_hold;
++    device_class_set_props(dc, esp_aes_properties);
+ 
+     esp_aes->aes_block_start = aes_block_start;
+ }
+diff --git a/hw/misc/esp_ds.c b/hw/misc/esp_ds.c
+index ff48955..a93a178 100644
+--- a/hw/misc/esp_ds.c
++++ b/hw/misc/esp_ds.c
+@@ -10,9 +10,11 @@
+ 
+ #include "qemu/osdep.h"
+ #include "hw/sysbus.h"
++#include "hw/qdev-properties.h"
+ #include "qemu/bswap.h"
+ #include "qemu/error-report.h"
+ #include "hw/misc/esp_ds.h"
++#include "hw/xtensa/esp32s3_reset_domain.h"
+ 
+ #define DS_WARNING 0
+ #define DS_DEBUG   0
+@@ -381,6 +383,12 @@ static const MemoryRegionOps esp_ds_ops = {
+ static void esp_ds_reset_hold(Object *obj, ResetType type)
+ {
+     ESPDsState *s = ESP_DS(obj);
++
++    /* PERIPH reset domain: CPU-only resets keep the DS engine state */
++    if (s->soc_reset && !esp32s3_reset_covers_periph(s->soc_reset)) {
++        return;
++    }
++
+     esp_ds_clear_buffers(s);
+     s->ds_signature_check = DS_SIGNATURE_PADDING_AND_MD_FAIL;
+ }
+@@ -446,6 +454,11 @@ static void esp_ds_init(Object *obj)
+     sysbus_init_mmio(sbd, &s->iomem);
+ }
+ 
++static Property esp_ds_properties[] = {
++    DEFINE_PROP_LINK("soc-reset", ESPDsState, soc_reset, TYPE_DEVICE, DeviceState *),
++    DEFINE_PROP_END_OF_LIST(),
++};
++
+ static void esp_ds_class_init(ObjectClass *klass, void *data)
+ {
+     DeviceClass *dc = DEVICE_CLASS(klass);
+@@ -453,6 +466,7 @@ static void esp_ds_class_init(ObjectClass *klass, void *data)
+ 
+     dc->realize = esp_ds_realize;
+     rc->phases.hold = esp_ds_reset_hold;
++    device_class_set_props(dc, esp_ds_properties);
+ }
+ 
+ static const TypeInfo esp_ds_info = {
+diff --git a/hw/misc/esp_hmac.c b/hw/misc/esp_hmac.c
+index bbc60c0..65d5f7e 100644
+--- a/hw/misc/esp_hmac.c
++++ b/hw/misc/esp_hmac.c
+@@ -10,8 +10,10 @@
+ 
+ #include "qemu/osdep.h"
+ #include "hw/sysbus.h"
++#include "hw/qdev-properties.h"
+ #include "hw/nvram/esp_efuse.h"
+ #include "hw/misc/esp_hmac.h"
++#include "hw/xtensa/esp32s3_reset_domain.h"
+ #include "qemu/bswap.h"
+ #include "qemu/error-report.h"
+ 
+@@ -162,6 +164,12 @@ static const MemoryRegionOps esp_hmac_ops = {
+ static void esp_hmac_reset_hold(Object *obj, ResetType type)
+ {
+     ESPHmacState *s = ESP_HMAC(obj);
++
++    /* PERIPH reset domain: CPU-only resets keep the HMAC engine state */
++    if (s->soc_reset && !esp32s3_reset_covers_periph(s->soc_reset)) {
++        return;
++    }
++
+     memset(s->message, 0, sizeof(s->message));
+     memset(s->result, 0, sizeof(s->result));
+ 
+@@ -190,6 +198,11 @@ static void esp_hmac_init(Object *obj)
+     sysbus_init_mmio(sbd, &s->iomem);
+ }
+ 
++static Property esp_hmac_properties[] = {
++    DEFINE_PROP_LINK("soc-reset", ESPHmacState, soc_reset, TYPE_DEVICE, DeviceState *),
++    DEFINE_PROP_END_OF_LIST(),
++};
++
+ static void esp_hmac_class_init(ObjectClass *klass, void *data)
+ {
+     DeviceClass *dc = DEVICE_CLASS(klass);
+@@ -198,6 +211,7 @@ static void esp_hmac_class_init(ObjectClass *klass, void *data)
+ 
+     dc->realize = esp_hmac_realize;
+     rc->phases.hold = esp_hmac_reset_hold;
++    device_class_set_props(dc, esp_hmac_properties);
+ 
+     esp_hmac->hmac_update = esp_hmac_update;
+     esp_hmac->hmac_finish = esp_hmac_finish;
+diff --git a/hw/misc/esp_rsa.c b/hw/misc/esp_rsa.c
+index ac6cd4b..32f8493 100644
+--- a/hw/misc/esp_rsa.c
++++ b/hw/misc/esp_rsa.c
+@@ -14,8 +14,10 @@
+ #include "qapi/error.h"
+ #include "hw/hw.h"
+ #include "hw/sysbus.h"
++#include "hw/qdev-properties.h"
+ #include "hw/boards.h"
+ #include "hw/misc/esp_rsa.h"
++#include "hw/xtensa/esp32s3_reset_domain.h"
+ #include "hw/irq.h"
+ #include <gcrypt.h>
+ 
+@@ -413,6 +415,11 @@ static void esp_rsa_reset_hold(Object *obj, ResetType type)
+ {
+     ESPRsaState *s = ESP_RSA(obj);
+ 
++    /* PERIPH reset domain: CPU-only resets keep the RSA engine state */
++    if (s->soc_reset && !esp32s3_reset_covers_periph(s->soc_reset)) {
++        return;
++    }
++
+     esp_rsa_clean_mem(s);
+ 
+     /* Clear any spurious interrupt */
+@@ -432,12 +439,19 @@ static void esp_rsa_init(Object *obj)
+     sysbus_init_irq(sbd, &s->irq);
+ }
+ 
++static Property esp_rsa_properties[] = {
++    DEFINE_PROP_LINK("soc-reset", ESPRsaState, soc_reset, TYPE_DEVICE, DeviceState *),
++    DEFINE_PROP_END_OF_LIST(),
++};
++
+ static void esp_rsa_class_init(ObjectClass *klass, void *data)
+ {
++    DeviceClass *dc = DEVICE_CLASS(klass);
+     ESPRsaClass* esp_rsa = ESP_RSA_CLASS(klass);
+     ResettableClass *rc = RESETTABLE_CLASS(klass);
+ 
+     rc->phases.hold = esp_rsa_reset_hold;
++    device_class_set_props(dc, esp_rsa_properties);
+ 
+     esp_rsa->rsa_exp_mod = esp_rsa_exp_mod;
+ }
+diff --git a/hw/misc/esp_sha.c b/hw/misc/esp_sha.c
+index c9fa2e6..a4760ea 100644
+--- a/hw/misc/esp_sha.c
++++ b/hw/misc/esp_sha.c
+@@ -14,9 +14,11 @@
+ #include "qapi/error.h"
+ #include "hw/hw.h"
+ #include "hw/sysbus.h"
++#include "hw/qdev-properties.h"
+ #include "hw/registerfields.h"
+ #include "hw/dma/esp_gdma.h"
+ #include "hw/misc/esp_sha.h"
++#include "hw/xtensa/esp32s3_reset_domain.h"
+ #include "hw/irq.h"
+ 
+ #define SHA_WARNING 0
+@@ -322,6 +324,12 @@ static const MemoryRegionOps esp_sha_ops = {
+ static void esp_sha_reset_hold(Object *obj, ResetType type)
+ {
+     ESPShaState *s = ESP_SHA(obj);
++
++    /* PERIPH reset domain: CPU-only resets keep the SHA engine state */
++    if (s->soc_reset && !esp32s3_reset_covers_periph(s->soc_reset)) {
++        return;
++    }
++
+     memset(s->hash, 0, 8 * sizeof(uint32_t));
+     memset(s->message, 0, ESP_SHA_MAX_MESSAGE_WORDS * sizeof(uint32_t));
+ 
+@@ -354,6 +362,11 @@ static void esp_sha_init(Object *obj)
+     sysbus_init_irq(sbd, &s->irq);
+ }
+ 
++static Property esp_sha_properties[] = {
++    DEFINE_PROP_LINK("soc-reset", ESPShaState, soc_reset, TYPE_DEVICE, DeviceState *),
++    DEFINE_PROP_END_OF_LIST(),
++};
++
+ static void esp_sha_class_init(ObjectClass *klass, void *data)
+ {
+     DeviceClass *dc = DEVICE_CLASS(klass);
+@@ -362,6 +375,7 @@ static void esp_sha_class_init(ObjectClass *klass, void *data)
+ 
+     dc->realize = esp_sha_realize;
+     rc->phases.hold = esp_sha_reset_hold;
++    device_class_set_props(dc, esp_sha_properties);
+ 
+     esp_sha->sha_start = esp_sha_start;
+ }
+diff --git a/hw/net/can/esp32s3_twai.c b/hw/net/can/esp32s3_twai.c
+index a31c6a6..e54323a 100644
+--- a/hw/net/can/esp32s3_twai.c
++++ b/hw/net/can/esp32s3_twai.c
+@@ -18,6 +18,8 @@
+ #include "qapi/error.h"
+ #include "qemu/error-report.h"
+ #include "hw/net/can/esp32s3_twai.h"
++#include "hw/qdev-properties.h"
++#include "hw/xtensa/esp32s3_reset_domain.h"
+ 
+ static uint64_t esp32s3_twai_read(void *opaque, hwaddr addr, unsigned int size)
+ {
+@@ -49,7 +51,12 @@ static void esp32s3_twai_reset(Object *obj, ResetType type)
+ {
+     Esp32S3TWAIState *s = ESP32S3_TWAI(obj);
+     Esp32S3TWAIClass *esp32s3_class = ESP32S3_TWAI_GET_CLASS(obj);
+-    
++
++    /* PERIPH reset domain: CPU-only resets keep the TWAI controller state */
++    if (s->soc_reset && !esp32s3_reset_covers_periph(s->soc_reset)) {
++        return;
++    }
++
+     esp32s3_class->parent_reset(obj, type);
+     
+     /* ESP32-S3 hardware is always in PeliCAN mode */
+@@ -70,6 +77,15 @@ static void esp32s3_twai_class_init(ObjectClass *klass, void *data)
+ 
+     device_class_set_parent_realize(dc, esp32s3_twai_realize, &esp32s3_class->parent_realize);
+ 
++    {
++        static Property esp32s3_twai_properties[] = {
++            DEFINE_PROP_LINK("soc-reset", Esp32S3TWAIState, soc_reset,
++                             TYPE_DEVICE, DeviceState *),
++            DEFINE_PROP_END_OF_LIST(),
++        };
++        device_class_set_props(dc, esp32s3_twai_properties);
++    }
++
+     esp32s3_class->parent_reset = rc->phases.hold;
+     rc->phases.hold = esp32s3_twai_reset;
+ 
+diff --git a/hw/net/can/esp32s3_twai.h b/hw/net/can/esp32s3_twai.h
+index 9b01077..11f99e5 100644
+--- a/hw/net/can/esp32s3_twai.h
++++ b/hw/net/can/esp32s3_twai.h
+@@ -21,6 +21,8 @@
+ /* ESP32-S3 TWAI device state */
+ typedef struct Esp32S3TWAIState {
+     Esp32TWAIState parent;
++    /* ESP32-S3 SoC, used to gate the hold phase by reset domain */
++    DeviceState *soc_reset;
+ } Esp32S3TWAIState;
+ 
+ /* ESP32-S3 TWAI device class */
+diff --git a/hw/ssi/esp32s3_spi.c b/hw/ssi/esp32s3_spi.c
+index 90250e7..5deee5e 100644
+--- a/hw/ssi/esp32s3_spi.c
++++ b/hw/ssi/esp32s3_spi.c
+@@ -19,6 +19,7 @@
+ #include "hw/qdev-properties.h"
+ #include "hw/ssi/ssi.h"
+ #include "hw/ssi/esp32s3_spi.h"
++#include "hw/xtensa/esp32s3_reset_domain.h"
+ #include "qemu/error-report.h"
+ 
+ #define SPI1_DEBUG      0
+@@ -456,6 +457,12 @@ static const MemoryRegionOps esp32s3_spi_ops = {
+ static void esp32s3_spi_reset_hold(Object *obj, ResetType type)
+ {
+     ESP32S3SpiState *s = ESP32S3_SPI(obj);
++
++    /* PERIPH reset domain: CPU-only resets keep the SPI1 controller state */
++    if (s->soc_reset && !esp32s3_reset_covers_periph(s->soc_reset)) {
++        return;
++    }
++
+     memset(s->data_reg, 0, ESP32S3_SPI_BUF_WORDS * sizeof(uint32_t));
+     s->mem_ctrl1 = FIELD_DP32(s->mem_ctrl1, SPI_MEM_CTRL1, CS_HOLD_DLY_RES, 0x3ff);
+     s->mem_clock = FIELD_DP32(s->mem_clock, SPI_MEM_CLOCK, CLKCNT_N, 3);
+@@ -501,6 +508,7 @@ static void esp32s3_spi_init(Object *obj)
+ }
+ 
+ static Property esp32s3_spi_properties[] = {
++    DEFINE_PROP_LINK("soc-reset", ESP32S3SpiState, soc_reset, TYPE_DEVICE, DeviceState *),
+     DEFINE_PROP_END_OF_LIST(),
+ };
+ 
+diff --git a/hw/xtensa/esp32s3_intc.c b/hw/xtensa/esp32s3_intc.c
+index 0437230..ddf0f9a 100644
+--- a/hw/xtensa/esp32s3_intc.c
++++ b/hw/xtensa/esp32s3_intc.c
+@@ -18,6 +18,7 @@
+ #include "hw/qdev-properties.h"
+ #include "hw/misc/esp32s3_reg.h"
+ #include "hw/xtensa/esp32s3_intc.h"
++#include "hw/xtensa/esp32s3_reset_domain.h"
+ 
+ #define INTMATRIX_UNINT_VALUE   6
+ 
+@@ -85,6 +86,13 @@ static const MemoryRegionOps esp_intmatrix_ops = {
+ static void esp32s3_intmatrix_reset_hold(Object *obj, ResetType type)
+ {
+     Esp32s3IntMatrixState *s = ESP32S3_INTMATRIX(obj);
++
++    /* PERIPH reset domain: CPU-only resets keep the routing map and the
++     * asserted lines (a routed source must survive a CPU reset) */
++    if (s->soc_reset && !esp32s3_reset_covers_periph(s->soc_reset)) {
++        return;
++    }
++
+     memset(s->irq_map, INTMATRIX_UNINT_VALUE, sizeof(s->irq_map));
+     for (int i = 0; i < ESP32S3_CPU_COUNT; ++i) {
+         if (s->outputs[i] == NULL) {
+@@ -123,6 +131,7 @@ static void esp32s3_intmatrix_init(Object *obj)
+ static Property esp32s3_intmatrix_properties[] = {
+     DEFINE_PROP_LINK("cpu0", Esp32s3IntMatrixState, cpu[0], TYPE_XTENSA_CPU, XtensaCPU *),
+     DEFINE_PROP_LINK("cpu1", Esp32s3IntMatrixState, cpu[1], TYPE_XTENSA_CPU, XtensaCPU *),
++    DEFINE_PROP_LINK("soc-reset", Esp32s3IntMatrixState, soc_reset, TYPE_DEVICE, DeviceState *),
+     DEFINE_PROP_END_OF_LIST(),
+ };
+ 
+diff --git a/include/hw/char/esp32_uart.h b/include/hw/char/esp32_uart.h
+index 3a84fe9..f7abcc9 100644
+--- a/include/hw/char/esp32_uart.h
++++ b/include/hw/char/esp32_uart.h
+@@ -103,6 +103,9 @@ typedef struct ESPUARTState {
+     /* Threshold, in bytes, for a full RX FIFO and an empty TX FIFO respectively */
+     uint32_t tx_empty_threshold;
+     uint32_t rx_full_threshold;
++
++    /* ESP32-S3 SoC, used to gate the hold phase by reset domain */
++    DeviceState *soc_reset;
+ } ESP32UARTState;
+ 
+ typedef struct ESPUARTClass {
+diff --git a/include/hw/dma/esp_gdma.h b/include/hw/dma/esp_gdma.h
+index d555249..4880763 100644
+--- a/include/hw/dma/esp_gdma.h
++++ b/include/hw/dma/esp_gdma.h
+@@ -121,6 +121,8 @@ typedef struct ESPGdmaState {
+     /* Keep a pointer to the SoC DRAM */
+     MemoryRegion* soc_mr;
+     AddressSpace dma_as;
++    /* ESP32-S3 SoC, used to gate the hold phase by reset domain */
++    DeviceState *soc_reset;
+ } ESPGdmaState;
+ 
+ 
+diff --git a/include/hw/misc/esp_aes.h b/include/hw/misc/esp_aes.h
+index 5015a7f..ab2be71 100644
+--- a/include/hw/misc/esp_aes.h
++++ b/include/hw/misc/esp_aes.h
+@@ -72,6 +72,9 @@ typedef struct ESPAesState {
+ 
+     /* Public: must be set by the machine before realizing current instance */
+     ESPGdmaState *gdma;
++
++    /* ESP32-S3 SoC, used to gate the hold phase by reset domain */
++    DeviceState *soc_reset;
+ } ESPAesState;
+ 
+ 
+diff --git a/include/hw/misc/esp_ds.h b/include/hw/misc/esp_ds.h
+index 749524a..194362e 100644
+--- a/include/hw/misc/esp_ds.h
++++ b/include/hw/misc/esp_ds.h
+@@ -60,6 +60,9 @@ typedef struct ESPDsState {
+     ESPAesState *aes;
+     ESPRsaState *rsa;
+     ESPShaState *sha;
++
++    /* ESP32-S3 SoC, used to gate the hold phase by reset domain */
++    DeviceState *soc_reset;
+ } ESPDsState;
+ 
+ typedef struct ESPDsClass {
+diff --git a/include/hw/misc/esp_hmac.h b/include/hw/misc/esp_hmac.h
+index ed6c77e..b0593ea 100644
+--- a/include/hw/misc/esp_hmac.h
++++ b/include/hw/misc/esp_hmac.h
+@@ -53,6 +53,9 @@ typedef struct ESPHmacState {
+     uint32_t message_write_complete;
+     uint32_t result[ESP_HMAC_RD_RESULT_REG_CNT];
+     ESPEfuseState *efuse;
++
++    /* ESP32-S3 SoC, used to gate the hold phase by reset domain */
++    DeviceState *soc_reset;
+ } ESPHmacState;
+ 
+ typedef struct ESPHmacClass {
+diff --git a/include/hw/misc/esp_rsa.h b/include/hw/misc/esp_rsa.h
+index a1e5a67..a6c01d5 100644
+--- a/include/hw/misc/esp_rsa.h
++++ b/include/hw/misc/esp_rsa.h
+@@ -41,6 +41,9 @@ typedef struct ESPRsaState {
+     /* Status/Control registers */
+     uint32_t int_ena;
+     qemu_irq irq;
++
++    /* ESP32-S3 SoC, used to gate the hold phase by reset domain */
++    DeviceState *soc_reset;
+ } ESPRsaState;
+ 
+ typedef struct ESPRsaClass {
+diff --git a/include/hw/misc/esp_sha.h b/include/hw/misc/esp_sha.h
+index d9f28eb..d8e72dc 100644
+--- a/include/hw/misc/esp_sha.h
++++ b/include/hw/misc/esp_sha.h
+@@ -111,6 +111,9 @@ typedef struct ESPShaState {
+ 
+     /* Public: must be set before realizing instance*/
+     ESPGdmaState *gdma;
++
++    /* ESP32-S3 SoC, used to gate the hold phase by reset domain */
++    DeviceState *soc_reset;
+ } ESPShaState;
+ 
+ typedef struct ESPShaClass {
+diff --git a/include/hw/ssi/esp32s3_spi.h b/include/hw/ssi/esp32s3_spi.h
+index 69dc78c..d9ada31 100644
+--- a/include/hw/ssi/esp32s3_spi.h
++++ b/include/hw/ssi/esp32s3_spi.h
+@@ -25,6 +25,9 @@ typedef struct ESP32S3SpiState {
+     SSIBus *spi;
+     qemu_irq cs_gpio[ESP32S3_SPI_CS_COUNT];
+ 
++    /* ESP32-S3 SoC, used to gate the hold phase by reset domain */
++    DeviceState *soc_reset;
++
+     uint32_t mem_cmd;
+     /**
+      * In user mode, this register represents the flash address.
+diff --git a/include/hw/xtensa/esp32s3_intc.h b/include/hw/xtensa/esp32s3_intc.h
+index 5960b9d..739e4b8 100644
+--- a/include/hw/xtensa/esp32s3_intc.h
++++ b/include/hw/xtensa/esp32s3_intc.h
+@@ -145,6 +145,8 @@ typedef struct Esp32s3IntMatrixState {
+ 
+     /* properties */
+     XtensaCPU *cpu[ESP32S3_CPU_COUNT];
++    /* ESP32-S3 SoC, used to gate the hold phase by reset domain */
++    DeviceState *soc_reset;
+ } Esp32s3IntMatrixState;
+ 
+ #define ETS_ETH_MAC_INTR_SOURCE     ETS_WIFI_MAC_INTR_SOURCE
+-- 
+2.43.0
+

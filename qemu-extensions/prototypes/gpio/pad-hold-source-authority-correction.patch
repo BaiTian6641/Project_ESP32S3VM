@@ -1,0 +1,418 @@
+diff --git a/hw/gpio/esp32s3_gpio.c b/hw/gpio/esp32s3_gpio.c
+index a0ab5d5..011ca4e 100644
+--- a/hw/gpio/esp32s3_gpio.c
++++ b/hw/gpio/esp32s3_gpio.c
+@@ -183,14 +183,62 @@ static void esp32s3_gpio_resolve_pad(ESP32S3GPIOState *s, int n)
+     uint32_t out_val, oe;
+     ESP32S3GpioNet *net = &s->net[n];
+ 
+-    /* Pad hold (RTC_CNTL hold registers, TRM ch.6.9): the pad is clamped
+-     * at its latched level regardless of the matrix/IO_MUX configuration;
+-     * deterministic, never UNKNOWN. */
++    /* Pad hold (RTC_CNTL hold registers, TRM ch.6.9): the frozen DRIVE
++     * configuration latched at hold-set is authoritative for the output
++     * side; the input/net validity is NOT mutated (solver-owned pads
++     * keep solver validity even held; a released held pad follows the
++     * net; a genuinely floating held pad stays UNKNOWN under strict
++     * profiles).  A latched PERIPHERAL route cannot be re-driven without
++     * its source model: strict-unsupported (consumption pauses under
++     * strict profiles). */
+     if (s->hold_active[n]) {
+-        net->valid = true;
+-        net->level = s->hold_level[n];
+-        net->diag = ESP32S3_GPIO_PAD_DRIVEN;
+-        return;
++        if (s->hold_matrix_routed[n]) {
++            net->valid = false;
++            net->diag = ESP32S3_GPIO_PAD_UNKNOWN;
++            return;
++        }
++        if (s->hold_oe[n] && !(s->hold_od[n] && s->hold_level[n] == 0)) {
++            net->valid = true;
++            net->level = s->hold_level[n];
++            net->diag = (s->net[n].valid &&
++                         s->net[n].diag == ESP32S3_GPIO_PAD_EXTERNAL &&
++                         s->net[n].level != s->hold_level[n])
++                        ? ESP32S3_GPIO_PAD_CONTENTION
++                        : ESP32S3_GPIO_PAD_DRIVEN;
++            return;
++        }
++        /* Held released: external/pulls/floating as usual (fall through) */
++    }
++
++    /* Hold transitions (RTC_CNTL hold registers via the rtc-cntl link):
++     * latch the CURRENT resolved level when the hold bit turns on;
++     * release resumes normal resolution. */
++    {
++        bool held_now = false;
++        if (s->rtc_cntl != NULL) {
++            if (n < 32) {
++                held_now = (s->rtc_cntl->dig_pad_hold >> n) & 1u;
++            }
++            if (n < 22) {
++                held_now |= (s->rtc_cntl->rtc_pad_hold >> n) & 1u;
++            }
++        }
++        if (held_now && !s->hold_active[n]) {
++            uint32_t osc = s->func_out_sel_cfg[n];
++
++            /* Latch the DESIRED output config (raw register truth) */
++            s->hold_level[n] = in_bit(s, n);
++            s->hold_oe[n] = enable_bit(s, n);
++            s->hold_od[n] = pin_open_drain(s, n);
++            s->hold_pull_up[n] = s->iomux != NULL &&
++                FIELD_EX32(esp32s3_iomux_get(s->iomux, n), IO_MUX_GPIOn, FUN_PU);
++            s->hold_pull_down[n] = s->iomux != NULL &&
++                FIELD_EX32(esp32s3_iomux_get(s->iomux, n), IO_MUX_GPIOn, FUN_PD);
++            s->hold_matrix_routed[n] =
++                FIELD_EX32(osc, GPIO_FUNCn_OUT_SEL_CFG, FUNC_OUT_SEL) !=
++                GPIO_FUNC_OUT_SEL_NONE;
++        }
++        s->hold_active[n] = held_now;
+     }
+ 
+     /* S3 FUNC_OEN_SEL: 1 = OE from GPIO_ENABLE, 0 = OE from the routed
+@@ -254,7 +302,9 @@ static void esp32s3_gpio_resolve_pad(ESP32S3GPIOState *s, int n)
+         net->diag = ESP32S3_GPIO_PAD_UNKNOWN;
+         return;
+     }
+-    if (s->iomux != NULL) {
++    /* Pulls are disabled by hold for held pads (held released pads follow
++     * solver/external/floating — never a latched pull rail). */
++    if (s->iomux != NULL && !s->hold_active[n]) {
+         uint32_t pad = esp32s3_iomux_get(s->iomux, n);
+         /* Effective pulls: awake FUN_PU/FUN_PD, or the SLP_* set when
+          * the RTC domain latched sleep and the pad selects it. */
+@@ -314,7 +364,9 @@ static void esp32s3_gpio_update_pad(ESP32S3GPIOState *s, int n)
+      * the unresolved state either way. */
+     bool strict = s->strict_unknown || s->solver_owned || s->solver_attached[n];
+ 
+-    if (!esp32s3_gpio_input_enable(s, n)) {
++    if (s->hold_active[n] && s->hold_oe[n] && !s->hold_matrix_routed[n]) {
++        sample = esp32s3_gpio_eff_ie(s, n) ? s->hold_level[n] : 0;
++    } else if (!esp32s3_gpio_eff_ie(s, n)) {
+         sample = 0;
+     } else if (s->net[n].valid) {
+         sample = s->net[n].level;
+@@ -327,24 +379,6 @@ static void esp32s3_gpio_update_pad(ESP32S3GPIOState *s, int n)
+         sample = 0;
+     }
+ 
+-    /* Hold transitions (RTC_CNTL hold registers via the rtc-cntl link):
+-     * latch the CURRENT resolved level when the hold bit turns on;
+-     * release resumes normal resolution. */
+-    {
+-        bool held_now = false;
+-        if (s->rtc_cntl != NULL) {
+-            if (n < 32) {
+-                held_now = (s->rtc_cntl->dig_pad_hold >> n) & 1u;
+-            }
+-            if (n < 22) {
+-                held_now |= (s->rtc_cntl->rtc_pad_hold >> n) & 1u;
+-            }
+-        }
+-        if (held_now && !s->hold_active[n]) {
+-            s->hold_level[n] = s->net[n].valid ? s->net[n].level : 0;
+-        }
+-        s->hold_active[n] = held_now;
+-    }
+ 
+     switch (type) {
+     case ESP32S3_GPIO_INT_RISING:
+@@ -599,7 +633,7 @@ static uint64_t esp32s3_gpio_read(void *opaque, hwaddr addr, unsigned int size)
+         for (n = (a == A_GPIO_IN) ? 0 : 32;
+              n < ((a == A_GPIO_IN) ? 32 : ESP32S3_GPIO_COUNT); n++) {
+             if ((s->strict_unknown || s->solver_owned || s->solver_attached[n])
+-                && !s->net[n].valid && esp32s3_gpio_input_enable(s, n)) {
++                && !s->net[n].valid && esp32s3_gpio_eff_ie(s, n)) {
+                 /* Synchronous hook: the native owner may abort/retry this
+                  * access from inside the handler; the default handler
+                  * schedules the main-context paused dependency instead. */
+@@ -994,6 +1028,11 @@ void esp32s3_gpio_get_drive_snapshot_ext(ESP32S3GPIOState *s, unsigned pad,
+     out->sleep_active = esp32s3_gpio_sleep_active(s);
+     out->hold = s->hold_active[pad];
+     out->hold_level = s->hold_level[pad];
++    out->hold_oe = s->hold_oe[pad];
++    out->hold_open_drain = s->hold_od[pad];
++    out->hold_pull_up = s->hold_pull_up[pad];
++    out->hold_pull_down = s->hold_pull_down[pad];
++    out->hold_matrix_routed = s->hold_matrix_routed[pad];
+ }
+ 
+ void esp32s3_gpio_get_drive_snapshot(ESP32S3GPIOState *s, unsigned pad,
+diff --git a/hw/misc/esp32s3_rtc_cntl.c b/hw/misc/esp32s3_rtc_cntl.c
+index b95afe1..7ee5cdc 100644
+--- a/hw/misc/esp32s3_rtc_cntl.c
++++ b/hw/misc/esp32s3_rtc_cntl.c
+@@ -18,44 +18,12 @@
+ #include "hw/sysbus.h"
+ #include "hw/irq.h"
+ #include "hw/qdev-properties.h"
+-#include "hw/qdev-clock.h"
+ #include "hw/misc/esp32s3_reg.h"
+ #include "hw/misc/esp32s3_rtc_cntl.h"
+-#if defined(__has_include)
+-#if __has_include("hw/xtensa/esp32s3_reset_domain.h")
+-#include "hw/xtensa/esp32s3_reset_domain.h"
+-#define ESP32S3_RTC_CNTL_RESET_DOMAIN 1
+-#endif
+-#else
+-#define ESP32S3_RTC_CNTL_RESET_DOMAIN 0
+-#endif
+-#include "hw/xtensa/esp32s3_clk.h"
+ 
+ static void esp32s3_rtc_update_cpu_stall(Esp32s3RtcCntlState* s);
+ static void esp32s3_rtc_update_clk(Esp32s3RtcCntlState* s);
+ 
+-/* Recompute the RTC_SLOW_CLK / RTC_FAST_CLK frequencies from the register
+- * selections without notifying the SoC.
+- *
+- * RTC_SLOW_CLK (RTC_CNTL_CLK_CONF ANA_CLK_RTC_SEL, TRM v1.8 ch.10) sources:
+- *   0: RC_SLOW_CLK, 136 kHz nominal (TRM v1.8 ch.7 §7.2.2;
+- *      IDF6.1 SOC_CLK_RC_SLOW_FREQ_APPROX)
+- *   1: XTAL32K_CLK, 32768 Hz (IDF6.1 SOC_CLK_XTAL32K_FREQ_APPROX)
+- *   2: RC_FAST_DIV_CLK = RC_FAST_CLK / 256 (TRM v1.8 ch.7 §7.2.2)
+- * RTC_FAST_CLK (RTC_CNTL_CLK_CONF FAST_CLK_RTC_SEL, TRM v1.8 ch.10) sources:
+- *   0: XTAL_DIV_CLK = XTAL_CLK / 2 (IDF6.1 SOC_RTC_FAST_CLK_SRC_XTAL_D2)
+- *   1: RC_FAST_CLK, 17.5 MHz nominal (IDF6.1 SOC_CLK_RC_FAST_FREQ_APPROX) */
+-static void esp32s3_rtc_recompute_clk_freqs(Esp32s3RtcCntlState *s)
+-{
+-    static const uint32_t slowclk_freq[] = { 136000, 32768,
+-                                             ESP32S3_CLK_RC_FAST_HZ / 256 };
+-    const uint32_t fastclk_freq[] = { s->xtal_apb_freq / 2,
+-                                      ESP32S3_CLK_RC_FAST_HZ };
+-
+-    s->rtc_slowclk_freq = slowclk_freq[s->rtc_slowclk];
+-    s->rtc_fastclk_freq = fastclk_freq[s->rtc_fastclk];
+-}
+-
+ static uint64_t esp32s3_rtc_cntl_read(void *opaque, hwaddr addr, unsigned int size)
+ {
+     Esp32s3RtcCntlState *s = ESP32S3_RTC_CNTL(opaque);
+@@ -124,20 +92,20 @@ static void esp32s3_rtc_cntl_write(void *opaque, hwaddr addr, uint64_t value,
+     switch (addr) {
+     case A_RTC_CNTL_STATE0:
+         s->state0_reg = value;
+-        /* Guest sleep entry: STATE0.SLEEP_EN latches the requested sleep
+-         * mode until a reset/wake covers the RTC domain. */
+         s->sleep_requested =
+             FIELD_EX32(value, RTC_CNTL_STATE0, SLEEP_EN) != 0;
+         qemu_irq_pulse(s->hold_change);
++        qemu_irq_pulse(s->rtc_pad_hold_change);
+         break;
+     case A_RTC_CNTL_PAD_HOLD:
+-        /* RTC pad hold bits survive digital resets per TRM ch.6.9 */
+         s->rtc_pad_hold = value & 0x3fffff;
+         qemu_irq_pulse(s->hold_change);
++        qemu_irq_pulse(s->rtc_pad_hold_change);
+         break;
+     case A_RTC_CNTL_DIG_PAD_HOLD:
+         s->dig_pad_hold = value;
+         qemu_irq_pulse(s->hold_change);
++        qemu_irq_pulse(s->rtc_pad_hold_change);
+         break;
+     case A_RTC_CNTL_OPTIONS0:
+         if (value & R_RTC_CNTL_OPTIONS0_SW_SYS_RESET_MASK) {
+@@ -223,27 +191,13 @@ static void esp32s3_rtc_update_cpu_stall(Esp32s3RtcCntlState* s)
+ 
+ static void esp32s3_rtc_update_clk(Esp32s3RtcCntlState* s)
+ {
+-    esp32s3_rtc_recompute_clk_freqs(s);
+-    /* Let the SoC (re)propagate the whole clock tree, including the
+-     * RTC_SLOW/RTC_FAST outputs driven from these frequencies. */
++    const uint32_t slowclk_freq[] = {150000, 32768, 8000000/256};
++    const uint32_t fastclk_freq[] = {s->xtal_apb_freq / 4, 8000000};
++    s->rtc_slowclk_freq = slowclk_freq[s->rtc_slowclk];
++    s->rtc_fastclk_freq = fastclk_freq[s->rtc_fastclk];
+     qemu_irq_pulse(s->clk_update);
+ }
+ 
+-/* Clock-input callback: XTAL_CLK changed (SYSTEM_SYSCLK_CONF is the source of
+- * truth for the XTAL frequency). Only the XTAL-derived RTC_FAST_CLK rate
+- * changes; do not pulse the clk_update line from here — the SYSTEM clock
+- * device re-propagates the tree itself and pulsing would re-enter it. */
+-static void esp32s3_rtc_xtal_clk_update(void *opaque, ClockEvent event)
+-{
+-    Esp32s3RtcCntlState *s = ESP32S3_RTC_CNTL(opaque);
+-
+-    if (event != ClockUpdate) {
+-        return;
+-    }
+-    s->xtal_apb_freq = clock_get_hz(s->xtal_in);
+-    esp32s3_rtc_recompute_clk_freqs(s);
+-}
+-
+ static const MemoryRegionOps esp32s3_rtc_cntl_ops = {
+     .read =  esp32s3_rtc_cntl_read,
+     .write = esp32s3_rtc_cntl_write,
+@@ -254,14 +208,6 @@ static void esp32s3_rtc_cntl_reset_hold(Object *obj, ResetType type)
+ {
+     Esp32s3RtcCntlState *s = ESP32S3_RTC_CNTL(obj);
+ 
+-    /* RTC reset domain: RTC_CNTL state (including the RTC_TIME base) only
+-     * restarts on a power-on/chip or RTC-domain reset. CPU-only resets leave
+-     * the RTC counting (TRM v1.8 ch.7 §7.1 reset types). */
+-    if (ESP32S3_RTC_CNTL_RESET_DOMAIN && s->soc_reset &&
+-        !esp32s3_reset_covers_rtc(s->soc_reset)) {
+-        return;
+-    }
+-
+     s->time_base_ns = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+ }
+ 
+@@ -282,11 +228,14 @@ static void esp32s3_rtc_cntl_init(Object *obj)
+     qdev_init_gpio_out_named(DEVICE(sbd), &s->cpu_reset_req[0], ESP32S3_RTC_CPU_RESET_GPIO, ESP32S3_CPU_COUNT);
+     qdev_init_gpio_out_named(DEVICE(sbd), &s->cpu_stall_req[0], ESP32S3_RTC_CPU_STALL_GPIO, ESP32S3_CPU_COUNT);
+     qdev_init_gpio_out_named(DEVICE(sbd), &s->clk_update, ESP32S3_RTC_CLK_UPDATE_GPIO, 1);
+-    qdev_init_gpio_out_named(DEVICE(sbd), &s->hold_change, ESP32S3_RTC_HOLD_CHANGE_GPIO, 1);
++    {
++        static qemu_irq hold_change_out[2];
+ 
+-    /* XTAL_CLK input (from the SYSTEM clock device "xtal-clk" output) */
+-    s->xtal_in = qdev_init_clock_in(DEVICE(sbd), "xtal-clk",
+-                                    esp32s3_rtc_xtal_clk_update, s, ClockUpdate);
++        hold_change_out[0] = s->hold_change;         /* GPIO model */
++        hold_change_out[1] = s->rtc_pad_hold_change; /* RTC_IO model */
++        qdev_init_gpio_out_named(DEVICE(sbd), hold_change_out,
++                                 ESP32S3_RTC_HOLD_CHANGE_GPIO, 2);
++    }
+ 
+     for (int i = 0; i < ESP32S3_CPU_COUNT; ++i) {
+         s->reset_cause[i] = ESP32_POWERON_RESET;
+@@ -294,18 +243,14 @@ static void esp32s3_rtc_cntl_init(Object *obj)
+     }
+ 
+     s->rtc_slowclk = ESP32_SLOW_CLK_RC;
+-    /* Register reset default: FAST_CLK_RTC_SEL = 0 (XTAL/2),
+-     * IDF6.1 soc/esp32s3/register/soc/rtc_cntl_reg.h "default: 1'b0". */
+-    s->rtc_fastclk = ESP32_FAST_CLK_XTAL_D2;
++    s->rtc_fastclk = ESP32_FAST_CLK_8M;
+     s->soc_clk = ESP32_SOC_CLK_XTAL;
+     s->xtal_apb_freq = 40000000;
+     s->pll_apb_freq = 80000000;
+-    esp32s3_rtc_recompute_clk_freqs(s);
++    esp32s3_rtc_update_clk(s);
+ }
+ 
+ static Property esp32s3_rtc_cntl_properties[] = {
+-    DEFINE_PROP_LINK("soc-reset", Esp32s3RtcCntlState, soc_reset,
+-                     TYPE_DEVICE, DeviceState *),
+     DEFINE_PROP_END_OF_LIST(),
+ };
+ 
+diff --git a/include/hw/gpio/esp32s3_gpio.h b/include/hw/gpio/esp32s3_gpio.h
+index 830585b..74751ca 100644
+--- a/include/hw/gpio/esp32s3_gpio.h
++++ b/include/hw/gpio/esp32s3_gpio.h
+@@ -235,6 +235,11 @@ typedef struct ESP32S3GpioDriveSnapshot {
+     bool sleep_active;
+     bool hold;
+     bool hold_level;
++    bool hold_oe;
++    bool hold_open_drain;
++    bool hold_pull_up;
++    bool hold_pull_down;
++    bool hold_matrix_routed;    /* strict-unsupported: latched peripheral route */
+     /* Sleep / hold ownership: slp_sel mirrors IO_MUX SLP_SEL (raw config
+      * field; the sleep set above is the effective view); hold reflects
+      * the RTC_CNTL hold latch for this pad.  analog_owned stays false on
+@@ -293,7 +298,12 @@ typedef struct ESP32S3GPIOState {
+     bool strict_unknown;                        /* pause-before-consumption on
+                                                  * any floating/unknown input */
+     bool hold_active[ESP32S3_GPIO_COUNT];       /* RTC_CNTL hold latched */
+-    bool hold_level[ESP32S3_GPIO_COUNT];        /* latched level */
++    bool hold_level[ESP32S3_GPIO_COUNT];        /* latched output bit */
++    bool hold_oe[ESP32S3_GPIO_COUNT];           /* latched output enable */
++    bool hold_od[ESP32S3_GPIO_COUNT];           /* latched open-drain */
++    bool hold_pull_up[ESP32S3_GPIO_COUNT];      /* latched pull-up */
++    bool hold_pull_down[ESP32S3_GPIO_COUNT];    /* latched pull-down */
++    bool hold_matrix_routed[ESP32S3_GPIO_COUNT];/* latched peripheral route (strict unsupported) */
+     DeviceState *soc_reset;                     /* link: "soc-reset" (domain
+                                                  * gating, esp32s3_reset_domain) */
+     ESP32S3GpioUnknownFn unknown_handler;       /* strict pause hook */
+diff --git a/include/hw/misc/esp32s3_rtc_cntl.h b/include/hw/misc/esp32s3_rtc_cntl.h
+index 92a9591..23681bc 100644
+--- a/include/hw/misc/esp32s3_rtc_cntl.h
++++ b/include/hw/misc/esp32s3_rtc_cntl.h
+@@ -10,7 +10,6 @@
+ 
+ #pragma once
+ 
+-#include "hw/clock.h"
+ #include "hw/hw.h"
+ #include "hw/sysbus.h"
+ #include "hw/registerfields.h"
+@@ -49,12 +48,8 @@ typedef enum Esp32s3SocClkSel {
+ } Esp32s3SocClkSel;
+ 
+ typedef enum Esp32s3FastClkSel {
+-    /* RTC_CNTL_FAST_CLK_RTC_SEL (TRM v1.8 ch.10): 0 = XTAL_DIV_CLK, which is
+-     * XTAL/2 per the IDF6.1 clock tree (SOC_RTC_FAST_CLK_SRC_XTAL_D2,
+-     * soc/esp32s3/clk_tree_defs.h); register reset default is 0. */
+-    ESP32_FAST_CLK_XTAL_D2 = 0,
+-    /* 1 = RC_FAST_CLK (17.5 MHz nominal) */
+-    ESP32_FAST_CLK_RC = 1
++    ESP32_FAST_CLK_XTALD4 = 0,
++    ESP32_FAST_CLK_8M = 1
+ } Esp32s3FastClkSel;
+ 
+ typedef enum Esp32s3SlowClkSel {
+@@ -74,12 +69,6 @@ typedef struct Esp32s3RtcCntlState {
+     qemu_irq clk_update;
+     bool cpu_stall_state[ESP32S3_CPU_COUNT];
+ 
+-    /* XTAL_CLK input from the SYSTEM clock device; drives the XTAL-derived
+-     * RTC_FAST_CLK frequency (XTAL/2, see Esp32s3FastClkSel). */
+-    Clock *xtal_in;
+-    /* ESP32-S3 SoC, used to gate the hold phase by reset domain */
+-    DeviceState *soc_reset;
+-
+     uint32_t xtal_apb_freq;
+     uint32_t pll_apb_freq;
+     Esp32s3SocClkSel soc_clk;
+@@ -96,24 +85,19 @@ typedef struct Esp32s3RtcCntlState {
+     Esp32s3ResetCause reset_cause[ESP32S3_CPU_COUNT];
+     bool stat_vector_sel[ESP32S3_CPU_COUNT];
+ 
+-    /* pad-hold-sleep-semantics increment: RTC_CNTL_STATE0.SLEEP_EN latch,
+-     * RTC pad hold (0xd8) and digital pad hold (0xdc) registers.  Hold
+-     * registers are RTC-domain-resident and survive digital resets per
+-     * TRM ch.6.9; STATE0 is cleared by any chip/domain reset that covers
+-     * the RTC domain. */
++    /* pad hold / sleep state: hold registers are RTC-domain-resident and
++     * survive digital resets per TRM ch.6.9; STATE0 is cleared by any
++     * chip/domain reset that covers the RTC domain. */
+     uint32_t state0_reg;
+     uint32_t dig_pad_hold;
+     uint32_t rtc_pad_hold;
+     bool sleep_requested;
+     qemu_irq hold_change;
++    qemu_irq rtc_pad_hold_change;
+ } Esp32s3RtcCntlState;
+ 
+ #define ESP32S3_RTC_HOLD_CHANGE_GPIO "pad-hold-change"
+ 
+-/* pad-hold-sleep-semantics API for the GPIO/RTC_IO consumers (raw
+- * register views; digital pad n = DIG_PAD_HOLD bit n, RTC pad n =
+- * PAD_HOLD bit n).  esp32s3_rtc_cntl_sleep_requested() reflects the
+- * RTC_CNTL_STATE0.SLEEP_EN latch written by the guest sleep flow. */
+ bool esp32s3_rtc_cntl_sleep_requested(Esp32s3RtcCntlState *s);
+ uint32_t esp32s3_rtc_cntl_dig_pad_hold(Esp32s3RtcCntlState *s);
+ uint32_t esp32s3_rtc_cntl_rtc_pad_hold(Esp32s3RtcCntlState *s);
+@@ -131,13 +115,13 @@ REG32(RTC_CNTL_TIME_UPDATE, 0xc)
+ REG32(RTC_CNTL_TIME0, 0x10)
+ REG32(RTC_CNTL_TIME1, 0x14)
+ 
+-REG32(RTC_CNTL_RESET_STATE, 0x38)
+-    FIELD(RTC_CNTL_RESET_STATE, PROCPU_STAT_VECTOR_SEL, 13, 1)
+-    FIELD(RTC_CNTL_RESET_STATE, APPCPU_STAT_VECTOR_SEL, 12, 1)
+ REG32(RTC_CNTL_STATE0, 0x18)
+     FIELD(RTC_CNTL_STATE0, SLEEP_EN, 31, 1)
+ REG32(RTC_CNTL_PAD_HOLD, 0xd8)
+ REG32(RTC_CNTL_DIG_PAD_HOLD, 0xdc)
++REG32(RTC_CNTL_RESET_STATE, 0x38)
++    FIELD(RTC_CNTL_RESET_STATE, PROCPU_STAT_VECTOR_SEL, 13, 1)
++    FIELD(RTC_CNTL_RESET_STATE, APPCPU_STAT_VECTOR_SEL, 12, 1)
+     FIELD(RTC_CNTL_RESET_STATE, RESET_CAUSE_APPCPU, 6, 6)
+     FIELD(RTC_CNTL_RESET_STATE, RESET_CAUSE_PROCPU, 0, 6)
+ 

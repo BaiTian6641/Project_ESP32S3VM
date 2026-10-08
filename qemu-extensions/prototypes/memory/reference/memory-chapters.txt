@@ -1,0 +1,3863 @@
+PDF page 358
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+• Programmable length of data to be transferred in bytes
+• Linked list of descriptors
+• INCR burst transfer when accessing internal RAM
+• Access to an address space of 480 KB at most in internal RAM
+• Access to an address spacee of 32 MB at most in external RAM
+• Five transmit channels and five receive channels
+• Access to internal and external RAM supported by every channel
+• Software-configurable selection of peripheral requesting its service supported by every channel
+• Fixed channel priority and round-robin channel arbitration
+3.3
+Architecture
+In ESP32-S3, all modules that need high-speed data transfer support GDMA. The GDMA controller and CPU
+data bus have access to the same address space in internal and external RAM. Figure 3.3-1 shows the basic
+architecture of the GDMA engine.
+Figure 3.3-1. GDMA Engine Architecture
+The GDMA controller has ten independent channels, i.e., five transmit channels and five receive channels.
+Every channel can be connected to different peripherals. In other words, channels are general-purpose,
+shared by peripherals.
+The GDMA engine has two independent AHB bus referred to as AHB_BUS1 and AHB_BUS2 respectively.
+AHB_BUS1 is used to read data from or write data to internal RAM, whereas AHB_BUS2 is used to read data
+from or write data to external RAM. Before this, the GDMA controller uses fixed-priority arbitration scheme for
+channels requesting read or write access. For available address range of RAM, please see Chapter 4 System
+and Memory.
+Software can use the GDMA engine through linked lists. These linked lists, stored in internal RAM, consist of
+outlinkn and inlinkn, where n indicates the channel number (ranging from 0 to 4). The GDMA controller reads
+an outlinkn (i.e., a linked list of transmit descriptors) from internal RAM and transmits data in corresponding
+Espressif Systems
+358
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 359
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+RAM according to the outlinkn, or reads an inlinkn (i.e., a linked list of receive descriptors) and stores received
+data into specific address space in RAM according to the inlinkn.
+Espressif Systems
+359
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 360
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+3.4
+Functional Description
+3.4.1
+Linked List
+Figure 3.4-1. Structure of a Linked List
+Figure 3.4-1 shows the structure of a linked list. An outlink and an inlink have the same structure. A linked list is
+formed by one or more descriptors, and each descriptor consists of three words. Linked lists should be in
+internal RAM for the GDMA engine to be able to use them. The meaning of each field is as follows:
+• Owner (DW0) [31]: Specifies who is allowed to access the buffer that this descriptor points to.
+1’b0: CPU can access the buffer;
+1’b1: The GDMA controller can access the buffer.
+When the GDMA controller stops using the buffer, this bit in a receive descriptor is automatically cleared
+by hardware, and this bit in a transmit descriptor is automatically cleared by hardware only if
+GDMA_OUT_AUTO_WRBACK_CHn is set to 1. When software loads a linked list, this bit should be set to 1.
+Note: GDMA_OUT is the prefix of transmit channel registers, and GDMA_IN is the prefix of receive
+channel registers.
+• suc_eof (DW0) [30]: Specifies whether the GDMA_IN_SUC_EOF_CHn_INT or
+GDMA_OUT_EOF_CHn_INT interrupt will be triggered when the data corresponding to this descriptor has
+been received or transmitted.
+1’b0: No interrupt will be triggered after the current descriptor’s successful transfer;
+1’b1: An interrupt will be triggered after the current descriptor’s successful transfer.
+For receive descriptors, software needs to clear this bit to 0, and hardware will set it to 1 after receiving
+data containing the EOF flag.
+For transmit descriptors, software needs to set this bit to 1 as needed.
+If software configures this bit to 1 in a descriptor, the GDMA will include the EOF flag in the data sent to
+the corresponding peripheral, indicating to the peripheral that this data segment marks the end of one
+transfer phase.
+• Reserved (DW0) [29]: Reserved. Value of this bit does not matter.
+• err_eof (DW0) [28]: Specifies whether the received data have errors.
+This bit is used only when UHCI0 uses GDMA to receive data. When an error is detected in the received
+data segment corresponding to a descriptor, this bit in the receive descriptor is set to 1 by hardware.
+• Reserved (DW0) [27:24]: Reserved.
+Espressif Systems
+360
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 361
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+• Length (DW0) [23:12]: Specifies the number of valid bytes in the buffer that this descriptor points to.
+This field in a transmit descriptor is written by software and indicates how many bytes can be read from
+the buffer; this field in a receive descriptor is written by hardware automatically and indicates how many
+valid bytes have been stored into the buffer.
+• Size (DW0) [11:0]: Specifies the size of the buffer that this descriptor points to.
+• Buffer address pointer (DW1): Address of the buffer.
+• Next descriptor address (DW2): Address of the next descriptor. If the current descriptor is the last one,
+this value is 0. This field can only point to internal RAM.
+If the length of data received is smaller than the size of the buffer, the GDMA controller will not use available
+space of the buffer in the next transaction.
+3.4.2
+Peripheral-to-Memory and Memory-to-Peripheral Data Transfer
+The GDMA controller can transfer data from memory to peripheral (transmit) and from peripheral to memory
+(receive). A transmit channel transfers data in the specified memory location to a peripheral’s transmitter via an
+outlinkn, whereas a receive channel transfers data received by a peripheral to the specified memory location
+via an inlinkn.
+Every transmit and receive channel can be connected to any peripheral with GDMA feature. Table 3.4-1
+illustrates how to select the peripheral to be connected via registers. When a channel is connected to a
+peripheral, the rest channels can not be connected to that peripheral. All transmit and receive channels
+support access to internal and external RAM. For details, please refer to Section 3.4.8 and Section 3.4.9.
+Table 3.4-1. Selecting Peripherals via Register Configuration
+GDMA_PERI_IN_SEL_CHn
+GDMA_PERI_OUT_SEL_CHn
+Peripheral
+0
+SPI2
+1
+SPI3
+2
+UHCI0
+3
+I2S0
+4
+I2S1
+5
+LCD/CAM
+6
+AES
+7
+SHA
+8
+ADC
+9
+RMT
+10 ~ 63
+Invalid
+3.4.3
+Memory-to-Memory Data Transfer
+The GDMA controller also allows memory-to-memory data transfer. Such data transfer can be enabled by
+setting GDMA_MEM_TRANS_EN_CHn, which connects the output of transmit channel n to the input of
+receive channel n. Note that a transmit channel is only connected to the receive channel with the same
+number (n).
+Espressif Systems
+361
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 362
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+As every transmit and receive channel can be used to access internal and external RAM, there are four data
+transfer modes:
+• from internal RAM to internal RAM
+• from internal RAM to external RAM
+• from external RAM to internal RAM
+• from external RAM to external RAM
+3.4.4
+Channel Buffer
+Every transmit and receive channel contains FIFOs at three levels, i.e., L1FIFO, L2FIFO, and L3FIFO. As Figure
+3.4-2 shows, L1FIFO is close to the memory, L3FIFO is close to peripherals, and L2FIFO falls in between
+L1FIFO and L3FIFO. L1FIFO, L2FIFO and L3FIFO have fixed depth: 24, 128, and 16 bytes, respectively.
+Figure 3.4-2. Channel Buffer
+3.4.5
+Enabling GDMA
+Software uses the GDMA controller through linked lists. When the GDMA controller receives data, software
+loads an inlink, configures GDMA_INLINK_ADDR_CHn field with address of the first receive descriptor, and sets
+GDMA_INLINK_START_CHn bit to enable GDMA. When the GDMA controller transmits data, software loads an
+outlink, prepares data to be transmitted, configures GDMA_OUTLINK_ADDR_CHn field with address of the first
+transmit descriptor, and sets GDMA_OUTLINK_START_CHn bit to enable GDMA. GDMA_INLINK_START_CHn bit
+and GDMA_OUTLINK_START_CHn bit are cleared automatically by hardware.
+In some cases, you may want to append more descriptors to a DMA transfer that is already started. Naively, it
+would seem to be possible to do this by clearing the EOF bit of the final descriptor in the existing list and
+setting its next descriptor address pointer field (DW2) to the first descriptor of the to-be-added list. However,
+this strategy fails if the existing DMA transfer is almost or entirely finished. Instead, the GDMA engine has
+specialized logic to make sure a DMA transfer can be continued or restarted: if it is still ongoing, it will make
+sure to take the appended descriptors into account; if the transfer has already finished, it will restart with the
+new descriptors. This is implemented in the Restart function.
+When using the Restart function, software needs to rewrite the address of the first descriptor in the new list to
+DW2 of the last descriptor in the loaded list, and set GDMA_INLINK_RESTART_CHn bit or
+GDMA_OUTLINK_RESTART_CHn bit (these two bits are cleared automatically by hardware). As shown in Figure
+3.4-3, by doing so hardware can obtain the address of the first descriptor in the new list when reading the last
+descriptor in the loaded list, and then read the new list.
+Espressif Systems
+362
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 363
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Figure 3.4-3. Relationship among Linked Lists
+3.4.6
+Linked List Reading Process
+Once configured and enabled by software, the GDMA controller starts to read the linked list from internal RAM.
+The GDMA performs checks on descriptors in the linked list. Only if the descriptors pass the checks, will the
+corresponding GDMA channel transfer data. If the descriptors fail any of the checks, hardware will trigger
+descriptor error interrupt (either GDMA_IN_DSCR_ERR_CHn_INT or GDMA_OUT_DSCR_ERR_CHn_INT), and
+the channel will halt.
+The checks performed on descriptors are:
+• Owner bit check when GDMA_IN_CHECK_OWNER_CHn or GDMA_OUT_CHECK_OWNER_CHn is set to 1.
+If the owner bit is 0, the buffer is accessed by the CPU. In this case, the owner bit fails the check. The
+owner bit will not be checked if GDMA_IN_CHECK_OWNER_CHn or GDMA_OUT_CHECK_OWNER_CHn is
+0;
+• Buffer address pointer (DW1) check. If the buffer address pointer points to 0x3FC88000 ~ 0x3FCFFFFF
+or 0x3C000000 ~ 0x3DFFFFFF (please refer to Section 3.4.8), it passes the check.
+After software detects a descriptor error interrupt, it must reset the corresponding channel, and enable GDMA
+by setting GDMA_OUTLINK_START_CHn or GDMA_INLINK_START_CHn bit.
+Note: The third word (DW2) in a descriptor can only point to a location in internal RAM, given that the third
+word points to the next descriptor to use and that all descriptors must be in internal memory.
+3.4.7
+EOF
+The GDMA controller uses EOF (end of frame) flags to indicate the end of data segment transfer
+corresponding to a specific descriptor.
+Before the GDMA controller transmits data, GDMA_OUT_TOTAL_EOF_CHn_INT_ENA bit should be set to enable
+GDMA_OUT_TOTAL_EOF_CHn_INT interrupt. If data in the buffer pointed by the last descriptor (with EOF) have
+been transmitted, a GDMA_OUT_TOTAL_EOF_CHn_INT interrupt is generated.
+Before the GDMA controller receives data, GDMA_IN_SUC_EOF_CHn_INT_ENA bit should be set to enable
+GDMA_IN_SUC_EOF_CHn_INT interrupt. If a data segment with an EOF flag has been received successfully, a
+GDMA_IN_SUC_EOF_CHn_INT interrupt is generated. In addition, when GDMA channel is connected to
+UHCI0, the GDMA controller also supports GDMA_IN_ERR_CHn_EOF_INT interrupt. This interrupt is enabled
+Espressif Systems
+363
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 364
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+by setting GDMA_IN_ERR_EOF_CHn_INT_ENA bit, and it indicates that a data segment corresponding to a
+descriptor has been received with errors.
+When detecting a GDMA_OUT_TOTAL_EOF_CHn_INT or a GDMA_IN_SUC_EOF_CHn_INT interrupt, software
+can record the value of GDMA_OUT_EOF_DES_ADDR_CHn or GDMA_IN_SUC_EOF_DES_ADDR_CHn field, i.e.,
+address of the last descriptor. Therefore, software can tell which descriptors have been used and reclaim
+them.
+Note: In this chapter, EOF of transmit descriptors refers to suc_eof, while EOF of receive descriptors refers to
+both suc_eof and err_eof.
+3.4.8
+Accessing Internal RAM
+Any transmit and receive channels of GDMA can access 0x3FC88000 ~ 0x3FCFFFFF in internal RAM. To
+improve data transfer efficiency, GDMA can send data in burst mode, which is disabled by default. This mode
+is enabled for receive channels by setting GDMA_IN_DATA_BURST_EN_CHn, and enabled for transmit
+channels by setting GDMA_OUT_DATA_BURST_EN_CHn.
+Table 3.4-2. Descriptor Field Alignment Requirements for Accessing Internal RAM
+Inlink/Outlink
+Burst Mode
+Size
+Length
+Buffer Address Pointer
+Inlink
+0
+—
+—
+—
+1
+Word-aligned
+—
+Word-aligned
+Outlink
+0
+—
+—
+—
+1
+—
+—
+—
+Table 3.4-2 lists the requirements for descriptor field alignment when GDMA accesses internal RAM.
+When burst mode is disabled, size, length, and buffer address pointer in both transmit and receive descriptors
+do not need to be word-aligned. That is to say, GDMA can read data of specified length (1 ~ 4095 bytes) from
+any start addresses in the accessible address range, or write received data of the specified length (1 ~ 4095
+bytes) to any contiguous addresses in the accessible address range.
+When burst mode is enabled, size, length, and buffer address pointer in transmit descriptors are also not
+necessarily word-aligned. However, size and buffer address pointer in receive descriptors except length
+should be word-aligned.
+3.4.9
+Accessing External RAM
+Any transmit and receive channels of GDMA can access 0x3C000000 ~ 0x3DFFFFFF in external RAM. GDMA
+can send data only in burst mode. The number of data bytes to transfer in one burst is defined as block size.
+Block size can be 16 bytes, 32 bytes or 64 bytes, configured via GDMA_IN_EXT_MEM_BK_SIZE_CHn for
+transmit channels and GDMA_OUT_EXT_MEM_BK_SIZE_CHn for receive channels.
+Table 3.4-3. Descriptor Field Alignment Requirements for Accessing External RAM
+Inlink/Outlink
+Size
+Length
+Buffer Address Pointer
+Inlink
+Block-aligned
+—
+Block-aligned
+Outlink
+—
+—
+—
+Espressif Systems
+364
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 365
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Table 3.4-3 lists the requirements for descriptor field alignment when GDMA accesses internal RAM. Size,
+length, and buffer address pointer in transmit descriptors do not need to be aligned. However, size and buffer
+address pointer in receive descriptors except length should be aligned with block size. Table 3.4-4 illustrates
+the value of GDMA_IN_EXT_MEM_BK_SIZE_CHn or GDMA_OUT_EXT_MEM_BK_SIZE_CHn bit when fields in
+linked list descriptors are 16-byte, 32-byte and 64-byte aligned respectively.
+Table 3.4-4. Relationship Between Configuration Register, Block Size and Alignment
+GDMA_IN_EXT_MEM_BK_SIZE_CHn
+or
+GDMA_OUT_EXT_MEM_BK_SIZE_CHn
+Block Size
+Alignment
+0
+16 bytes
+16-byte aligned
+1
+32 bytes
+32-byte aligned
+2
+64 bytes
+64-byte aligned
+Note: For receive descriptors, if the data length received are not aligned with block size, GDMA will pad the
+data received with 0 until they are aligned to initiate burst transfer. You can read the length field in receive
+descriptors to obtain the length of valid data received.
+3.4.10
+External RAM Access Permissions
+GDMA in ESP32-S3 has a permission control module for access to external RAM. As Figure 3.4-4 shows, the
+permission control module divided the 32 MB external RAM into four areas through three configurable
+boundaries, namely boundary 0, boundary 1, and boundary 2.
+• Area 0: 0x3C000000 ~ boundary 0 (include 0x3C000000 but exclude boundary 0)
+• Area 1: boundary 0 ~ boundary 1 (include boundary 0 but exclude boundary 1)
+• Area 2: boundary 1 ~ boundary 2 (include boundary 1 but exclude boundary 2)
+• Area 3: boundary 2 ~ 0x3DFFFFFF (include boundary 0)
+Boundary 0, 1, and 2 are configured via PMS_EDMA_BOUNDARY_0, PMS_EDMA_BOUNDARY_1, and
+PMS_EDMA_BOUNDARY_2, respectively. For details about these fields, please refer to Chapter 15 Permission
+Control (PMS). The unit of these fields is 4 KB. For example, if PMS_EDMA_BOUNDARY_0 is 0x80, the address
+of boundary 0 should be 0x3C000000 + 0x80 * 4 KB = 3c080000, in which 0x3C000000 is the starting
+address of accessible external RAM.
+Figure 3.4-4. Dividing External RAM into Areas
+Espressif Systems
+365
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 366
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+All peripherals with GDMA feature (i.e., SPI2, SPI3, UHCI0, I2S0, I2S1, LCD/CAM, AES, SHA, ADC, and RMT) do
+not have access permissions for Area 0 and Area 3, but their permissions for Area 1 and Area 2 can be
+independently managed. The permission control module contains registers to manage such access
+permissions for Area 1 and Area 2. For example, the PMS_EDMA_PMS_SPI2_ATTR1 field configures SPI2’s
+permissions to read and write Area 1. Specifically, when bit 0 of this field is 1, SPI2 is granted read permission;
+when bit 1 of this field is 1, SPI2 is granted write permission. Likewise, the PMS_EDMA_PMS_SPI2_ATTR2 field
+configures SPI2’s permissions to read and write Area 2.
+Access violations are logged and can trigger the GDMA_ETXMEN_REJECT_INT interrupt. You can check the
+address where the address violation occurs, the peripheral involved, channel number and read or write
+attribute via GDMA_ETXMEM_REJECT_ADDR, GDMA_ETXMEN_REJECT_PERI_NUM,
+GDMA_ETXMEN_REJECT_CHANNEL_NUM, and GDMA_ETXMEM_REJECT_ATTR respectively.
+3.4.11
+Seamless Access to Internal and External RAM
+In some application scenarios, a data frame or packet contains data from both internal RAM and external RAM.
+To ensure real-time data processing, GDMA is designed in such a way that some descriptors in the linked list
+can be used to access internal RAM, while the other descriptors in the same linked list can be used to access
+external RAM. This design allows seamless access to internal and external RAM.
+3.4.12
+Arbitration
+To ensure timely response to peripherals running at a high speed with low latency (such as SPI, LCD/CAM),
+the GDMA controller implements a fixed-priority channel arbitration scheme. That is to say, each channel can
+be assigned a priority from 0 ~ 9. The larger the number, the higher the priority, and the more timely the
+response. When several channels are assigned the same priority, the GDMA controller adopts a round-robin
+arbitration scheme.
+Please note that the overall throughput of peripherals with GDMA feature cannot exceed the maximum
+bandwidth of the GDMA, so that requests from low-priority peripherals can be responded to.
+3.5
+GDMA Interrupts
+• GDMA_OUT_TOTAL_EOF_CHn_INT: Triggered when all data corresponding to a linked list (including
+multiple descriptors) have been sent via transmit channel n.
+• GDMA_IN_DSCR_EMPTY_CHn_INT: Triggered when the size of the buffer pointed by receive descriptors
+is smaller than the length of data to be received via receive channel n.
+• GDMA_OUT_DSCR_ERR_CHn_INT: Triggered when an error is detected in a transmit descriptor on
+transmit channel n.
+• GDMA_IN_DSCR_ERR_CHn_INT: Triggered when an error is detected in a receive descriptor on receive
+channel n.
+• GDMA_OUT_EOF_CHn_INT: Triggered when EOF in a transmit descriptor is 1 and data corresponding to
+this descriptor have been sent via transmit channel n. If GDMA_OUT_EOF_MODE_CHn is 0, this interrupt
+will be triggered when the last byte of data corresponding to this descriptor enters GDMA’s transmit
+channel; if GDMA_OUT_EOF_MODE_CHn is 1, this interrupt is triggered when the last byte of data is
+taken from GDMA’s transmit channel.
+Espressif Systems
+366
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 367
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+• GDMA_OUT_DONE_CHn_INT: Triggered when all data corresponding to a transmit descriptor have been
+sent via transmit channel n.
+• GDMA_IN_ERR_EOF_CHn_INT: Triggered when an error is detected in the data segment corresponding
+to a descriptor received via receive channel n. This interrupt is used only for UHCI0 peripheral (UART0 or
+UART1).
+• GDMA_IN_SUC_EOF_CHn_INT: Triggered when the suc_eof bit in a receive descriptor is 1 and the data
+corresponding to this receive descriptor has been received via receive channel n.
+• GDMA_IN_DONE_CHn_INT: Triggered when all data corresponding to a receive descriptor have been
+received via receive channel n.
+3.6
+Programming Procedures
+3.6.1
+Programming Procedure for GDMA Clock and Reset
+GDMA’s clock and reset should be configured as follows:
+1. Set SYSTEM_DMA_CLK_EN to enable GDMA’s clock;
+2. Clear SYSTEM_DMA_RST to reset GDMA.
+3.6.2
+Programming Procedures for GDMA’s Transmit Channel
+To transmit data, GDMA’s transmit channel should be configured by software as follows:
+1. Set GDMA_OUT_RST_CHn first to 1 and then to 0, to reset the state machine of GDMA’s transmit channel
+and FIFO pointer;
+2. Load an outlink, and configure GDMA_OUTLINK_ADDR_CHn with address of the first transmit descriptor;
+3. Configure GDMA_PERI_OUT_SEL_CHn with the value corresponding to the peripheral to be connected,
+as shown in Table 3.4-1;
+4. Set GDMA_OUTLINK_START_CHn to enable GDMA’s transmit channel for data transfer;
+5. Configure and enable the corresponding peripheral (SPI2, SPI3, UHCI0 (UART0, UART1, or UART2), I2S0,
+I2S1, AES, SHA, and ADC). See details in individual chapters of these peripherals;
+6. Wait for GDMA_OUT_TOTAL_EOF_CHn_INT interrupt, which indicates the completion of data transfer.
+3.6.3
+Programming Procedures for GDMA’s Receive Channel
+To receive data, GDMA’s receive channel should be configured by software as follows:
+1. Set GDMA_IN_RST_CHn first to 1 and then to 0, to reset the state machine of GDMA’s receive channel
+and FIFO pointer;
+2. Load an inlink, and configure GDMA_INLINK_ADDR_CHn with address of the first receive descriptor;
+3. Configure GDMA_PERI_IN_SEL_CHn with the value corresponding to the peripheral to be connected, as
+shown in Table 3.4-1;
+4. Set GDMA_INLINK_START_CHn to enable GDMA’s receive channel for data transfer;
+Espressif Systems
+367
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 368
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+5. Configure and enable the corresponding peripheral (SPI2, SPI3, UHCI0 (UART0, UART1, or UART2), I2S0,
+I2S1, AES, SHA, and ADC). See details in individual chapters of these peripherals;
+3.6.4
+Programming Procedures for Memory-to-Memory Transfer
+To transfer data from one memory location to another, GDMA should be configured by software as
+follows:
+1. Set GDMA_OUT_RST_CHn first to 1 and then to 0, to reset the state machine of GDMA’s transmit channel
+and FIFO pointer;
+2. Set GDMA_IN_RST_CHn first to 1 and then to 0, to reset the state machine of GDMA’s receive channel
+and FIFO pointer;
+3. Load an outlink, and configure GDMA_OUTLINK_ADDR_CHn with address of the first transmit descriptor;
+4. Load an inlink, and configure GDMA_INLINK_ADDR_CHn with address of the first receive descriptor;
+5. Set GDMA_MEM_TRANS_EN_CHn to enable memory-to-memory transfer;
+6. Set GDMA_OUTLINK_START_CHn to enable GDMA’s transmit channel for data transfer;
+7. Set GDMA_INLINK_START_CHn to enable GDMA’s receive channel for data transfer;
+8. If the suc_eof bit is set in a transmit descriptor, a GDMA_IN_SUC_EOF_CHn_INT interrupt will be
+triggered when the data segment corresponding to this descriptor has been transmitted.
+Espressif Systems
+368
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 369
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+3.7
+Register Summary
+The addresses in this section are relative to GDMA base address provided in Table 4.3-3 in Chapter 4 System
+and Memory.
+The abbreviations given in Column Access are explained in Section Access Types for Registers.
+Name
+Description
+Address
+Access
+Configuration Registers
+GDMA_IN_CONF0_CH0_REG
+Configuration register 0 of RX channel 0
+0x0000
+R/W
+GDMA_IN_CONF1_CH0_REG
+Configuration register 1 of RX channel 0
+0x0004
+R/W
+GDMA_IN_POP_CH0_REG
+Pop control register of RX channel 0
+0x001C
+varies
+GDMA_IN_LINK_CH0_REG
+Link descriptor configuration and control
+register of RX channel 0
+0x0020
+varies
+GDMA_OUT_CONF0_CH0_REG
+Configuration register 0 of TX channel 0
+0x0060
+R/W
+GDMA_OUT_CONF1_CH0_REG
+Configuration register 1 of TX channel 0
+0x0064
+R/W
+GDMA_OUT_PUSH_CH0_REG
+Push control register of RX channel 0
+0x007C
+varies
+GDMA_OUT_LINK_CH0_REG
+Link descriptor configuration and control
+register of TX channel 0
+0x0080
+varies
+GDMA_IN_CONF0_CH1_REG
+Configuration register 0 of RX channel 1
+0x00C0
+R/W
+GDMA_IN_CONF1_CH1_REG
+Configuration register 1 of RX channel 1
+0x00C4
+R/W
+GDMA_IN_POP_CH1_REG
+Pop control register of RX channel 1
+0x00DC
+varies
+GDMA_IN_LINK_CH1_REG
+Link descriptor configuration and control
+register of RX channel 1
+0x00E0
+varies
+GDMA_OUT_CONF0_CH1_REG
+Configuration register 0 of TX channel 1
+0x0120
+R/W
+GDMA_OUT_CONF1_CH1_REG
+Configuration register 1 of TX channel 1
+0x0124
+R/W
+GDMA_OUT_PUSH_CH1_REG
+Push control register of RX channel 1
+0x013C
+varies
+GDMA_OUT_LINK_CH1_REG
+Link descriptor configuration and control
+register of TX channel 1
+0x0140
+varies
+GDMA_IN_CONF0_CH2_REG
+Configuration register 0 of RX channel 2
+0x0180
+R/W
+GDMA_IN_CONF1_CH2_REG
+Configuration register 1 of RX channel 2
+0x0184
+R/W
+GDMA_IN_POP_CH2_REG
+Pop control register of RX channel 2
+0x019C
+varies
+GDMA_IN_LINK_CH2_REG
+Link descriptor configuration and control
+register of RX channel 2
+0x01A0
+varies
+GDMA_OUT_CONF0_CH2_REG
+Configuration register 0 of TX channel 2
+0x01E0
+R/W
+GDMA_OUT_CONF1_CH2_REG
+Configuration register 1 of TX channel 2
+0x01E4
+R/W
+GDMA_OUT_PUSH_CH2_REG
+Push control register of RX channel 2
+0x01FC
+varies
+GDMA_OUT_LINK_CH2_REG
+Link descriptor configuration and control
+register of TX channel 2
+0x0200
+varies
+GDMA_IN_CONF0_CH3_REG
+Configuration register 0 of RX channel 3
+0x0240
+R/W
+GDMA_IN_CONF1_CH3_REG
+Configuration register 1 of RX channel 3
+0x0244
+R/W
+GDMA_IN_POP_CH3_REG
+Pop control register of RX channel 3
+0x025C
+varies
+GDMA_IN_LINK_CH3_REG
+Link descriptor configuration and control
+register of RX channel 3
+0x0260
+varies
+GDMA_OUT_CONF0_CH3_REG
+Configuration register 0 of TX channel 3
+0x02A0
+R/W
+Espressif Systems
+369
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 370
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Name
+Description
+Address
+Access
+GDMA_OUT_CONF1_CH3_REG
+Configuration register 1 of TX channel 3
+0x02A4
+R/W
+GDMA_OUT_PUSH_CH3_REG
+Push control register of RX channel 3
+0x02BC
+varies
+GDMA_OUT_LINK_CH3_REG
+Link descriptor configuration and control
+register of TX channel 3
+0x02C0
+varies
+GDMA_IN_CONF0_CH4_REG
+Configuration register 0 of RX channel 4
+0x0300
+R/W
+GDMA_IN_CONF1_CH4_REG
+Configuration register 1 of RX channel 4
+0x0304
+R/W
+GDMA_IN_POP_CH4_REG
+Pop control register of RX channel 4
+0x031C
+varies
+GDMA_IN_LINK_CH4_REG
+Link descriptor configuration and control
+register of RX channel 4
+0x0320
+varies
+GDMA_OUT_CONF0_CH4_REG
+Configuration register 0 of TX channel 4
+0x0360
+R/W
+GDMA_OUT_CONF1_CH4_REG
+Configuration register 1 of TX channel 4
+0x0364
+R/W
+GDMA_OUT_PUSH_CH4_REG
+Push control register of RX channel 4
+0x037C
+varies
+GDMA_OUT_LINK_CH4_REG
+Link descriptor configuration and control
+register of TX channel 4
+0x0380
+varies
+GDMA_PD_CONF_REG
+reserved
+0x03C4
+R/W
+GDMA_MISC_CONF_REG
+Miscellaneous register
+0x03C8
+R/W
+Interrupt Registers
+GDMA_IN_INT_RAW_CH0_REG
+Raw status interrupt of RX channel 0
+0x0008
+R/WTC/SS
+GDMA_IN_INT_ST_CH0_REG
+Masked interrupt of RX channel 0
+0x000C
+RO
+GDMA_IN_INT_ENA_CH0_REG
+Interrupt enable bits of RX channel 0
+0x0010
+R/W
+GDMA_IN_INT_CLR_CH0_REG
+Interrupt clear bits of RX channel 0
+0x0014
+WT
+GDMA_OUT_INT_RAW_CH0_REG
+Raw status interrupt of TX channel 0
+0x0068
+R/WTC/SS
+GDMA_OUT_INT_ST_CH0_REG
+Masked interrupt of TX channel 0
+0x006C
+RO
+GDMA_OUT_INT_ENA_CH0_REG
+Interrupt enable bits of TX channel 0
+0x0070
+R/W
+GDMA_OUT_INT_CLR_CH0_REG
+Interrupt clear bits of TX channel 0
+0x0074
+WT
+GDMA_IN_INT_RAW_CH1_REG
+Raw status interrupt of RX channel 1
+0x00C8
+R/WTC/SS
+GDMA_IN_INT_ST_CH1_REG
+Masked interrupt of RX channel 1
+0x00CC
+RO
+GDMA_IN_INT_ENA_CH1_REG
+Interrupt enable bits of RX channel 1
+0x00D0
+R/W
+GDMA_IN_INT_CLR_CH1_REG
+Interrupt clear bits of RX channel 1
+0x00D4
+WT
+GDMA_OUT_INT_RAW_CH1_REG
+Raw status interrupt of TX channel 1
+0x0128
+R/WTC/SS
+GDMA_OUT_INT_ST_CH1_REG
+Masked interrupt of TX channel 1
+0x012C
+RO
+GDMA_OUT_INT_ENA_CH1_REG
+Interrupt enable bits of TX channel 1
+0x0130
+R/W
+GDMA_OUT_INT_CLR_CH1_REG
+Interrupt clear bits of TX channel 1
+0x0134
+WT
+GDMA_IN_INT_RAW_CH2_REG
+Raw status interrupt of RX channel 2
+0x0188
+R/WTC/SS
+GDMA_IN_INT_ST_CH2_REG
+Masked interrupt of RX channel 2
+0x018C
+RO
+GDMA_IN_INT_ENA_CH2_REG
+Interrupt enable bits of RX channel 2
+0x0190
+R/W
+GDMA_IN_INT_CLR_CH2_REG
+Interrupt clear bits of RX channel 2
+0x0194
+WT
+GDMA_OUT_INT_RAW_CH2_REG
+Raw status interrupt of TX channel 2
+0x01E8
+R/WTC/SS
+GDMA_OUT_INT_ST_CH2_REG
+Masked interrupt of TX channel 2
+0x01EC
+RO
+GDMA_OUT_INT_ENA_CH2_REG
+Interrupt enable bits of TX channel 2
+0x01F0
+R/W
+GDMA_OUT_INT_CLR_CH2_REG
+Interrupt clear bits of TX channel 2
+0x01F4
+WT
+GDMA_IN_INT_RAW_CH3_REG
+Raw status interrupt of RX channel 3
+0x0248
+R/WTC/SS
+GDMA_IN_INT_ST_CH3_REG
+Masked interrupt of RX channel 3
+0x024C
+RO
+Espressif Systems
+370
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 371
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Name
+Description
+Address
+Access
+GDMA_IN_INT_ENA_CH3_REG
+Interrupt enable bits of RX channel 3
+0x0250
+R/W
+GDMA_IN_INT_CLR_CH3_REG
+Interrupt clear bits of RX channel 3
+0x0254
+WT
+GDMA_OUT_INT_RAW_CH3_REG
+Raw status interrupt of TX channel 3
+0x02A8
+R/WTC/SS
+GDMA_OUT_INT_ST_CH3_REG
+Masked interrupt of TX channel 3
+0x02AC
+RO
+GDMA_OUT_INT_ENA_CH3_REG
+Interrupt enable bits of TX channel 3
+0x02B0
+R/W
+GDMA_OUT_INT_CLR_CH3_REG
+Interrupt clear bits of TX channel 3
+0x02B4
+WT
+GDMA_IN_INT_RAW_CH4_REG
+Raw status interrupt of RX channel 4
+0x0308
+R/WTC/SS
+GDMA_IN_INT_ST_CH4_REG
+Masked interrupt of RX channel 4
+0x030C
+RO
+GDMA_IN_INT_ENA_CH4_REG
+Interrupt enable bits of RX channel 4
+0x0310
+R/W
+GDMA_IN_INT_CLR_CH4_REG
+Interrupt clear bits of RX channel 4
+0x0314
+WT
+GDMA_OUT_INT_RAW_CH4_REG
+Raw status interrupt of TX channel 4
+0x0368
+R/WTC/SS
+GDMA_OUT_INT_ST_CH4_REG
+Masked interrupt of TX channel 4
+0x036C
+RO
+GDMA_OUT_INT_ENA_CH4_REG
+Interrupt enable bits of TX channel 4
+0x0370
+R/W
+GDMA_OUT_INT_CLR_CH4_REG
+Interrupt clear bits of TX channel 4
+0x0374
+WT
+GDMA_EXTMEM_REJECT_INT_RAW_REG
+Raw interrupt status of external RAM
+permission
+0x03FC
+R/WTC/SS
+GDMA_EXTMEM_REJECT_INT_ST_REG
+Masked interrupt status of external RAM
+permission
+0x0400
+RO
+GDMA_EXTMEM_REJECT_INT_ENA_REG
+Interrupt enable bits of external RAM
+permission
+0x0404
+R/W
+GDMA_EXTMEM_REJECT_INT_CLR_REG
+Interrupt clear bits of external RAM
+permission
+0x0408
+WT
+Status Registers
+GDMA_INFIFO_STATUS_CH0_REG
+Receive FIFO status of RX channel 0
+0x0018
+RO
+GDMA_IN_STATE_CH0_REG
+Receive status of RX channel 0
+0x0024
+RO
+GDMA_IN_SUC_EOF_DES_ADDR_CH0
+_REG
+Inlink descriptor address when EOF
+occurs of RX channel 0
+0x0028
+RO
+GDMA_IN_ERR_EOF_DES_ADDR_CH0
+_REG
+Inlink descriptor address when errors
+occur of RX channel 0
+0x002C
+RO
+GDMA_IN_DSCR_CH0_REG
+Address of the next receive descriptor
+pointed by the current pre-read receive
+descriptor on RX channel 0
+0x0030
+RO
+GDMA_IN_DSCR_BF0_CH0_REG
+Address of the current pre-read receive
+descriptor on RX channel 0
+0x0034
+RO
+GDMA_IN_DSCR_BF1_CH0_REG
+Address of the previous pre-read receive
+descriptor on RX channel 0
+0x0038
+RO
+GDMA_OUTFIFO_STATUS_CH0_REG
+Transmit FIFO status of TX channel 0
+0x0078
+RO
+GDMA_OUT_STATE_CH0_REG
+Transmit status of TX channel 0
+0x0084
+RO
+GDMA_OUT_EOF_DES_ADDR_CH0_REG
+Outlink descriptor address when EOF
+occurs of TX channel 0
+0x0088
+RO
+GDMA_OUT_EOF_BFR_DES_ADDR_CH0
+_REG
+The last outlink descriptor address when
+EOF occurs of TX channel 0
+0x008C
+RO
+Espressif Systems
+371
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 372
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Name
+Description
+Address
+Access
+GDMA_OUT_DSCR_CH0_REG
+Address of the next transmit descriptor
+pointed by the current pre-read transmit
+descriptor on TX channel 0
+0x0090
+RO
+GDMA_OUT_DSCR_BF0_CH0_REG
+Address of the current pre-read transmit
+descriptor on TX channel 0
+0x0094
+RO
+GDMA_OUT_DSCR_BF1_CH0_REG
+Address of the previous pre-read transmit
+descriptor on TX channel 0
+0x0098
+RO
+GDMA_INFIFO_STATUS_CH1_REG
+Receive FIFO status of RX channel 1
+0x00D8
+RO
+GDMA_IN_STATE_CH1_REG
+Receive status of RX channel 1
+0x00E4
+RO
+GDMA_IN_SUC_EOF_DES_ADDR_CH1
+_REG
+Inlink descriptor address when EOF
+occurs of RX channel 1
+0x00E8
+RO
+GDMA_IN_ERR_EOF_DES_ADDR_CH1
+_REG
+Inlink descriptor address when errors
+occur of RX channel 1
+0x00EC
+RO
+GDMA_IN_DSCR_CH1_REG
+Address of the next receive descriptor
+pointed by the current pre-read receive
+descriptor on RX channel 1
+0x00F0
+RO
+GDMA_IN_DSCR_BF0_CH1_REG
+Address of the current pre-read receive
+descriptor on RX channel 1
+0x00F4
+RO
+GDMA_IN_DSCR_BF1_CH1_REG
+Address of the previous pre-read receive
+descriptor on RX channel 1
+0x00F8
+RO
+GDMA_OUTFIFO_STATUS_CH1_REG
+Transmit FIFO status of TX channel 1
+0x0138
+RO
+GDMA_OUT_STATE_CH1_REG
+Transmit status of TX channel 1
+0x0144
+RO
+GDMA_OUT_EOF_DES_ADDR_CH1_REG
+Outlink descriptor address when EOF
+occurs of TX channel 1
+0x0148
+RO
+GDMA_OUT_EOF_BFR_DES_ADDR_CH1
+_REG
+The last outlink descriptor address when
+EOF occurs of TX channel 1
+0x014C
+RO
+GDMA_OUT_DSCR_CH1_REG
+Address of the next transmit descriptor
+pointed by the current pre-read transmit
+descriptor on TX channel 1
+0x0150
+RO
+GDMA_OUT_DSCR_BF0_CH1_REG
+Address of the current pre-read transmit
+descriptor on TX channel 1
+0x0154
+RO
+GDMA_OUT_DSCR_BF1_CH1_REG
+Address of the previous pre-read transmit
+descriptor on TX channel 1
+0x0158
+RO
+GDMA_INFIFO_STATUS_CH2_REG
+Receive FIFO status of RX channel 2
+0x0198
+RO
+GDMA_IN_STATE_CH2_REG
+Receive status of RX channel 2
+0x01A4
+RO
+GDMA_IN_SUC_EOF_DES_ADDR_CH2
+_REG
+Inlink descriptor address when EOF
+occurs of RX channel 2
+0x01A8
+RO
+GDMA_IN_ERR_EOF_DES_ADDR_CH2
+_REG
+Inlink descriptor address when errors
+occur of RX channel 2
+0x01AC
+RO
+GDMA_IN_DSCR_CH2_REG
+Address of the next receive descriptor
+pointed by the current pre-read receive
+descriptor on RX channel 2
+0x01B0
+RO
+GDMA_IN_DSCR_BF0_CH2_REG
+Address of the current pre-read receive
+descriptor on RX channel 2
+0x01B4
+RO
+Espressif Systems
+372
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 373
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Name
+Description
+Address
+Access
+GDMA_IN_DSCR_BF1_CH2_REG
+Address of the previous pre-read receive
+descriptor on RX channel 2
+0x01B8
+RO
+GDMA_OUTFIFO_STATUS_CH2_REG
+Transmit FIFO status of TX channel 2
+0x01F8
+RO
+GDMA_OUT_STATE_CH2_REG
+Transmit status of TX channel 2
+0x0204
+RO
+GDMA_OUT_EOF_DES_ADDR_CH2_REG
+Outlink descriptor address when EOF
+occurs of TX channel 2
+0x0208
+RO
+GDMA_OUT_EOF_BFR_DES_ADDR_CH2
+_REG
+The last outlink descriptor address when
+EOF occurs of TX channel 2
+0x020C
+RO
+GDMA_OUT_DSCR_CH2_REG
+Address of the next transmit descriptor
+pointed by the current pre-read transmit
+descriptor on TX channel 2
+0x0210
+RO
+GDMA_OUT_DSCR_BF0_CH2_REG
+Address of the current pre-read transmit
+descriptor on TX channel 2
+0x0214
+RO
+GDMA_OUT_DSCR_BF1_CH2_REG
+Address of the previous pre-read transmit
+descriptor on TX channel 2
+0x0218
+RO
+GDMA_INFIFO_STATUS_CH3_REG
+Receive FIFO status of RX channel 3
+0x0258
+RO
+GDMA_IN_STATE_CH3_REG
+Receive status of RX channel 3
+0x0264
+RO
+GDMA_IN_SUC_EOF_DES_ADDR_CH3
+_REG
+Inlink descriptor address when EOF
+occurs of RX channel 3
+0x0268
+RO
+GDMA_IN_ERR_EOF_DES_ADDR_CH3
+_REG
+Inlink descriptor address when errors
+occur of RX channel 3
+0x026C
+RO
+GDMA_IN_DSCR_CH3_REG
+Address of the next receive descriptor
+pointed by the current pre-read receive
+descriptor on RX channel 3
+0x0270
+RO
+GDMA_IN_DSCR_BF0_CH3_REG
+Address of the current pre-read receive
+descriptor on RX channel 3
+0x0274
+RO
+GDMA_IN_DSCR_BF1_CH3_REG
+Address of the previous pre-read receive
+descriptor on RX channel 3
+0x0278
+RO
+GDMA_OUTFIFO_STATUS_CH3_REG
+Transmit FIFO status of TX channel 3
+0x02B8
+RO
+GDMA_OUT_STATE_CH3_REG
+Transmit status of TX channel 3
+0x02C4
+RO
+GDMA_OUT_EOF_DES_ADDR_CH3_REG
+Outlink descriptor address when EOF
+occurs of TX channel 3
+0x02C8
+RO
+GDMA_OUT_EOF_BFR_DES_ADDR_CH3
+_REG
+The last outlink descriptor address when
+EOF occurs of TX channel 3
+0x02CC
+RO
+GDMA_OUT_DSCR_CH3_REG
+Address of the next transmit descriptor
+pointed by the current pre-read transmit
+descriptor on TX channel 3
+0x02D0
+RO
+GDMA_OUT_DSCR_BF0_CH3_REG
+Address of the current pre-read transmit
+descriptor on TX channel 3
+0x02D4
+RO
+GDMA_OUT_DSCR_BF1_CH3_REG
+Address of the previous pre-read transmit
+descriptor on TX channel 3
+0x02D8
+RO
+GDMA_INFIFO_STATUS_CH4_REG
+Receive FIFO status of RX channel 4
+0x0318
+RO
+GDMA_IN_STATE_CH4_REG
+Receive status of RX channel 4
+0x0324
+RO
+Espressif Systems
+373
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 374
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Name
+Description
+Address
+Access
+GDMA_IN_SUC_EOF_DES_ADDR_CH4
+_REG
+Inlink descriptor address when EOF
+occurs of RX channel 4
+0x0328
+RO
+GDMA_IN_ERR_EOF_DES_ADDR_CH4
+_REG
+Inlink descriptor address when errors
+occur of RX channel 4
+0x032C
+RO
+GDMA_IN_DSCR_CH4_REG
+Address of the next receive descriptor
+pointed by the current pre-read receive
+descriptor on RX channel 4
+0x0330
+RO
+GDMA_IN_DSCR_BF0_CH4_REG
+Address of the current pre-read receive
+descriptor on RX channel 4
+0x0334
+RO
+GDMA_IN_DSCR_BF1_CH4_REG
+Address of the previous pre-read receive
+descriptor on RX channel 4
+0x0338
+RO
+GDMA_OUTFIFO_STATUS_CH4_REG
+Transmit FIFO status of TX channel 4
+0x0378
+RO
+GDMA_OUT_STATE_CH4_REG
+Transmit status of TX channel 4
+0x0384
+RO
+GDMA_OUT_EOF_DES_ADDR_CH4_REG
+Outlink descriptor address when EOF
+occurs of TX channel 4
+0x0388
+RO
+GDMA_OUT_EOF_BFR_DES_ADDR_CH4
+_REG
+The last outlink descriptor address when
+EOF occurs of TX channel 4
+0x038C
+RO
+GDMA_OUT_DSCR_CH4_REG
+Address of the next transmit descriptor
+pointed by the current pre-read transmit
+descriptor on TX channel 4
+0x0390
+RO
+GDMA_OUT_DSCR_BF0_CH4_REG
+Address of the current pre-read transmit
+descriptor on TX channel 4
+0x0394
+RO
+GDMA_OUT_DSCR_BF1_CH4_REG
+Address of the previous pre-read transmit
+descriptor on TX channel 4
+0x0398
+RO
+Priority Registers
+GDMA_IN_PRI_CH0_REG
+Priority register of RX channel 0
+0x0044
+R/W
+GDMA_OUT_PRI_CH0_REG
+Priority register of TX channel 0
+0x00A4
+R/W
+GDMA_IN_PRI_CH1_REG
+Priority register of RX channel 1
+0x0104
+R/W
+GDMA_OUT_PRI_CH1_REG
+Priority register of TX channel 1
+0x0164
+R/W
+GDMA_IN_PRI_CH2_REG
+Priority register of RX channel 2
+0x01C4
+R/W
+GDMA_OUT_PRI_CH2_REG
+Priority register of TX channel 2
+0x0224
+R/W
+GDMA_IN_PRI_CH3_REG
+Priority register of RX channel 3
+0x0284
+R/W
+GDMA_OUT_PRI_CH3_REG
+Priority register of TX channel 3
+0x02E4
+R/W
+GDMA_IN_PRI_CH4_REG
+Priority register of RX channel 4
+0x0344
+R/W
+GDMA_OUT_PRI_CH4_REG
+Priority register of TX channel 4
+0x03A4
+R/W
+Peripheral Selection Registers
+GDMA_IN_PERI_SEL_CH0_REG
+Peripheral selection of RX channel 0
+0x0048
+R/W
+GDMA_OUT_PERI_SEL_CH0_REG
+Peripheral selection of TX channel 0
+0x00A8
+R/W
+GDMA_IN_PERI_SEL_CH1_REG
+Peripheral selection of RX channel 1
+0x0108
+R/W
+GDMA_OUT_PERI_SEL_CH1_REG
+Peripheral selection of TX channel 1
+0x0168
+R/W
+GDMA_IN_PERI_SEL_CH2_REG
+Peripheral selection of RX channel 2
+0x01C8
+R/W
+GDMA_OUT_PERI_SEL_CH2_REG
+Peripheral selection of TX channel 2
+0x0228
+R/W
+GDMA_IN_PERI_SEL_CH3_REG
+Peripheral selection of RX channel 3
+0x0288
+R/W
+GDMA_OUT_PERI_SEL_CH3_REG
+Peripheral selection of TX channel 3
+0x02E8
+R/W
+Espressif Systems
+374
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 375
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Name
+Description
+Address
+Access
+GDMA_IN_PERI_SEL_CH4_REG
+Peripheral selection of RX channel 4
+0x0348
+R/W
+GDMA_OUT_PERI_SEL_CH4_REG
+Peripheral selection of TX channel 4
+0x03A8
+R/W
+Permission Status Registers
+GDMA_EXTMEM_REJECT_ADDR_REG
+External RAM address where access
+violation occurs
+0x03F4
+RO
+GDMA_EXTMEM_REJECT_ST_REG
+Status of external RAM where access
+violation occurs
+0x03F8
+RO
+Version Register
+GDMA_DATE_REG
+Version control register
+0x040C
+R/W
+Espressif Systems
+375
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 376
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+3.8
+Registers
+The addresses in this section are relative to GDMA base address provided in Table 4.3-3 in Chapter 4 System
+and Memory.
+Register 3.1. GDMA_IN_CONF0_CHn_REG (n: 0-4) (0x0000+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+5
+GDMA_MEM_TRANS_EN_CH0
+0
+4
+GDMA_IN_DATA_BURST_EN_CH0
+0
+3
+GDMA_INDSCR_BURST_EN_CH0
+0
+2
+GDMA_IN_LOOP_TEST_CH0
+0
+1
+GDMA_IN_RST_CH0
+0
+0
+Reset
+GDMA_IN_RST_CHn This bit is used to reset GDMA channel 0 RX FSM and RX FIFO pointer. (R/W)
+GDMA_IN_LOOP_TEST_CHn Reserved. (R/W)
+GDMA_INDSCR_BURST_EN_CHn Set this bit to 1 to enable INCR burst transfer for RX channel 0
+reading descriptor when accessing internal RAM. (R/W)
+GDMA_IN_DATA_BURST_EN_CHn Set this bit to 1 to enable INCR burst transfer for RX channel 0
+receiving data when accessing internal RAM. (R/W)
+GDMA_MEM_TRANS_EN_CHn Set this bit 1 to enable automatic transmitting data from memory to
+memory via GDMA. (R/W)
+Espressif Systems
+376
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 377
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.2. GDMA_IN_CONF1_CHn_REG (n: 0-4) (0x0004+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+15
+GDMA_IN_EXT_MEM_BK_SIZE_CH0
+0
+14
+13
+GDMA_IN_CHECK_OWNER_CH0
+0
+12
+GDMA_DMA_INFIFO_FULL_THRS_CH0
+0xc
+11
+0
+Reset
+GDMA_DMA_INFIFO_FULL_THRS_CHn This
+register
+is
+used
+to
+generate
+the
+GDMA_INFIFO_FULL_WM_INT interrupt when RX channel 0 received byte number in RX
+FIFO is up to the value of the register. (R/W)
+GDMA_IN_CHECK_OWNER_CHn Set this bit to enable checking the owner attribute of the descrip-
+tor. (R/W)
+GDMA_IN_EXT_MEM_BK_SIZE_CHn Block size of RX channel 0 when GDMA access external RAM.
+0: 16 bytes; 1: 32 bytes; 2: 64 bytes; 3: Reserved. (R/W)
+Register 3.3. GDMA_IN_POP_CHn_REG (n: 0-4) (0x001C+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+13
+GDMA_INFIFO_POP_CH0
+0
+12
+GDMA_INFIFO_RDATA_CH0
+0x800
+11
+0
+Reset
+GDMA_INFIFO_RDATA_CHn This register stores the data popping from GDMA FIFO (intended for
+debugging). (RO)
+GDMA_INFIFO_POP_CHn Set this bit to pop data from GDMA FIFO (intended for debugging).
+(R/W/SC)
+Espressif Systems
+377
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 378
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.4. GDMA_IN_LINK_CHn_REG (n: 0-4) (0x0020+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+31
+25
+GDMA_INLINK_PARK_CH0
+1
+24
+GDMA_INLINK_RESTART_CH0
+0
+23
+GDMA_INLINK_START_CH0
+0
+22
+GDMA_INLINK_STOP_CH0
+0
+21
+GDMA_INLINK_AUTO_RET_CH0
+1
+20
+GDMA_INLINK_ADDR_CH0
+0x000
+19
+0
+Reset
+GDMA_INLINK_ADDR_CHn This register stores the 20 least significant bits of the first receive de-
+scriptor’s address. (R/W)
+GDMA_INLINK_AUTO_RET_CHn Set this bit to return to current receive descriptor’s address, when
+there are some errors in current receiving data. (R/W)
+GDMA_INLINK_STOP_CHn Set this bit to stop GDMA’s receive channel from receiving data.
+(R/W/SC)
+GDMA_INLINK_START_CHn Set this bit to enable GDMA’s receive channel for data transfer.
+(R/W/SC)
+GDMA_INLINK_RESTART_CHn Set this bit to mount a new receive descriptor. (R/W/SC)
+GDMA_INLINK_PARK_CHn 1: the receive descriptor’s FSM is in idle state; 0: the receive descrip-
+tor’s FSM is working. (RO)
+Espressif Systems
+378
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 379
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.5. GDMA_OUT_CONF0_CHn_REG (n: 0-4) (0x0060+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+6
+GDMA_OUT_DATA_BURST_EN_CH0
+0
+5
+GDMA_OUTDSCR_BURST_EN_CH0
+0
+4
+GDMA_OUT_EOF_MODE_CH0
+1
+3
+GDMA_OUT_AUTO_WRBACK_CH0
+0
+2
+GDMA_OUT_LOOP_TEST_CH0
+0
+1
+GDMA_OUT_RST_CH0
+0
+0
+Reset
+GDMA_OUT_RST_CHn This bit is used to reset GDMA channel 0 TX FSM and TX FIFO pointer. (R/W)
+GDMA_OUT_LOOP_TEST_CHn Reserved. (R/W)
+GDMA_OUT_AUTO_WRBACK_CHn Set this bit to enable automatic outlink-writeback when all the
+data in TX FIFO has been transmitted. (R/W)
+GDMA_OUT_EOF_MODE_CHn EOF flag generation mode when transmitting data. 1: EOF flag for TX
+channel 0 is generated when data need to transmit has been popped from FIFO in GDMA. (R/W)
+GDMA_OUTDSCR_BURST_EN_CHn Set this bit to 1 to enable INCR burst transfer for TX channel 0
+reading descriptor when accessing internal RAM. (R/W)
+GDMA_OUT_DATA_BURST_EN_CHn Set this bit to 1 to enable INCR burst transfer for TX channel 0
+transmitting data when accessing internal RAM. (R/W)
+Register 3.6. GDMA_OUT_CONF1_CHn_REG (n: 0-4) (0x0064+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+15
+GDMA_OUT_EXT_MEM_BK_SIZE_CH0
+0
+14
+13
+GDMA_OUT_CHECK_OWNER_CH0
+0
+12
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+11
+0
+Reset
+GDMA_OUT_CHECK_OWNER_CHn Set this bit to enable checking the owner attribute of the de-
+scriptor. (R/W)
+GDMA_OUT_EXT_MEM_BK_SIZE_CHn Block size of TX channel 0 when GDMA access external
+RAM. 0: 16 bytes; 1: 32 bytes; 2: 64 bytes; 3: Reserved. (R/W)
+Espressif Systems
+379
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 380
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.7. GDMA_OUT_PUSH_CHn_REG (n: 0-4) (0x007C+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+10
+GDMA_OUTFIFO_PUSH_CH0
+0
+9
+GDMA_OUTFIFO_WDATA_CH0
+0x0
+8
+0
+Reset
+GDMA_OUTFIFO_WDATA_CHn This register stores the data that need to be pushed into GDMA FIFO.
+(R/W)
+GDMA_OUTFIFO_PUSH_CHn Set this bit to push data into GDMA FIFO. (R/W/SC)
+Register 3.8. GDMA_OUT_LINK_CHn_REG (n: 0-4) (0x0080+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+31
+24
+GDMA_OUTLINK_PARK_CH0
+1
+23
+GDMA_OUTLINK_RESTART_CH0
+0
+22
+GDMA_OUTLINK_START_CH0
+0
+21
+GDMA_OUTLINK_STOP_CH0
+0
+20
+GDMA_OUTLINK_ADDR_CH0
+0x000
+19
+0
+Reset
+GDMA_OUTLINK_ADDR_CHn This register stores the 20 least significant bits of the first transmit
+descriptor’s address. (R/W)
+GDMA_OUTLINK_STOP_CHn Set this bit to stop GDMA’s transmit channel from transferring data.
+(R/W/SC)
+GDMA_OUTLINK_START_CHn Set this bit to enable GDMA’s transmit channel for data transfer.
+(R/W/SC)
+GDMA_OUTLINK_RESTART_CHn Set this bit to restart a new outlink from the last address. (R/W/SC)
+GDMA_OUTLINK_PARK_CHn 1: the transmit descriptor’s FSM is in idle state; 0: the transmit de-
+scriptor’s FSM is working. (RO)
+Espressif Systems
+380
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 381
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.9. GDMA_PD_CONF_REG (0x03C4)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+7
+GDMA_DMA_RAM_CLK_FO
+0
+6
+GDMA_DMA_RAM_FORCE_PU
+1
+5
+GDMA_DMA_RAM_FORCE_PD
+0
+4
+(reserved)
+0
+0
+0
+0
+3
+0
+Reset
+GDMA_DMA_RAM_FORCE_PD Set this bit to force power down GDMA internal memory. (R/W)
+GDMA_DMA_RAM_FORCE_PU Set this bit to force power up GDMA internal memory. (R/W)
+GDMA_DMA_RAM_CLK_FO 1: Force to open the clock and bypass the gate-clock when accessing
+the RAM in GDMA; 0: A gate-clock will be used when accessing the RAM in GDMA. (R/W)
+Register 3.10. GDMA_MISC_CONF_REG (0x03C8)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+5
+GDMA_CLK_EN
+0
+4
+(reserved)
+0
+3
+GDMA_ARB_PRI_DIS
+0
+2
+GDMA_AHBM_RST_EXTER
+0
+1
+GDMA_AHBM_RST_INTER
+0
+0
+Reset
+GDMA_AHBM_RST_INTER Set this bit, then clear this bit to reset the internal AHB FSM. (R/W)
+GDMA_AHBM_RST_EXTER Set this bit, then clear this bit to reset the external AHB FSM. (R/W)
+GDMA_ARB_PRI_DIS Set this bit to disable priority arbitration function. (R/W)
+GDMA_CLK_EN 1: Force clock on for registers; 0: Support clock only when application writes reg-
+isters. (R/W)
+Espressif Systems
+381
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 382
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.11. GDMA_IN_INT_RAW_CHn_REG (n: 0-4) (0x0008+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+6
+GDMA_INFIFO_FULL_WM_CH0_INT_RAW
+0
+5
+GDMA_IN_DSCR_EMPTY_CH0_INT_RAW
+0
+4
+GDMA_IN_DSCR_ERR_CH0_INT_RAW
+0
+3
+GDMA_IN_ERR_EOF_CH0_INT_RAW
+0
+2
+GDMA_IN_SUC_EOF_CH0_INT_RAW
+0
+1
+GDMA_IN_DONE_CH0_INT_RAW
+0
+0
+Reset
+GDMA_IN_DONE_CHn_INT_RAW The raw interrupt bit turns to high level when the last data pointed
+by one receive descriptor has been received for RX channel 0. (R/WTC/SS)
+GDMA_IN_SUC_EOF_CHn_INT_RAW The raw interrupt bit turns to high level for RX channel 0 when
+the last data pointed by one receive descriptor has been received and the suc_eof bit in this
+descriptor is 1. For UHCI0, the raw interrupt bit turns to high level when the last data pointed
+by one receive descriptor has been received and no data error is detected for RX channel 0.
+(R/WTC/SS)
+GDMA_IN_ERR_EOF_CHn_INT_RAW The raw interrupt bit turns to high level when data error is de-
+tected only in the case that the peripheral is UHCI0 for RX channel 0. For other peripherals, this
+raw interrupt is reserved. (R/WTC/SS)
+GDMA_IN_DSCR_ERR_CHn_INT_RAW The raw interrupt bit turns to high level when detecting re-
+ceive descriptor error, including owner error, the second and third word error of receive de-
+scriptor for RX channel 0. (R/WTC/SS)
+GDMA_IN_DSCR_EMPTY_CHn_INT_RAW The raw interrupt bit turns to high level when RX FIFO
+pointed by inlink is full and receiving data is not completed, but there is no more inlink for RX
+channel 0. (R/WTC/SS)
+GDMA_INFIFO_FULL_WM_CHn_INT_RAW The raw interrupt bit turns to high level when received
+data byte number is up to threshold configured by GDMA_DMA_INFIFO_FULL_THRS_CH0 in RX
+FIFO of RX channel 0. (R/WTC/SS)
+Espressif Systems
+382
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 383
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.12. GDMA_IN_INT_ST_CHn_REG (n: 0-4) (0x000C+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+6
+GDMA_INFIFO_FULL_WM_CH0_INT_ST
+0
+5
+GDMA_IN_DSCR_EMPTY_CH0_INT_ST
+0
+4
+GDMA_IN_DSCR_ERR_CH0_INT_ST
+0
+3
+GDMA_IN_ERR_EOF_CH0_INT_ST
+0
+2
+GDMA_IN_SUC_EOF_CH0_INT_ST
+0
+1
+GDMA_IN_DONE_CH0_INT_ST
+0
+0
+Reset
+GDMA_IN_DONE_CHn_INT_ST The raw interrupt status bit for the GDMA_IN_DONE_CH_INT inter-
+rupt. (RO)
+GDMA_IN_SUC_EOF_CHn_INT_ST The raw interrupt status bit for the GDMA_IN_SUC_EOF_CH_INT
+interrupt. (RO)
+GDMA_IN_ERR_EOF_CHn_INT_ST The raw interrupt status bit for the GDMA_IN_ERR_EOF_CH_INT
+interrupt. (RO)
+GDMA_IN_DSCR_ERR_CHn_INT_ST The
+raw
+interrupt
+status
+bit
+for
+the
+GDMA_IN_DSCR_ERR_CH_INT interrupt. (RO)
+GDMA_IN_DSCR_EMPTY_CHn_INT_ST The
+raw
+interrupt
+status
+bit
+for
+the
+GDMA_IN_DSCR_EMPTY_CH_INT interrupt. (RO)
+GDMA_INFIFO_FULL_WM_CHn_INT_ST The
+raw
+interrupt
+status
+bit
+for
+the
+GDMA_INFIFO_FULL_WM_CH_INT interrupt. (RO)
+Espressif Systems
+383
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 384
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.13. GDMA_IN_INT_ENA_CHn_REG (n: 0-4) (0x0010+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+6
+GDMA_INFIFO_FULL_WM_CH0_INT_ENA
+0
+5
+GDMA_IN_DSCR_EMPTY_CH0_INT_ENA
+0
+4
+GDMA_IN_DSCR_ERR_CH0_INT_ENA
+0
+3
+GDMA_IN_ERR_EOF_CH0_INT_ENA
+0
+2
+GDMA_IN_SUC_EOF_CH0_INT_ENA
+0
+1
+GDMA_IN_DONE_CH0_INT_ENA
+0
+0
+Reset
+GDMA_IN_DONE_CHn_INT_ENA The interrupt enable bit for the GDMA_IN_DONE_CH_INT inter-
+rupt. (R/W)
+GDMA_IN_SUC_EOF_CHn_INT_ENA The interrupt enable bit for the GDMA_IN_SUC_EOF_CH_INT
+interrupt. (R/W)
+GDMA_IN_ERR_EOF_CHn_INT_ENA The interrupt enable bit for the GDMA_IN_ERR_EOF_CH_INT
+interrupt. (R/W)
+GDMA_IN_DSCR_ERR_CHn_INT_ENA The
+interrupt
+enable
+bit
+for
+the
+GDMA_IN_DSCR_ERR_CH_INT interrupt. (R/W)
+GDMA_IN_DSCR_EMPTY_CHn_INT_ENA The
+interrupt
+enable
+bit
+for
+the
+GDMA_IN_DSCR_EMPTY_CH_INT interrupt. (R/W)
+GDMA_INFIFO_FULL_WM_CHn_INT_ENA The
+interrupt
+enable
+bit
+for
+the
+GDMA_INFIFO_FULL_WM_CH_INT interrupt. (R/W)
+Espressif Systems
+384
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 385
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.14. GDMA_IN_INT_CLR_CHn_REG (n: 0-4) (0x0014+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+6
+GDMA_DMA_INFIFO_FULL_WM_CH0_INT_CLR
+0
+5
+GDMA_IN_DSCR_EMPTY_CH0_INT_CLR
+0
+4
+GDMA_IN_DSCR_ERR_CH0_INT_CLR
+0
+3
+GDMA_IN_ERR_EOF_CH0_INT_CLR
+0
+2
+GDMA_IN_SUC_EOF_CH0_INT_CLR
+0
+1
+GDMA_IN_DONE_CH0_INT_CLR
+0
+0
+Reset
+GDMA_IN_DONE_CHn_INT_CLR Set this bit to clear the GDMA_IN_DONE_CH_INT interrupt. (WT)
+GDMA_IN_SUC_EOF_CHn_INT_CLR Set this bit to clear the GDMA_IN_SUC_EOF_CH_INT interrupt.
+(WT)
+GDMA_IN_ERR_EOF_CHn_INT_CLR Set this bit to clear the GDMA_IN_ERR_EOF_CH_INT interrupt.
+(WT)
+GDMA_IN_DSCR_ERR_CHn_INT_CLR Set this bit to clear the GDMA_IN_DSCR_ERR_CH_INT inter-
+rupt. (WT)
+GDMA_IN_DSCR_EMPTY_CHn_INT_CLR Set this bit to clear the GDMA_IN_DSCR_EMPTY_CH_INT
+interrupt. (WT)
+GDMA_DMA_INFIFO_FULL_WM_CHn_INT_CLR Set
+this
+bit
+to
+clear
+the
+GDMA_INFIFO_FULL_WM_CH_INT interrupt. (WT)
+Espressif Systems
+385
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 386
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.15. GDMA_OUT_INT_RAW_CHn_REG (n: 0-4) (0x0068+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+4
+GDMA_OUT_TOTAL_EOF_CH0_INT_RAW
+0
+3
+GDMA_OUT_DSCR_ERR_CH0_INT_RAW
+0
+2
+GDMA_OUT_EOF_CH0_INT_RAW
+0
+1
+GDMA_OUT_DONE_CH0_INT_RAW
+0
+0
+Reset
+GDMA_OUT_DONE_CHn_INT_RAW The raw interrupt bit turns to high level when the last data
+pointed by one transmit descriptor has been transmitted to peripherals for TX channel 0.
+(R/WTC/SS)
+GDMA_OUT_EOF_CHn_INT_RAW The raw interrupt bit turns to high level when the last data pointed
+by one transmit descriptor has been read from memory for TX channel 0. (R/WTC/SS)
+GDMA_OUT_DSCR_ERR_CHn_INT_RAW The raw interrupt bit turns to high level when detecting
+transmit descriptor error, including owner error, the second and third word error of transmit de-
+scriptor for TX channel 0. (R/WTC/SS)
+GDMA_OUT_TOTAL_EOF_CHn_INT_RAW The raw interrupt bit turns to high level when data corre-
+sponding a outlink (includes one descriptor or few descriptors) is transmitted out for TX channel
+0. (R/WTC/SS)
+Espressif Systems
+386
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 387
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.16. GDMA_OUT_INT_ST_CHn_REG (n: 0-4) (0x006C+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+4
+GDMA_OUT_TOTAL_EOF_CH0_INT_ST
+0
+3
+GDMA_OUT_DSCR_ERR_CH0_INT_ST
+0
+2
+GDMA_OUT_EOF_CH0_INT_ST
+0
+1
+GDMA_OUT_DONE_CH0_INT_ST
+0
+0
+Reset
+GDMA_OUT_DONE_CHn_INT_ST The raw interrupt status bit for the GDMA_OUT_DONE_CH_INT in-
+terrupt. (RO)
+GDMA_OUT_EOF_CHn_INT_ST The raw interrupt status bit for the GDMA_OUT_EOF_CH_INT inter-
+rupt. (RO)
+GDMA_OUT_DSCR_ERR_CHn_INT_ST The
+raw
+interrupt
+status
+bit
+for
+the
+GDMA_OUT_DSCR_ERR_CH_INT interrupt. (RO)
+GDMA_OUT_TOTAL_EOF_CHn_INT_ST The
+raw
+interrupt
+status
+bit
+for
+the
+GDMA_OUT_TOTAL_EOF_CH_INT interrupt. (RO)
+Register 3.17. GDMA_OUT_INT_ENA_CHn_REG (n: 0-4) (0x0070+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+4
+GDMA_OUT_TOTAL_EOF_CH0_INT_ENA
+0
+3
+GDMA_OUT_DSCR_ERR_CH0_INT_ENA
+0
+2
+GDMA_OUT_EOF_CH0_INT_ENA
+0
+1
+GDMA_OUT_DONE_CH0_INT_ENA
+0
+0
+Reset
+GDMA_OUT_DONE_CHn_INT_ENA The interrupt enable bit for the GDMA_OUT_DONE_CH_INT in-
+terrupt. (R/W)
+GDMA_OUT_EOF_CHn_INT_ENA The interrupt enable bit for the GDMA_OUT_EOF_CH_INT inter-
+rupt. (R/W)
+GDMA_OUT_DSCR_ERR_CHn_INT_ENA The
+interrupt
+enable
+bit
+for
+the
+GDMA_OUT_DSCR_ERR_CH_INT interrupt. (R/W)
+GDMA_OUT_TOTAL_EOF_CHn_INT_ENA The
+interrupt
+enable
+bit
+for
+the
+GDMA_OUT_TOTAL_EOF_CH_INT interrupt. (R/W)
+Espressif Systems
+387
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 388
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.18. GDMA_OUT_INT_CLR_CHn_REG (n: 0-4) (0x0074+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+4
+GDMA_OUT_TOTAL_EOF_CH0_INT_CLR
+0
+3
+GDMA_OUT_DSCR_ERR_CH0_INT_CLR
+0
+2
+GDMA_OUT_EOF_CH0_INT_CLR
+0
+1
+GDMA_OUT_DONE_CH0_INT_CLR
+0
+0
+Reset
+GDMA_OUT_DONE_CHn_INT_CLR Set this bit to clear the GDMA_OUT_DONE_CH_INT interrupt.
+(WT)
+GDMA_OUT_EOF_CHn_INT_CLR Set this bit to clear the GDMA_OUT_EOF_CH_INT interrupt. (WT)
+GDMA_OUT_DSCR_ERR_CHn_INT_CLR Set this bit to clear the GDMA_OUT_DSCR_ERR_CH_INT
+interrupt. (WT)
+GDMA_OUT_TOTAL_EOF_CHn_INT_CLR Set this bit to clear the GDMA_OUT_TOTAL_EOF_CH_INT
+interrupt. (WT)
+Register 3.19. GDMA_EXTMEM_REJECT_INT_RAW_REG (0x03FC)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+1
+GDMA_EXTMEM_REJECT_INT_RAW
+0
+0
+Reset
+GDMA_EXTMEM_REJECT_INT_RAW The raw interrupt bit turns to high level when accessing exter-
+nal RAM is rejected by permission control. (R/WTC/SS)
+Espressif Systems
+388
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 389
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.20. GDMA_EXTMEM_REJECT_INT_ST_REG (0x0400)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+1
+GDMA_EXTMEM_REJECT_INT_ST
+0
+0
+Reset
+GDMA_EXTMEM_REJECT_INT_ST The raw interrupt status bit for the GDMA_EXTMEM_REJECT_INT
+interrupt. (RO)
+Register 3.21. GDMA_EXTMEM_REJECT_INT_ENA_REG (0x0404)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+1
+GDMA_EXTMEM_REJECT_INT_ENA
+0
+0
+Reset
+GDMA_EXTMEM_REJECT_INT_ENA The interrupt enable bit for the GDMA_EXTMEM_REJECT_INT
+interrupt. (R/W)
+Register 3.22. GDMA_EXTMEM_REJECT_INT_CLR_REG (0x0408)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+1
+GDMA_EXTMEM_REJECT_INT_CLR
+0
+0
+Reset
+GDMA_EXTMEM_REJECT_INT_CLR Set this bit to clear the GDMA_EXTMEM_REJECT_INT interrupt.
+(WT)
+Espressif Systems
+389
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 390
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.23. GDMA_INFIFO_STATUS_CHn_REG (n: 0-4) (0x0018+192*n)
+(reserved)
+0
+0
+0
+31
+29
+reserved
+0
+28
+reserved
+1
+27
+reserved
+1
+26
+reserved
+1
+25
+reserved
+1
+24
+GDMA_INFIFO_CNT_L3_CH0
+0
+23
+19
+GDMA_INFIFO_CNT_L2_CH0
+0
+18
+12
+GDMA_INFIFO_CNT_L1_CH0
+0
+11
+6
+GDMA_INFIFO_EMPTY_L3_CH0
+1
+5
+GDMA_INFIFO_FULL_L3_CH0
+1
+4
+GDMA_INFIFO_EMPTY_L2_CH0
+1
+3
+GDMA_INFIFO_FULL_L2_CH0
+0
+2
+GDMA_INFIFO_EMPTY_L1_CH0
+1
+1
+GDMA_INFIFO_FULL_L1_CH0
+0
+0
+Reset
+GDMA_INFIFO_FULL_L1_CHn L1 RX FIFO full signal for RX channel 0. (RO)
+GDMA_INFIFO_EMPTY_L1_CHn L1 RX FIFO empty signal for RX channel 0. (RO)
+GDMA_INFIFO_FULL_L2_CHn L2 RX FIFO full signal for RX channel 0. (RO)
+GDMA_INFIFO_EMPTY_L2_CHn L2 RX FIFO empty signal for RX channel 0. (RO)
+GDMA_INFIFO_FULL_L3_CHn L3 RX FIFO full signal for RX channel 0. (RO)
+GDMA_INFIFO_EMPTY_L3_CHn L3 RX FIFO empty signal for RX channel 0. (RO)
+GDMA_INFIFO_CNT_L1_CHn The register stores the byte number of the data in L1 RX FIFO for RX
+channel 0. (RO)
+GDMA_INFIFO_CNT_L2_CHn The register stores the byte number of the data in L2 RX FIFO for RX
+channel 0. (RO)
+GDMA_INFIFO_CNT_L3_CHn The register stores the byte number of the data in L3 RX FIFO for RX
+channel 0. (RO)
+Register 3.24. GDMA_IN_STATE_CHn_REG (n: 0-4) (0x0024+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+23
+reserved
+0
+22
+20
+reserved
+0
+19
+18
+GDMA_INLINK_DSCR_ADDR_CH0
+0
+17
+0
+Reset
+GDMA_INLINK_DSCR_ADDR_CHn This register stores the lower 18 bits of the next receive descrip-
+tor address that is pre-read (but not processed yet). If the current receive descriptor is the last
+descriptor, then this field represents the address of the current receive descriptor. (RO)
+Espressif Systems
+390
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 391
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.25. GDMA_IN_SUC_EOF_DES_ADDR_CHn_REG (n: 0-4) (0x0028+192*n)
+GDMA_IN_SUC_EOF_DES_ADDR_CH0
+0x000000
+31
+0
+Reset
+GDMA_IN_SUC_EOF_DES_ADDR_CHn This register stores the address of the receive descriptor
+when the EOF bit in this descriptor is 1. (RO)
+Register 3.26. GDMA_IN_ERR_EOF_DES_ADDR_CHn_REG (n: 0-4) (0x002C+192*n)
+GDMA_IN_ERR_EOF_DES_ADDR_CH0
+0x000000
+31
+0
+Reset
+GDMA_IN_ERR_EOF_DES_ADDR_CHn This register stores the address of the receive descriptor
+when there are some errors in current receiving data. Only used when peripheral is UHCI0. (RO)
+Register 3.27. GDMA_IN_DSCR_CHn_REG (n: 0-4) (0x0030+192*n)
+GDMA_INLINK_DSCR_CH0
+0
+31
+0
+Reset
+GDMA_INLINK_DSCR_CHn Represents the address of the next receive descriptor x+1 pointed by
+the current receive descriptor that is pre-read. (RO)
+Espressif Systems
+391
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 392
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.28. GDMA_IN_DSCR_BF0_CHn_REG (n: 0-4) (0x0034+192*n)
+GDMA_INLINK_DSCR_BF0_CH0
+0
+31
+0
+Reset
+GDMA_INLINK_DSCR_BF0_CHn Represents the address of the current receive descriptor x that is
+pre-read. (RO)
+Register 3.29. GDMA_IN_DSCR_BF1_CHn_REG (n: 0-4) (0x0038+192*n)
+GDMA_INLINK_DSCR_BF1_CH0
+0
+31
+0
+Reset
+GDMA_INLINK_DSCR_BF1_CHn Represents the address of the previous receive descriptor x-1 that
+is pre-read. (RO)
+Espressif Systems
+392
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 393
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.30. GDMA_OUTFIFO_STATUS_CHn_REG (n: 0-4) (0x0078+192*n)
+(reserved)
+0
+0
+0
+0
+0
+31
+27
+GDMA_OUT_REMAIN_UNDER_4B_L3_CH0
+1
+26
+GDMA_OUT_REMAIN_UNDER_3B_L3_CH0
+1
+25
+GDMA_OUT_REMAIN_UNDER_2B_L3_CH0
+1
+24
+GDMA_OUT_REMAIN_UNDER_1B_L3_CH0
+1
+23
+GDMA_OUTFIFO_CNT_L3_CH0
+0
+22
+18
+GDMA_OUTFIFO_CNT_L2_CH0
+0
+17
+11
+GDMA_OUTFIFO_CNT_L1_CH0
+0
+10
+6
+GDMA_OUTFIFO_EMPTY_L3_CH0
+1
+5
+GDMA_OUTFIFO_FULL_L3_CH0
+0
+4
+GDMA_OUTFIFO_EMPTY_L2_CH0
+1
+3
+GDMA_OUTFIFO_FULL_L2_CH0
+0
+2
+GDMA_OUTFIFO_EMPTY_L1_CH0
+1
+1
+GDMA_OUTFIFO_FULL_L1_CH0
+0
+0
+Reset
+GDMA_OUTFIFO_FULL_L1_CHn L1 TX FIFO full signal for TX channel 0. (RO)
+GDMA_OUTFIFO_EMPTY_L1_CHn L1 TX FIFO empty signal for TX channel 0. (RO)
+GDMA_OUTFIFO_FULL_L2_CHn L2 TX FIFO full signal for TX channel 0. (RO)
+GDMA_OUTFIFO_EMPTY_L2_CHn L2 TX FIFO empty signal for TX channel 0. (RO)
+GDMA_OUTFIFO_FULL_L3_CHn L3 TX FIFO full signal for TX channel 0. (RO)
+GDMA_OUTFIFO_EMPTY_L3_CHn L3 TX FIFO empty signal for TX channel 0. (RO)
+GDMA_OUTFIFO_CNT_L1_CHn The register stores the byte number of the data in L1 TX FIFO for TX
+channel 0. (RO)
+GDMA_OUTFIFO_CNT_L2_CHn The register stores the byte number of the data in L2 TX FIFO for
+TX channel 0. (RO)
+GDMA_OUTFIFO_CNT_L3_CHn The register stores the byte number of the data in L3 TX FIFO for
+TX channel 0. (RO)
+GDMA_OUT_REMAIN_UNDER_1B_L3_CHn Reserved. (RO)
+GDMA_OUT_REMAIN_UNDER_2B_L3_CHn Reserved. (RO)
+GDMA_OUT_REMAIN_UNDER_3B_L3_CHn Reserved. (RO)
+GDMA_OUT_REMAIN_UNDER_4B_L3_CHn Reserved. (RO)
+Espressif Systems
+393
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 394
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.31. GDMA_OUT_STATE_CHn_REG (n: 0-4) (0x0084+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+23
+GDMA_OUT_STATE_CH0
+0
+22
+20
+GDMA_OUT_DSCR_STATE_CH0
+0
+19
+18
+GDMA_OUTLINK_DSCR_ADDR_CH0
+0
+17
+0
+Reset
+GDMA_OUTLINK_DSCR_ADDR_CHn This register stores the lower 18 bits of the next receive de-
+scriptor address that is pre-read (but not processed yet). If the current receive descriptor is the
+last descriptor, then this field represents the address of the current receive descriptor. (RO)
+GDMA_OUT_DSCR_STATE_CHn Reserved. (RO)
+GDMA_OUT_STATE_CHn Reserved. (RO)
+Register 3.32. GDMA_OUT_EOF_DES_ADDR_CHn_REG (n: 0-4) (0x0088+192*n)
+GDMA_OUT_EOF_DES_ADDR_CH0
+0x000000
+31
+0
+Reset
+GDMA_OUT_EOF_DES_ADDR_CHn This register stores the address of the transmit descriptor when
+the EOF bit in this descriptor is 1. (RO)
+Espressif Systems
+394
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 395
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.33. GDMA_OUT_EOF_BFR_DES_ADDR_CHn_REG (n: 0-4) (0x008C+192*n)
+GDMA_OUT_EOF_BFR_DES_ADDR_CH0
+0x000000
+31
+0
+Reset
+GDMA_OUT_EOF_BFR_DES_ADDR_CHn This register stores the address of the transmit descriptor
+before the last transmit descriptor. (RO)
+Register 3.34. GDMA_OUT_DSCR_CHn_REG (n: 0-4) (0x0090+192*n)
+GDMA_OUTLINK_DSCR_CH0
+0
+31
+0
+Reset
+GDMA_OUTLINK_DSCR_CHn Represents the address of the next transmit descriptor y+1 pointed
+by the current transmit descriptor that is pre-read. (RO)
+Register 3.35. GDMA_OUT_DSCR_BF0_CHn_REG (n: 0-4) (0x0094+192*n)
+GDMA_OUTLINK_DSCR_BF0_CH0
+0
+31
+0
+Reset
+GDMA_OUTLINK_DSCR_BF0_CHn Represents the address of the current transmit descriptor y that
+is pre-read. (RO)
+Espressif Systems
+395
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 396
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.36. GDMA_OUT_DSCR_BF1_CHn_REG (n: 0-4) (0x0098+192*n)
+GDMA_OUTLINK_DSCR_BF1_CH0
+0
+31
+0
+Reset
+GDMA_OUTLINK_DSCR_BF1_CHn Represents the address of the previous transmit descriptor y-1
+that is pre-read. (RO)
+Register 3.37. GDMA_IN_PRI_CHn_REG (n: 0-4) (0x0044+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+4
+GDMA_RX_PRI_CH0
+0
+3
+0
+Reset
+GDMA_RX_PRI_CHn The priority of RX channel 0. The larger the value, the higher the priority. (R/W)
+Register 3.38. GDMA_OUT_PRI_CHn_REG (n: 0-4) (0x00A4+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+4
+GDMA_TX_PRI_CH0
+0
+3
+0
+Reset
+GDMA_TX_PRI_CHn The priority of TX channel 0. The larger the value, the higher the priority. (R/W)
+Espressif Systems
+396
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 397
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.39. GDMA_IN_PERI_SEL_CHn_REG (n: 0-4) (0x0048+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+6
+GDMA_PERI_IN_SEL_CH0
+0x3f
+5
+0
+Reset
+GDMA_PERI_IN_SEL_CHn This register is used to select peripheral for RX channel 0. 0: SPI2; 1:
+SPI3; 2: UHCI0; 3: I2S0; 4: I2S1; 5: LCD_CAM; 6: AES; 7: SHA; 8: ADC_DAC; 9: RMT; 10 ~ 63:
+Invalid. (R/W)
+Register 3.40. GDMA_OUT_PERI_SEL_CHn_REG (n: 0-4) (0x00A8+192*n)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+6
+GDMA_PERI_OUT_SEL_CH0
+0x3f
+5
+0
+Reset
+GDMA_PERI_OUT_SEL_CHn This register is used to select peripheral for TX channel 0. 0: SPI2; 1:
+SPI3; 2: UHCI0; 3: I2S0; 4: I2S1; 5: LCD_CAM; 6: AES; 7: SHA; 8: ADC_DAC; 9: RMT; 10 ~ 63:
+Invalid. (R/W)
+Register 3.41. GDMA_EXTMEM_REJECT_ADDR_REG (0x03F4)
+GDMA_EXTMEM_REJECT_ADDR
+0
+31
+0
+Reset
+GDMA_EXTMEM_REJECT_ADDR This register store the first address rejected by permission control
+when accessing external RAM. (RO)
+Espressif Systems
+397
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 398
+Chapter 3 GDMA Controller (GDMA)
+GoBack
+Register 3.42. GDMA_EXTMEM_REJECT_ST_REG (0x03F8)
+(reserved)
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+31
+12
+GDMA_EXTMEM_REJECT_PERI_NUM
+0
+11
+6
+GDMA_EXTMEM_REJECT_CHANNEL_NUM
+0
+5
+2
+GDMA_EXTMEM_REJECT_ATRR
+0
+1
+0
+Reset
+GDMA_EXTMEM_REJECT_ATRR Read or write attribute of the rejected access. Bit 0: if this bit is 1,
+the rejected access is READ. Bit 1: if this bit is 1, the rejected access is WRITE. (RO)
+GDMA_EXTMEM_REJECT_CHANNEL_NUM This field indicates the channel used for the rejected
+access. (RO)
+GDMA_EXTMEM_REJECT_PERI_NUM This bit indicates the peripheral whose access was rejected.
+(RO)
+Register 3.43. GDMA_DATE_REG (0x040C)
+GDMA_DATE
+0x2101180
+31
+0
+Reset
+GDMA_DATE This is the version control register. (R/W)
+Espressif Systems
+398
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 399
+GoBack
+Part II
+Memory Organization
+This part provides insights into the system’s memory structure, discussing the organization and mapping of
+RAM, ROM, eFuse, and external memories, offering a framework for understanding memory-related
+subsystems.
+Espressif Systems
+399
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 400
+Chapter 4 System and Memory
+GoBack
+Chapter 4
+System and Memory
+4.1
+Overview
+The ESP32-S3 is a dual-core system with two Harvard Architecture Xtensa® LX7 CPUs. All internal memory,
+external memory, and peripherals are located on the CPU buses.
+4.2
+Features
+• Address Space
+– 848 KB of internal memory address space accessed from the instruction bus
+– 560 KB of internal memory address space accessed from the data bus
+– 836 KB of peripheral address space
+– 32 MB of external memory virtual address space accessed from the instruction bus
+– 32 MB external memory virtual address space accessed from the data bus
+– 480 KB of internal DMA address space
+– 32 MB of external DMA address space
+• Internal Memory
+– 384 KB Internal ROM
+– 512 KB Internal SRAM
+– 8 KB RTC FAST Memory
+– 8 KB RTC SLOW Memory
+• External Memory
+– Supports up to 1 GB external flash
+– Supports up to 1 GB external RAM
+• Peripheral Space
+– 45 modules/peripherals in total
+• GDMA
+– 10 GDMA-supported modules/peripherals
+Espressif Systems
+400
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 401
+Chapter 4 System and Memory
+GoBack
+Figure 4.2-1 illustrates the system structure and address mapping.
+Figure 4.2-1. System Structure and Address Mapping
+Note:
+• The address space with gray background is not available to users.
+• The memory or peripherals marked with a pentagram can be accessed by the ULP co-processor.
+• The range of addresses available in the address space may be larger than the actual available memory of a
+particular type.
+4.3
+Functional Description
+4.3.1
+Address Mapping
+The system contains two Harvard Architecture Xtensa® LX7 CPUs, and both can access the same range of
+address space.
+Addresses below 0x4000_0000 are accessed using the data bus. Addresses in the range of 0x4000_0000 ~
+Espressif Systems
+401
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 402
+Chapter 4 System and Memory
+GoBack
+0x4FFF_FFFF are accessed using the instruction bus. Addresses over and including 0x5000_0000 are
+shared by both data bus and instruction bus.
+Both data bus and instruction bus are little-endian. The CPU can access data via the data bus using
+single-byte, double-byte, 4-byte and 16-byte alignment. The CPU can also access data via the instruction bus,
+but only in 4-byte aligned manner; non-aligned data access will cause a CPU exception.
+The CPU can:
+• directly access the internal memory via both data bus and instruction bus;
+• directly access the external memory which is mapped into the address space via cache;
+• directly access modules/peripherals via data bus.
+Figure 4.2-1 lists the address ranges on the data bus and instruction bus and their corresponding target
+memory.
+Some internal and external memory can be accessed via both data bus and instruction bus. In such cases,
+the CPU can access the same memory using multiple addresses.
+4.3.2
+Internal Memory
+The ESP32-S3 consists of the following three types of internal memory:
+• Internal ROM (384 KB): The internal ROM is a read-only memory and cannot be programmed. Internal
+ROM contains the ROM code (software instructions and some software read-only data) of some low
+level system software.
+• Internal SRAM (512 KB): The Internal Static RAM (SRAM) is a volatile memory that can be quickly
+accessed by the CPU (generally within a single CPU clock cycle).
+– A part of the SRAM can be configured to operate as a cache for external memory access, which
+cannot be accessed by CPU in such case.
+– Some parts of the SRAM can only be accessed via the CPU’s instruction bus.
+– Some parts of the SRAM can only be accessed via the CPU’s data bus.
+– Some parts of the SRAM can be accessed via both the CPU’s instruction bus and the CPU’s data
+bus.
+• RTC Memory (16 KB): The RTC (Real Time Clock) memory implemented as Static RAM (SRAM) and thus
+is volatile. However, RTC memory has the added feature of being persistent throughout deep sleep (i.e.,
+the RTC memory retains its values throughout deep sleep).
+– RTC FAST Memory (8 KB): RTC FAST memory can only be accessed by the CPU, and cannot be
+accessed by the ULP co-processor. It is generally used to store instructions and data that needs to
+persist across a deep sleep.
+– RTC SLOW Memory (8 KB): The RTC SLOW memory can be accessed by both the CPU and the ULP
+co-processor, and thus is generally used to store instructions and share data between the CPU and
+the ULP co-processor.
+Based on the three different types of internal memory described above, the internal memory of the ESP32-S3
+is split into four segments: Internal ROM (384 KB), Internal SRAM (512 KB), RTC FAST Memory (8 KB) and RTC
+Espressif Systems
+402
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 403
+Chapter 4 System and Memory
+GoBack
+SLOW Memory (8 KB). However, within each segment, there may be different bus access restrictions (e.g.,
+some parts of the segment may only be accessible by the CPU’s instruction bus). Therefore, some segments
+are also further divided down into parts. Table 4.3-1 describes each part of internal memory and their address
+ranges on the data bus and/or instruction bus.
+Table 4.3-1. Internal Memory Address Mapping
+Boundary Address
+Bus Type
+Low Address
+High Address
+Size (KB)
+Target
+Data bus
+0x3FF0_0000
+0x3FF1_FFFF
+128
+Internal ROM 1
+0x3FC8_8000
+0x3FCE_FFFF
+416
+Internal SRAM 1
+0x3FCF_0000
+0x3FCF_FFFF
+64
+Internal SRAM 2
+Instruction bus
+0x4000_0000
+0x4003_FFFF
+256
+Internal ROM 0
+0x4004_0000
+0x4005_FFFF
+128
+Internal ROM 1
+0x4037_0000
+0x4037_7FFF
+32
+Internal SRAM 0
+0x4037_8000
+0x403D_FFFF
+416
+Internal SRAM 1
+Data/Instruction bus
+0x5000_0000
+0x5000_1FFF
+8
+RTC SLOW Memory
+0x600F_E000
+0x600F_FFFF
+8
+RTC FAST Memory
+Note:
+All of the internal memories are managed by Permission Control module. An internal memory can only be ac-
+cessed when it is allowed by Permission Control, then the internal memory can be available to the CPU. For
+more information about Permission Control, please refer to Chapter 15 Permission Control (PMS).
+1. Internal ROM 0
+Internal ROM 0 is a 256 KB, read-only memory space, addressed by the CPU only through the instruction bus,
+as shown in Table 4.3-1.
+2. Internal ROM 1
+Internal ROM 1 is a 128 KB, read-only memory space, addressed by the CPU through the instruction bus via
+0x4004_0000 ~ 0x4005_FFFF or through the data bus via 0x3FF0_0000 ~ 0x3FF1_FFFF in the same order,
+as shown in Table 4.3-1.
+This means, for example, address 0x4004_0000 and 0x3FF0_0000 correspond to the same word,
+0x4004_0004 and 0x3FF0_0004 correspond to the same word, 0x4004_0008 and 0x3FF0_0008
+correspond to the same word, etc (same below).
+3. Internal SRAM 0
+Internal SRAM 0 is a 32 KB, read-and-write memory space, addressed by the CPU through the instruction bus,
+as shown in Table 4.3-1.
+A 16 KB or the total 32 KB of this memory space can be configured as instruction cache (ICache) to store
+instructions or read-only data of the external memory. In this case, the occupied memory space cannot be
+accessed by the CPU, while the remaining can still can be accessed by the CPU.
+4. Internal SRAM 1
+Espressif Systems
+403
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 404
+Chapter 4 System and Memory
+GoBack
+Internal SRAM 1 is a 416 KB, read-and-write memory space, addressed by the CPU through the data bus or
+instruction bus in the same order, as shown in Table 4.3-1.
+The total 416 KB memory space comprises multiple 8 KB and 16 KB memory (sub-memory) blocks. A memory
+block (up to 16 KB) can be used as a Trace Memory, in which case this block can still be accessed by the
+CPU.
+5. Internal SRAM 2
+Internal SRAM 2 is a 64 KB, read-and-write memory space, addressed by the CPU through the data bus, as
+shown in Table 4.3-1.
+A 32 KB or the total 64 KB can be configured as data cache (DCache) to cache data of the external memory.
+The space used as DCache cannot be accessed by the CPU, while the remaining space can still be accessed
+by the CPU.
+6. RTC FAST Memory
+RTC FAST Memory is a 8 KB, read-and-write SRAM, addressed by the CPU through the data/instruction bus via
+the shared address 0x600F_E000 ~ 0x600F_FFFF, as described in Table 4.3-1.
+7. RTC SLOW Memory
+RTC SLOW Memory is a 8 KB, read-and-write SRAM, addressed by the CPU through the data/instruction bus
+via shared address 0x5000_E000 ~ 0x5001_FFFF, as described in Table 4.3-1.
+RTC SLOW Memory can also be used as a peripheral addressable to the CPU via 0x6002_1000 ~
+0x6002_2FFF.
+4.3.3
+External Memory
+ESP32-S3 supports SPI, Dual SPI, Quad SPI, Octal SPI, QPI, and OPI interfaces that allow connection to
+external flash and RAM. It also supports hardware encryption and decryption based on XTS_AES algorithm to
+protect users’ programs and data in the external flash and RAM.
+4.3.3.1
+External Memory Address Mapping
+The CPU accesses the external memory via the cache. According to information inside the MMU (Memory
+Management Unit), the cache maps the CPU’s instruction/data bus address into a physical address of the
+external flash and RAM. Due to this address mapping, ESP32-S3 can address up to 1 GB external flash and 1
+GB external RAM.
+Using the cache, ESP32-S3 is able to support the following address space mappings at a time:
+• Up to 32 MB instruction bus address space can be mapped to the external flash or RAM as individual 64
+KB blocks via the ICache. 4-byte aligned reads and fetches are supported.
+• Up to 32 MB data bus address space can be mapped to the external RAM as individual 64 KB blocks via
+the DCache. Single-byte, double-byte, 4-byte, 16-byte aligned reads and writes are supported. This
+address space can also be mapped to the external flash or RAM for read operations only.
+Table 4.3-2 lists the mapping between the cache and the corresponding address ranges on the data bus and
+instruction bus.
+Espressif Systems
+404
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 405
+Chapter 4 System and Memory
+GoBack
+Table 4.3-2. External Memory Address Mapping
+Boundary Address
+Bus Type
+Low Address
+High Address
+Size (MB)
+Target
+Data bus
+0x3C00_0000
+0x3DFF_FFFF
+32
+DCache
+Instruction bus
+0x4200_0000
+0x43FF_FFFF
+32
+ICache
+Note:
+Only if the CPU obtains permission for accessing the external memory, can it be responded for memory access.
+For more detailed information about permission control, please refer to Chapter 15 Permission Control (PMS).
+4.3.3.2
+Cache
+As shown in Figure 4.3-1, ESP32-S3 has a dual-core-shared ICache and DCache structure, which allows
+prompt response upon simultaneous requests from the instruction bus and data bus. Some internal memory
+space can be used as cache (see Internal SRAM 0 and Internal SRAM 2 in Section 4.3.2).
+When the instruction bus of two cores initiate a request on ICache simultaneously, the arbiter determines
+which core gets the access to the ICache first; when the data bus of two cores initiate a request on DCache
+simultaneously, the arbiter determines which gets the access to the DCache first. When a cache miss occurs,
+the cache controller will initiate a request to the external memory. When ICache and DCache initiate requests
+on the external memory simultaneously, the arbiter determines which gets the access to the external memory
+first. The size of ICache can be configured to 16 KB or 32 KB, while its block size can be configured to 16 B or
+32 B. When an ICache is configured to 32 KB, its block cannot be 16 B. The size of DCache can be configured
+to 32 KB or 64 KB, while its block size can be configured to 16 B, 32 B or 64 B. When a DCache is configured
+to 64 KB, its block cannot be 16 B.
+Figure 4.3-1. Cache Structure
+4.3.3.3
+Cache Operations
+ESP32-S3 caches support the following operations:
+Espressif Systems
+405
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 406
+Chapter 4 System and Memory
+GoBack
+1. Write-Back: This operation is used to clear the dirty bits in dirty blocks and update the new data to the
+external memory. After the write-back operation finished, both the external memory and the cache are
+bearing the new data. The CPU can then read/write the data directly from the cache. Only DCache has
+this function.
+If the data in the cache is newer than the one stored in the external memory, then the new data will be
+considered as a dirty block. The cache tracks these dirty blocks through their dirty bits. When the dirty
+bits of a data are cleared, the cache will consider the data as new.
+2. Clean: This operation is used to clear dirty bits in the dirty block, without updating data to the external
+memory. After the clean operation finish, there will still be old data stored in the external memory, while
+the cache keeps the new one (but the cache does not know about this). The CPU can then read/write
+the data directly from the cache. Only DCache has this function.
+3. Invalidate: This operation is used to remove valid data in the cache. Even if the data is a dirty block
+mentioned above, it will not be updated to the external memory. But for the non-dirty data, it will be only
+stored in the external memory after this operation. The CPU needs to access the external memory in
+order to read/write this data. As for the dirty blocks, they will be totally lost with only old data in the
+external memory after this operation. There are two types of invalidate operation: automatic invalidation
+(Auto-Invalidate) and manual invalidation (Manual-Invalidate). Manual-Invalidate is performed only on
+data in the specified area in the cache, while Auto-Invalidate is performed on all data in the cache. Both
+ICache and DCache have this function.
+4. Preload: This operation is to load instructions and data into the cache in advance. The minimum unit of
+preload-operation is one block. There are two types of preload-operation: manual preload
+(Manual-Preload) and automatic preload (Auto-Preload). Manual-Preload means that the hardware
+prefetches a piece of continuous data according to the virtual address specified by the software.
+Auto-Preload means the hardware prefetches a piece of continuous data according to the current
+address where the cache hits or misses (depending on configuration). Both ICache and DCache have
+this function.
+5. Lock/Unlock: The lock operation is used to prevent the data in the cache from being easily replaced.
+There are two types of lock: prelock and manual lock. When prelock is enabled, the cache locks the
+data in the specified area when filling the missing data to cache memory, while the data outside the
+specified area will not be locked. When manual lock is enabled, the cache checks the data that is
+already in the cache memory and locks the data only if it falls in the specified area, and leaves the data
+outside the specified area unlocked. When there are missing data, the cache will replace the data in the
+unlocked way first, so the data in the locked way is always stored in the cache and will not be replaced.
+But when all ways within the cache are locked, the cache will replace data, as if it was not locked.
+Unlocking is the reverse of locking, except that it only can be done manually. Both ICache and DCache
+have this function.
+Please note that the writing-back, cleaning and Manual-Invalidate operations will only work on the
+unlocked data. If you expect to perform such operations on the locked data, please unlock them first.
+4.3.4
+GDMA Address Space
+The GDMA (General Direct Memory Access) peripheral in ESP32-S3 can provide DMA (Direct Memory Access)
+services including:
+Espressif Systems
+406
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 407
+Chapter 4 System and Memory
+GoBack
+• Data transfers between different locations of internal memory;
+• Data transfers between internal memory and external memory;
+• Data transfers between different locations of external memory.
+GDMA uses the same addresses as the CPU’s data bus to access Internal SRAM 1 and Internal SRAM 2.
+Specifically, GDMA uses address range 0x3FC8_8000 ~ 0x3FCE_FFFF to access Internal SRAM 1 and
+0x3FCF_0000 ~ 0x3FCF_FFFF to access Internal SRAM 2. Note that GDMA cannot access the internal
+memory occupied by cache.
+In addition, GDMA can access the external memory (only RAM) via the same address as CPU accessing
+DCache (0x3C00_0000 ~ 0x3DFF_FFFF). When DCache and GDMA access the external memory
+simultaneously, the software needs to make sure the data is consistent.
+Besides, some peripherals/modules of the ESP32-S3 can work together with GDMA. In these cases, GDMA
+can provide the following powerful services for them:
+• Data transfers between modules/peripherals and internal memory;
+• Data transfers between modules/peripherals and external memory.
+There are 10 peripherals/modules that can work together with GDMA. As shown in Figure 4.3-2, these 10
+vertical lines in turn correspond to these 10 peripherals/modules with GDMA function, the horizontal line
+represents a certain channel of GDMA (can be any channel), and the intersection of the vertical line and the
+horizontal line indicates that a peripheral/module has the ability to access the corresponding channel of
+GDMA. If there are multiple intersections on the same line, it means that these peripherals/modules cannot
+enable the GDMA function at the same time.
+*Note: UART0, UART1, and UART2 support DMA functionality via UHCI0.
+Figure 4.3-2. Peripherals/modules that can work with GDMA
+These peripherals/modules can access any memory available to GDMA. For more information, please refer to
+Chapter 3 GDMA Controller (GDMA).
+Espressif Systems
+407
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 408
+Chapter 4 System and Memory
+GoBack
+Note:
+When accessing a memory via GDMA, a corresponding access permission is needed, otherwise this access
+may fail. For more information about permission control, please refer to Chapter 15 Permission Control (PMS).
+4.3.5
+Modules/Peripherals
+The CPU can access modules/peripherals via 0x6000_0000 ~ 0x600D_0FFF shared by the data/instruction
+bus.
+4.3.5.1
+Module/Peripheral Address Mapping
+Table 4.3-3 lists all the modules/peripherals and their respective address ranges. Note that the address space
+of specific modules/peripherals is defined by “Boundary Address” (including both Low Address and High
+Address).
+Table 4.3-3. Module/Peripheral Address Mapping
+Boundary Address
+Target
+Low Address
+High Address
+Size (KB)
+Notes
+UART Controller 0
+0x6000_0000
+0x6000_0FFF
+4
+Reserved
+0x6000_1000
+0x6000_1FFF
+SPI Controller 1
+0x6000_2000
+0x6000_2FFF
+4
+SPI Controller 0
+0x6000_3000
+0x6000_3FFF
+4
+GPIO
+0x6000_4000
+0x6000_4FFF
+4
+Reserved
+0x6000_5000
+0x6000_6FFF
+eFuse Controller
+0x6000_7000
+0x6000_7FFF
+4
+Low-Power Management
+0x6000_8000
+0x6000_8FFF
+4
+IO MUX
+0x6000_9000
+0x6000_9FFF
+4
+Reserved
+0x6000_A000
+0x6000_EFFF
+I2S Controller 0
+0x6000_F000
+0x6000_FFFF
+4
+UART Controller 1
+0x6001_0000
+0x6001_0FFF
+4
+Reserved
+0x6001_1000
+0x6001_2FFF
+I2C Controller 0
+0x6001_3000
+0x6001_3FFF
+4
+UHCI0
+0x6001_4000
+0x6001_4FFF
+4
+Reserved
+0x6001_5000
+0x6001_5FFF
+Remote Control Peripheral
+0x6001_6000
+0x6001_6FFF
+4
+Pulse Count Controller
+0x6001_7000
+0x6001_7FFF
+4
+Reserved
+0x6001_8000
+0x6001_8FFF
+LED PWM Controller
+0x6001_9000
+0x6001_9FFF
+4
+Reserved
+0x6001_A000
+0x6001_DFFF
+Motor Control PWM 0
+0x6001_E000
+0x6001_EFFF
+4
+Timer Group 0
+0x6001_F000
+0x6001_FFFF
+4
+Timer Group 1
+0x6002_0000
+0x6002_0FFF
+4
+RTC SLOW Memory
+0x6002_1000
+0x6002_2FFF
+8
+System Timer
+0x6002_3000
+0x6002_3FFF
+4
+Cont’d on next page
+Espressif Systems
+408
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 409
+Chapter 4 System and Memory
+GoBack
+Table 4.3-3 – cont’d from previous page
+Boundary Address
+Target
+Low Address
+High Address
+Size (KB)
+Notes
+SPI Controller 2
+0x6002_4000
+0x6002_4FFF
+4
+SPI Controller 3
+0x6002_5000
+0x6002_5FFF
+4
+SYSCON
+0x6002_6000
+0x6002_6FFF
+4
+I2C Controller 1
+0x6002_7000
+0x6002_7FFF
+4
+SD/MMC Host Controller
+0x6002_8000
+0x6002_8FFF
+4
+Reserved
+0x6002_9000
+0x6002_AFFF
+Two-wire Automotive Interface
+0x6002_B000
+0x6002_BFFF
+4
+Motor Control PWM 1
+0x6002_C000
+0x6002_CFFF
+4
+I2S Controller 1
+0x6002_D000
+0x6002_DFFF
+4
+UART controller 2
+0x6002_E000
+0x6002_EFFF
+4
+Reserved
+0x6002_F000
+0x6003_7FFF
+USB Serial/JTAG Controller
+0x6003_8000
+0x6003_8FFF
+4
+USB External Control registers
+0x6003_9000
+0x6003_9FFF
+4
+1
+AES Accelerator
+0x6003_A000
+0x6003_AFFF
+4
+SHA Accelerator
+0x6003_B000
+0x6003_BFFF
+4
+RSA Accelerator
+0x6003_C000
+0x6003_CFFF
+4
+Digital Signature
+0x6003_D000
+0x6003_DFFF
+4
+HMAC Accelerator
+0x6003_E000
+0x6003_EFFF
+4
+GDMA Controller
+0x6003_F000
+0x6003_FFFF
+4
+ADC Controller
+0x6004_0000
+0x6004_0FFF
+4
+Camera-LCD Controller
+0x6004_1000
+0x6004_1FFF
+4
+Reserved
+0x6004_2000
+0x6007_FFFF
+USB core registers
+0x6008_0000
+0x600B_FFFF
+256
+1
+System Registers
+0x600C_0000
+0x600C_0FFF
+4
+PMS Registers
+0x600C_1000
+0x600C_1FFF
+4
+Interrupt Matrix
+0x600C_2000
+0x600C_2FFF
+4
+Reserved
+0x600C_3000
+0x600C_3FFF
+Reserved
+0x600C_4000
+0x600C_BFFF
+External Memory Encryption and
+Decryption
+0x600C_C000
+0x600C_CFFF
+4
+Reserved
+0x600C_D000
+0x600C_DFFF
+Reserved
+0x600C_E000
+0x600C_EFFF
+Reserved
+0x600C_F000
+0x600C_FFFF
+World Controller
+0x600D_0000
+0x600D_0FFF
+4
+Note:
+1. The address space in this module/peripheral is not continuous.
+2. The CPU needs to obtain the access permission to a certain module/peripheral when initiating a request to
+access it, otherwise it may fail. For more information of permission control, please see Chapter 15 Permission
+Control (PMS).
+Espressif Systems
+409
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)
+
+PDF page 410
+Chapter 5 eFuse Controller (EFUSE)
+GoBack
+Chapter 5
+eFuse Controller (EFUSE)
+5.1
+Overview
+The ESP32-S3 contains a 4-Kbit eFuse to store parameters. These parameters are burned and read by an
+eFuse Controller. Once an eFuse bit is programmed to 1, it can never be reverted to 0. The eFuse controller
+programs individual bits of parameters in eFuse according to users configurations. Some of these parameters
+can be read by users using the eFuse controller. If read-protection for some data is not enabled, that data is
+readable from outside the chip. If read-protection is enabled, that data can not be read from outside the chip.
+In all cases, however, some keys stored in eFuse can still be used internally by hardware cryptography
+modules such as Digital Signature, HMAC, etc., without exposing this data to the outside world.
+5.2
+Features
+• 4-Kbit in total, with 1792 bits available for users
+• One-time programmable storage
+• Configurable write protection
+• Configurable read protection
+• Various hardware encoding schemes protect against data corruption
+5.3
+Functional Description
+5.3.1
+Structure
+The eFuse data is organized in 11 blocks (BLOCK0 ~ BLOCK10). BLOCK0 has 640 bits in totall. BLOCK1 has 288
+bits and each block of BLOCK2 ~ 10 has 352 bits.
+BLOCK0, which holds most parameters, has 25 bits that are readable but useless to users (the details are
+showed in Section 5.3.2), and 29 further bits are reserved for future use.
+Table 5.3-1 lists all the parameters in BLOCK0 and their offsets, bit widths, as well as information on whether
+they can be used by hardware, which bits are write-protected, and corresponding descriptions.
+The EFUSE_WR_DIS parameter is used to disable the writing of other parameters, while EFUSE_RD_DIS is
+used to disable users from reading BLOCK4 ~ BLOCK10. For more information on these two parameters,
+please see Section 5.3.1.1 and Section 5.3.1.2.
+Espressif Systems
+410
+Submit Documentation Feedback
+ESP32-S3 TRM (Version 1.8)

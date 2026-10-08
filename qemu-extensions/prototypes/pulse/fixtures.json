@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "status": "authored-not-built-or-executed",
+  "idf_commit": "fff9895c82d744c7237be8847347bdd1b07c6643",
+  "instructions": {
+    "ordinary_idf": ["Activate pinned build-idf-6.1 environment", "idf.py -C tests/firmware/pulse_native set-target esp32s3", "idf.py -C tests/firmware/pulse_native menuconfig", "idf.py -C tests/firmware/pulse_native build", "In the build directory: python -m esptool --chip esp32s3 merge-bin --fill-flash-size 4MB -o pulse-native.merged.bin @flash_args"],
+    "native_firmware": "python3 qemu-extensions/prototypes/pulse/run-native-fixture.py --execution firmware --feature all --mode connected --qemu /explicit/qemu-system-xtensa --flash /explicit/pulse-native.merged.bin --sdkconfig /explicit/sdkconfig --evidence /explicit/evidence",
+    "native_qtest": "python3 qemu-extensions/prototypes/pulse/run-native-fixture.py --execution qtest --feature ledc-pcnt --mode connected --qemu /explicit/qemu-system-xtensa --flash /explicit/pulse-native.merged.bin --evidence /explicit/evidence",
+    "other_runs": "Repeat connected/disconnected/wrong-wire for firmware and qtest; both support all, ledc-pcnt, mcpwm and sdm. MCPWM qtest records actual complementary/deadtime/capture-net pulses, shadow compare, GPIO sync/fault, gates/stop/reset; the controller-owner suite additionally covers both groups, carrier and detailed register masks. --build uses the pinned checkout and creates evidence-local sdkconfig/build/flash. --adc-provider-ready requires an existing evidence JSON with status READY; no converter readiness is inferred from electrical.support.adc.",
+    "platform": "Runner QMP/qtest Unix sockets require WSL/Linux. Source flash is always copied to a writable evidence-local raw disk before QEMU starts. No official/frozen tree is modified."
+  },
+  "qualification": {
+    "firmware": "Actual public IDF driver handles, physical GPIO matrix PCNT/capture/sync/fault inputs, bounded ISR records. Guest ISR timestamps are not electrical edge timestamps.",
+    "qtest": "Real MMIO, explicit v3 graph, clock_step next-deadline observations of resolved physical levels; records each change and exact observation virtual ns, never replaces pulses with averaged GPIO voltage. Multiple opposite transitions inside the same integer-ns settled deadline cannot be separated by this observer.",
+    "sdm": "Actual waveform-profile/waveform-assumptions QOM properties must declare s3-sdm-second-order-transfer-v1. Documented density functional profile only; exact second-order hidden-width/reset/startup silicon sequence is explicitly unavailable. API disable alone does not stop hardware on this IDF target.",
+    "rc": "Explicit finite-driver 1 kohm/1 uF passive RC, sampled waveform mean/ripple over last half-window. Not physical metrology. ADC conversion attempted only with externally declared READY provider."
+  },
+  "routes": {
+    "connected": {"counter": ["U1.io4", "U1.io5", "PullCount.a"], "capture": ["U1.io6", "U1.io8", "PullCapture.a"], "sync": ["U1.io12", "U1.io9", "PullSync.a"], "fault": ["U1.io13", "U1.io10", "PullFault.a"]},
+    "disconnected": {"counter": ["U1.io5", "PullCount.a"], "capture": ["U1.io8", "PullCapture.a"], "sync": ["U1.io9", "PullSync.a"], "fault": ["U1.io10", "PullFault.a"]},
+    "wrong-wire": {"counter": ["U1.io3", "U1.io5", "PullCount.a"], "capture": ["U1.io7", "U1.io8", "PullCapture.a"], "sync": ["U1.io12", "U1.io9", "PullSync.a"], "fault": ["U1.io13", "U1.io10", "PullFault.a"]}
+  },
+  "project": {
+    "version": 3, "id": "pulse-native", "name": "Ordinary ESP32-S3 native pulse physical nets",
+    "profile": {"chip": "esp32s3", "board": "esp32-s3-devkitc-1", "module": "esp32-s3-wroom-1"},
+    "firmware": {}, "runtime": {"electrical": {"driver_profile": "s3-explicit-finite-v1", "mode": "rc", "edit_charge": "reset"}},
+    "geometry": {"components": {}, "nets": {}},
+    "components": [
+      {"id": "U1", "name": "U1", "kind": "mcu", "type": "mcu", "parameters": {}, "terminals": [
+        {"id": "U1.vdd", "name": "vdd", "role": "vdd", "domain": "power", "direction": "input"},
+        {"id": "U1.gnd", "name": "gnd", "role": "gnd", "domain": "ground", "direction": "input"},
+        {"id": "U1.io1", "name": "io1", "role": "gpio", "domain": "analog", "direction": "inout", "gpio": 1},
+        {"id": "U1.io3", "name": "io3", "role": "gpio", "domain": "digital", "direction": "inout", "gpio": 3},
+        {"id": "U1.io4", "name": "io4", "role": "gpio", "domain": "digital", "direction": "inout", "gpio": 4},
+        {"id": "U1.io5", "name": "io5", "role": "gpio", "domain": "digital", "direction": "inout", "gpio": 5},
+        {"id": "U1.io6", "name": "io6", "role": "gpio", "domain": "digital", "direction": "inout", "gpio": 6},
+        {"id": "U1.io7", "name": "io7", "role": "gpio", "domain": "digital", "direction": "inout", "gpio": 7},
+        {"id": "U1.io8", "name": "io8", "role": "gpio", "domain": "digital", "direction": "inout", "gpio": 8},
+        {"id": "U1.io9", "name": "io9", "role": "gpio", "domain": "digital", "direction": "inout", "gpio": 9},
+        {"id": "U1.io10", "name": "io10", "role": "gpio", "domain": "digital", "direction": "inout", "gpio": 10},
+        {"id": "U1.io11", "name": "io11", "role": "gpio", "domain": "digital", "direction": "inout", "gpio": 11},
+        {"id": "U1.io12", "name": "io12", "role": "gpio", "domain": "digital", "direction": "inout", "gpio": 12},
+        {"id": "U1.io13", "name": "io13", "role": "gpio", "domain": "digital", "direction": "inout", "gpio": 13},
+        {"id": "U1.io14", "name": "io14", "role": "gpio", "domain": "digital", "direction": "inout", "gpio": 14},
+        {"id": "U1.io15", "name": "io15", "role": "gpio", "domain": "digital", "direction": "inout", "gpio": 15}
+      ]},
+      {"id": "G", "name": "G", "kind": "ground", "type": "ground", "parameters": {}, "terminals": [{"id": "G.ref", "name": "ref", "role": "ref", "domain": "ground", "direction": "passive"}]},
+      {"id": "V", "name": "V", "kind": "voltage-source", "type": "voltage-source", "parameters": {"voltage": {"value": 3.3, "unit": "V"}}, "terminals": [{"id": "V.p", "name": "p", "role": "p", "domain": "power", "direction": "output"}, {"id": "V.n", "name": "n", "role": "n", "domain": "ground", "direction": "input"}]},
+      {"id": "R", "name": "R", "kind": "resistor", "type": "resistor", "parameters": {"resistance": {"value": 1000, "unit": "ohm"}}, "terminals": [{"id": "R.a", "name": "a", "role": "a", "domain": "passive", "direction": "passive"}, {"id": "R.b", "name": "b", "role": "b", "domain": "passive", "direction": "passive"}]},
+      {"id": "C", "name": "C", "kind": "capacitor", "type": "capacitor", "parameters": {"capacitance": {"value": 1, "unit": "uF"}, "initial_voltage": {"value": 0, "unit": "V"}}, "terminals": [{"id": "C.p", "name": "p", "role": "p", "domain": "passive", "direction": "passive"}, {"id": "C.n", "name": "n", "role": "n", "domain": "passive", "direction": "passive"}]},
+      {"id": "PullCount", "name": "PullCount", "kind": "resistor", "type": "resistor", "parameters": {"resistance": {"value": 10000, "unit": "ohm"}}, "terminals": [{"id": "PullCount.a", "name": "a", "role": "a", "domain": "passive", "direction": "passive"}, {"id": "PullCount.b", "name": "b", "role": "b", "domain": "passive", "direction": "passive"}]},
+      {"id": "PullCapture", "name": "PullCapture", "kind": "resistor", "type": "resistor", "parameters": {"resistance": {"value": 10000, "unit": "ohm"}}, "terminals": [{"id": "PullCapture.a", "name": "a", "role": "a", "domain": "passive", "direction": "passive"}, {"id": "PullCapture.b", "name": "b", "role": "b", "domain": "passive", "direction": "passive"}]},
+      {"id": "PullSync", "name": "PullSync", "kind": "resistor", "type": "resistor", "parameters": {"resistance": {"value": 10000, "unit": "ohm"}}, "terminals": [{"id": "PullSync.a", "name": "a", "role": "a", "domain": "passive", "direction": "passive"}, {"id": "PullSync.b", "name": "b", "role": "b", "domain": "passive", "direction": "passive"}]},
+      {"id": "PullFault", "name": "PullFault", "kind": "resistor", "type": "resistor", "parameters": {"resistance": {"value": 10000, "unit": "ohm"}}, "terminals": [{"id": "PullFault.a", "name": "a", "role": "a", "domain": "passive", "direction": "passive"}, {"id": "PullFault.b", "name": "b", "role": "b", "domain": "passive", "direction": "passive"}]}
+    ],
+    "nets": [
+      {"id": "gnd", "name": "gnd", "endpoints": ["G.ref", "V.n", "U1.gnd", "C.n", "PullCount.b", "PullCapture.b", "PullSync.b", "PullFault.b"]},
+      {"id": "vdd", "name": "vdd", "endpoints": ["V.p", "U1.vdd"]},
+      {"id": "counter_level", "name": "counter_level", "endpoints": ["U1.io14", "U1.io15"]},
+      {"id": "sdm_raw", "name": "sdm_raw", "endpoints": ["U1.io11", "R.a"]},
+      {"id": "sdm_rc", "name": "sdm_rc", "endpoints": ["R.b", "C.p", "U1.io1"]}
+    ]
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-07",
+  "component": "Native persistent edge-level JEDEC NOR service",
+  "files": [
+    "copies/esp32s3_spi_service.h",
+    "copies/esp32s3_spi_service.c",
+    "copies/test-esp32s3-spi-service.c"
+  ],
+  "integration_contract": {
+    "header_destination": "include/hw/ssi/esp32s3_spi_service.h",
+    "source_destination": "hw/ssi/esp32s3_spi_service.c",
+    "unit_test_destination": "tests/unit/test-esp32s3-spi-service.c",
+    "ownership": "One initialized instance per actual graph component, persistent across SPI controller reset; no controller or graph dependency inside this service.",
+    "electrical": "Caller supplies real CS changes and SCLK edges, sampled MOSI and virtual nanoseconds. MISO value and drive-enable are separate outputs. MISO is high-impedance until a supported response begins, and whenever unpowered, deselected, unknown-command or busy-rejected. Electrical graph pulls, not this service, resolve undriven SO.",
+    "reset": "s3_spi_nor_abort discards the current CS transaction without finalization, preserving committed data, WEL and any previously started busy operation.",
+    "power": "s3_spi_nor_power advances work to the supplied timestamp first. A real power transition cancels incomplete transactions and unfinished busy work, clears WEL, and preserves committed bytes; restoration starts deselected.",
+    "time": "s3_spi_nor_advance commits at now_ns >= busy_until_ns. Edge, select, abort and power also advance. The binding may schedule advance at the virtual deadline; no host sleep or internal controller timer. Deadline addition saturates at UINT64_MAX."
+  },
+  "profile": {
+    "modes": [0, 3],
+    "mode_convention": "Sample MOSI rising; change SO falling. Modes 1/2 are deliberately unsupported, not reinterpreted as mode 0.",
+    "default_size_bytes": 1048576,
+    "default_jedec_id_hex": ["ef", "40", "14"],
+    "configurable": "Per-component size, all three JEDEC ID bytes and busy durations. Size is a power of two from 64 KiB through 16 MiB. Durations must be nonzero.",
+    "initial_contents": "Every byte erased to FF; no preloaded read responses.",
+    "commands": {
+      "9f": "Output configured three-byte JEDEC ID, then FF on additional response clocks.",
+      "03": "24-bit big-endian address, then sequential data; address wraps across configured capacity.",
+      "0b": "24-bit address and exactly one dummy byte, then sequential data.",
+      "05": "Continuous coherent status bytes: bit0 WIP, bit1 WEL, other bits zero. Remains valid during busy.",
+      "06": "WREN takes effect only at clean CS deassert with no trailing or partial input.",
+      "04": "WRDI takes effect only at clean CS deassert with no trailing or partial input.",
+      "02": "24-bit address, at least one complete data byte, WEL required. A 256-byte page latch wraps within the starting page; the last input at each wrapped position wins in the latch. Deferred commit applies stored_byte AND latch_byte, never changing a stored zero to one.",
+      "20": "WEL-required 4-KiB erase of the sector containing the 24-bit address.",
+      "d8": "WEL-required 64-KiB erase of the block containing the 24-bit address.",
+      "c7/60": "WEL-required whole-chip erase aliases."
+    },
+    "default_durations_ns": {
+      "program": 700000,
+      "sector_erase": 45000000,
+      "block_erase": 150000000,
+      "chip_erase": 2000000000
+    },
+    "commit": "Clean CS deassert accepts complete mutating commands, clears WEL and starts WIP. Memory changes atomically only at the virtual completion timestamp.",
+    "busy": "Only status 05 is accepted while busy; all other opcodes, including ID, read, WREN and WRDI, are rejected for that entire CS transaction even if busy subsequently expires.",
+    "invalid_and_partial": "Unknown opcode rejects the transaction until CS release. Partial command/address/program-data bytes never commit. Address-only program never starts busy. WREN, WRDI and erase commands with trailing input are invalid. Duplicate CS levels do not create transaction boundaries.",
+    "power_failure": "Deterministic atomic model: unfinished work is discarded without partial cell changes. Already completed work remains nonvolatile.",
+    "bounds": "One fallible allocation capped at 16 MiB. Fixed 256-byte page and parser state; input stream length never increases allocation or unbounded counters. Commit work is at most 256 byte ANDs or one bounded capacity erase.",
+    "unsupported": ["SPI modes 1/2", "dual/quad or QPI", "SFDP", "protection registers", "suspend/resume", "deep power-down", "endurance", "analog partial power-failure writes"]
+  },
+  "behavioral_tests": [
+    "Per-chip configurable ID independence and invalid configuration cleanup",
+    "Erased storage, sequential reads, fast-read dummy byte, address wrap, modes 0 and 3",
+    "WEL gating, deferred exact-deadline completion, 1-to-0 programming and page wrap",
+    "Bounded long page-latch overwrite semantics",
+    "Busy rejection of every modeled non-status opcode and no mid-CS revival",
+    "Streaming status coherence across completion",
+    "Partial opcodes, partial addresses, partial payloads, WREN/WRDI and CS boundaries",
+    "Sector, block and both chip-erase aliases with neighboring data preservation",
+    "Controller-reset persistence, actual power transitions and pending program/erase cancellation",
+    "Independent SO drive-enable, MOSI non-echo and falling-only output transitions"
+  ],
+  "verification": {
+    "status": "Not run by service author as instructed; parent owns delegated verification after integration.",
+    "required": "Wire a QEMU GLib unit executable linking the actual service C and run all /esp32s3/spi-nor tests, then run ordinary IDF SPI2/3 graph/GPIO/electrical qualification."
+  }
+}

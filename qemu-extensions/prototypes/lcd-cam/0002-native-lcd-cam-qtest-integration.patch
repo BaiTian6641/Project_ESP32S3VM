@@ -1,0 +1,11 @@
+diff --git a/tests/qtest/meson.build b/tests/qtest/meson.build
+--- a/tests/qtest/meson.build
++++ b/tests/qtest/meson.build
+@@ -343,3 +343,7 @@
++if config_all_devices.has_key('CONFIG_XTENSA_ESP32S3')
++  qtests_xtensa += ['esp32s3-lcd-cam-test']
++endif
++
+ qtests = {
+   'bios-tables-test': [io, 'boot-sector.c', 'acpi-utils.c', 'tpm-emu.c'],
+   'cdrom-test': files('boot-sector.c'),

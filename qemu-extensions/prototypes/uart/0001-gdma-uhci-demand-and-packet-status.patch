@@ -1,0 +1,378 @@
+--- a/hw/dma/esp_gdma.c
++++ b/hw/dma/esp_gdma.c
+@@ -31,6 +31,7 @@
+ /* Descriptor word 0 fields, TRM chapter 3 section "Linked List" */
+ #define GDMA_DESC_OWNER_MASK    (0x1u << 31)
+ #define GDMA_DESC_SUC_EOF_MASK  (0x1u << 30)
++#define GDMA_DESC_ERR_EOF_MASK  (0x1u << 28)
+ #define GDMA_DESC_LENGTH_SHIFT  12
+ #define GDMA_DESC_LENGTH_MASK   0xfffu
+ #define GDMA_DESC_SIZE_MASK     0xfffu
+@@ -242,6 +243,7 @@
+     st->rx_last_desc_addr = 0;
+     st->rx_last_prev_addr = 0;
+     st->rx_packet_ended = false;
++    st->rx_segment_pending = false;
+     st->walk_count = 0;
+     st->idle_count = 0;
+     st->fsm_active = false;
+@@ -455,6 +457,29 @@
+     return d.next_addr;
+ }
+ 
++void esp_gdma_set_peripheral_notify(ESPGdmaState *s, GdmaPeripheral periph,
++                                    EspGdmaPeripheralNotify notify, void *opaque)
++{
++    if (!s || (unsigned)periph > GDMA_LAST) {
++        return;
++    }
++    s->peripheral_notify[periph].notify = notify;
++    s->peripheral_notify[periph].opaque = opaque;
++}
++
++static void esp_gdma_notify_arm(ESPGdmaState *s, uint32_t chan, uint32_t dir)
++{
++    unsigned periph = FIELD_EX32(s->ch_conf[dir][chan].peripheral,
++                                 GDMA_PERI_SEL, PERI_SEL);
++    if (periph <= GDMA_LAST &&
++        !FIELD_EX32(s->ch_conf[ESP_GDMA_IN_IDX][chan].conf0,
++                    GDMA_IN_CONF0, MEM_TRANS_EN) &&
++        s->peripheral_notify[periph].notify) {
++        s->peripheral_notify[periph].notify(s, periph, chan, dir,
++                                           s->peripheral_notify[periph].opaque);
++    }
++}
++
+ /**
+  * @brief Arm a chain after software wrote GDMA_xLINK (START or RESTART) and
+  *        the channel is not in memory-to-memory mode. The first descriptor
+@@ -490,6 +515,7 @@
+             st->fsm_active = true;
+             st->walk_count = 0;
+             st->idle_count = 0;
++            esp_gdma_notify_arm(s, chan, dir);
+             return;
+         }
+         addr = esp_gdma_restart_addr(s, chan, dir);
+@@ -510,12 +536,14 @@
+         st->rx_last_desc_addr = 0;
+         st->rx_last_prev_addr = 0;
+         st->rx_packet_ended = false;
++        st->rx_segment_pending = false;
+     }
+     st->fsm_active = true;
+     if (!esp_gdma_load_descriptor(s, chan, dir, addr)) {
+         /* esp_gdma_load_descriptor flagged DSCR_ERR and halted the channel */
+         return;
+     }
++    esp_gdma_notify_arm(s, chan, dir);
+ }
+ 
+ /**
+@@ -726,6 +754,7 @@
+         st->rx_last_desc_addr = 0;
+         st->rx_last_prev_addr = 0;
+         st->rx_packet_ended = false;
++        st->rx_segment_pending = false;
+     }
+ }
+ 
+@@ -1009,11 +1038,13 @@
+  *        `size` bytes out of the guest outlink into `buffer`, continuing
+  *        from the persistent descriptor + byte cursor.
+  */
+-bool esp_gdma_read_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uint32_t size)
+-{
+-    ESPGdmaClass *class = ESP_GDMA_GET_CLASS(s);
+-
+-    if (s == NULL || chan >= class->m_channel_count || buffer == NULL) {
++bool esp_gdma_read_channel_ex(ESPGdmaState *s, uint32_t chan, uint8_t *buffer,
++                              uint32_t size, EspGdmaTxInfo *info)
++{
++    if (info) {
++        memset(info, 0, sizeof(*info));
++    }
++    if (!s || !buffer || chan >= ESP_GDMA_GET_CLASS(s)->m_channel_count) {
+         return false;
+     }
+ 
+@@ -1043,6 +1074,9 @@
+             }
+             st->cur_buf_off += take;
+             consumed += take;
++            if (info) {
++                info->served = consumed;
++            }
+             st->idle_count = 0;
+         }
+ 
+@@ -1053,6 +1087,9 @@
+ 
+         /* Descriptor exhausted: close it, honor its EOF flag, advance */
+         const bool eof = st->cur_suc_eof;
++        if (info && eof) {
++            info->eof_reached = true;
++        }
+         esp_gdma_writeback_out(s, chan);
+         if (st->halted) {
+             break;
+@@ -1069,6 +1106,9 @@
+         if (st->cur_next_addr == 0) {
+             /* Outlink exhausted: park. The caller sees a short transfer. */
+             esp_gdma_park(st);
++            if (info) {
++                info->list_done = true;
++            }
+             break;
+         }
+         if (esp_gdma_walk_bound_hit(s, chan, ESP_GDMA_OUT_IDX)) {
+@@ -1078,6 +1118,9 @@
+             break;
+         }
+         if (!esp_gdma_load_descriptor(s, chan, ESP_GDMA_OUT_IDX, st->cur_next_addr)) {
++            break;
++        }
++        if (info && eof) {
+             break;
+         }
+     }
+@@ -1094,16 +1137,24 @@
+     return consumed == size;
+ }
+ 
++bool esp_gdma_read_channel(ESPGdmaState *s, uint32_t chan,
++                           uint8_t *buffer, uint32_t size)
++{
++    return esp_gdma_read_channel_ex(s, chan, buffer, size, NULL);
++}
++
+ /**
+  * @brief Serve a receive (peripheral -> memory) handshake: push up to
+  *        `size` bytes from `buffer` into the guest inlink, continuing from
+  *        the persistent descriptor + byte cursor.
+  */
+-bool esp_gdma_write_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uint32_t size)
+-{
+-    ESPGdmaClass *class = ESP_GDMA_GET_CLASS(s);
+-
+-    if (s == NULL || chan >= class->m_channel_count || buffer == NULL) {
++bool esp_gdma_write_channel_ex(ESPGdmaState *s, uint32_t chan, uint8_t *buffer,
++                               uint32_t size, uint32_t *served)
++{
++    if (served) {
++        *served = 0;
++    }
++    if (!s || !buffer || chan >= ESP_GDMA_GET_CLASS(s)->m_channel_count) {
+         return false;
+     }
+ 
+@@ -1133,8 +1184,12 @@
+             }
+             st->cur_buf_off += take;
+             consumed += take;
++            if (served) {
++                *served = consumed;
++            }
+             st->rx_last_desc_addr = st->cur_desc_addr;
+             st->rx_last_prev_addr = st->bfr_bfr_desc_addr;
++            st->rx_segment_pending = true;
+             st->idle_count = 0;
+         }
+ 
+@@ -1190,12 +1245,21 @@
+     return consumed == size;
+ }
+ 
+-bool esp_gdma_finish_rx_channel(ESPGdmaState *s, uint32_t chan)
++bool esp_gdma_write_channel(ESPGdmaState *s, uint32_t chan,
++                            uint8_t *buffer, uint32_t size)
++{
++    return esp_gdma_write_channel_ex(s, chan, buffer, size, NULL);
++}
++
++static bool esp_gdma_finish_rx_common(ESPGdmaState *s, uint32_t chan, bool error)
+ {
+     if (!s || chan >= ESP_GDMA_GET_CLASS(s)->m_channel_count) {
+         return false;
+     }
+     DmaConfigState *st = &s->ch_conf[ESP_GDMA_IN_IDX][chan];
++    if (error && FIELD_EX32(st->peripheral, GDMA_PERI_SEL, PERI_SEL) != GDMA_UHCI0) {
++        return false;
++    }
+     if (st->halted || !st->rx_last_desc_addr) {
+         return false;
+     }
+@@ -1204,6 +1268,10 @@
+     }
+     if (st->cur_desc_addr == st->rx_last_desc_addr &&
+         st->cur_buf_off > 0 && st->cur_buf_off < st->cur_buf_cap) {
++        st->cur_dw0 &= ~GDMA_DESC_ERR_EOF_MASK;
++        if (error) {
++            st->cur_dw0 |= GDMA_DESC_ERR_EOF_MASK;
++        }
+         esp_gdma_writeback_in(s, chan, true);
+         if (st->halted) {
+             return false;
+@@ -1216,6 +1284,10 @@
+         if (!esp_gdma_read_descr(s, st->rx_last_desc_addr, &d)) {
+             esp_gdma_desc_error(s, chan, ESP_GDMA_IN_IDX, st->rx_last_desc_addr);
+             return false;
++        }
++        d.config.val &= ~GDMA_DESC_ERR_EOF_MASK;
++        if (error) {
++            d.config.val |= GDMA_DESC_ERR_EOF_MASK;
+         }
+         d.config.val |= GDMA_DESC_SUC_EOF_MASK;
+         if (!esp_gdma_write_descr(s, st->rx_last_desc_addr, &d)) {
+@@ -1233,11 +1305,78 @@
+         st->state = d.next_addr & R_GDMA_OUT_STATE_LINK_DSCR_ADDR_MASK;
+     }
+     st->rx_packet_ended = true;
++    st->rx_segment_pending = false;
+     st->suc_eof_desc_addr = st->rx_last_desc_addr;
++    if (error) {
++        st->err_eof_desc_addr = st->rx_last_desc_addr;
++    }
+     esp_gdma_park(st);
+     esp_gdma_set_status(&st->int_state,
+                         R_GDMA_INTERRUPT_IN_DONE_MASK |
+-                        R_GDMA_INTERRUPT_IN_SUC_EOF_MASK);
++                        R_GDMA_INTERRUPT_IN_SUC_EOF_MASK |
++                        (error ? R_GDMA_INTERRUPT_IN_ERR_EOF_MASK : 0));
++    return true;
++}
++
++bool esp_gdma_finish_rx_channel(ESPGdmaState *s, uint32_t chan)
++{
++    return esp_gdma_finish_rx_common(s, chan, false);
++}
++
++bool esp_gdma_finish_rx_channel_err(ESPGdmaState *s, uint32_t chan)
++{
++    return esp_gdma_finish_rx_common(s, chan, true);
++}
++
++bool esp_gdma_finish_rx_segment(ESPGdmaState *s, uint32_t chan)
++{
++    if (!s || chan >= ESP_GDMA_GET_CLASS(s)->m_channel_count) {
++        return false;
++    }
++    DmaConfigState *st = &s->ch_conf[ESP_GDMA_IN_IDX][chan];
++    if (st->halted || !st->rx_segment_pending || !st->rx_last_desc_addr) {
++        return false;
++    }
++    bool partial = st->cur_desc_addr == st->rx_last_desc_addr &&
++                   st->cur_buf_off > 0 && st->cur_buf_off < st->cur_buf_cap;
++    if (partial) {
++        st->cur_dw0 &= ~GDMA_DESC_ERR_EOF_MASK;
++        esp_gdma_writeback_in(s, chan, true);
++        if (st->halted) {
++            return false;
++        }
++    } else {
++        /* The ordinary pump already closed the full descriptor and may have
++         * prefetched DW2. Mark the last actual descriptor, never that empty
++         * next allocation. Do not rewind the live byte/descriptor cursor. */
++        GdmaLinkedList d;
++        if (!esp_gdma_read_descr(s, st->rx_last_desc_addr, &d)) {
++            esp_gdma_desc_error(s, chan, ESP_GDMA_IN_IDX, st->rx_last_desc_addr);
++            return false;
++        }
++        d.config.val = (d.config.val & ~GDMA_DESC_ERR_EOF_MASK) |
++                       GDMA_DESC_SUC_EOF_MASK;
++        if (!esp_gdma_write_descr(s, st->rx_last_desc_addr, &d)) {
++            esp_gdma_desc_error(s, chan, ESP_GDMA_IN_IDX, st->rx_last_desc_addr);
++            return false;
++        }
++    }
++    st->rx_segment_pending = false;
++    st->suc_eof_desc_addr = st->rx_last_desc_addr;
++    esp_gdma_set_status(&st->int_state, R_GDMA_INTERRUPT_IN_SUC_EOF_MASK);
++    if (partial) {
++        /* A segment consumes this allocation even if its unused tail remains.
++         * RESTART after an actual end-of-list must therefore follow DW2. */
++        st->cur_buf_off = st->cur_buf_cap;
++        if (!st->cur_next_addr) {
++            esp_gdma_park(st);
++        } else {
++            st->walk_count = st->idle_count = 0;
++            if (!esp_gdma_walk_bound_hit(s, chan, ESP_GDMA_IN_IDX)) {
++                esp_gdma_load_descriptor(s, chan, ESP_GDMA_IN_IDX, st->cur_next_addr);
++            }
++        }
++    }
+     return true;
+ }
+ 
+--- a/include/hw/dma/esp_gdma.h
++++ b/include/hw/dma/esp_gdma.h
+@@ -116,6 +116,16 @@
+ 
+ 
+ typedef struct ESPGdmaState ESPGdmaState;
++
++typedef void (*EspGdmaPeripheralNotify)(ESPGdmaState *s,
++                                       GdmaPeripheral peripheral,
++                                       uint32_t channel, int direction,
++                                       void *opaque);
++typedef struct EspGdmaTxInfo {
++    uint32_t served; /* Actual bytes fetched, valid even on failure. */
++    bool eof_reached;
++    bool list_done;
++} EspGdmaTxInfo;
+ 
+ /* Defined in hw/dma/esp_gdma.c; one per channel for the M2M work quantum */
+ typedef struct ESPGdmaQuantum ESPGdmaQuantum;
+@@ -154,6 +164,7 @@
+     uint32_t rx_last_desc_addr; /* Last descriptor that actually received bytes */
+     uint32_t rx_last_prev_addr; /* Its previous descriptor, before prefetch */
+     bool rx_packet_ended;      /* Terminal peripheral EOF already committed */
++    bool rx_segment_pending;  /* Actual stores since the last segment EOF. */
+     uint32_t walk_count;    /* Descriptors fetched since the chain was armed */
+     uint32_t idle_count;    /* Consecutive fetches that moved no byte (cycle detection) */
+     bool fsm_active;        /* Chain armed and unfinished; LINK.PARK reads !fsm_active */
+@@ -176,6 +187,10 @@
+     DeviceState *soc_reset;
+     /* M2M work-quantum bottom halves, one per channel (see ESP_GDMA_WORK_QUANTUM) */
+     ESPGdmaQuantum* quantum;
++    struct {
++        EspGdmaPeripheralNotify notify;
++        void *opaque;
++    } peripheral_notify[GDMA_LAST + 1];
+ } ESPGdmaState;
+ 
+ 
+@@ -212,11 +227,33 @@
+ 
+ bool esp_gdma_read_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uint32_t size);
+ bool esp_gdma_write_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uint32_t size);
++/* The extended TX pump stops at the first packet EOF when info is non-NULL.
++ * The legacy pump remains a contiguous byte-stream consumer. Metadata remains
++ * valid after an advance/writeback fault; fetched bytes are never un-fetched. */
++bool esp_gdma_read_channel_ex(ESPGdmaState *s, uint32_t chan, uint8_t *buffer,
++                              uint32_t size, EspGdmaTxInfo *info);
++/* Reports actual stores even if the request was only partly satisfied. */
++bool esp_gdma_write_channel_ex(ESPGdmaState *s, uint32_t chan, uint8_t *buffer,
++                               uint32_t size, uint32_t *served);
++/* One fixed-slot notification per hardware peripheral; no hot-path allocation.
++ * Called only after successful peripheral START/RESTART, never M2M/failed arm.
++ * Bindings survive device reset; unregister before destroying the consumer. */
++void esp_gdma_set_peripheral_notify(ESPGdmaState *s, GdmaPeripheral peripheral,
++                                    EspGdmaPeripheralNotify notify, void *opaque);
+ /* Actual peripheral RX frame end. Writes exact partial length, clears owner,
+  * marks the last received descriptor EOF and parks only this IN channel.
+  * No bytes/halted/reset cursor => false, no write/IRQ; repeat end => true.
+  * STOP keeps a finalizable cursor; reset discards it without writeback. */
+ bool esp_gdma_finish_rx_channel(ESPGdmaState *s, uint32_t chan);
++/* UHCI0-only terminal malformed packet: exact length, owner=0,
++ * err_eof+suc_eof, IN_ERR_EOF+IN_SUC_EOF+IN_DONE, ERR_EOF_DES_ADDR. */
++bool esp_gdma_finish_rx_channel_err(ESPGdmaState *s, uint32_t chan);
++/* Nonterminal receive segment EOF (I2S RX_EOF_NUM). Exact partial/full boundary
++ * writeback and IN_SUC_EOF; continues directly at DW2, preserving an already
++ * prefetched empty next descriptor. No IN_DONE, no terminal packet marker.
++ * Returns false for no new stores/halted/reset, true once EOF is committed
++ * even if loading the next descriptor then halts with DSCR_ERR. */
++bool esp_gdma_finish_rx_segment(ESPGdmaState *s, uint32_t chan);
+ 
+ 
+ /**

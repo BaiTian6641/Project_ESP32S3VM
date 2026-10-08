@@ -1,0 +1,135 @@
+--- a/hw/misc/meson.build
++++ b/hw/misc/meson.build
+@@ -161,3 +161,8 @@
+ system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files(
++  'esp32s3_i2s.c',
++  'esp32s3_i2s_pdm.c',
++  'esp32s3_i2s_peer.c',
++  'esp32s3_i2s_peer_config.c',
++  'esp32s3_i2s_peer_service.c',
+   'esp32s3_cache.c',
+   'ssi_psram.c',
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -70,3 +70,5 @@
+ #include "hw/misc/esp32s3_electrical.h"
++#include "hw/misc/esp32s3_i2s.h"
++#include "hw/misc/esp32s3_i2s_peer_service.h"
+ #include "hw/misc/esp32s3_xts_aes.h"
+ #include "hw/misc/esp32s3_pms.h"
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -146,3 +146,4 @@
+     ESP32S3ClockState clock;
+     ESP32S3GdmaState gdma;
++    ESP32S3I2sState i2s[2];
+     ESP32S3ShaState sha;
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -232,3 +232,6 @@
+         device_cold_reset(DEVICE(&s->systimer));
+         device_cold_reset(DEVICE(&s->gdma));
++        for (unsigned i = 0; i < ARRAY_SIZE(s->i2s); i++) {
++            device_cold_reset(DEVICE(&s->i2s[i]));
++        }
+         device_cold_reset(DEVICE(&s->spi1));
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -748,3 +748,15 @@
++static void esp32s3_i2s_resolved_frame(void *opaque, uint64_t sample_ns)
++{
++    /* The controller consumes resolved slave edges at this virtual instant. */
++    (void)sample_ns;
++    esp32s3_i2s_net_changed(opaque);
++}
++
++static void esp32s3_i2s_route_wake(void *opaque)
++{
++    esp32s3_i2s_routes_changed(opaque);
++}
++
+ static void esp32s3_machine_init(MachineState *machine)
+ {
+     DriveInfo *dinfo = drive_get(IF_MTD, 0, 0);
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -811,3 +811,5 @@
+     object_initialize_child(OBJECT(ss), "gdma", &ss->gdma, TYPE_ESP32S3_GDMA);
++    object_initialize_child(OBJECT(ss), "i2s0", &ss->i2s[0], TYPE_ESP32S3_I2S);
++    object_initialize_child(OBJECT(ss), "i2s1", &ss->i2s[1], TYPE_ESP32S3_I2S);
+     object_initialize_child(OBJECT(ss), "sha", &ss->sha, TYPE_ESP32S3_SHA);
+     object_initialize_child(OBJECT(ss), "aes", &ss->aes, TYPE_ESP32S3_AES);
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -1230,3 +1230,71 @@
++    /* I2S v2 clocks and physical graph links must precede realization.
++     * Bases/interrupts are the pinned ESP-IDF 6.1 ESP32-S3 SoC definitions. */
++    {
++        static const hwaddr base[] = { DR_REG_I2S_BASE, DR_REG_I2S1_BASE };
++        static const unsigned interrupt[] = {
++            ETS_I2S0_INTR_SOURCE, ETS_I2S1_INTR_SOURCE,
++        };
++        static const unsigned gate[] = {
++            ESP32S3_GATE_I2S0, ESP32S3_GATE_I2S1,
++        };
++        static const unsigned reset[] = {
++            ESP32S3_RST_I2S0, ESP32S3_RST_I2S1,
++        };
++        static const unsigned system_bit[] = { 4, 21 };
++        DeviceState *clk_dev = DEVICE(&ss->clock);
++        DeviceState *electrical = DEVICE(object_resolve_path_component(
++                                            OBJECT(ss), "electrical"));
++
++        esp32s3_i2s_peer_service_create(OBJECT(ss), electrical);
++
++        for (unsigned i = 0; i < ARRAY_SIZE(ss->i2s); i++) {
++            DeviceState *dev = DEVICE(&ss->i2s[i]);
++            qdev_prop_set_uint32(dev, "controller", i);
++            object_property_set_link(OBJECT(dev), "gdma", OBJECT(&ss->gdma),
++                                     &error_fatal);
++            object_property_set_link(OBJECT(dev), "gpio", OBJECT(&ss->gpio),
++                                     &error_fatal);
++            object_property_set_link(OBJECT(dev), "electrical", OBJECT(electrical),
++                                     &error_fatal);
++            qdev_connect_clock_in(dev, "bus",
++                                  qdev_get_clock_out(clk_dev, "apb-clk"));
++            qdev_connect_clock_in(dev, "xtal",
++                                  qdev_get_clock_out(clk_dev, "xtal-clk"));
++            qdev_connect_clock_in(dev, "pll160",
++                                  qdev_get_clock_out(clk_dev, "pll-f160m-clk"));
++            qdev_connect_clock_in(dev, "pll240",
++                                  qdev_get_clock_out(clk_dev, "pll-f240m-clk"));
++            qdev_connect_gpio_out_named(clk_dev, ESP32S3_CLK_GATES_GPIO, gate[i],
++                                       qdev_get_gpio_in_named(dev, "clk-gate", 0));
++            qdev_connect_gpio_out_named(clk_dev, ESP32S3_CLK_RST_LEVEL_GPIO,
++                                       reset[i],
++                                       qdev_get_gpio_in_named(dev, "reset", 0));
++            /* Late GPIO connections do not replay previously emitted levels. */
++            qemu_set_irq(qdev_get_gpio_in_named(dev, "clk-gate", 0),
++                         !!(ss->clock.perip_clk_en0 & (1u << system_bit[i])));
++            qemu_set_irq(qdev_get_gpio_in_named(dev, "reset", 0),
++                         !!(ss->clock.perip_rst_en0 & (1u << system_bit[i])));
++
++            sysbus_realize(SYS_BUS_DEVICE(dev), &error_fatal);
++            memory_region_add_subregion_overlap(sys_mem, base[i],
++                    sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 0), 0);
++            sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0,
++                               qdev_get_gpio_in(intmatrix_dev, interrupt[i]));
++            if (!esp32s3_electrical_subscribe(electrical,
++                                            esp32s3_i2s_resolved_frame,
++                                            &ss->i2s[i])) {
++                error_report("I2S%u cannot subscribe to native electrical frames", i);
++                exit(1);
++            }
++            if (!esp32s3_electrical_add_model_notify(electrical,
++                                                   esp32s3_i2s_route_wake,
++                                                   &ss->i2s[i])) {
++                error_report("I2S%u cannot subscribe to native route changes", i);
++                exit(1);
++            }
++        }
++    }
++
+     esp32s3_soc_add_unimp_device(sys_mem, "esp32s3.rmt", DR_REG_RMT_BASE, 0x1000);
+ 
+     esp32s3_machine_init_sd(ss);

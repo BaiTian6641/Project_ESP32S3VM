@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "source": "copies/esp32s3-memory-test.c",
+  "destination": "tests/qtest/esp32s3-memory-test.c",
+  "meson_patch": "qtest-integration.patch",
+  "official_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "official_tree_modified": false,
+  "scope": "Native functional qtest source; no execution result or silicon/cache timing claim.",
+  "native_case_count": 12,
+  "retained_acceptance_case_count": 9,
+  "spi0_invalid_phase_vector_count": 18,
+  "profiles": {
+    "positive": "-M esp32s3 -m 8M -S; real SPI1 CS1 ssi_psram, exactly 8388608 backed bytes. Cache consumers first issue SPI1 35 in chip SPI mode, then program real SPI0 phases. Pure SPI1 transport/identity consumers start in uninitialized SPI mode.",
+    "absent": "-M esp32s3 -m 0 -S; absent chip must raise GDMA descriptor errors",
+    "other_capacities": "Unsupported nonzero sizes and octal properties must fail realize under SSI contract; this suite does not qualify other SKUs or startup-error subprocess behavior.",
+    "flash_xts": "No flash drive attached and no flash/XTS qualification inferred. Existing boot-profile execution is separately owned."
+  },
+  "prerequisites": [
+    "Memory copies integrated into native QEMU, including cache CPU I/O target and separate MMU-translating GDMA I/O target",
+    "Machine soc_mr owns internal DRAM alias at 0x3fc80000 and cache.psram_dma at 0x3c000000",
+    "Frozen GDMA artifacts retained: MEMTX_DECODE_ERROR becomes DSCR_ERR",
+    "Parent SPI1 transport patch compares transfer index rather than byte value in both TX/RX bounds",
+    "SSI child data_mr is the sole physical PSRAM array",
+    "SPI0 at 0x60003000 reuses official ESP32S3SpiState with cache-port=true and validates actual cache phases against the sole SPI1 CS1 chip; no second SSI backing",
+    "esp32s3_spi_psram_cache_ready(spi0, psram, write) gates physical CPU cache misses/writeback and direct GDMA read/write; cached CPU hits do not require external traffic",
+    "EXT sync size zero and address zero implement whole-cache ROM convention"
+  ],
+  "fixtures": {
+    "internal_descriptors": ["0x3fc88000", "0x3fc88020"],
+    "internal_data": ["0x3fc89000", "0x3fc8a000"],
+    "reserved_cache_sram_avoided": true,
+    "mmu": "512 shared entries, 64KiB pages; type bit15 PSRAM, invalid bit14, physical page bits0..13",
+    "dcache": "CTRL enable|8 selects 32-byte lines, 32KiB; CTRL1=0 opens CPU buses. Four ways; bit1 reserved and left clear.",
+    "maintenance": "EXT 0x28: invalidate=1, writeback=2, clean=4, done=8; address0x2c, block count0x30",
+    "writeback_fault": "Same pinned extmem_reg.h: illegal status0xe4 DCACHE_SYNC_OP_FAULT bit2, W1C at0xe0 bit2. Write-invalid vectors first clear/assert0, require fault status plus retained cached bytes after failed WB, clear/assert0, restore actualSPI0 phases and retry: known committed bytes change only after successful retry and fault status stays0. SYNC_DONE means command completion, not successful data commitment.",
+    "spi01_system": "Same IDF primary pin, soc/esp32s3/register/soc/reg_base.h and system_reg.h: SYSTEM0x600c0000, PERIP_CLK_EN0 offset0x18 and PERIP_RST_EN0 offset0x20 share SPI01 bit1. Gate cycling preserves phases/storage; held reset prevents physical access and ignores SPI0 phase writes; release requires fresh programming. Controller-only reset preserves externalQPI/data and CPUcache/MMU/dirtybytes.",
+    "cpu_access": "qtest accesses system address-space data alias MemoryRegion; not execution of Xtensa cache instructions",
+    "gdma_access": "Raw MMIO M2M internal descriptors; never external descriptor placement. GDMA sees committed SSI storage, not dirty CPU lines.",
+    "spi0": {
+      "base": "0x60003000",
+      "primary_pin": "ESP-IDF b774170ff46c393eeb5e495ea37936038d3f4f4f",
+      "phase_sequence": "esp_psram/device/esp_psram_impl_ap_quad.c config_psram_spi_phases() using hal/esp32s3/include/hal/psram_ctrlr_ll.h",
+      "register_definitions": "soc/esp32s3/register/soc/spi_mem_reg.h",
+      "cache_sctrl_0x40": "0x0055c174: QIO bit2, read dummy enable bit4, user read bit5/write bit20, address23<<14, read dummy5<<6; reset write-dummy length1<<22 retained but write-dummy enable bit3 clear",
+      "read_command_0x48": "0x700000eb: eight command bits, EB QPI read",
+      "write_command_0x4c": "0x70000038: eight command bits, 38 QPI write",
+      "misc_0x34": "0x00000001: CS0 disabled, CS1 enabled",
+      "sram_clock_0x50": "0x00010001: N=1,H=0,L=1; core selector0 at0xec and register gate1 at0xe8, qualified80MHz/2 configuration",
+      "smem_ddr_0xe4": "0x00003020 reset mask/minimum-byte fields retained; DDR enable bit0 clear",
+      "chip_mode": "Real SSI35 transitions chip SPI to QPI; SPI1 FCMD_QUAD bit8 selected for subsequent QPI commands. Reconfigure SPI0 only after warm reset; do not reissue35 while chip is already QPI.",
+      "negative_observation": "Valid MMU/backing plus invalid selected phase returns native OUT_DSCR_ERR bit2 or IN_DSCR_ERR bit3, preserves destination guard/committed SSI bytes, and resumes known byte transport after actual-register restoration. Incorrect read-only phases do not suppress valid writes; incorrect write-only phases do not suppress valid reads."
+    },
+    "pio": "SPI1 USR, CS0 disabled and CS1 enabled; FIFO transfers <=64 bytes. Eight32-byte transactions cover all256 byte values. Simultaneous SPI READ MOSI/MISO with all FIFO bytes>=0x80 uses TX32/RX32 and TX2/RX32; both must return the same known SSI source bytes, not stale clock bytes. These consumer assertions distinguish the original byte-value transport bounds from corrected index bounds."
+  },
+  "cases": {
+    "cache-geometry": ["all valid four-way32KiB16/32/64B and64KiB32/64B geometries", "actual dirty CPU vs committedSSI/GDMA bytes before/after line-count writeback", "actual stale CPU bytes and invalidate reload for every geometry", "32KiB frees lowerSRAM2 while64KiB consumesall; upperSRAM2 always faults"],
+    "visibility": ["dirty CPU data differs from GDMA committed source", "writeback commits", "DMA store leaves CPU cache stale", "invalidate reloads", "invalidate discards dirty line", "clean clears dirty without updating external storage and keeps CPU bytes", "subsequent WB cannot commit cleaned bytes", "whole-cache WB+invalidate"],
+    "alias-remap": ["two data virtual pages share physical cached bytes", "maintenance via alias", "remap switches physical backing and reverse remap restores original"],
+    "boundaries": ["64KiB CPU/DMA page crossing", "unaligned eight-byte OUT beat crossing non-contiguous valid physical MMU pages", "last64 bytes of physical8MiB", "physical page128 rejected for DMA read/write", "invalid MMU rejected", "flash-type destination rejected", "enabled32KiB DCache occupies upper SRAM2: GDMA reads/writes at0x3fcf8000 fault"],
+    "absent": ["PSRAM MMU with absent chip rejects DMA read/write"],
+    "alignment": ["IN16/32/64 misaligned buffer address rejects", "IN16/32/64 misaligned size rejects", "unaligned OUT address and7-byte length accepted with aligned IN size/address"],
+    "reset": ["all512 MMU entries invalid", "DMA fails before remapping", "cache/MMU-only reconfiguration still rejects GDMA read/write because actual SPI0 phase registers reset", "actual SPI0 reconfiguration resumes without another35 because external QPI persists", "committed storage retained", "dirty CPU line discarded"],
+    "spi1-ssi": ["initial SPI-mode9F identity0d5d420000000000", "full-byte-domain SPI PIO roundtrip", "35 enters QPI before38 write and EB read", "actual SPI0 phase programming before SSI/GDMA/CPU committed-array comparisons", "warm reset preserves QPI and storage; reconfigureSPI0 without35", "F5 exitsQPI: SPI ID/read succeed while SPI0 QPI GDMA read/write raisesDSCR_ERR", "35 restoresQPI and GDMA reads committedbytes", "99 alone preservesQPI and storage", "66/99 returns SPI while preserving storage and rejectsSPI0QPI GDMA", "35 resumesQPI committed-byte transport after66/99"],
+    "spi1-high-duplex": ["high-bit clock TX32/RX32 captures known SSI bytes; independently selectable before/after transport regression"],
+    "spi1-asymmetric": ["high-bit stale FIFO TX2/RX32 captures known SSI bytes within64-byte FIFO; independently selectable before/after transport regression"],
+    "spi0-clock-reset": ["actual SYSTEM SPI01 sharedgate bit1 blocks nativeGDMA read/write and preserves destinationguard", "CPU dirty cache hits remain visible while externalSPI clock is gated", "gate restoration resumes known committedbytes without phase reconfiguration", "held sharedSPI01 reset blocksGDMA and preserves dirtyCPUbytes", "SPI0 phase writes whileheld cannotarm consumers afterrelease", "freshactualSPI0 programming restoresGDMA without sending another35", "SPI1 EB consumer proves externalQPI/storage retained", "controllerreset preservesMMU/cache dirtyline; actualWB afterreconfiguration commits retaineddirtybytes"],
+    "spi0-phases": ["eighteen independently named negativephasevectors: disabledCS1, selectedCS0instead, incorrectread/writeopcode, sevenbitread/writecommand,23bitaddress, disabledread dummy, fivereaddummyclocks, enabledwrite dummy, disableduserread/writecommand, absentQPIflag, dualmode, octalmode, DDR, incorrectclockdivider/coreselector", "CLOCK_GATE.CLK_EN register-clock force-on values0/1 both transport actualSSI/GDMAbytes; ordinaryIDF rtc_init clears it", "native direction-specific GDMA DSCR_ERR instead of fabricatedbytes with validMMU/chipQPI/storage", "failed read leaves known internal destinationguard unchanged", "failed write leaves SSIcommittedbytes unchanged", "unaffecteddirection remains usable", "actualregister restoration resumes GDMA and invalidatedCPU knownbytevisibility", "write-invalid phase preventsCPUWB fromcommitting and preservesdirtyCPUline; restoredphase retrycommits realbytes"]
+  },
+  "unknown_rows": [
+    {"row": "OPI/DDR/DQS/HyperRAM", "status": "rejected, not qualified", "coverage": "SPI0 octal and DDR bits cause real GDMA descriptor errors; no lane/edge timing evidence"},
+    {"row": "other PSRAM clocks/capacities/SKUs", "status": "unqualified", "coverage": "8MiB AP quad at qualified80MHz-core/2 only; incorrect divider/selector rejected, not a general clock/timing model"},
+    {"row": "PSRAM instruction cache independent visibility", "status": "unqualified", "coverage": "qtest CPU data alias only; no Xtensa instruction execution claim"},
+    {"row": "electrical lane widths, exact dummy timing and cache replacement", "status": "not claimed", "coverage": "phase qualification and functional byte visibility only"},
+    {"row": "cache illegal-fault interrupt routing", "status": "unqualified", "coverage": "authored assertions cover actual DCACHE_SYNC_OP_FAULT status and W1C; no execution, IRQ routing or hardware proof"},
+    {"row": "flash/XTS and native camera/RGB firmware", "status": "separately owned", "coverage": "no proof borrowed from this native memory qtest source"}
+  ],
+  "changelog": [
+    {"date": "2026-10-07", "change": "Retained all nine native acceptance cases and added actual SPI0 phase consumers with18 negative vectors plus register-clock force-on0/1 positivebytes, realSYSTEMclock/reset consumers and allfive validcachegeometry/line-ownership consumers (12 nativecases total), realSSI QPI/SPI transitions, phase-reset isolation and failed-writeback retry with actual illegal-fault status/W1C and dirty cached-byte retention. Authored source only; no build/test result."}
+  ],
+  "not_claimed": ["build or test pass", "independent PSRAM instruction-cache visibility (provider retains shared IOMMU target)", "ISA cache maintenance opcodes (S3 has no dhi/dhwb/dhwbi)", "electrical lane widths", "cycle accurate dummy timing", "exact silicon LRU", "camera/RGB firmware execution", "flash/XTS boot correctness"],
+  "verification": {"worker_checks_run": [], "owner_next": ["Apply U3 meson patch after source copy", "Build integrated native qtest target after SOURCE_READY", "Run esp32s3-memory-test under delegated verifier", "Run the same SPI1 consumer assertion against original and transport-corrected candidate binaries and record separate hashes plus before-failure/after-pass evidence", "Run separately owned actual native SDK memoryconsumer camera/RGB and flash/XTS boot profiles"]}
+}

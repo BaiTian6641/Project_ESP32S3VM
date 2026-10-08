@@ -1,0 +1,423 @@
+{
+  "schema_version": 1,
+  "status": "source-authored-not-built-or-qualified",
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "prefix_fingerprint": "dbe2a8a5ad4e07a607e76ab751e77ac85fe3bf30974359bd25a69354499f9b32",
+  "patch": {
+    "path": "prototypes/memory/spi0-cache-phases.patch",
+    "format": "unified diff, exactly three context lines",
+    "sha256": "8238b21fb729c0eb43a85fe6b6ca9521679517516525f0d81ef47f7273ea0e2b",
+    "apply_after": [
+      "immutable frozen prefix",
+      "prototypes/coreclk/0010..0014 immutable prefix inputs",
+      "prototypes/memory/spi1-transport.patch"
+    ],
+    "targets": [
+      "hw/ssi/esp32s3_spi.c",
+      "include/hw/ssi/esp32s3_spi.h"
+    ],
+    "spi_c_after_spi1_transport_sha256": "7c8a8c3ffa6c7fa14dca0961423c4bb946b8ecff59bd871312f8deb2c4ed7276",
+    "spi_header_prefix_sha256": "f430e2da0b95fa1ad496609513efec8bc4df70dd8138703855aa8cacfefd126b"
+  },
+  "primary_sdk": {
+    "repository": "https://github.com/espressif/esp-idf",
+    "commit": "b774170ff46c393eeb5e495ea37936038d3f4f4f",
+    "local_checkout": "build-idf-5.5.5",
+    "sources": [
+      {
+        "path": "components/soc/esp32s3/register/soc/spi_mem_reg.h",
+        "sha256": "b070956a871e8da5b10a2362088840bf6fb327b8bea00dabccdfa85947d6a193",
+        "line_ranges": [
+          647,
+          722,
+          819,
+          874,
+          1406,
+          1658,
+          1719,
+          2048
+        ],
+        "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/soc/esp32s3/register/soc/spi_mem_reg.h"
+      },
+      {
+        "path": "components/hal/esp32s3/include/hal/psram_ctrlr_ll.h",
+        "sha256": "d037117bc61f21172c61f83fe8f060bce6d1fae5e0854be834386a1b90417426",
+        "line_ranges": [
+          50,
+          129,
+          137,
+          173,
+          211,
+          215
+        ],
+        "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/hal/esp32s3/include/hal/psram_ctrlr_ll.h"
+      },
+      {
+        "path": "components/esp_psram/device/esp_psram_impl_ap_quad.c",
+        "sha256": "e5dc3da8585a156bde3ffc119ea616d3430975ee0b2b84461de811d0ab119f22",
+        "line_ranges": [
+          427,
+          435
+        ],
+        "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/esp_psram/device/esp_psram_impl_ap_quad.c"
+      },
+      {
+        "path": "components/esp_psram/device/esp_quad_psram_defs_ap.h",
+        "sha256": "27bc3c20539a8caa64db94249f0d9dc9a3ef94145428f7193a7c18fe1a39d32f",
+        "line_ranges": [21, 34, 74, 79],
+        "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/esp_psram/device/esp_quad_psram_defs_ap.h"
+      },
+      {
+        "path": "components/hal/esp32s3/include/hal/mspi_ll.h",
+        "sha256": "0c7230c7cd32df8a4257d0837d497336a3e9c0fe3c9bf25dc669edec2f5b5f4c",
+        "line_ranges": [
+          195,
+          214,
+          315,
+          362
+        ],
+        "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/hal/esp32s3/include/hal/mspi_ll.h"
+      },
+      {
+        "path": "components/esp_hw_support/mspi_timing_tuning/port/esp32s3/mspi_timing_config.c",
+        "sha256": "d302c7e0f2b9ead1c0aecb4a12daf87ac194ad93078204d3e0b33d25c5e31c74",
+        "line_ranges": [
+          56,
+          71
+        ],
+        "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/esp_hw_support/mspi_timing_tuning/port/esp32s3/mspi_timing_config.c"
+      },
+      {
+        "path": "components/soc/esp32s3/register/soc/system_reg.h",
+        "sha256": "83439de5edf634caa160c8ca925cc0867f04faa9b01ac3ef5d7970bba2ac6f3c",
+        "line_ranges": [105, 105, 286, 291, 367, 367, 548, 553],
+        "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/soc/esp32s3/register/soc/system_reg.h"
+      },
+      {
+        "path": "components/esp_hw_support/mspi_timing_tuning/port/esp32s3/mspi_timing_tuning_configs.h",
+        "sha256": "54b89337e5307b4825f851b32ab2cf02084af79e79bad16382d6e8e1f80d14c0",
+        "line_ranges": [
+          68,
+          74,
+          163,
+          165
+        ],
+        "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/esp_hw_support/mspi_timing_tuning/port/esp32s3/mspi_timing_tuning_configs.h"
+      }
+    ]
+  },
+  "controller": {
+    "type": "ssi.esp32s3.spi",
+    "state": "ESP32S3SpiState",
+    "base": "0x60003000",
+    "qom_property": {
+      "name": "cache-port",
+      "type": "bool",
+      "default": false,
+      "spi0": true,
+      "spi1": false,
+      "meaning": "Controller port role, not a PSRAM-ready/enable flag; set before realize."
+    },
+    "system_clock_link": {
+      "name": "system-clock",
+      "type": "esp32s3.soc.clk",
+      "state_field": "ESP32S3ClockState *system_clock",
+      "required_for_spi0_ready": true,
+      "spi1": "Leave unlinked for unchanged existing PIO semantics.",
+      "gate_rule": "perip_clk_en0 bit1 set, perip_rst_en0 bit1 clear and existing pll_valid true for the selected PLL-derived80MHz MSPI source",
+      "register_write_rule": "While perip_rst_en0 bit1 is held, all SPI0 writes return MEMTX_DECODE_ERROR and leave fields unchanged. Clock-off configuration writes/readback remain available."
+    },
+    "bus_ownership": "SPI1 CS1 owns the sole 8 MiB SsiPsramState and byte-SSI bus attachment. SPI0 cache service never allocates a PSRAM chip or independently transacts its empty SSI bus.",
+    "unsupported_spi0_pio": "Nonzero write to SPI_MEM_CMD returns MEMTX_DECODE_ERROR via write_with_attrs; zero write is harmless. SPI1 forwards to its original PIO callback.",
+    "spi1_preservation": "All added register read/write/reset behavior is guarded by cache_port. Existing SPI1 flash/XTS transaction paths remain unchanged beyond the separately owned two-index transport fix.",
+    "undefined_registers": "No general register-array/write-echo fallback; original unsupported-register behavior remains."
+  },
+  "api": {
+    "declaration": "bool esp32s3_spi_psram_cache_ready(ESP32S3SpiState *spi, const SsiPsramState *psram, bool write);",
+    "effect": "Pure eligibility predicate; no data transfer, mutation or allocation. Parent maps false to MEMTX_DECODE_ERROR for CPU cache and committed GDMA access.",
+    "common_rules": [
+      "Non-null SPI0 cache-port and actual SSI PSRAM chip",
+      "8 MiB chip, non-octal, actual qpi=true, linear wrap32=false",
+      "MISC.CS1_DIS=0",
+      "Typed system-clock link required; SYSTEM_PERIP_CLK_EN0.SPI01_CLK_EN bit1=1, SYSTEM_PERIP_RST_EN0.SPI01_RST bit1=0 and existing pll_valid=true for the selected80MHz PLL-derived MSPI source. CLOCK_GATE.CLK_EN is register-clock force-on, not a functional gate; ordinaryIDF rtc_init clears it and both0/1 are operational.",
+      "CACHE_SCTRL.QIO=1; DIO=0; SRAM_OCT=0; SCMD_4BYTE=0; SRAM_ADDR_BITLEN=23",
+      "SMEM_DDR bits30:24 and DDR_EN bit0 zero (no HyperBus/octal/DQS/differential/DDR)",
+      "SMEM_AC.ECC_16TO18_BYTE_EN=0",
+      "CORE_CLK_SEL=0 and SRAM_CLK=0x00010001 for pinned 80 MHz core / 2 =40 MHz"
+    ],
+    "read_rules": [
+      "USR_RCMD=1",
+      "DRD.BITLEN=7 and DRD.VALUE=0x00eb",
+      "USR_RD_SRAM_DUMMY=1",
+      "Effective read dummy clocks = RDUMMY_CYCLELEN+1 + (SMEM_TIMING_CALI.TIMING_CALI ? EXTRA_DUMMY_CYCLELEN : 0), exactly six"
+    ],
+    "write_rules": [
+      "USR_WCMD=1",
+      "DWR.BITLEN=7 and DWR.VALUE=0x0038",
+      "USR_WR_SRAM_DUMMY=0 (disabled WDUMMY_CYCLELEN ignored)"
+    ],
+    "directionality": "Read predicate does not require valid write command/dummy; write predicate does not require valid read command/dummy. Common address, mode and clock rules apply to both."
+  },
+  "supported_modes": [
+    {
+      "chip": "8 MiB AP quad byte-SSI PSRAM",
+      "protocol": "STR QPI",
+      "read_command": "0xeb",
+      "write_command": "0x38",
+      "command_bits": 8,
+      "address_bits": 24,
+      "read_dummy_clocks": 6,
+      "write_dummy_clocks": 0,
+      "functional_frequency_hz": 40000000,
+      "timing_claim": "Functional register/phase eligibility, not waveform/analogue/latency accuracy. SRAM delay-mode/number/output timing fields read back with public masks; physical delay is not modeled."
+    }
+  ],
+  "unsupported_or_unknown_modes": [
+    "SPI cache mode (including HAL SPI/DIO mapping): false; SPI1 byte-SSI PIO SPI transport remains available",
+    "DIO, OPI/octal, DDR, HyperBus, differential/DQS-enabled PSRAM cache: false",
+    "Unknown commands, command lengths, address widths, dummy counts, user-command bypasses: false",
+    "Other frequencies/core selections: false in this pinned cache qualification mode",
+    "ECC 16-to18-byte mapping and wrap32: false",
+    "Encryption/physical security/hardware qualification: outside scope"
+  ],
+  "registers": [
+    {
+      "name": "CACHE_SCTRL",
+      "state_field": "cache_sctrl",
+      "offset": "0x40",
+      "write_mask": "0x0fffcfff",
+      "reset": "0x0055c070"
+    },
+    {
+      "name": "SRAM_DRD_CMD",
+      "state_field": "sram_drd_cmd",
+      "offset": "0x48",
+      "write_mask": "0xf000ffff",
+      "reset": "0x00000000"
+    },
+    {
+      "name": "SRAM_DWR_CMD",
+      "state_field": "sram_dwr_cmd",
+      "offset": "0x4c",
+      "write_mask": "0xf000ffff",
+      "reset": "0x00000000"
+    },
+    {
+      "name": "SRAM_CLK",
+      "state_field": "sram_clk",
+      "offset": "0x50",
+      "write_mask": "0x80ffffff",
+      "reset": "0x00030103"
+    },
+    {
+      "name": "SMEM_AC",
+      "state_field": "smem_ac",
+      "offset": "0xdc",
+      "write_mask": "0x7f01ffff",
+      "reset": "0x0000b084"
+    },
+    {
+      "name": "SMEM_DDR",
+      "state_field": "smem_ddr",
+      "offset": "0xe4",
+      "write_mask": "0x7f7fffff",
+      "reset": "0x00003020"
+    },
+    {
+      "name": "SMEM_TIMING_CALI",
+      "state_field": "smem_timing_cali",
+      "offset": "0xbc",
+      "write_mask": "0x0000001f",
+      "reset": "0x00000000"
+    },
+    {
+      "name": "SMEM_DIN_MODE",
+      "state_field": "smem_din_mode",
+      "offset": "0xc0",
+      "write_mask": "0x07ffffff",
+      "reset": "0x00000000"
+    },
+    {
+      "name": "SMEM_DIN_NUM",
+      "state_field": "smem_din_num",
+      "offset": "0xc4",
+      "write_mask": "0x0003ffff",
+      "reset": "0x00000000"
+    },
+    {
+      "name": "SMEM_DOUT_MODE",
+      "state_field": "smem_dout_mode",
+      "offset": "0xc8",
+      "write_mask": "0x000001ff",
+      "reset": "0x00000000"
+    },
+    {
+      "name": "CORE_CLK_SEL",
+      "state_field": "core_clk_sel",
+      "offset": "0xec",
+      "write_mask": "0x00000003",
+      "reset": "0x00000000"
+    }
+  ],
+  "phase_fields": {
+    "CACHE_SCTRL": {
+      "WDUMMY_CYCLELEN": [
+        27,
+        22
+      ],
+      "SRAM_OCT": [
+        21,
+        21
+      ],
+      "USR_WCMD": [
+        20,
+        20
+      ],
+      "ADDR_BITLEN": [
+        19,
+        14
+      ],
+      "RDUMMY_CYCLELEN": [
+        11,
+        6
+      ],
+      "USR_RCMD": [
+        5,
+        5
+      ],
+      "RD_DUMMY": [
+        4,
+        4
+      ],
+      "WR_DUMMY": [
+        3,
+        3
+      ],
+      "QIO": [
+        2,
+        2
+      ],
+      "DIO": [
+        1,
+        1
+      ],
+      "4BYTE": [
+        0,
+        0
+      ]
+    },
+    "SRAM_DRD_CMD/SRAM_DWR_CMD": {
+      "BITLEN": [
+        31,
+        28
+      ],
+      "VALUE": [
+        15,
+        0
+      ]
+    },
+    "SRAM_CLK": {
+      "EQU_SYSCLK": [
+        31,
+        31
+      ],
+      "N": [
+        23,
+        16
+      ],
+      "H": [
+        15,
+        8
+      ],
+      "L": [
+        7,
+        0
+      ]
+    },
+    "SMEM_TIMING_CALI": {
+      "EXTRA_DUMMY": [
+        4,
+        2
+      ],
+      "ENABLE": [
+        1,
+        1
+      ],
+      "TIMING_CLK_ENA": [
+        0,
+        0
+      ]
+    },
+    "SMEM_AC": {
+      "HOLD_DELAY": [
+        30,
+        25
+      ],
+      "ECC_16TO18_BYTE_EN": [
+        16,
+        16
+      ],
+      "HOLD_TIME": [
+        11,
+        7
+      ],
+      "SETUP_TIME": [
+        6,
+        2
+      ],
+      "HOLD": [
+        1,
+        1
+      ],
+      "SETUP": [
+        0,
+        0
+      ]
+    },
+    "SMEM_DDR": {
+      "DDR_EN": [
+        0,
+        0
+      ]
+    },
+    "MISC": {
+      "CS1_DIS": [
+        1,
+        1
+      ],
+      "CS0_DIS": [
+        0,
+        0
+      ]
+    }
+  },
+  "setup_example": {
+    "spi1_first": "SSI command0x35 enters actual chip QPI before cache use",
+    "spi0_writes": {
+      "0x40": "0x0055c174",
+      "0x48": "0x700000eb",
+      "0x4c": "0x70000038",
+      "0x34": "0x00000001",
+      "0x50": "0x00010001"
+    },
+    "smem_ddr_default": "0x00003020 at0xe4; do not confuse with inherited flash DDR at0xe0"
+  },
+  "reset": {
+    "interface": "Existing soc-reset QOM link and ResettableClass hold callback; parent integrates SPI0 in existing SPI01 peripheral reset domain, with no fabricated clock/reset bits.",
+    "realize": "Install public SPI0 defaults after cache-port property assignment.",
+    "periph_or_chip_controller_reset": "Reset new SPI0 fields to public defaults, MISC=0, inherited flash DDR=0x00003020, CLOCK_GATE=1. Defaults do not qualify data access.",
+    "level_held_spi01_reset": "write_with_attrs rejects every SPI0 guest write with MEMTX_DECODE_ERROR while typed system-clock perip_rst_en0 bit1 remains asserted; valid fields cannot latch until reset release. Existing central SPI01 reset strobe resets the controller phases.",
+    "cpu_only_reset": "Existing PERIPH reset-domain guard retains controller phases.",
+    "warm_external_chip": "No SSI chip reset or allocation from SPI0; chip data/qpi persist under controller phase reset. Parent cache reset discards dirty CPU state separately.",
+    "recovery": "Reprogram valid phases/clock/CS1 to regain backing access; chip may already remain QPI."
+  },
+  "qualification": {
+    "performed": [],
+    "required_by_main": [
+      "Prepare NEW immutable candidate after phase patch and integration",
+      "Confirm proper patch application after frozen prefix and minimal SPI1 index fix",
+      "Build native candidate once and run owned qtests/ordinary pinned SDK firmware qualification",
+      "Exercise wrong phase/SSI mode/DDR/CS1 faults, correct reads and writes, committed GDMA view, and warm phase reset without losing chip data"
+    ]
+  }
+}

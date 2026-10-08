@@ -1,0 +1,90 @@
+diff --git a/hw/xtensa/esp32s3.c b/hw/xtensa/esp32s3.c
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -64,3 +64,7 @@
+ #include "hw/timer/esp32s3_timg.h"
+ #include "hw/timer/esp32s3_systimer.h"
++#include "hw/misc/esp32s3_ledc.h"
++#include "hw/misc/esp32s3_pcnt.h"
++#include "hw/misc/esp32s3_mcpwm.h"
++#include "hw/misc/esp32s3_electrical.h"
+ #include "hw/gpio/esp32s3_gpio.h"
+@@ -150,4 +154,7 @@
+     ESP32S3RsaState rsa;
+     ESP32S3HmacState hmac;
+     ESP32S3DsState ds;
+     ESP32S3PmsState pms;
++    ESP32S3LedcState ledc;
++    ESP32S3PcntState pcnt;
++    ESP32S3McpwmState mcpwm[2];
+@@ -342,5 +349,9 @@
+     case ESP32S3_RST_SHA:      dev = DEVICE(&s->sha); break;
+     case ESP32S3_RST_RSA:      dev = DEVICE(&s->rsa); break;
+     case ESP32S3_RST_HMAC:     dev = DEVICE(&s->hmac); break;
+     case ESP32S3_RST_DS:       dev = DEVICE(&s->ds); break;
++    case ESP32S3_RST_LEDC:     dev = DEVICE(&s->ledc); break;
++    case ESP32S3_RST_PCNT:     dev = DEVICE(&s->pcnt); break;
++    case ESP32S3_RST_MCPWM0:   dev = DEVICE(&s->mcpwm[0]); break;
++    case ESP32S3_RST_MCPWM1:   dev = DEVICE(&s->mcpwm[1]); break;
+     default:
+@@ -815,3 +826,9 @@
+     object_initialize_child(OBJECT(ss), "hmac", &ss->hmac, TYPE_ESP32S3_HMAC);
+     object_initialize_child(OBJECT(ss), "ds", &ss->ds, TYPE_ESP32S3_DS);
+     object_initialize_child(OBJECT(ss), "pms", &ss->pms, TYPE_ESP32S3_PMS);
++    object_initialize_child(OBJECT(ss), "ledc", &ss->ledc, TYPE_ESP32S3_LEDC);
++    object_initialize_child(OBJECT(ss), "pcnt", &ss->pcnt, TYPE_ESP32S3_PCNT);
++    object_initialize_child(OBJECT(ss), "mcpwm0", &ss->mcpwm[0], TYPE_ESP32S3_MCPWM);
++    object_initialize_child(OBJECT(ss), "mcpwm1", &ss->mcpwm[1], TYPE_ESP32S3_MCPWM);
++    qdev_prop_set_uint32(DEVICE(&ss->mcpwm[0]), "group", 0);
++    qdev_prop_set_uint32(DEVICE(&ss->mcpwm[1]), "group", 1);
+@@ -1124,3 +1141,50 @@
+ 
++    /* Pulse controllers depend on the one committed native electrical graph.
++     * Connect clock inputs before realization; never replace pad/input state. */
++    {
++        DeviceState *clk = DEVICE(&ss->clock);
++        DeviceState *electrical = DEVICE(object_resolve_path_component(OBJECT(ss), "electrical"));
++        DeviceState *devices[] = {
++            DEVICE(&ss->ledc), DEVICE(&ss->pcnt),
++            DEVICE(&ss->mcpwm[0]), DEVICE(&ss->mcpwm[1]),
++        };
++        const unsigned gates[] = {
++            ESP32S3_GATE_LEDC, ESP32S3_GATE_PCNT,
++            ESP32S3_GATE_MCPWM0, ESP32S3_GATE_MCPWM1,
++        };
++        const unsigned resets[] = {
++            ESP32S3_RST_LEDC, ESP32S3_RST_PCNT,
++            ESP32S3_RST_MCPWM0, ESP32S3_RST_MCPWM1,
++        };
++        const hwaddr bases[] = {
++            DR_REG_LEDC_BASE, DR_REG_PCNT_BASE, DR_REG_PWM0_BASE, DR_REG_PWM1_BASE,
++        };
++        const unsigned sources[] = { 35, 41, 31, 32 };
++        for (unsigned i = 0; i < ARRAY_SIZE(devices); i++) {
++            DeviceState *dev = devices[i];
++            object_property_set_link(OBJECT(dev), "gpio", OBJECT(&ss->gpio), &error_abort);
++            object_property_set_link(OBJECT(dev), "electrical", OBJECT(electrical), &error_abort);
++            object_property_set_link(OBJECT(dev), "soc-reset", OBJECT(ss), &error_abort);
++            qdev_connect_clock_in(dev, "apb-clk", qdev_get_clock_out(clk, "apb-clk"));
++            qdev_connect_gpio_out_named(clk, ESP32S3_CLK_GATES_GPIO, gates[i],
++                                       qdev_get_gpio_in_named(dev, "clock-enable", 0));
++            qdev_connect_gpio_out_named(clk, ESP32S3_CLK_RST_LEVEL_GPIO, resets[i],
++                                       qdev_get_gpio_in_named(dev, "reset-held", 0));
++        }
++        qdev_connect_clock_in(devices[0], "xtal-clk", qdev_get_clock_out(clk, "xtal-clk"));
++        qdev_connect_clock_in(devices[0], "rc-fast-clk", qdev_get_clock_out(clk, "rc-fast-clk"));
++        for (unsigned i = 2; i < ARRAY_SIZE(devices); i++) {
++            qdev_connect_clock_in(devices[i], "pll-f160m-clk",
++                                  qdev_get_clock_out(clk, "pll-f160m-clk"));
++        }
++        for (unsigned i = 0; i < ARRAY_SIZE(devices); i++) {
++            sysbus_realize(SYS_BUS_DEVICE(devices[i]), &error_fatal);
++            memory_region_add_subregion_overlap(sys_mem, bases[i],
++                sysbus_mmio_get_region(SYS_BUS_DEVICE(devices[i]), 0), 0);
++            sysbus_connect_irq(SYS_BUS_DEVICE(devices[i]), 0,
++                               qdev_get_gpio_in(intmatrix_dev, sources[i]));
++        }
++    }
++
+     esp32s3_machine_init_sd(ss);
+ 

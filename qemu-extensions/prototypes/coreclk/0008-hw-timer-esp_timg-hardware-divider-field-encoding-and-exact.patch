@@ -1,0 +1,233 @@
+From 12d276b3351591723b8e61ed1aa45f067fbe9325 Mon Sep 17 00:00:00 2001
+From: ESP32S3VM coreclk <coreclk@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 13:15:22 +0800
+Subject: [PATCH] hw/timer/esp_timg: hardware divider-field encoding and exact
+ conversion
+
+TIMG_Tx_DIVIDER field encoding per TRM v1.8 Register 12.1 (reset 0x01,
+Timer x clock prescaler value) + ch.12 features (16-bit clock prescaler,
+from 2 to 65536) and the IDF6.1 S3 HAL (esp_hal_timg/esp32s3 timer_ll
+timer_ll_set_clock_prescale: asserts 2..65536, encodes divider 65536 as
+register field 0):
+
+  field 0        -> divide by 65536 (previously modeled as a frozen
+                    zero-frequency counter)
+  field 1        -> divide by 2 (TRM ch.12 12.2.1: the actual divisor
+                    is 2; the reset value counts at half rate until
+                    software writes a divider)
+  field 2..65535 -> divide by the field value (unchanged)
+
+The virtual-counter conversions now keep full precision instead of
+truncating the rate to kHz: counter accumulation uses
+muldiv64(elapsed_ns, frequency, 1s) and alarm scheduling/resume use
+muldiv64(ticks, 1s, frequency), so sub-MHz time bases (max divider) and
+alarm delays are exact.
+
+The qtest suite gains timg-divider-boundary covering field 0 (1220
+ticks/s at APB 80 MHz), field 1 (80k ticks/ms, no wedge), field 2 (40k
+ticks/ms) and an alarm firing through the maximum divider.
+---
+ hw/timer/esp_timg.c                | 31 +++++++++++--
+ tests/qtest/esp32s3-coreclk-test.c | 73 ++++++++++++++++++++++++++----
+ 2 files changed, 90 insertions(+), 14 deletions(-)
+
+diff --git a/hw/timer/esp_timg.c b/hw/timer/esp_timg.c
+index acd43e0..b50bd21 100644
+--- a/hw/timer/esp_timg.c
++++ b/hw/timer/esp_timg.c
+@@ -67,14 +67,32 @@ static inline uint64_t esp_timg_xtal_freq(ESPTimgState *s, bool clk_on)
+ }
+ 
+ /* Time-base clock of a Tx timer: source (TIMG_TxCONFIG USE_XTAL selects
+- * XTAL_CLK or APB_CLK, TRM v1.8 ch.12 §12.2) divided by the 16-bit prescaler */
++ * XTAL_CLK or APB_CLK, TRM v1.8 ch.12 §12.2) divided by the 16-bit prescaler.
++ *
++ * Divider-field encoding (TRM v1.8 Register 12.1 reset 0x01 + ch.12 §12.2.1:
++ * "When the TIMG_Tx_DIVIDER field is configured as 2~65536, the divisor of
++ * the prescaler would be 2~65536. Note that programming value 0 to
++ * TIMG_Tx_DIVIDER will result in the divisor being 65536. When the prescaler
++ * is set to 1, the actual divisor is 2"; IDF esp_hal_timg
++ * esp32s3/include/hal/timer_ll.h timer_ll_set_clock_prescale asserts
++ * 2..65536 and encodes divider 65536 as register field 0):
++ *   field 0        -> divide by 65536 (max divider encoding)
++ *   field 1        -> divide by 2 (reset value; TRM: "the actual divisor is 2")
++ *   field 2..65535 -> divide by the field value */
+ static uint64_t esp_timg_timer_freq(ESPTimgState *s, const ESPT0State *t)
+ {
+     const uint32_t divider = FIELD_EX32(t->config, TIMG_T0CONFIG, DIVIDER);
+     const uint64_t clk = FIELD_EX32(t->config, TIMG_T0CONFIG, USE_XTAL) ?
+                          esp_timg_xtal_freq(s, s->timers_clk_on) :
+                          esp_timg_apb_freq(s, s->timers_clk_on);
+-    return divider ? clk / divider : 0;
++
++    if (divider == 0) {
++        return clk / 65536;
++    }
++    if (divider == 1) {
++        return clk / 2;
++    }
++    return clk / divider;
+ }
+ 
+ 
+@@ -85,7 +103,8 @@ static int64_t esp_virtual_counter_update(ESPVirtualCounter *counter)
+ {
+     const int64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+     const int64_t elapsed_ns = now - counter->base;
+-    const int64_t ticks = (elapsed_ns * (counter->frequency / 1000)) / 1000000;
++    const int64_t ticks = muldiv64(elapsed_ns, counter->frequency,
++                                   NANOSECONDS_PER_SECOND);
+     counter->value += ticks;
+     counter->base = now;
+     return counter->value;
+@@ -108,7 +127,8 @@ static void esp_virtual_counter_alarm_in_ticks(ESPVirtualCounter *counter, int64
+         timer_del(&counter->timer);
+         return;
+     }
+-    int64_t delay_ns = (ticks * (1000000000UL / counter->frequency));
++    int64_t delay_ns = muldiv64(ticks, NANOSECONDS_PER_SECOND,
++                                counter->frequency);
+     const int64_t now2 = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+     counter->base = now2;
+     counter->value = 0;
+@@ -134,7 +154,8 @@ static void esp_virtual_counter_resume_in_ticks(ESPVirtualCounter *counter, int6
+ {
+     const int64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+     counter->base = now;
+-    timer_mod_ns(&counter->timer, now + ticks * (1000000000UL / counter->frequency));
++    timer_mod_ns(&counter->timer,
++                 now + muldiv64(ticks, NANOSECONDS_PER_SECOND, counter->frequency));
+ }
+ 
+ static void esp_virtual_counter_reset(ESPVirtualCounter* counter)
+diff --git a/tests/qtest/esp32s3-coreclk-test.c b/tests/qtest/esp32s3-coreclk-test.c
+index ba4f0a4..77fede2 100644
+--- a/tests/qtest/esp32s3-coreclk-test.c
++++ b/tests/qtest/esp32s3-coreclk-test.c
+@@ -162,29 +162,29 @@ static void test_cpu_divider_registers(void)
+ static void test_apb_divider_changes_timg_progress(void)
+ {
+     /* Switch to the PLL 80 MHz state, then APB-fed TIMG0 (USE_XTAL=0),
+-     * divider 1: 80 MHz -> 80000 ticks/ms */
++     * divider 2: 40 MHz -> 40000 ticks/ms */
+     qtest_writel(qts, R_SYSCLK_CONF, SYSCLK_PLL_80);
+-    enable_timg_counter(TIMG0_BASE, 1);
++    enable_timg_counter(TIMG0_BASE, 2);
+     g_assert_cmpuint(timg_counter(TIMG0_BASE), ==, 0);
+ 
+     qtest_clock_step(qts, 1000000);      /* 1 ms of virtual time */
+-    g_assert_cmphex(timg_counter(TIMG0_BASE), ==, 80000);
++    g_assert_cmphex(timg_counter(TIMG0_BASE), ==, 40000);
+ 
+     /* Switch the SoC clock back to the reset XTAL source:
+-     * APB = CPU_CLK = XTAL/2 = 20 MHz -> 20000 ticks/ms */
++     * APB = CPU_CLK = XTAL/2 = 20 MHz -> 10000 ticks/ms */
+     qtest_writel(qts, R_SYSCLK_CONF, SYSCLK_RESET);
+     qtest_clock_step(qts, 1000000);
+-    g_assert_cmphex(timg_counter(TIMG0_BASE), ==, 100000); /* 80000 + 20000 */
++    g_assert_cmphex(timg_counter(TIMG0_BASE), ==, 50000); /* 40000 + 10000 */
+ 
+     /* Restore PLL and verify the rate follows */
+     qtest_writel(qts, R_SYSCLK_CONF, SYSCLK_PLL_80);
+     qtest_clock_step(qts, 1000000);
+-    g_assert_cmphex(timg_counter(TIMG0_BASE), ==, 180000);
++    g_assert_cmphex(timg_counter(TIMG0_BASE), ==, 90000);
+ 
+     /* The CPU divider does not touch the APB-fed rate (PLL: APB fixed 80M) */
+     qtest_writel(qts, R_CPU_PER_CONF, 2);
+     qtest_clock_step(qts, 1000000);
+-    g_assert_cmphex(timg_counter(TIMG0_BASE), ==, 260000);
++    g_assert_cmphex(timg_counter(TIMG0_BASE), ==, 130000);
+ 
+     qtest_writel(qts, R_CPU_PER_CONF, CPUPERIOD_RESET);
+     qtest_writel(qts, R_SYSCLK_CONF, SYSCLK_RESET);
+@@ -211,6 +211,59 @@ static void test_timg_xtal_source_and_divider(void)
+     qtest_writel(qts, R_T0CONFIG(TIMG1_BASE), T0CFG_RESET);
+ }
+ 
++static void test_timg_divider_boundary_values(void)
++{
++    /* Divider-field encoding (TRM Register 12.1 + ch.12 12.2.1 + IDF
++     * esp_hal_timg esp32s3 timer_ll_set_clock_prescale): field 0 encodes
++     * the maximum divider 65536; field 1 divides by 2 ("the actual divisor
++     * is 2"); fields 2..65535 divide by the field value. The write path
++     * must never divide by zero. */
++    qtest_writel(qts, R_SYSCLK_CONF, SYSCLK_PLL_80);   /* APB 80 MHz */
++
++    /* Field 0 -> /65536: 80 MHz / 65536 = 1220 Hz (+ truncation) */
++    enable_timg_counter(TIMG0_BASE, 0);
++    {
++        uint32_t c0 = timg_counter(TIMG0_BASE);
++        qtest_clock_step(qts, 1000000000ull);          /* 1 s */
++        g_assert_cmpuint(timg_counter(TIMG0_BASE) - c0, ==, 1220);
++    }
++
++    /* Field 1 (reset value; TRM §12.2.1: "the actual divisor is 2") ->
++     * 40 MHz -> 40000 ticks/ms. Writing it must not wedge the counter
++     * or divide by zero. */
++    enable_timg_counter(TIMG0_BASE, 1);
++    {
++        uint32_t c0 = timg_counter(TIMG0_BASE);
++        qtest_clock_step(qts, 1000000);                /* 1 ms */
++        g_assert_cmpuint(timg_counter(TIMG0_BASE) - c0, ==, 40000);
++    }
++
++    /* Field 2 (first valid value) -> 40 MHz -> 40000 ticks/ms */
++    enable_timg_counter(TIMG0_BASE, 2);
++    {
++        uint32_t c0 = timg_counter(TIMG0_BASE);
++        qtest_clock_step(qts, 1000000);
++        g_assert_cmphex(timg_counter(TIMG0_BASE) - c0, ==, 40000);
++    }
++
++    /* Alarm still fires with the maximum divider: alarm 1221 ticks ahead
++     * (~1 s), INT_RAW bit 0 set after 1.01 s of virtual time. */
++    enable_timg_counter(TIMG0_BASE, 0);
++    qtest_writel(qts, R_T0LOADLO(TIMG0_BASE), 0);
++    qtest_writel(qts, R_T0LOAD(TIMG0_BASE), 1);
++    qtest_writel(qts, TIMG0_BASE + 0x10, 1221);        /* T0ALARMLO */
++    qtest_writel(qts, TIMG0_BASE + 0x14, 0);           /* T0ALARMHI */
++    qtest_writel(qts, R_T0CONFIG(TIMG0_BASE),
++                 T0CFG_EN | T0CFG_INCREASE | (1u << 10) | T0CFG_DIV(0));
++    qtest_clock_step(qts, 1010000000ull);              /* 1.01 s */
++    g_assert_cmpuint(qtest_readl(qts, TIMG0_BASE + 0x74) & 1u, ==, 1);
++
++    /* Restore */
++    qtest_writel(qts, TIMG0_BASE + 0x7C, 1u);          /* INT_CLR */
++    qtest_writel(qts, R_T0CONFIG(TIMG0_BASE), T0CFG_RESET);
++    qtest_writel(qts, R_SYSCLK_CONF, SYSCLK_RESET);
++}
++
+ static void test_systimer_cnt_clk_invariant(void)
+ {
+     /* TRM ch.11: the systimer counter runs from CNT_CLK (2/5 x XTAL_CLK =
+@@ -256,7 +309,7 @@ static void test_periph_clock_gate_halts_timg(void)
+     /* Full restore: progress resumes */
+     qtest_writel(qts, R_CLK_EN0, en0);
+     qtest_clock_step(qts, 1000000);
+-    g_assert_cmphex(timg_counter(TIMG0_BASE), ==, 80000);
++    g_assert_cmphex(timg_counter(TIMG0_BASE), ==, 40000);
+ 
+     /* TIMG1 is gated by TIMERGROUP1_CLK_EN [15] */
+     enable_timg_counter(TIMG1_BASE, 1);
+@@ -266,7 +319,7 @@ static void test_periph_clock_gate_halts_timg(void)
+     g_assert_cmphex(timg_counter(TIMG1_BASE), ==, 0);
+     qtest_writel(qts, R_CLK_EN0, en0);
+     qtest_clock_step(qts, 1000000);
+-    g_assert_cmphex(timg_counter(TIMG1_BASE), ==, 80000);
++    g_assert_cmphex(timg_counter(TIMG1_BASE), ==, 40000);
+ 
+     qtest_writel(qts, R_T0CONFIG(TIMG0_BASE), T0CFG_RESET);
+     qtest_writel(qts, R_T0CONFIG(TIMG1_BASE), T0CFG_RESET);
+@@ -380,6 +433,8 @@ int main(int argc, char **argv)
+                    test_apb_divider_changes_timg_progress);
+     qtest_add_func("esp32s3-coreclk/timg-xtal-source",
+                    test_timg_xtal_source_and_divider);
++    qtest_add_func("esp32s3-coreclk/timg-divider-boundary",
++                   test_timg_divider_boundary_values);
+     qtest_add_func("esp32s3-coreclk/systimer-cnt-clk-invariant",
+                    test_systimer_cnt_clk_invariant);
+     qtest_add_func("esp32s3-coreclk/periph-clock-gate",
+-- 
+2.43.0
+

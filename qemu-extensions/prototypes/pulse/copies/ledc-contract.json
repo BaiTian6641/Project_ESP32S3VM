@@ -1,0 +1,233 @@
+{
+  "schema": 1,
+  "controller": "ESP32-S3 LEDC",
+  "requirement": "SOC01",
+  "license": "GPL-2.0-or-later",
+  "type": "esp32s3-ledc",
+  "implementation": [
+    {
+      "path": "qemu-extensions/prototypes/pulse/copies/esp32s3_ledc.c",
+      "sha256": "c7c9e50e3ee588945c46cf7678db907c47f3addbf03b18b586eeb7c387f189aa"
+    },
+    {
+      "path": "qemu-extensions/prototypes/pulse/copies/esp32s3_ledc.h",
+      "sha256": "0c696c2c1e17b2454e6cdf697946ee9309bc62238ec34143fa7b5b4560f89e07"
+    },
+    {
+      "path": "qemu-extensions/prototypes/pulse/copies/esp32s3-ledc-test.c",
+      "sha256": "ff15a4a817f8113c14d37d43592fa58a174ff8df40333f743f92864543d2f6b5"
+    }
+  ],
+  "primary_sources": [
+    {
+      "path": "build-idf-6.1/components/soc/esp32s3/register/soc/ledc_reg.h",
+      "sha256": "94585f7e82e156370d0eed528a882814c2a2b5cde24668d822497478ff59d0f7"
+    },
+    {
+      "path": "build-idf-6.1/components/soc/esp32s3/register/soc/ledc_struct.h",
+      "sha256": "46af212252b1a7aee502df8a7bd2fe23475aa97973102f55e2319f2112b42616"
+    },
+    {
+      "path": "build-idf-6.1/components/soc/esp32s3/include/soc/gpio_sig_map.h",
+      "sha256": "f4fe38cc217a2bdcd2c0ec192fa887df1cbbe3506da1c677656506dc3997d758"
+    },
+    {
+      "path": "build-idf-6.1/components/soc/esp32s3/include/soc/interrupts.h",
+      "sha256": "ff3368997c620685080642e19c6f0385b190715b639c0c3dd4a5b0fd6ca50744"
+    },
+    {
+      "path": "build-idf-6.1/components/soc/esp32s3/register/soc/reg_base.h",
+      "sha256": "c6df84d3d98549b89c36811ebf3c664316823c8901ead27bb98b5350774aec46"
+    },
+    {
+      "path": "build-idf-6.1/components/esp_hal_ledc/esp32s3/include/hal/ledc_ll.h",
+      "sha256": "dc72338e507fd6584adbe2c2c97e74103a96d5d146c572b8b108bb73a81a0699"
+    },
+    {
+      "path": "build-idf-6.1/components/esp_hal_ledc/ledc_hal_iram.c",
+      "sha256": "f3a9b03656aa61cb49cd997040e184f94852dd9d5b0d714835249511ebc3b872"
+    },
+    {
+      "path": "build-idf-6.1/components/esp_driver_ledc/src/ledc.c",
+      "sha256": "27cc29833347527b310627925414b501f8711d2d9c2bce403590f6ff77e617fd"
+    },
+    {
+      "path": "qemu-extensions/prototypes/electrical-runtime/copies/esp32s3_electrical.h",
+      "sha256": "fb0c24c2ced9a25d281969ad850f46bb817c3d688c8b97c6ece93ec356e59377"
+    }
+  ],
+  "public_primary_sources": [
+    {
+      "url": "https://documentation.espressif.com/esp32-s3_technical_reference_manual_en.pdf",
+      "version": "1.8",
+      "sha256": "4484bf8a69035ec42a731c58c64ada6fbd1f1618c5559409f134d9ea083f444f",
+      "sections": [
+        "35.3.2.1",
+        "35.3.2.2",
+        "35.3.2.3",
+        "35.3.3",
+        "35.3.4",
+        "35.3.5",
+        "35.5"
+      ],
+      "pages": "1310-1325",
+      "retrieval": "downloaded PDF bytes, PyMuPDF chapter extraction; read URL converter stopped before ch35"
+    },
+    {
+      "url": "https://docs.espressif.com/projects/esp-idf/en/v5.0.2/esp32s3/api-reference/peripherals/ledc.html",
+      "usage": "search result corroborates low-speed-only S3; pinned LL/driver used for programming sequence"
+    }
+  ],
+  "integration": {
+    "mmio_base": "0x60019000",
+    "mmio_size": "0x1000",
+    "irq_source": 35,
+    "irq_output": 0,
+    "links": [
+      "gpio: ESP32S3GPIOState",
+      "electrical: DeviceState",
+      "soc-reset: DeviceState"
+    ],
+    "clock_inputs": [
+      "apb-clk",
+      "xtal-clk",
+      "rc-fast-clk"
+    ],
+    "gpio_inputs": [
+      "clock-enable[0]",
+      "reset-held[0]"
+    ],
+    "clock_owner_gate": "ESP32S3_GATE_LEDC, SYSTEM_PERIP_CLK_EN0[11]",
+    "clock_owner_reset": "ESP32S3_RST_LEDC, SYSTEM_PERIP_RST_EN0[11]",
+    "matrix_outputs": [
+      73,
+      74,
+      75,
+      76,
+      77,
+      78,
+      79,
+      80
+    ],
+    "header_destination": "hw/misc/esp32s3_ledc.h",
+    "output_authority": "esp32s3_electrical_set_matrix_drive",
+    "input_sampling": "none: LEDC has no physical input signals",
+    "electrical_subscription": "not required for output-only LEDC",
+    "reset_domain": "Resettable hold skips CPU-only reset through esp32s3_reset_covers_periph; explicit reset-held rising edge always clears device"
+  },
+  "features": [
+    {
+      "name": "target-register-file",
+      "status": "implemented-source-derived",
+      "detail": "8 channels / 4 timers, aligned 32-bit little-endian accesses, masks, read-only counters/current duty, WO strobes read zero, IRQ RAW/ST/ENA/W1C, writable DATE 0x19040200 reset; timer reset bit23 defaults1; bit24 reserved despite IDF struct tick_sel label",
+      "date_source_precedence": "Pinned S3 IDF6.1 ledc_reg.h:1550 documents 0x19040200. TRM v1.8 35.5 Register35.13 page1325 instead diagrams 0x19072601. This target follows the pinned SDK register header; discrepancy is explicit, not silicon-qualified."
+    },
+    {
+      "name": "ordinary-pwm",
+      "status": "implemented-source-derived",
+      "detail": "Real digital output edges, period 2^resolution, integer duty plus hpoint phase, full/zero duty, driven idle on disabled channel, all 8 independent outputs and 4 timebases; no intensity/average output. Only changed channels publish through one electrical batch; reset forces full re-publication; unchanged MMIO polling does not settle the electrical graph."
+    },
+    {
+      "name": "shadow-updates",
+      "status": "implemented-source-derived-with-startup-policy",
+      "detail": "Strobes snapshot divider/resolution and enable/timer/hpoint/overflow-counter-enable; running timer wrap commits them. Fade parameters/current duty commit immediately; output duty width sampled on timer wrap. Initial reset/unconfigured counter accepts shadow state before start."
+    },
+    {
+      "name": "fractional-divider",
+      "status": "implemented-unqualified-pattern-phase",
+      "detail": "A/A+1 integer source cycle intervals via bounded modulo256 accumulator; no fictional continuous fractional tick. Prescaler accumulator and residual billionth-cycle phase survive divider/clock/gate/pause changes."
+    },
+    {
+      "name": "fractional-duty",
+      "status": "implemented-unqualified-pattern-phase",
+      "detail": "Low nibble dithers integer pulse widths over 16 periods, persistent modulo16 accumulator; not a fractional sub-tick edge"
+    },
+    {
+      "name": "fade",
+      "status": "implemented-source-derived-with-edge-policies",
+      "detail": "Increasing/decreasing duty by SCALE per CYCLE selected-timer wraps for NUM changes, DUTY_R live19-bit value; IRQ bits4..11 latch completion; fade_start and data writes require channel strobe; conf0-only updates do not restart unchanged fade"
+    },
+    {
+      "name": "timer-and-channel-overflow-irq",
+      "status": "implemented-source-derived",
+      "detail": "Timer wrap RAW0..3 and enabled overflow-count thresholds NUM+1 RAW12..19; modulo threshold counter, WO reset; asserted level IRQ RAW&ENA"
+    },
+    {
+      "name": "clock-gate-reset-idle",
+      "status": "implemented-source-derived-with-bus-policy",
+      "detail": "Common APB/RC_FAST/XTAL selectors1/2/3, selector0 disconnected. CONF.CLK_EN is automatic register-clock gating override, not waveform enable. SYSTEM gate/pause retain count/phase/output; reset clears output to driven low idle; held reset rejects writes."
+    },
+    {
+      "name": "bounded-scheduling",
+      "status": "implemented",
+      "detail": "One persistent QEMUTimer, 4 fixed timer states, 8 fixed channel states, no per-edge allocations. Next comparator/wrap deadline rounded upward to virtual nanoseconds with source-phase carry. Binary counter advance bounded14 iterations; catch-up max16 wraps/timer/callback, residual backlog retained and callback scheduled no earlier than now+1ns."
+    }
+  ],
+  "missing_primary_source_semantics": [
+    {
+      "topic": "initial fractional divider and duty dither ordering",
+      "missing": "TRM specifies even distribution/count but does not specify accumulator seed or precise 256/16-cycle ordering",
+      "policy": "zero seed, modulo carry; tests pin model convention, not a silicon oracle"
+    },
+    {
+      "topic": "hpoint+width crossing programmable timer modulus",
+      "missing": "TRM describes sum comparator but does not specify counter-width truncation vs resolution-modulus wrap and match priority",
+      "policy": "width spans timer modulus; zero width low/full width high; hpoint outside period retains previous signal state; these corner cases not hardware-qualified"
+    },
+    {
+      "topic": "reset/paused startup shadow application",
+      "missing": "TRM specifies next wrap but not what initially reset/unconfigured timer does with PARA_UP",
+      "policy": "commit when reset/unconfigured to permit real IDF start; pauses otherwise retain pending shadow"
+    },
+    {
+      "topic": "fade degenerate and overflow arithmetic",
+      "missing": "exact zero NUM/CYCLE behavior, underflow/overflow duty saturation and DUTY_START auto-clear not documented",
+      "policy": "CYCLE0 treated as one wrap; NUM0 completes after one cycle; 19-bit modulo duty arithmetic; DUTY_START guest value retained after completion"
+    },
+    {
+      "topic": "fade time origin and first sample ordering",
+      "missing": "strobe vs first-wrap phase and re-arm of unchanged start bit not cycle-level specified",
+      "policy": "restart on dirty duty/conf1 strobe, count subsequent wraps, apply step before sampled width; conf0-only strobes preserve fade"
+    },
+    {
+      "topic": "overflow counter reset status handshake and threshold re-arm",
+      "missing": "RO reset-status timing and threshold saturation/auto-rearm not described",
+      "policy": "reset accepted synchronously so status reads0; counters periodically re-arm modulo NUM+1"
+    },
+    {
+      "topic": "bus access while SYSTEM clock disabled",
+      "missing": "TRM does not specify QEMU-visible return value or transaction behavior",
+      "policy": "reads0/writes ignored while SYSTEM gate/reset held; gated output retained"
+    },
+    {
+      "topic": "late virtual-clock jump waveform chronology",
+      "missing": "not a silicon semantic: virtual callbacks may arrive after multiple comparator deadlines",
+      "policy": "bounded catch-up produces current-time resolved state, not invented historical electrical publications; exact edge-sequence qualification requires normal deadline dispatch"
+    }
+  ],
+  "qualification": {
+    "status": "not-executed",
+    "checks_run": [],
+    "controller_qtest": "esp32s3-ledc-test.c",
+    "qtest_cases": [
+      "all8 channels and all4 timers via real GPIO4->GPIO5 powered net",
+      "exact nonfractional hpoint/duty boundary samples",
+      "shadow duty, pause/gate phase freeze, driven idle and held reset defaults",
+      "up/down fade DUTY_R and fade/overflow IRQ mask+W1C",
+      "fractional divider/duty carry and overflow-latched divider update"
+    ],
+    "required_before_acceptance": [
+      "Parent integrates machine child /machine/soc/ledc, MMIO, IRQ35, all links, named gate/reset and live clock inputs in separate GPL executable",
+      "Parent builds its independent tree once after all workers land; register qtest source in tests/qtest/meson.build and run esp32s3-ledc-test with QTEST_QEMU_BINARY pointing to native executable",
+      "Build and run tests/firmware/pulse_native IDF6.1 LEDC GPIO4->PCNT GPIO5 real net fixture; verify PCNT pulse totals and guest fade completion callbacks/IRQ",
+      "Add/execute qualification vectors for 8 simultaneous channels/4 simultaneous independent nets, source clock switch while partial tick, CPU-only vs peripheral reset, overflow-count explicit reset and no drift over long fractional periods",
+      "Obtain primary waveform or silicon references for listed undocumented corner semantics before claiming exact hardware equivalence there"
+    ],
+    "not_claimed": [
+      "No builds/tests/linters executed by LEDC worker",
+      "No official/frozen/sibling source trees mutated",
+      "No analog/security/hardware calibration or hardware measurements",
+      "Existing ESP32 intensity-only LEDC not reused"
+    ]
+  }
+}

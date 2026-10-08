@@ -1,0 +1,44 @@
+diff --git a/qapi/qom.json b/qapi/qom.json
+--- a/qapi/qom.json
++++ b/qapi/qom.json
+@@ -1070,6 +1070,23 @@
+ 
+ 
+ ##
++# @Esp32s3HostbusProbeProperties:
++#
++# Properties for the controlled external-peer hostbus prototype object.
++# This object exposes QOM debug control only, with no guest MMIO mapping.
++#
++# @chardev: identifier of the dedicated socket character backend
++#
++# @watchdog-ms: canonical decimal realtime watchdog milliseconds,
++#     1 through 600000 (default: "5000")
++#
++# Since: 9.2
++##
++{ 'struct': 'Esp32s3HostbusProbeProperties',
++  'if': 'CONFIG_TCG',
++  'data': { 'chardev': 'str', '*watchdog-ms': 'str' } }
++
++##
+ # @ObjectType:
+ #
+ # Features:
+@@ -1097,6 +1114,7 @@
+     { 'name': 'cryptodev-vhost-user',
+       'if': 'CONFIG_VHOST_CRYPTO' },
+     'dbus-vmstate',
++    { 'name': 'esp32s3-hostbus-probe', 'if': 'CONFIG_TCG' },
+     'filter-buffer',
+     'filter-dump',
+     'filter-mirror',
+@@ -1172,6 +1190,8 @@
+       'cryptodev-vhost-user':       { 'type': 'CryptodevVhostUserProperties',
+                                       'if': 'CONFIG_VHOST_CRYPTO' },
+       'dbus-vmstate':               'DBusVMStateProperties',
++      'esp32s3-hostbus-probe':       { 'type': 'Esp32s3HostbusProbeProperties',
++                                      'if': 'CONFIG_TCG' },
+       'filter-buffer':              'FilterBufferProperties',
+       'filter-dump':                'FilterDumpProperties',
+       'filter-mirror':              'FilterMirrorProperties',

@@ -1,0 +1,9 @@
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  /mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/memory/copies-frozen-i2c/SHA256SUMS
+f68174f68a95a801cae3c18190137de1bfb81a1f4e0ef0f10d26ab6b2e914e27  /mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/memory/copies-frozen-i2c/esp32s3-i2c-test.c
+bb22585013b9c2e4a38f02b32d88b4571f5b6d84d7ac15e413517db7de6f9822  /mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/memory/copies-frozen-i2c/esp32s3_i2c.c
+ba5f9894c5b9d96b09710e44dda0f2dd0d8687b30475b2b74d664d91566df502  /mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/memory/copies-frozen-i2c/esp32s3_i2c.h
+5116fe506d5597be9ad7b745d68ae22896bd56283dec449a5fa0671023e2382e  /mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/memory/copies-frozen-i2c/esp32s3_i2c_binding.c
+f3bb50a4bbf7cb534eec35bd1e3e9d746fc1cbe0d7f54e40f0eddd087621f297  /mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/memory/copies-frozen-i2c/esp32s3_i2c_binding.h
+09db4b0e3407e3b0b0bc777766d72d5b3c44f041759fa2bb8982a6f96dc58670  /mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/memory/copies-frozen-i2c/esp32s3_i2c_service.c
+737286e8cb1cd78bd79187e7cffa4ea77840856df02353aa64a833138418e047  /mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/memory/copies-frozen-i2c/esp32s3_i2c_service.h
+2807776795c98cf4725bc759b07ac19d92deafefd56fa61fbdac4f2b6ae3dced  /mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/memory/copies-frozen-i2c/test-esp32s3-i2c-service.c

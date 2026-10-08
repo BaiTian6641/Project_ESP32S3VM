@@ -1,0 +1,947 @@
+From a6809c51f0eb06fa21f7a1095969c6d81963ca9f Mon Sep 17 00:00:00 2001
+From: ESP32S3VM gdma <gdma@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 11:41:58 +0800
+Subject: [PATCH 2/5] tests/qtest: add esp32s3-gdma-test suite
+
+Drive the esp32s3.gdma controller through MMIO and guest RAM descriptor
+tables (16 cases): 3-descriptor ring/chain transfer with owner hand-off,
+owner/window/burst-alignment errors with bounded stop, external-RAM
+window audit, RESTART cursor reuse of a ring, work-quantum streaming of
+a valid double ring with mid-stream channel reset, zero-length
+self-loop and byte-moving self-loop bounded failure, dual-channel
+independence, PERI_SEL register masking, LINK PARK/STOP semantics,
+partial descriptor boundaries, internal-RAM word-alignment window
+discrimination, QMP responsiveness with a running vCPU across many
+quanta, non-cumulative walk bound for endless streams, repeated
+RESTART streaming, and system reset values.
+---
+ tests/qtest/esp32s3-gdma-test.c | 903 ++++++++++++++++++++++++++++++++
+ tests/qtest/meson.build         |   2 +-
+ 2 files changed, 904 insertions(+), 1 deletion(-)
+ create mode 100644 tests/qtest/esp32s3-gdma-test.c
+
+diff --git a/tests/qtest/esp32s3-gdma-test.c b/tests/qtest/esp32s3-gdma-test.c
+new file mode 100644
+index 0000000..a06f8e6
+--- /dev/null
++++ b/tests/qtest/esp32s3-gdma-test.c
+@@ -0,0 +1,903 @@
++/*
++ * QTest suite for the ESP32-S3 GDMA controller (esp32s3.gdma)
++ *
++ * Copyright (c) 2026 ESP32S3VM project
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 or
++ * (at your option) any later version.
++ *
++ * Exercises the bounded descriptor engine per docs/plans/peripherals-
++ * electrical.md CORE-04 and TRM chapter 3: descriptor ring walking with
++ * owner hand-off, descriptor errors (owner/window/alignment/zero-length
++ * cycles), restart cursors, dual-channel independence, channel reset and
++ * work-quantum streaming.
++ *
++ * The GDMA engine is driven purely through MMIO and guest RAM descriptors;
++ * the machine boots in paused state (-S), no firmware runs.
++ */
++
++#include "qemu/osdep.h"
++#include "libqtest.h"
++#include "qemu/bitops.h"
++
++/* GDMA register block, TRM 3.7 */
++#define GDMA_BASE           0x6003F000u
++#define GDMA_CHAN_STRIDE    0xC0u
++#define GDMA_OUT_OFF        0x60u
++
++/* Offsets inside one direction block */
++#define REG_CONF0           0x000
++#define REG_CONF1           0x004
++#define REG_INT_RAW         0x008
++#define REG_INT_ST          0x00C
++#define REG_INT_ENA         0x010
++#define REG_INT_CLR         0x014
++#define REG_FIFO_ST         0x018
++#define REG_LINK            0x020
++#define REG_STATE           0x024
++#define REG_SUC_EOF_DESC    0x028
++#define REG_ERR_EOF_DESC    0x02C
++#define REG_DESC_ADDR       0x030
++#define REG_BF0_DESC_ADDR   0x034
++#define REG_BF1_DESC_ADDR   0x038
++#define REG_PERI_SEL        0x048
++
++#define CH_IN_REG(ch, reg)  (GDMA_BASE + GDMA_CHAN_STRIDE * (ch) + (reg))
++#define CH_OUT_REG(ch, reg) (GDMA_BASE + GDMA_CHAN_STRIDE * (ch) + GDMA_OUT_OFF + (reg))
++
++/* IN_CONF0 */
++#define IN_MEM_TRANS_EN     BIT(4)
++/* OUT_CONF0 */
++#define OUT_AUTO_WRBACK     BIT(2)
++/* CONF1 */
++#define CHECK_OWNER         BIT(12)
++/* Interrupt bits, TRM 3.5 */
++#define IN_DONE             BIT(0)
++#define IN_SUC_EOF          BIT(1)
++#define IN_ERR_EOF          BIT(2)
++#define IN_DSCR_ERR         BIT(3)
++#define IN_DSCR_EMPTY       BIT(4)
++#define OUT_DONE            BIT(0)
++#define OUT_EOF             BIT(1)
++#define OUT_DSCR_ERR        BIT(2)
++#define OUT_TOTAL_EOF       BIT(3)
++/* INLINK */
++#define INLINK_PARK         BIT(24)
++#define INLINK_RESTART      BIT(23)
++#define INLINK_START        BIT(22)
++#define INLINK_STOP         BIT(21)
++#define INLINK_AUTO_RET     BIT(20)
++#define INLINK_ADDR_M       0xFFFFFu
++/* OUTLINK */
++#define OUTLINK_PARK        BIT(23)
++#define OUTLINK_RESTART     BIT(22)
++#define OUTLINK_START       BIT(21)
++#define OUTLINK_STOP        BIT(20)
++#define OUTLINK_ADDR_M      0xFFFFFu
++
++/* Internal RAM, machine "esp32s3.dram" region */
++#define DRAM_BASE           0x3FC80000u
++
++/* Descriptor (TRM 3.4.1) */
++#define DESC(size, length, suc_eof, owner) \
++    ((uint32_t)(size) | ((uint32_t)(length) << 12) | \
++     ((suc_eof) ? BIT(30) : 0) | ((owner) ? BIT(31) : 0))
++
++typedef struct Desc {
++    uint32_t dw0;
++    uint32_t buf;
++    uint32_t next;
++} QEMU_PACKED Desc;
++
++/* Scratch layout inside DRAM (96 bytes of data per slot) */
++#define SRC_AREA    0x3FC90000u     /* source data, second channel at +0x100 */
++#define OUT_DESC    0x3FC90200u     /* out descriptors, 0x40 per channel */
++#define IN_DESC     0x3FC90300u     /* in descriptors, 0x40 per channel */
++#define DST_AREA    0x3FC90400u     /* destination data, second channel at +0x100 */
++
++static inline void wr(QTestState *qts, uint32_t addr, uint32_t val)
++{
++    qtest_writel(qts, addr, val);
++}
++
++static inline uint32_t rd(QTestState *qts, uint32_t addr)
++{
++    return qtest_readl(qts, addr);
++}
++
++static void write_desc(QTestState *qts, uint32_t addr, uint32_t dw0,
++                       uint32_t buf, uint32_t next)
++{
++    Desc d = { dw0, buf, next };
++    qtest_memwrite(qts, addr, &d, sizeof(d));
++}
++
++static Desc read_desc(QTestState *qts, uint32_t addr)
++{
++    Desc d;
++    qtest_memread(qts, addr, &d, sizeof(d));
++    return d;
++}
++
++/*
++ * Build the canonical 3-descriptor chain/ring fixture:
++ * out: d0(32B) -> d1(32B) -> d2(32B, suc_eof) -> next
++ * in : e0(32B) -> e1(32B) -> e2(32B)       -> next
++ * Source pattern (96 bytes) at SRC_AREA, destination cleared at DST_AREA.
++ * `src` must point to at least 96 bytes.
++ */
++static void build_fixture(QTestState *qts, uint8_t *src, bool out_ring,
++                          bool in_ring, uint32_t dw0_or)
++{
++    uint32_t d_next = out_ring ? OUT_DESC : 0;
++    uint32_t e_next = in_ring ? IN_DESC : 0;
++
++    for (int i = 0; i < 96; i++) {
++        src[i] = (uint8_t)(0x10 + i);
++    }
++    qtest_memwrite(qts, SRC_AREA, src, 96);
++    qtest_memset(qts, DST_AREA, 0xEE, 96);
++
++    /* Owner is set by software before handing the list to GDMA */
++    write_desc(qts, OUT_DESC + 0, DESC(32, 32, false, true) | dw0_or, SRC_AREA,
++               OUT_DESC + 12);
++    write_desc(qts, OUT_DESC + 12, DESC(32, 32, false, true) | dw0_or,
++               SRC_AREA + 32, OUT_DESC + 24);
++    write_desc(qts, OUT_DESC + 24, DESC(32, 32, true, true) | dw0_or,
++               SRC_AREA + 64, d_next);
++
++    /* Receive descriptors: software clears suc_eof and hands ownership */
++    write_desc(qts, IN_DESC + 0, DESC(32, 0, false, true) | dw0_or, DST_AREA,
++               IN_DESC + 12);
++    write_desc(qts, IN_DESC + 12, DESC(32, 0, false, true) | dw0_or,
++               DST_AREA + 32, IN_DESC + 24);
++    write_desc(qts, IN_DESC + 24, DESC(32, 0, false, true) | dw0_or,
++               DST_AREA + 64, e_next);
++}
++
++static void start_m2m(QTestState *qts, uint32_t ch)
++{
++    /* MEM_TRANS_EN alone does not trigger (no pending START yet) */
++    wr(qts, CH_IN_REG(ch, REG_CONF0), IN_MEM_TRANS_EN);
++    wr(qts, CH_IN_REG(ch, REG_LINK), (IN_DESC & INLINK_ADDR_M) | INLINK_START);
++    /* The OUTLINK START write services the pending INLINK START: M2M runs */
++    wr(qts, CH_OUT_REG(ch, REG_LINK), (OUT_DESC & OUTLINK_ADDR_M) | OUTLINK_START);
++}
++
++static void clear_ints(QTestState *qts, uint32_t ch)
++{
++    wr(qts, CH_IN_REG(ch, REG_INT_CLR), 0xFFFFFFFFu);
++    wr(qts, CH_OUT_REG(ch, REG_INT_CLR), 0xFFFFFFFFu);
++}
++
++/* --- Tests -------------------------------------------------------------- */
++
++/*
++ * Mem-to-mem across a 3-descriptor chain: data moved in order, owner
++ * hand-off observed in guest memory (OUT via AUTO_WRBACK, IN always),
++ * exact interrupt statuses, EOF descriptor registers per TRM 3.5.
++ */
++static void test_m2m_chain_owner(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    uint8_t src[96];
++    Desc d;
++
++    build_fixture(qts, src, false, false, 0);
++    /* Owner check enabled on both directions, AUTO_WRBACK on OUT */
++    wr(qts, CH_IN_REG(0, REG_CONF1), CHECK_OWNER);
++    wr(qts, CH_OUT_REG(0, REG_CONF1), CHECK_OWNER);
++    wr(qts, CH_OUT_REG(0, REG_CONF0), OUT_AUTO_WRBACK);
++
++    start_m2m(qts, 0);
++
++    /* Exact statuses: OUT DONE|EOF|TOTAL_EOF, IN DONE|SUC_EOF */
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)), ==,
++                    OUT_DONE | OUT_EOF | OUT_TOTAL_EOF);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_INT_RAW)), ==,
++                    IN_DONE | IN_SUC_EOF);
++    /* No error reported */
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DSCR_ERR, ==, 0);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_INT_RAW)) & IN_DSCR_ERR, ==, 0);
++
++    /* Masked status follows ENA */
++    wr(qts, CH_OUT_REG(0, REG_INT_ENA), OUT_DONE | OUT_EOF | OUT_TOTAL_EOF);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_ST)), ==,
++                    OUT_DONE | OUT_EOF | OUT_TOTAL_EOF);
++
++    /* Data landed at the destination */
++    uint8_t dst[96];
++    qtest_memread(qts, DST_AREA, dst, 96);
++    g_assert_cmpmem(dst, 96, src, 96);
++
++    /* Owner transitions: OUT descriptors cleared by AUTO_WRBACK */
++    d = read_desc(qts, OUT_DESC);
++    g_assert_cmphex(d.dw0 & BIT(31), ==, 0);
++    d = read_desc(qts, OUT_DESC + 24);
++    g_assert_cmphex(d.dw0 & BIT(31), ==, 0);
++    g_assert_cmphex(d.dw0 & BIT(30), ==, BIT(30)); /* suc_eof kept */
++
++    /* IN descriptors: owner cleared by hardware, length written back;
++     * the final one gets suc_eof from hardware (checked below) */
++    for (int i = 0; i < 2; i++) {
++        d = read_desc(qts, IN_DESC + 12 * i);
++        g_assert_cmphex(d.dw0 & BIT(31), ==, 0);
++        g_assert_cmphex((d.dw0 >> 12) & 0xFFF, ==, 32);
++        g_assert_cmphex(d.dw0 & BIT(30), ==, 0);
++    }
++    /* Hardware sets suc_eof on the final receive descriptor (EOF data) */
++    d = read_desc(qts, IN_DESC + 24);
++    g_assert_cmphex(d.dw0 & BIT(30), ==, BIT(30));
++
++    /* EOF descriptor registers: last processed descriptors */
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_SUC_EOF_DESC)), ==, OUT_DESC + 24);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_SUC_EOF_DESC)), ==, IN_DESC + 24);
++
++    /* Cursor trail per TRM 3.27..3.29/3.34..3.36: BF0 = last current */
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_BF0_DESC_ADDR)), ==, OUT_DESC + 24);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_BF1_DESC_ADDR)), ==, OUT_DESC + 12);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_BF0_DESC_ADDR)), ==, IN_DESC + 24);
++
++    /* Chain done: both FSMs parked (LINK.PARK reads 1) */
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_LINK)) & OUTLINK_PARK, ==, OUTLINK_PARK);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_LINK)) & INLINK_PARK, ==, INLINK_PARK);
++
++    qtest_quit(qts);
++}
++
++/*
++ * Error descriptor in the middle of the chain: bad owner on d1 with
++ * CHECK_OWNER set raises DSCR_ERR and halts the channel; d2 is never
++ * touched and DONE never fires (EOF-after-error per TRM 3.4.6: halt).
++ */
++static void test_error_owner_mid_chain(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    uint8_t src[96];
++
++    build_fixture(qts, src, false, false, 0);
++    /* Revoke ownership of the second OUT descriptor */
++    write_desc(qts, OUT_DESC + 12, DESC(32, 32, false, false), SRC_AREA + 32,
++               OUT_DESC + 24);
++    wr(qts, CH_IN_REG(0, REG_CONF1), CHECK_OWNER);
++    wr(qts, CH_OUT_REG(0, REG_CONF1), CHECK_OWNER);
++
++    start_m2m(qts, 0);
++
++    /* Per-direction descriptor checks (TRM 3.5): only the OUT side errored */
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)), ==, OUT_DSCR_ERR);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_INT_RAW)), ==, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DONE, ==, 0);
++
++    /* Only the first buffer was copied, the rest is untouched */
++    uint8_t dst[96];
++    qtest_memread(qts, DST_AREA, dst, 96);
++    g_assert_cmpint(dst[0], ==, src[0]);
++    g_assert_cmpint(dst[31], ==, src[31]);
++    for (int i = 0; i < 32; i++) {
++        g_assert_cmpint(dst[32 + i], ==, 0xEE);
++        g_assert_cmpint(dst[64 + i], ==, 0xEE);
++    }
++
++    /* Erroring OUT descriptor address observable; IN trail untouched */
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_ERR_EOF_DESC)), ==, OUT_DESC + 12);
++    /* The channel is halted: PARK reads 1 */
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_LINK)) & OUTLINK_PARK, ==, OUTLINK_PARK);
++
++    /*
++     * TRM 3.4.6: after a descriptor error software must reset the channel
++     * before starting again; RESTART alone does not clear the halt.
++     */
++    wr(qts, CH_IN_REG(0, REG_LINK), INLINK_RESTART);
++    wr(qts, CH_OUT_REG(0, REG_LINK), OUTLINK_RESTART);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DONE, ==, 0);
++    /* Software fixes the descriptor ownership, resets the channel... */
++    write_desc(qts, OUT_DESC + 12, DESC(32, 32, false, true), SRC_AREA + 32,
++               OUT_DESC + 24);
++    wr(qts, CH_IN_REG(0, REG_CONF0), IN_MEM_TRANS_EN | 1); /* RST=1 */
++    wr(qts, CH_OUT_REG(0, REG_CONF0), 1);
++    wr(qts, CH_IN_REG(0, REG_CONF0), IN_MEM_TRANS_EN);     /* RST 1->0 */
++    wr(qts, CH_OUT_REG(0, REG_CONF0), 0);
++    clear_ints(qts, 0);
++    start_m2m(qts, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DONE, !=, 0);
++
++    qtest_quit(qts);
++}
++
++/*
++ * Descriptor window checks (TRM 3.4.6): a buffer address outside the
++ * internal/external RAM windows and a next-descriptor address outside
++ * internal RAM both raise DSCR_ERR and halt.
++ */
++static void test_error_bad_addresses(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    uint8_t src[96];
++
++    /* DW1 pointing at a peripheral window */
++    build_fixture(qts, src, false, false, 0);
++    write_desc(qts, OUT_DESC, DESC(32, 32, true, true), 0x6003F000, 0);
++    start_m2m(qts, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DSCR_ERR, ==, OUT_DSCR_ERR);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DONE, ==, 0);
++
++    /* DW2 (next descriptor) outside internal RAM */
++    clear_ints(qts, 0);
++    build_fixture(qts, src, false, false, 0);
++    write_desc(qts, OUT_DESC, DESC(32, 32, false, true), SRC_AREA, 0x60020000);
++    write_desc(qts, OUT_DESC + 12, DESC(32, 32, true, true), SRC_AREA + 32, 0);
++    start_m2m(qts, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DSCR_ERR, ==, OUT_DSCR_ERR);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DONE, ==, 0);
++
++    /*
++     * External RAM window passes the TRM 3.4.6 address check but no PSRAM
++     * is modeled in this machine: the transfer fails at the bus and is
++     * reported as a descriptor error (no silent success, CORE-04 memory
++     * path audit).
++     */
++    clear_ints(qts, 0);
++    build_fixture(qts, src, false, false, 0);
++    write_desc(qts, OUT_DESC, DESC(32, 32, true, true), 0x3C000000, 0);
++    start_m2m(qts, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DSCR_ERR, ==, OUT_DSCR_ERR);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DONE, ==, 0);
++
++    qtest_quit(qts);
++}
++
++/*
++ * Burst alignment (TRM table 3.4-2): with inlink burst enabled, a receive
++ * descriptor with non word-aligned size or buffer address is an error.
++ */
++static void test_error_inlink_burst_alignment(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    uint8_t src[96];
++
++    build_fixture(qts, src, false, false, 0);
++    /* Unaligned size (not word-aligned) and unaligned buffer address */
++    write_desc(qts, IN_DESC, DESC(30, 0, false, true), DST_AREA + 2, IN_DESC + 12);
++    write_desc(qts, IN_DESC + 12, DESC(64, 0, false, true), DST_AREA + 32, 0);
++    /* Peripheral receive chain: burst enabled, no MEM_TRANS_EN */
++    wr(qts, CH_IN_REG(0, REG_CONF0), BIT(2) /* DSCR_BURST_EN */);
++    wr(qts, CH_IN_REG(0, REG_INT_CLR), 0xFFFFFFFFu);
++    wr(qts, CH_IN_REG(0, REG_LINK), (IN_DESC & INLINK_ADDR_M) | INLINK_START);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_INT_RAW)) & IN_DSCR_ERR, ==, IN_DSCR_ERR);
++
++    /* The same descriptors pass with burst disabled: reset, then re-start */
++    wr(qts, CH_IN_REG(0, REG_CONF0), 1);
++    wr(qts, CH_IN_REG(0, REG_CONF0), 0);
++    wr(qts, CH_IN_REG(0, REG_INT_CLR), 0xFFFFFFFFu);
++    wr(qts, CH_IN_REG(0, REG_LINK), (IN_DESC & INLINK_ADDR_M) | INLINK_START);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_INT_RAW)) & IN_DSCR_ERR, ==, 0);
++    /* The armed peripheral chain leaves the park state */
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_LINK)) & INLINK_PARK, ==, 0);
++
++    qtest_quit(qts);
++}
++
++/*
++ * Restart cursor: after the ring transfer finishes, appending new data by
++ * rewriting DW2 of the last descriptor and issuing RESTART re-walks the
++ * ring from its first descriptor (TRM 3.4.5) and copies the new content.
++ */
++static void test_ring_restart_cursor(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    uint8_t src[96];
++
++    /*
++     * Double ring with the EOF flag on the third OUT descriptor: suc_eof
++     * ends the transfer phase (OUT_EOF) but the ring continues (DW2 != 0),
++     * so TRM 3.5 OUT_TOTAL_EOF (whole list sent) does not fire.
++     */
++    build_fixture(qts, src, true, true, 0);
++    wr(qts, CH_OUT_REG(0, REG_CONF0), OUT_AUTO_WRBACK);
++    start_m2m(qts, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)), ==, OUT_DONE | OUT_EOF);
++
++    /* Update the source data, then re-walk the ring through RESTART */
++    for (int i = 0; i < 32; i++) {
++        src[i] = (uint8_t)(0xA0 + i);
++    }
++    qtest_memwrite(qts, SRC_AREA, src, 32);
++    clear_ints(qts, 0);
++
++    wr(qts, CH_IN_REG(0, REG_LINK), INLINK_RESTART);
++    wr(qts, CH_OUT_REG(0, REG_LINK), OUTLINK_RESTART);
++
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)), ==, OUT_DONE | OUT_EOF);
++    uint8_t dst[96];
++    qtest_memread(qts, DST_AREA, dst, 96);
++    for (int i = 0; i < 32; i++) {
++        g_assert_cmpint(dst[i], ==, (uint8_t)(0xA0 + i));
++    }
++
++    qtest_quit(qts);
++}
++
++/*
++ * Work quantum streaming: an EOF-less double ring is valid circular
++ * streaming (CORE-04). The engine must yield at the quantum boundary with
++ * the channel still armed (PARK=0), keep making progress across timer
++ * deadlines, never hang, and leave a clean state on channel reset.
++ */
++static void test_ring_streaming_quantum(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    uint8_t src[96];
++    uint8_t dst[96];
++
++    /* Rings on both sides, no suc_eof anywhere */
++    build_fixture(qts, src, true, true, 0);
++    write_desc(qts, OUT_DESC + 24, DESC(32, 32, false, true), SRC_AREA + 64,
++               OUT_DESC);
++    write_desc(qts, IN_DESC + 24, DESC(32, 0, false, true), DST_AREA + 64,
++               IN_DESC);
++    wr(qts, CH_OUT_REG(0, REG_CONF0), OUT_AUTO_WRBACK);
++    start_m2m(qts, 0);
++
++    /* Still streaming: armed (PARK=0), no error, no DONE */
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_LINK)) & OUTLINK_PARK, ==, 0);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_LINK)) & INLINK_PARK, ==, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) &
++                    (OUT_DSCR_ERR | OUT_DONE), ==, 0);
++
++    /* The quantum copied several ring laps already */
++    qtest_memread(qts, DST_AREA, dst, 96);
++    g_assert_cmpint(dst[0], ==, src[0]);
++
++    /* Progress continues across scheduled quanta */
++    for (int round = 0; round < 10; round++) {
++        g_usleep(G_USEC_PER_SEC / 50);
++        qtest_memread(qts, DST_AREA, dst, 96);
++        g_assert_cmpint(dst[round % 96], ==, src[round % 96]);
++    }
++
++    /* Reset both channels mid-stream: clean state (CORE-04) */
++    wr(qts, CH_IN_REG(0, REG_CONF0), IN_MEM_TRANS_EN | 1);
++    wr(qts, CH_OUT_REG(0, REG_CONF0), 1);
++    g_usleep(G_USEC_PER_SEC / 50);
++    wr(qts, CH_IN_REG(0, REG_CONF0), IN_MEM_TRANS_EN);
++    wr(qts, CH_OUT_REG(0, REG_CONF0), 0);
++
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_STATE)), ==, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_DESC_ADDR)), ==, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_BF0_DESC_ADDR)), ==, 0);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_STATE)), ==, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_LINK)) & OUTLINK_PARK, ==, OUTLINK_PARK);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_LINK)) & INLINK_PARK, ==, INLINK_PARK);
++
++    /* The engine is usable again after the reset */
++    clear_ints(qts, 0);
++    build_fixture(qts, src, false, false, 0);
++    wr(qts, CH_OUT_REG(0, REG_CONF0), OUT_AUTO_WRBACK);
++    start_m2m(qts, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)), ==,
++                    OUT_DONE | OUT_EOF | OUT_TOTAL_EOF);
++
++    qtest_quit(qts);
++}
++
++/*
++ * Malicious descriptor chains must never hang QEMU:
++ * - a zero-length self-referential cycle makes no progress: bounded DSCR_ERR;
++ * - a byte-moving self-loop keeps walking until the receive list runs out:
++ *   bounded IN_DSCR_EMPTY halt.
++ */
++static void test_malicious_self_loop(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    uint8_t src[96];
++
++    /* Zero-length self-loop on the OUT side */
++    build_fixture(qts, src, false, false, 0);
++    write_desc(qts, OUT_DESC, DESC(0, 0, false, true), SRC_AREA, OUT_DESC);
++    start_m2m(qts, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DSCR_ERR, ==, OUT_DSCR_ERR);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DONE, ==, 0);
++
++    /* Byte-moving self-loop: OUT cycles, IN chain is finite */
++    clear_ints(qts, 0);
++    build_fixture(qts, src, true, false, 0);
++    write_desc(qts, OUT_DESC + 24, DESC(32, 32, false, true), SRC_AREA + 64,
++               OUT_DESC);
++    start_m2m(qts, 0);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_INT_RAW)) & IN_DSCR_EMPTY, ==,
++                    IN_DSCR_EMPTY);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_INT_RAW)) & IN_DONE, ==, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DONE, ==, 0);
++    /* Receive buffers were filled round-robin until the list ran out */
++    uint8_t dst[96];
++    qtest_memread(qts, DST_AREA, dst, 96);
++    g_assert_cmpint(dst[0], ==, src[0]);
++
++    qtest_quit(qts);
++}
++
++/*
++ * Two channels running different payloads concurrently must never
++ * interfere (CORE-04: five channels, no cross-channel consumption).
++ */
++static void test_dual_channel_independent(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    uint8_t src0[96], src1[96];
++    uint8_t dst[96];
++
++    for (int i = 0; i < 96; i++) {
++        src0[i] = (uint8_t)(0x40 + i);
++        src1[i] = (uint8_t)(0x80 + i);
++    }
++    qtest_memwrite(qts, SRC_AREA, src0, 96);
++    qtest_memwrite(qts, SRC_AREA + 0x100, src1, 96);
++
++    /* Channel 0: SRC_AREA -> DST_AREA; channel 1: SRC+0x100 -> DST+0x100 */
++    for (uint32_t ch = 0; ch < 2; ch++) {
++        uint32_t src_addr = SRC_AREA + 0x100 * ch;
++        uint32_t dst_addr = DST_AREA + 0x100 * ch;
++        qtest_memset(qts, dst_addr, 0xEE, 96);
++        write_desc(qts, OUT_DESC + 0x40 * ch,
++                   DESC(32, 32, false, true), src_addr, OUT_DESC + 0x40 * ch + 12);
++        write_desc(qts, OUT_DESC + 0x40 * ch + 12,
++                   DESC(32, 32, false, true), src_addr + 32, OUT_DESC + 0x40 * ch + 24);
++        write_desc(qts, OUT_DESC + 0x40 * ch + 24,
++                   DESC(32, 32, true, true), src_addr + 64, 0);
++        write_desc(qts, IN_DESC + 0x40 * ch,
++                   DESC(32, 0, false, true), dst_addr, IN_DESC + 0x40 * ch + 12);
++        write_desc(qts, IN_DESC + 0x40 * ch + 12,
++                   DESC(32, 0, false, true), dst_addr + 32, IN_DESC + 0x40 * ch + 24);
++        write_desc(qts, IN_DESC + 0x40 * ch + 24,
++                   DESC(32, 0, false, true), dst_addr + 64, 0);
++        wr(qts, CH_IN_REG(ch, REG_CONF0), IN_MEM_TRANS_EN);
++        wr(qts, CH_IN_REG(ch, REG_LINK), ((IN_DESC + 0x40 * ch) & INLINK_ADDR_M) | INLINK_START);
++    }
++    /* Both OUT chains start at the same register write "time" */
++    wr(qts, CH_OUT_REG(0, REG_LINK), (OUT_DESC & OUTLINK_ADDR_M) | OUTLINK_START);
++    wr(qts, CH_OUT_REG(1, REG_LINK), ((OUT_DESC + 0x40) & OUTLINK_ADDR_M) | OUTLINK_START);
++
++    for (uint32_t ch = 0; ch < 2; ch++) {
++        g_assert_cmphex(rd(qts, CH_OUT_REG(ch, REG_INT_RAW)), ==,
++                        OUT_DONE | OUT_EOF | OUT_TOTAL_EOF);
++        g_assert_cmphex(rd(qts, CH_IN_REG(ch, REG_INT_RAW)), ==,
++                        IN_DONE | IN_SUC_EOF);
++    }
++
++    qtest_memread(qts, DST_AREA, dst, 32);
++    g_assert_cmpmem(dst, 32, src0, 32);
++    qtest_memread(qts, DST_AREA + 0x100, dst, 32);
++    g_assert_cmpmem(dst, 32, src1, 32);
++
++    qtest_quit(qts);
++}
++
++/*
++ * Peripheral handshake hooks: PERI_SEL register semantics. Values 10..63
++ * are invalid on ESP32-S3 (TRM table 3.4-1) and reserved bits read zero.
++ * Memory-to-memory transfers are independent of PERI_SEL.
++ */
++static void test_peri_sel_register(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    uint8_t src[96];
++
++    /* PERI_SEL is a 6-bit field, reserved bits read as zero */
++    wr(qts, CH_OUT_REG(0, REG_PERI_SEL), 0x1234u);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_PERI_SEL)), ==, 0x34);
++    wr(qts, CH_OUT_REG(0, REG_PERI_SEL), 0x3Fu); /* disconnect value */
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_PERI_SEL)), ==, 0x3F);
++    wr(qts, CH_OUT_REG(0, REG_PERI_SEL), 0x9u);  /* RMT, highest valid */
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_PERI_SEL)), ==, 0x9);
++
++    /* M2M works regardless of the peripheral selection */
++    build_fixture(qts, src, false, false, 0);
++    start_m2m(qts, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DONE, !=, 0);
++
++    qtest_quit(qts);
++}
++
++/*
++ * LINK register semantics: PARK reset value 1 (both directions), INLINK
++ * AUTO_RET resets to 1, START arms a peripheral chain (PARK reads 0 until
++ * the chain completes), STOP parks again (TRM registers 3.4 and 3.8).
++ */
++static void test_link_park_stop(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    uint8_t src[96];
++
++    /* Reset values */
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_LINK)), ==, OUTLINK_PARK);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_LINK)), ==, INLINK_PARK | INLINK_AUTO_RET);
++
++    /*
++     * Peripheral (non M2M) OUT chain: START arms it immediately, the data
++     * waits for a peripheral pump, so the FSM leaves the park state.
++     */
++    build_fixture(qts, src, false, false, 0);
++    wr(qts, CH_OUT_REG(0, REG_LINK), (OUT_DESC & OUTLINK_ADDR_M) | OUTLINK_START);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_LINK)) & OUTLINK_PARK, ==, 0);
++
++    /* STOP parks the channel and drops the pending chain */
++    wr(qts, CH_OUT_REG(0, REG_LINK), OUTLINK_STOP);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_LINK)) & OUTLINK_PARK, ==, OUTLINK_PARK);
++    /* START/RESTART/STOP are self-clearing */
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_LINK)) &
++                    (OUTLINK_START | OUTLINK_RESTART | OUTLINK_STOP), ==, 0);
++
++    qtest_quit(qts);
++}
++
++/*
++ * Partial bursts across a descriptor boundary: two OUT descriptors of
++ * different sizes feeding one IN descriptor move every byte exactly once.
++ */
++static void test_partial_descriptor_boundary(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    uint8_t src[48];
++    uint8_t dst[48];
++
++    for (int i = 0; i < 48; i++) {
++        src[i] = (uint8_t)(0xC0 + i);
++    }
++    qtest_memwrite(qts, SRC_AREA, src, 48);
++    qtest_memset(qts, DST_AREA, 0xEE, 48);
++
++    /* OUT: 20 bytes + 28 bytes; IN: one 48-byte buffer */
++    write_desc(qts, OUT_DESC, DESC(20, 20, false, true), SRC_AREA, OUT_DESC + 12);
++    write_desc(qts, OUT_DESC + 12, DESC(28, 28, true, true), SRC_AREA + 20, 0);
++    write_desc(qts, IN_DESC, DESC(48, 0, false, true), DST_AREA, 0);
++
++    wr(qts, CH_IN_REG(0, REG_CONF0), IN_MEM_TRANS_EN);
++    wr(qts, CH_IN_REG(0, REG_LINK), (IN_DESC & INLINK_ADDR_M) | INLINK_START);
++    wr(qts, CH_OUT_REG(0, REG_LINK), (OUT_DESC & OUTLINK_ADDR_M) | OUTLINK_START);
++
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)), ==,
++                    OUT_DONE | OUT_EOF | OUT_TOTAL_EOF);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_INT_RAW)), ==, IN_DONE | IN_SUC_EOF);
++
++    qtest_memread(qts, DST_AREA, dst, 48);
++    g_assert_cmpmem(dst, 48, src, 48);
++    /* IN descriptor written back with the full received length */
++    Desc d = read_desc(qts, IN_DESC);
++    g_assert_cmphex((d.dw0 >> 12) & 0xFFF, ==, 48);
++    g_assert_cmphex(d.dw0 & BIT(30), ==, BIT(30));
++    g_assert_cmphex(d.dw0 & BIT(31), ==, 0);
++
++    qtest_quit(qts);
++}
++
++/*
++ * Defect regressions (review 2026-10-07):
++ *
++ * 1. Quantum continuation must not starve the main loop: with the VM
++ *    actually running (-accel tcg, no -S, live vCPU and virtual clock),
++ *    QMP must answer promptly while a streaming ring runs through many
++ *    quanta, and data must keep flowing.
++ * 2. Burst alignment windows: internal-RAM receive descriptors are
++ *    word-aligned (TRM table 3.4-2) even when not 16-byte aligned; only
++ *    external-RAM descriptors take the EXT_MEM_BK_SIZE block alignment
++ *    (TRM table 3.4-3). The internal window (0x3FC88000..) lies
++ *    numerically above the external base (0x3C000000), so the window
++ *    test must be explicit.
++ * 3. The absolute walk bound is per scheduled quantum / per restart,
++ *    never cumulative: a valid EOF-less ring must keep streaming past
++ *    65536 total descriptor fetches without DSCR_ERR.
++ */
++static void test_streaming_qmp_responsive(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -accel tcg");
++    uint8_t src[96];
++    uint8_t dst[96];
++    int64_t start_ns;
++    int64_t max_round_ns = 0;
++
++    build_fixture(qts, src, true, true, 0);
++    write_desc(qts, OUT_DESC + 24, DESC(32, 32, false, true), SRC_AREA + 64,
++               OUT_DESC);
++    write_desc(qts, IN_DESC + 24, DESC(32, 0, false, true), DST_AREA + 64,
++               IN_DESC);
++    wr(qts, CH_OUT_REG(0, REG_CONF0), OUT_AUTO_WRBACK);
++    start_m2m(qts, 0);
++
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_LINK)) & OUTLINK_PARK, ==, 0);
++
++    /*
++     * The vCPU is executing and the virtual clock runs: every QMP command
++     * must complete within a generous wall-clock bound even while the
++     * streaming ring re-schedules its work quantum on every main-loop
++     * iteration.
++     */
++    start_ns = g_get_monotonic_time();
++    for (int i = 0; i < 20; i++) {
++        int64_t cmd_start = g_get_monotonic_time();
++        QDict *rsp = qtest_qmp(qts, "{ 'execute': 'query-status' }");
++        g_assert(qdict_haskey(rsp, "return"));
++        qobject_unref(rsp);
++        int64_t round = g_get_monotonic_time() - cmd_start;
++        max_round_ns = MAX(max_round_ns, round);
++        g_usleep(G_USEC_PER_SEC / 100);
++    }
++    /* Whole exchange bounded; each individual QMP command far below 1s */
++    g_assert_cmpint(g_get_monotonic_time() - start_ns, <, 30 * G_USEC_PER_SEC);
++    g_assert_cmpint(max_round_ns, <, G_USEC_PER_SEC);
++
++    /* Data kept flowing across the quanta */
++    qtest_memread(qts, DST_AREA, dst, 96);
++    g_assert_cmpint(dst[0], ==, src[0]);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DSCR_ERR, ==, 0);
++
++    /* Leave a clean state */
++    wr(qts, CH_IN_REG(0, REG_CONF0), IN_MEM_TRANS_EN | 1);
++    wr(qts, CH_OUT_REG(0, REG_CONF0), 1);
++    qtest_qmp_assert_success(qts, "{ 'execute': 'quit' }");
++}
++
++/*
++ * An EOF-less double ring is a valid endless stream: the walk bound must
++ * not accumulate across quanta (regression for the cumulative 65536
++ * descriptor bound), the stream simply keeps flowing with no DSCR_ERR.
++ */
++static void test_streaming_walk_bound_not_cumulative(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    uint8_t src[96];
++    uint8_t dst[96];
++
++    build_fixture(qts, src, true, true, 0);
++    write_desc(qts, OUT_DESC + 24, DESC(32, 32, false, true), SRC_AREA + 64,
++               OUT_DESC);
++    write_desc(qts, IN_DESC + 24, DESC(32, 0, false, true), DST_AREA + 64,
++               IN_DESC);
++    wr(qts, CH_OUT_REG(0, REG_CONF0), OUT_AUTO_WRBACK);
++    start_m2m(qts, 0);
++
++    /*
++     * Each quantum fetches 256 descriptors (6 per ring lap), so roughly
++     * 256 quanta are needed to reach the old cumulative 65536 bound. The
++     * BH runs one quantum per main-loop iteration; poll well past that
++     * and assert the stream is error-free and still parked-in-motion.
++     */
++    for (int round = 0; round < 100; round++) {
++        g_usleep(G_USEC_PER_SEC / 200);
++        g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) &
++                        (OUT_DSCR_ERR | OUT_DONE), ==, 0);
++        g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_INT_RAW)) &
++                        (IN_DSCR_ERR | IN_DSCR_EMPTY), ==, 0);
++    }
++    qtest_memread(qts, DST_AREA, dst, 96);
++    g_assert_cmpint(dst[0], ==, src[0]);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_LINK)) & OUTLINK_PARK, ==, 0);
++
++    qtest_quit(qts);
++}
++
++/*
++ * RESTART-based streaming must not accumulate the walk bound either
++ * (regression: walk_count is reset on every RESTART arm).
++ */
++static void test_restart_stream_repeated(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    uint8_t src[96];
++    uint8_t dst[96];
++
++    build_fixture(qts, src, true, true, 0);
++    wr(qts, CH_OUT_REG(0, REG_CONF0), OUT_AUTO_WRBACK);
++    start_m2m(qts, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DONE, !=, 0);
++
++    for (int pass = 0; pass < 8; pass++) {
++        clear_ints(qts, 0);
++        wr(qts, CH_IN_REG(0, REG_LINK), INLINK_RESTART);
++        wr(qts, CH_OUT_REG(0, REG_LINK), OUTLINK_RESTART);
++        g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DONE, !=, 0);
++        g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DSCR_ERR, ==, 0);
++    }
++    qtest_memread(qts, DST_AREA, dst, 96);
++    g_assert_cmpint(dst[0], ==, src[0]);
++
++    qtest_quit(qts);
++}
++
++/*
++ * Burst-alignment window discrimination (TRM tables 3.4-2/3.4-3):
++ * an internal-RAM receive descriptor that is word-aligned but NOT
++ * 16-byte aligned is valid with burst enabled; the external block
++ * alignment must not leak onto internal descriptors.
++ */
++static void test_inlink_internal_word_alignment(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    uint8_t src[96];
++
++    build_fixture(qts, src, false, false, 0);
++    /* Word-aligned but not 16-byte aligned: valid for internal RAM */
++    write_desc(qts, IN_DESC, DESC(36, 0, false, true), DST_AREA + 4, 0);
++    wr(qts, CH_IN_REG(0, REG_CONF0), BIT(2) /* DSCR_BURST_EN */);
++    wr(qts, CH_IN_REG(0, REG_INT_CLR), 0xFFFFFFFFu);
++    wr(qts, CH_IN_REG(0, REG_LINK), (IN_DESC & INLINK_ADDR_M) | INLINK_START);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_INT_RAW)) & IN_DSCR_ERR, ==, 0);
++
++    /* 8-byte aligned is still not word-aligned-blocked: valid too */
++    write_desc(qts, IN_DESC, DESC(32, 0, false, true), DST_AREA + 8, 0);
++    wr(qts, CH_IN_REG(0, REG_INT_CLR), 0xFFFFFFFFu);
++    wr(qts, CH_IN_REG(0, REG_LINK), (IN_DESC & INLINK_ADDR_M) | INLINK_START);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_INT_RAW)) & IN_DSCR_ERR, ==, 0);
++
++    /* Not word-aligned: descriptor error (TRM table 3.4-2) */
++    write_desc(qts, IN_DESC, DESC(30, 0, false, true), DST_AREA + 2, 0);
++    wr(qts, CH_IN_REG(0, REG_INT_CLR), 0xFFFFFFFFu);
++    wr(qts, CH_IN_REG(0, REG_LINK), (IN_DESC & INLINK_ADDR_M) | INLINK_START);
++    g_assert_cmphex(rd(qts, CH_IN_REG(0, REG_INT_RAW)) & IN_DSCR_ERR, ==, IN_DSCR_ERR);
++
++    qtest_quit(qts);
++}
++
++/*
++ * System reset returns every register to its reset value (device cold
++ * reset path), including the LINK park/auto-ret defaults.
++ */
++static void test_system_reset(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    uint8_t src[96];
++    QDict *rsp;
++
++    build_fixture(qts, src, false, false, 0);
++    start_m2m(qts, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DONE, !=, 0);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_BF0_DESC_ADDR)), !=, 0);
++
++    rsp = qtest_qmp(qts, "{ 'execute': 'system_reset' }");
++    qobject_unref(rsp);
++    /* Reset happens asynchronously; wait for the machine to come back */
++    qtest_qmp_eventwait(qts, "RESET");
++
++    for (uint32_t ch = 0; ch < 2; ch++) {
++        g_assert_cmphex(rd(qts, CH_OUT_REG(ch, REG_INT_RAW)), ==, 0);
++        g_assert_cmphex(rd(qts, CH_IN_REG(ch, REG_INT_RAW)), ==, 0);
++        g_assert_cmphex(rd(qts, CH_OUT_REG(ch, REG_BF0_DESC_ADDR)), ==, 0);
++        g_assert_cmphex(rd(qts, CH_OUT_REG(ch, REG_STATE)), ==, 0);
++        g_assert_cmphex(rd(qts, CH_OUT_REG(ch, REG_LINK)), ==, OUTLINK_PARK);
++        g_assert_cmphex(rd(qts, CH_IN_REG(ch, REG_LINK)), ==,
++                        INLINK_PARK | INLINK_AUTO_RET);
++    }
++
++    qtest_quit(qts);
++}
++
++int main(int argc, char **argv)
++{
++    g_test_init(&argc, &argv, NULL);
++
++    qtest_add_func("/esp32s3-gdma/m2m-chain-owner", test_m2m_chain_owner);
++    qtest_add_func("/esp32s3-gdma/error-owner-mid-chain", test_error_owner_mid_chain);
++    qtest_add_func("/esp32s3-gdma/error-bad-addresses", test_error_bad_addresses);
++    qtest_add_func("/esp32s3-gdma/error-inlink-burst-alignment",
++                   test_error_inlink_burst_alignment);
++    qtest_add_func("/esp32s3-gdma/ring-restart-cursor", test_ring_restart_cursor);
++    qtest_add_func("/esp32s3-gdma/ring-streaming-quantum", test_ring_streaming_quantum);
++    qtest_add_func("/esp32s3-gdma/malicious-self-loop", test_malicious_self_loop);
++    qtest_add_func("/esp32s3-gdma/dual-channel-independent", test_dual_channel_independent);
++    qtest_add_func("/esp32s3-gdma/peri-sel-register", test_peri_sel_register);
++    qtest_add_func("/esp32s3-gdma/link-park-stop", test_link_park_stop);
++    qtest_add_func("/esp32s3-gdma/partial-descriptor-boundary",
++                   test_partial_descriptor_boundary);
++    qtest_add_func("/esp32s3-gdma/inlink-internal-word-alignment",
++                   test_inlink_internal_word_alignment);
++    qtest_add_func("/esp32s3-gdma/streaming-qmp-responsive",
++                   test_streaming_qmp_responsive);
++    qtest_add_func("/esp32s3-gdma/streaming-walk-bound-not-cumulative",
++                   test_streaming_walk_bound_not_cumulative);
++    qtest_add_func("/esp32s3-gdma/restart-stream-repeated",
++                   test_restart_stream_repeated);
++    qtest_add_func("/esp32s3-gdma/system-reset", test_system_reset);
++
++    return g_test_run();
++}
+diff --git a/tests/qtest/meson.build b/tests/qtest/meson.build
+index 25786be..737c5f2 100644
+--- a/tests/qtest/meson.build
++++ b/tests/qtest/meson.build
+@@ -341,7 +341,7 @@ if gnutls.found()
+ endif
+ 
+ # ESP32-S3 clock tree / reset domain tests (coreclk lane)
+-qtests_xtensa = [ 'esp32s3-coreclk-test' ]
++qtests_xtensa = [ 'esp32s3-coreclk-test', 'esp32s3-gdma-test' ]
+ 
+ qtests = {
+   'bios-tables-test': [io, 'boot-sector.c', 'acpi-utils.c', 'tpm-emu.c'],
+-- 
+2.43.0
+

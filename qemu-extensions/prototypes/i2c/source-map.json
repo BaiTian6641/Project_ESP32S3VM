@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "license": "GPL-2.0-or-later",
+  "status": "Native master source delivered; service14/14 qualified; electrical/native/boot qualification BLOCKED by provider freeze",
+  "work_package": "I2C-01 initial native7-bit master; timing/routing initial I2C-02 slice; I2C-03 canonical gates remain open",
+  "combined_v3_fingerprint": "105a156e5dec5fc63f347cc1d989c1d11ab402c63668d8426869462d6387b999",
+  "native_checkout": "/home/polar/.cache/esp32s3vm/qemu-i2c-40edccac4156",
+  "prefix_commit": "2b0e49021de6cb5e91dc1dc0b1a8804334a1c083",
+  "copies": [
+    {
+      "source": "copies/esp32s3_i2c.h",
+      "destination": "include/hw/i2c/esp32s3_i2c.h"
+    },
+    {
+      "source": "copies/esp32s3_i2c.c",
+      "destination": "hw/i2c/esp32s3_i2c.c"
+    },
+    {
+      "source": "copies/esp32s3_i2c_service.h",
+      "destination": "include/hw/i2c/esp32s3_i2c_service.h"
+    },
+    {
+      "source": "copies/esp32s3_i2c_service.c",
+      "destination": "hw/i2c/esp32s3_i2c_service.c"
+    },
+    {
+      "source": "copies/esp32s3_i2c_binding.h",
+      "destination": "include/hw/i2c/esp32s3_i2c_binding.h"
+    },
+    {
+      "source": "copies/esp32s3_i2c_binding.c",
+      "destination": "hw/i2c/esp32s3_i2c_binding.c"
+    },
+    {
+      "source": "copies/esp32s3-i2c-test.c",
+      "destination": "tests/qtest/esp32s3-i2c-test.c"
+    },
+    {
+      "source": "copies/test-esp32s3-i2c-service.c",
+      "destination": "tests/unit/test-esp32s3-i2c-service.c"
+    }
+  ],
+  "dependency_copies": [
+    {
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical.h",
+      "destination": "include/hw/misc/esp32s3_electrical.h"
+    },
+    {
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical.c",
+      "destination": "hw/adc/esp32s3_electrical.c"
+    },
+    {
+      "source": "prototypes/electrical-runtime/copies/esp32s3_project.h",
+      "destination": "hw/adc/esp32s3_project.h"
+    },
+    {
+      "source": "prototypes/electrical-runtime/copies/esp32s3_project.c",
+      "destination": "hw/adc/esp32s3_project.c"
+    },
+    {
+      "source": "prototypes/electrical-runtime/copies/esp32s3-electrical-test.c",
+      "destination": "tests/qtest/esp32s3-electrical-test.c"
+    },
+    {
+      "source": "electrical/net-dc.c",
+      "destination": "hw/adc/net-dc.c"
+    },
+    {
+      "source": "electrical/net-dc.h",
+      "destination": "hw/adc/net-dc.h"
+    },
+    {
+      "source": "electrical/net-rc.c",
+      "destination": "hw/adc/net-rc.c"
+    },
+    {
+      "source": "electrical/net-rc.h",
+      "destination": "hw/adc/net-rc.h"
+    },
+    {
+      "source": "electrical/net-adapter.c",
+      "destination": "hw/adc/net-adapter.c"
+    },
+    {
+      "source": "electrical/net-adapter.h",
+      "destination": "hw/adc/net-adapter.h"
+    }
+  ],
+  "integration_patch": "integration.patch",
+  "prerequisite_restack_patch": "dependencies-restack.patch",
+  "additional_core_paths": [
+    "hw/i2c/meson.build",
+    "hw/adc/meson.build",
+    "hw/xtensa/esp32s3.c",
+    "tests/qtest/meson.build",
+    "tests/unit/meson.build"
+  ],
+  "firmware_fixture": "tests/firmware/i2c_native",
+  "evidence": "build-runtime-state/i2c-native-2026-10-07/",
+  "canonical_gates": [
+    "native slave",
+    "10-bit addressing/general call",
+    "multi-master/arbitration waveform qualification",
+    "edge/fast-path equivalence and replay",
+    "glitch filter waveform behavior",
+    "slow analog RC rise and recovery",
+    "inverted/direct IO_MUX/split input-output pad routes",
+    "non-FIFO memory mode",
+    "EEPROM write-protection/endurance",
+    "external environmental and hostbus device services",
+    "asynchronous queued multi-batch transfers"
+  ],
+  "layered_integration_patch": "integration-after-electrical.patch",
+  "electrical_prerequisite_patch": "electrical-prerequisites.patch",
+  "layering_note": "Bootstrap integration.patch includes common clock/electrical prerequisites. Aggregate already carrying NativeNet and centralized clock ports must apply only integration-after-electrical.patch and lane-owned copies. The additive overlay binds the existing electrical child; it never creates a second graph or adds clock enum definitions.",
+  "clock_owner": "CoreClockWorker; core1..6,8,9,10 production stack; temporary0007 expressly excluded",
+  "clock_prerequisite_patches": [
+    "prototypes/coreclk/0008-hw-timer-esp_timg-hardware-divider-field-encoding-and-exact.patch",
+    "prototypes/coreclk/0009-hw-timer-esp_timg-exact-rational-tick-conversion.patch",
+    "prototypes/coreclk/0010-hw-xtensa-esp32s3_clk-common-clock-ports-for-SPI2-3.patch"
+  ],
+  "clock_port_contract": {
+    "sources": [
+      "xtal-clk",
+      "rc-fast-clk"
+    ],
+    "gates": [
+      "ESP32S3_GATE_I2C0",
+      "ESP32S3_GATE_I2C1"
+    ],
+    "reset_strobes": [
+      "ESP32S3_RST_I2C0",
+      "ESP32S3_RST_I2C1"
+    ],
+    "reset_level_bundle": "ESP32S3_CLK_RST_LEVEL_GPIO",
+    "rc_fast_validity": "RTC_CNTL CK8M_FORCE_PD ->0Hz; neverAPB/PLLalias"
+  },
+  "service_verification": {
+    "result": "18/18 PASS",
+    "runs": 1,
+    "evidence": "build-runtime-state/i2c-native-2026-10-07/external-service-20261007T090614Z-f87cb4fc/",
+    "scope": "Native service dispatch/state unit only; no controller/electrical/camera qualification"
+  },
+  "required_provider_freeze": [
+    "GPIO rawselector/OEN semantics",
+    "NativeNet post-solved multicast and actualpower_on_ns/power_epoch implementation",
+    "ADC/radio SENSsingle-owner cutover preservingfinalradio4"
+  ],
+  "native_checks_exercised": [],
+  "external_service_api": {
+    "header": "copies/esp32s3_i2c_service.h",
+    "registration_header": "copies/esp32s3_i2c_binding.h",
+    "callbacks": "address/write/read/read_ack/stop/cancel/power_reset/ready_ns mandatory",
+    "registration": "actualcomponentID+ops+opaque, noaddress/controllerargument",
+    "registry_review": "correct: external owner/type identity retained; unregister reclaims fixed slot without moving live pointers",
+    "provider_prerequisite": "NativeNetactualOV2640 enum/I2C routing/byID/drive +LCD_CAMbody/preflight",
+    "readiness": "I2C_SCCB_SERVICE_SOURCE_READY for callback surface only; actualNativeNetOVrouting is still runtime prerequisite"
+  },
+  "owned_source_hashes": [
+    {
+      "source": "copies/esp32s3_i2c.h",
+      "destination": "include/hw/i2c/esp32s3_i2c.h",
+      "sha256": "ba5f9894c5b9d96b09710e44dda0f2dd0d8687b30475b2b74d664d91566df502"
+    },
+    {
+      "source": "copies/esp32s3_i2c.c",
+      "destination": "hw/i2c/esp32s3_i2c.c",
+      "sha256": "bb22585013b9c2e4a38f02b32d88b4571f5b6d84d7ac15e413517db7de6f9822"
+    },
+    {
+      "source": "copies/esp32s3_i2c_service.h",
+      "destination": "include/hw/i2c/esp32s3_i2c_service.h",
+      "sha256": "737286e8cb1cd78bd79187e7cffa4ea77840856df02353aa64a833138418e047"
+    },
+    {
+      "source": "copies/esp32s3_i2c_service.c",
+      "destination": "hw/i2c/esp32s3_i2c_service.c",
+      "sha256": "09db4b0e3407e3b0b0bc777766d72d5b3c44f041759fa2bb8982a6f96dc58670"
+    },
+    {
+      "source": "copies/esp32s3_i2c_binding.h",
+      "destination": "include/hw/i2c/esp32s3_i2c_binding.h",
+      "sha256": "f3bb50a4bbf7cb534eec35bd1e3e9d746fc1cbe0d7f54e40f0eddd087621f297"
+    },
+    {
+      "source": "copies/esp32s3_i2c_binding.c",
+      "destination": "hw/i2c/esp32s3_i2c_binding.c",
+      "sha256": "5116fe506d5597be9ad7b745d68ae22896bd56283dec449a5fa0671023e2382e"
+    },
+    {
+      "source": "copies/esp32s3-i2c-test.c",
+      "destination": "tests/qtest/esp32s3-i2c-test.c",
+      "sha256": "bbb1bab5c276e8dcdfa41fc53df1fe972d4d333f3cd713d595a19c396ef0b12a"
+    },
+    {
+      "source": "copies/test-esp32s3-i2c-service.c",
+      "destination": "tests/unit/test-esp32s3-i2c-service.c",
+      "sha256": "2807776795c98cf4725bc759b07ac19d92deafefd56fa61fbdac4f2b6ae3dced"
+    }
+  ],
+  "idf_build_contract": {
+    "prepare": "bash tools/prepare-idf-wsl.sh idf-6.1",
+    "activate": "~/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/activate.sh",
+    "buildroot": "$ESP32S3_IDF_BUILD_ROOT/i2c_native/<frozen-sourcehash-or-run>",
+    "target": "esp32s3",
+    "owner": "NativeSdkBuildWorker"
+  }
+}

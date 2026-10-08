@@ -1,0 +1,46 @@
+{
+  "component_id": "D",
+  "sequence": 0,
+  "width": 64,
+  "height": 48,
+  "bus_width": 16,
+  "bits_per_pixel": 24,
+  "memory_format": "RGB888",
+  "firmware_profile": "rgb-demand-parallel16-rgb888",
+  "pclk_period_ns": 1000,
+  "timing": {
+    "hsync_pulse_width": 2,
+    "h_back_porch": 4,
+    "h_front_porch": 4,
+    "vsync_pulse_width": 2,
+    "v_back_porch": 2,
+    "v_front_porch": 2
+  },
+  "lane": "rgb-demand",
+  "pattern": {
+    "source": "lcd-rgb888-fixture",
+    "frame": 0
+  },
+  "frame_duration_ns": 5724000,
+  "metadata": {
+    "bus_width": 16,
+    "bits_per_pixel": 24,
+    "pixels": 3072,
+    "errors": 0,
+    "valid": true,
+    "visible": true,
+    "pclk_samples": 5724,
+    "lines": 54,
+    "period_min_ns": 1000,
+    "period_max_ns": 1000,
+    "observed_width": 64,
+    "observed_wire_width": 96,
+    "observed_height": 48,
+    "observed_hsync_width": 2,
+    "observed_h_back_porch": 4,
+    "observed_h_front_porch": 4,
+    "observed_vsync_width": 2,
+    "observed_v_back_porch": 2,
+    "observed_v_front_porch": 2
+  }
+}

@@ -1,0 +1,178 @@
+From 6dea9e1ce3f8cdad8f0577522408558f37c4ab20 Mon Sep 17 00:00:00 2001
+From: Regi2cWorker <regi2c@esp32s3vm.local>
+Date: Wed, 7 Oct 2026 12:24:22 +0800
+Subject: [PATCH 4/4] hw/misc/esp32s3_regi2c: model BBPLL_CAL_DONE (+0x40
+ BIT24) as timed engine status
+
+The ordinary IDF boot path reaches rtc_clk_bbpll_configure
+(clk_ll_bbpll_calibration_start -> clk_ll_bbpll_set_config -> poll
+clk_ll_bbpll_calibration_is_done -> 10 us delay -> calibration_stop) and
+polls I2C_MST_ANA_CONF0 (0x6000E040) BIT24 (I2C_MST_BBPLL_CAL_DONE,
+regi2c_defs.h); without a model it spins there forever. This supersedes
+the temporary coreclk read-only bridge (coreclk patch 0007).
+
+Firmware contract (esp_hal_clock/esp32s3 clk_tree_ll.h):
+- calibration_start = ANA_CONF0 STOP_FORCE_HIGH (BIT2) clear +
+  STOP_FORCE_LOW (BIT3) set, arriving as two RMW steps;
+- then the BBPLL config RMW transactions to the analog slave
+  (observed slave 0x66 words 0x56b0466/0x5500266/0x5080366 on the
+  from-reset trace);
+- poll BIT24; 10 us delay; calibration_stop swaps the force bits.
+
+Model: BIT24 is engine-owned RO status (software writes preserve it).
+Entering the start pattern clears it and starts a modeled calibration
+window (40 us = one engine wire time on the same divider-derived clock;
+true analog cal duration UNKNOWN, bounded choice). Completion sets DONE.
+calibration_stop leaves it set until the next start (recalib re-runs).
+It is engine completion STATUS, not measurement data: no measurement
+provider is required, and reset leaves it clear (no constant DONE).
+
+Verified on the combined profile (coreclk 0001-0005 + this patch, coreclk
+0007 dropped): from-reset write trace shows the full sequence on
+esp32s3.regi2c -- start (0x6000e040 <- 0x0, <- 0x8), BBPLL config RMWs,
+then calibration_stop reading back the modeled DONE=1 (0x6000e040 <-
+0x1000000, <- 0x1000004); boot smoke 3/3. Without this patch the same
+profile spins in the poll (coreclk evidence).
+---
+ hw/misc/esp32s3_regi2c.c              | 42 +++++++++++++++++++++++++++
+ include/hw/misc/esp32s3_regi2c.h      |  8 +++++
+ include/hw/misc/esp32s3_regi2c_defs.h | 14 +++++++++
+ 3 files changed, 64 insertions(+)
+
+diff --git a/hw/misc/esp32s3_regi2c.c b/hw/misc/esp32s3_regi2c.c
+index 02577ad..3f58e16 100644
+--- a/hw/misc/esp32s3_regi2c.c
++++ b/hw/misc/esp32s3_regi2c.c
+@@ -29,6 +29,11 @@
+  *     toggle, 8x13-bit codes from +0x80..+0x9c.
+  *   Blob txdc_cal_v70 (libphy.a): command word +0x4c, poll BIT24.
+  *   temperature_sensor_ll.h: SENS_SAR_TCTRL 0x60008850 dump_out/ready/out.
++ *   clk_tree_ll.h (esp_hal_clock/esp32s3): +0x40 BBPLL calibration --
++ *     start = STOP_FORCE_LOW set / STOP_FORCE_HIGH clear (two RMW steps),
++ *     then BBPLL config RMWs to slave 0x67, poll BBPLL_CAL_DONE (BIT24),
++ *     10 us delay, stop = force bits swapped. BIT24 is engine STATUS
++ *     (calibration done), modeled as a timed window, never a constant.
+  *
+  * FAIL-CLOSED CONTRACT
+  * --------------------
+@@ -271,6 +276,16 @@ static void esp32s3_regi2c_txdc_done(void *opaque)
+     s->regs[R_IDX(A_REGI2C_TXDC_STATUS)] |= REGI2C_TXDC_DONE;
+ }
+ 
++static void esp32s3_regi2c_bbpll_cal_done(void *opaque)
++{
++    ESP32S3RegI2CState *s = ESP32S3_REGI2C(opaque);
++
++    s->bbpll_cal_running = false;
++    /* Engine STATUS, not data: the modeled analog I2C-master/BBPLL
++     * calibration window elapsed (clk_ll_bbpll_calibration_is_done). */
++    s->regs[R_IDX(A_REGI2C_ANA_CONF0)] |= REGI2C_BBPLL_CAL_DONE;
++}
++
+ static void esp32s3_regi2c_engine_done(void *opaque)
+ {
+     Esp32s3RegI2CEngine *e = opaque;
+@@ -448,6 +463,28 @@ static void esp32s3_regi2c_write(void *opaque, hwaddr addr, uint64_t value,
+     case A_REGI2C_ENG1_WORD:
+         esp32s3_regi2c_engine_write(s, addr / 4, (uint32_t)value);
+         return;
++    case A_REGI2C_ANA_CONF0: {
++        /* BIT24 (BBPLL_CAL_DONE) is engine-owned RO: software writes do not
++         * touch it. The clk_ll_bbpll_calibration_start pattern (STOP_FORCE_
++         * LOW set while STOP_FORCE_HIGH clear, arriving as two RMW steps)
++         * begins a modeled calibration window; DONE sets when it elapses
++         * and is left set by calibration_stop until the next start. */
++        bool start_state = !(value & REGI2C_BBPLL_STOP_FORCE_HIGH) &&
++                           (value & REGI2C_BBPLL_STOP_FORCE_LOW);
++
++        s->regs[idx] = ((uint32_t)value & ~REGI2C_BBPLL_CAL_DONE) |
++                       (s->regs[idx] & REGI2C_BBPLL_CAL_DONE);
++        if (start_state && !s->bbpll_cal_start_state &&
++            !s->bbpll_cal_running) {
++            s->regs[idx] &= ~REGI2C_BBPLL_CAL_DONE;
++            s->bbpll_cal_running = true;
++            timer_mod(s->bbpll_timer,
++                      qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) +
++                      REGI2C_BBPLL_CAL_NS);
++        }
++        s->bbpll_cal_start_state = start_state;
++        return;
++    }
+     case A_REGI2C_SAR2_CFG: {
+         uint32_t old = s->regs[idx];
+ 
+@@ -665,6 +702,8 @@ static void esp32s3_regi2c_reset_hold(Object *obj, ResetType type)
+     s->sar2_conv_count = 0;
+     s->sar2_phase = REGI2C_SAR2_IDLE;
+     s->unavailable = false;
++    s->bbpll_cal_running = false;
++    s->bbpll_cal_start_state = false;
+     memset(s->slave_regs, 0, sizeof(s->slave_regs));
+     memset(s->slave_written, 0, sizeof(s->slave_written));
+ 
+@@ -673,6 +712,7 @@ static void esp32s3_regi2c_reset_hold(Object *obj, ResetType type)
+     timer_del(s->sar2_timer);
+     timer_del(s->txdc_timer);
+     timer_del(s->tsens_timer);
++    timer_del(s->bbpll_timer);
+ }
+ 
+ static void esp32s3_regi2c_realize(DeviceState *dev, Error **errp)
+@@ -710,6 +750,8 @@ static void esp32s3_regi2c_init(Object *obj)
+                                  esp32s3_regi2c_txdc_done, s);
+     s->tsens_timer = timer_new_ns(QEMU_CLOCK_VIRTUAL,
+                                   esp32s3_regi2c_tsens_done, s);
++    s->bbpll_timer = timer_new_ns(QEMU_CLOCK_VIRTUAL,
++                                  esp32s3_regi2c_bbpll_cal_done, s);
+     s->pause_bh = qemu_bh_new(esp32s3_regi2c_pause_bh, s);
+ 
+     object_property_add_link(obj, "meas-provider",
+diff --git a/include/hw/misc/esp32s3_regi2c.h b/include/hw/misc/esp32s3_regi2c.h
+index bb731bc..575d782 100644
+--- a/include/hw/misc/esp32s3_regi2c.h
++++ b/include/hw/misc/esp32s3_regi2c.h
+@@ -81,8 +81,16 @@ struct ESP32S3RegI2CState {
+     QEMUTimer *sar2_timer;
+     QEMUTimer *txdc_timer;
+     QEMUTimer *tsens_timer;
++    QEMUTimer *bbpll_timer;
+     QEMUBH *pause_bh;
+ 
++    /* BBPLL self-calibration engine state (+0x40 BIT24, engine-owned RO).
++     * start pattern = STOP_FORCE_LOW set with STOP_FORCE_HIGH clear
++     * (clk_ll_bbpll_calibration_start); done sets after the modeled cal
++     * window; stop pattern leaves done as-is (recalib re-runs it). */
++    bool bbpll_cal_running;
++    bool bbpll_cal_start_state;
++
+     /* Measurement provider (optional; absent => fail closed). */
+     DeviceState *meas_provider;
+     bool unavailable; /* a dependency failure was reported this run */
+diff --git a/include/hw/misc/esp32s3_regi2c_defs.h b/include/hw/misc/esp32s3_regi2c_defs.h
+index f8767b0..ad86882 100644
+--- a/include/hw/misc/esp32s3_regi2c_defs.h
++++ b/include/hw/misc/esp32s3_regi2c_defs.h
+@@ -75,6 +75,20 @@ FIELD(REGI2C_MST_CFG1, DIV, 0, 8)
+  * clears 29; semantics UNKNOWN) */
+ #define A_REGI2C_UNK_CFG        0xc4
+ 
++/* I2C_MST_ANA_CONF0 (+0x40) BBPLL calibration fields (regi2c_defs.h public
++ * names; firmware contract esp_hal_clock/esp32s3 clk_tree_ll.h
++ * clk_ll_bbpll_calibration_start/_is_done/_stop:
++ *   start = STOP_FORCE_HIGH clear + STOP_FORCE_LOW set (two RMW steps)
++ *   then BBPLL config RMWs to slave 0x67, poll BBPLL_CAL_DONE, 10 us delay,
++ *   stop = STOP_FORCE_LOW clear + STOP_FORCE_HIGH set) */
++#define REGI2C_BBPLL_STOP_FORCE_HIGH BIT(2)
++#define REGI2C_BBPLL_STOP_FORCE_LOW  BIT(3)
++#define REGI2C_BBPLL_CAL_DONE        BIT(24)
++/* Modeled BBPLL self-calibration duration: true value UNKNOWN (analog loop);
++ * bounded choice = one engine wire time on the same divider-derived clock.
++ * Completion is engine STATUS, not data. */
++#define REGI2C_BBPLL_CAL_NS          40000ll
++
+ /* SENS SAR2 force bits (sens_reg.h) */
+ #define SENS_SAR_MEAS2_CTRL2_EN_PAD_FORCE BIT(31) /* 0x60008830 */
+ #define SENS_SAR_MEAS2_MUX_RTC_FORCE      BIT(31) /* 0x60008834 */
+-- 
+2.43.0
+

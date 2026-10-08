@@ -1,0 +1,25 @@
+--- a/include/hw/char/esp32_uart.h
++++ b/include/hw/char/esp32_uart.h
+@@ -109,6 +109,7 @@
+     SysBusDeviceClass parent_class;
+ 
+     /* Virtual attributes/methods */
++    bool defer_fifo_create; /* S3 attaches its shared physical RAM at realize. */
+     void (*uart_write)(void *opaque, hwaddr addr, uint64_t value, unsigned int size);
+     uint64_t (*uart_read)(void *opaque, hwaddr addr, unsigned int size);
+ } ESP32UARTClass;
+--- a/hw/char/esp32_uart.c
++++ b/hw/char/esp32_uart.c
+@@ -363,8 +363,10 @@
+                           TYPE_ESP32_UART, UART_REG_CNT * sizeof(uint32_t));
+     sysbus_init_mmio(sbd, &s->iomem);
+     sysbus_init_irq(sbd, &s->irq);
+-    fifo8_create(&s->tx_fifo, UART_FIFO_LENGTH);
+-    fifo8_create(&s->rx_fifo, UART_FIFO_LENGTH);
++    if (!class->defer_fifo_create) {
++        fifo8_create(&s->tx_fifo, UART_FIFO_LENGTH);
++        fifo8_create(&s->rx_fifo, UART_FIFO_LENGTH);
++    }
+     timer_init_ns(&s->throttle_timer, QEMU_CLOCK_VIRTUAL, uart_throttle_timer_cb, s);
+     timer_init_ns(&s->rx_timeout_timer, QEMU_CLOCK_VIRTUAL, uart_rx_timeout_timer_cb, s);
+ }

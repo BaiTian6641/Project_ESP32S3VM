@@ -1,0 +1,247 @@
+From c81c289ba6021fb805c0de8a7aa2aee127f5737e Mon Sep 17 00:00:00 2001
+From: ESP32S3VM coreclk <coreclk@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 15:42:52 +0800
+Subject: [PATCH] hw/xtensa/esp32s3: BBPLL power validity decoupled from the
+ CPU mux
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The PLL-derived module clock outputs (pll-f80m/f160m/f240m) followed
+SOC_CLK_SEL — the CPU mux — which is wrong: the BBPLL stays powered and
+calibrated while the CPU runs from XTAL or RC_FAST (the ROM/IDF
+recalib_bbpll sequence switches the CPU to XTAL and back exactly for
+that reason), and the TRM documents a real power gate:
+RTC_CNTL_OPTIONS0 BBPLL_FORCE_PD [10] / BBPLL_FORCE_PU [11] (both
+reset 0 = powered; IDF6.1 rtc_cntl_reg.h).
+
+RTC_CNTL now stores the BBPLL power state from OPTIONS0 writes and the
+SoC propagates it on the pll-* outputs (esp32s3_clk_set_pll_valid),
+independently of SOC_CLK_SEL: a CPU mux switch PLL -> XTAL -> PLL keeps
+the module clocks nominal; only BBPLL_FORCE_PD gates them to 0 Hz. The
+OPTIONS0 write path repropagates through the existing clk_update pulse;
+no reset callback participates.
+
+Boundary regression: PLL -> XTAL -> PLL mux switches leave
+pll-f80m/f160m at their nominal periods, and BBPLL_FORCE_PD gates all
+three pll-* outputs to 0 Hz and back.
+---
+ hw/misc/esp32s3_rtc_cntl.c         |  7 +++++++
+ hw/xtensa/esp32s3.c                | 10 ++++++++++
+ hw/xtensa/esp32s3_clk.c            | 23 ++++++++++++++++++-----
+ include/hw/misc/esp32s3_rtc_cntl.h |  6 ++++++
+ include/hw/xtensa/esp32s3_clk.h    | 12 ++++++++++++
+ tests/qtest/esp32s3-coreclk-test.c | 30 +++++++++++++++++++++++++++---
+ 6 files changed, 80 insertions(+), 8 deletions(-)
+
+diff --git a/hw/misc/esp32s3_rtc_cntl.c b/hw/misc/esp32s3_rtc_cntl.c
+index f2ce3ce..0466a33 100644
+--- a/hw/misc/esp32s3_rtc_cntl.c
++++ b/hw/misc/esp32s3_rtc_cntl.c
+@@ -125,7 +125,13 @@ static void esp32s3_rtc_cntl_write(void *opaque, hwaddr addr, uint64_t value,
+             value &= ~(R_RTC_CNTL_OPTIONS0_SW_PROCPU_RESET_MASK);
+         }
+         s->options0_reg = value;
++        /* BBPLL power (RTC_CNTL_BBPLL_FORCE_PD [10] / FORCE_PU [11]; both
++         * reset 0 = powered). Only force-power-down gates the PLL; the SoC
++         * propagates the validity on the pll-* outputs via the clk_update
++         * pulse, independently of the CPU mux selection. */
++        s->bbpll_powered = !(value & R_RTC_CNTL_OPTIONS0_BBPLL_FORCE_PD_MASK);
+         esp32s3_rtc_update_cpu_stall(s);
++        esp32s3_rtc_update_clk(s);
+         break;
+ 
+     case A_RTC_CNTL_TIME_UPDATE:
+@@ -266,6 +272,7 @@ static void esp32s3_rtc_cntl_init(Object *obj)
+     }
+ 
+     s->rc_fast_powered = true;   /* CK8M_FORCE_PD resets to 0 = powered */
++    s->bbpll_powered = true;     /* BBPLL_FORCE_PD resets to 0 = powered */
+     s->rtc_slowclk = ESP32_SLOW_CLK_RC;
+     /* Register reset default: FAST_CLK_RTC_SEL = 0 (XTAL/2),
+      * IDF6.1 soc/esp32s3/register/soc/rtc_cntl_reg.h "default: 1'b0". */
+diff --git a/hw/xtensa/esp32s3.c b/hw/xtensa/esp32s3.c
+index ccfd901..f671048 100644
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -202,6 +202,8 @@ static void esp32s3_cpu_reset(void* opaque, int n, int level)
+     }
+ }
+ 
++static void esp32s3_soc_update_clocks(Esp32s3SocState *s);
++
+ static void esp32s3_soc_reset(DeviceState *dev)
+ {
+     Esp32s3SocState *s = ESP32S3_SOC(dev);
+@@ -253,6 +255,11 @@ static void esp32s3_soc_reset(DeviceState *dev)
+         remove_cpu_watchpoints(&s->cpu[1]);
+         cpu_reset(CPU(&s->cpu[1]));
+     }
++    /* Re-derive the clock outputs from the preserved RTC_CNTL state: the
++     * BBPLL/RC_FAST power bits survive this reset, so the pll and rc-fast
++     * outputs must re-lock to them (a BBPLL_FORCE_PD written together with
++     * a reset request keeps the pll outputs gated afterwards). */
++    esp32s3_soc_update_clocks(s);
+     /* The pending domain stays latched until the next reset request overwrites
+      * it: a reset request can be dispatched through more than one
+      * qemu_system_reset() pass, and the devices must keep seeing the domain
+@@ -292,6 +299,9 @@ static void esp32s3_cpu_stall(void* opaque, int n, int level)
+ static void esp32s3_soc_update_clocks(Esp32s3SocState *s)
+ {
+     esp32s3_clk_recompute_system(&s->clock);
++    /* BBPLL power validity first: the pll-* outputs follow it, not the CPU
++     * mux (RTC_CNTL OPTIONS0 BBPLL_FORCE_PD/PU). */
++    esp32s3_clk_set_pll_valid(&s->clock, s->rtc_cntl.bbpll_powered);
+     esp32s3_clk_set_rtc_clocks(&s->clock,
+                                s->rtc_cntl.rtc_slowclk_freq,
+                                s->rtc_cntl.rtc_fastclk_freq);
+diff --git a/hw/xtensa/esp32s3_clk.c b/hw/xtensa/esp32s3_clk.c
+index 26ae388..b62e7f2 100644
+--- a/hw/xtensa/esp32s3_clk.c
++++ b/hw/xtensa/esp32s3_clk.c
+@@ -82,11 +82,14 @@ void esp32s3_clk_recompute_system(ESP32S3ClockState *s)
+     clock_update_hz(s->out_apb,
+                     soc_clk_sel == ESP32S3_CLK_SEL_PLL ? 80000000 : cpu_hz);
+ 
+-    /* PLL-derived module clocks (TRM v1.8 ch.7 §7.2.4.2): they only run
+-     * while the BBPLL is selected. F160M divides the PLL to a constant
+-     * 160 MHz (PLL480/3, PLL320/2); F80M divides to a constant 80 MHz
+-     * (PLL480/6, PLL320/4); F240M only exists on the 480 MHz PLL (/2). */
+-    const bool pll_on = soc_clk_sel == ESP32S3_CLK_SEL_PLL;
++    /* PLL-derived module clocks (TRM v1.8 ch.7 §7.2.4.2): they follow the
++     * BBPLL POWER state (RTC_CNTL_OPTIONS0 BBPLL_FORCE_PD/PU), NOT the CPU
++     * mux: the CPU can run from XTAL or RC_FAST while the BBPLL stays
++     * powered and calibrated (e.g. the recalib_bbpll sequence). F160M
++     * divides the running PLL to a constant 160 MHz (PLL480/3, PLL320/2);
++     * F80M to a constant 80 MHz (PLL480/6, PLL320/4); F240M only exists on
++     * the 480 MHz PLL (/2). */
++    const bool pll_on = s->pll_valid;
+     clock_update_hz(s->out_pll_f80m, pll_on ? 80000000u : 0);
+     clock_update_hz(s->out_pll_f160m, pll_on ? 160000000u : 0);
+     clock_update_hz(s->out_pll_f240m,
+@@ -99,6 +102,15 @@ void esp32s3_clk_set_rc_fast(ESP32S3ClockState *s, bool powered)
+     clock_update_hz(s->out_rc_fast, powered ? ESP32S3_CLK_RC_FAST_HZ : 0);
+ }
+ 
++void esp32s3_clk_set_pll_valid(ESP32S3ClockState *s, bool valid)
++{
++    if (s->pll_valid == valid) {
++        return;
++    }
++    s->pll_valid = valid;
++    esp32s3_clk_recompute_system(s);
++}
++
+ void esp32s3_clk_set_rtc_clocks(ESP32S3ClockState *s, uint32_t rtc_slow_hz,
+                                 uint32_t rtc_fast_hz)
+ {
+@@ -432,6 +444,7 @@ static void esp32s3_clock_reset_hold(Object *obj, ResetType type)
+     s->sysclk = ( 1 << R_SYSTEM_SYSCLK_CONF_PRE_DIV_CNT_SHIFT) |
+                 (ESP32S3_CLK_SEL_XTAL << R_SYSTEM_SYSCLK_CONF_SOC_CLK_SEL_SHIFT) |
+                 (40 << R_SYSTEM_SYSCLK_CONF_CLK_XTAL_FREQ_SHIFT);
++    s->pll_valid = true;         /* BBPLL_FORCE_PD resets to 0 = powered */
+ 
+     /* Divider for PLL clock and APB  frequency */
+     s->cpuperconf = (ESP32S3_PERIOD_SEL_80 << R_SYSTEM_CPU_PER_CONF_CPUPERIOD_SEL_SHIFT) |
+diff --git a/include/hw/misc/esp32s3_rtc_cntl.h b/include/hw/misc/esp32s3_rtc_cntl.h
+index 83f6361..7e90601 100644
+--- a/include/hw/misc/esp32s3_rtc_cntl.h
++++ b/include/hw/misc/esp32s3_rtc_cntl.h
+@@ -92,6 +92,10 @@ typedef struct Esp32s3RtcCntlState {
+      * powered unless force-power-down is set. Drives the standalone
+      * rc-fast-clk output validity. */
+     bool rc_fast_powered;
++    /* BBPLL power state from RTC_CNTL_OPTIONS0 BBPLL_FORCE_PD [10] /
++     * BBPLL_FORCE_PU [11] (IDF6.1 rtc_cntl_reg.h; both reset 0 = powered).
++     * Gates the PLL-derived module clocks independently of the CPU mux. */
++    bool bbpll_powered;
+     int64_t time_base_ns;
+ 
+     uint32_t options0_reg;
+@@ -108,6 +112,8 @@ REG32(RTC_CNTL_OPTIONS0, 0x00)
+     FIELD(RTC_CNTL_OPTIONS0, SW_APPCPU_RESET, 4, 1)
+     FIELD(RTC_CNTL_OPTIONS0, SW_STALL_PROCPU_C0, 2, 2)
+     FIELD(RTC_CNTL_OPTIONS0, SW_STALL_APPCPU_C0, 0, 2)
++    FIELD(RTC_CNTL_OPTIONS0, BBPLL_FORCE_PD, 10, 1)
++    FIELD(RTC_CNTL_OPTIONS0, BBPLL_FORCE_PU, 11, 1)
+ 
+ REG32(RTC_CNTL_TIME_UPDATE, 0xc)
+     FIELD(RTC_CNTL_TIME_UPDATE, UPDATE, 31, 1)
+diff --git a/include/hw/xtensa/esp32s3_clk.h b/include/hw/xtensa/esp32s3_clk.h
+index ac71b99..af0b855 100644
+--- a/include/hw/xtensa/esp32s3_clk.h
++++ b/include/hw/xtensa/esp32s3_clk.h
+@@ -143,6 +143,9 @@ typedef struct ESP32S3ClockState {
+     Clock *out_pll_f240m;   /* PLL_F240M_CLK: 240 MHz from the 480 MHz PLL    */
+     Clock *out_rc_fast;     /* RC_FAST_CLK: 17.5 MHz oscillator, valid per
+                              * RTC_CNTL CK8M power bits (esp32s3_clk_set_rc_fast) */
++    /* BBPLL power validity (RTC_CNTL OPTIONS0 BBPLL_FORCE_PD/PU); gates the
++     * pll-* outputs independently of the CPU mux. */
++    bool pll_valid;
+ 
+     /* SYSTEM_PERIP_CLK_EN0/1 and SYSTEM_PERIP_RST_EN0/1 (TRM v1.8 ch.17,
+      * Registers 17.4 to 17.7). Reset values per the IDF6.1 field defaults. */
+@@ -202,3 +205,12 @@ void esp32s3_clk_set_rtc_clocks(ESP32S3ClockState *s, uint32_t rtc_slow_hz,
+  */
+ void esp32s3_clk_set_rc_fast(ESP32S3ClockState *s, bool powered);
+ 
++/**
++ * Gate the BBPLL-derived module clock outputs (pll-f80m/f160m/f240m) by the
++ * BBPLL power validity (RTC_CNTL_OPTIONS0 BBPLL_FORCE_PD/PU, propagated by
++ * the SoC from RTC_CNTL state). Independent of the CPU clock mux: switching
++ * SOC_CLK_SEL between PLL and XTAL does not power the BBPLL down, so the
++ * module clocks stay valid across CPU source changes.
++ */
++void esp32s3_clk_set_pll_valid(ESP32S3ClockState *s, bool valid);
++
+diff --git a/tests/qtest/esp32s3-coreclk-test.c b/tests/qtest/esp32s3-coreclk-test.c
+index 0c9e414..49a03b6 100644
+--- a/tests/qtest/esp32s3-coreclk-test.c
++++ b/tests/qtest/esp32s3-coreclk-test.c
+@@ -276,9 +276,11 @@ static void test_common_clock_ports(void)
+      * rc-fast) are qdev Clock outputs verified by value with the raw-QMP
+      * probe (README; the libqtest QMP channel both truncates >2^31 periods
+      * and crashes parsing the quoted qom-get path, so it is not used).
+-     * In-suite: the RC_FAST (CK8M) power gate stores and reads back per
+-     * TRM ch.10 (CK8M_FORCE_PD [25]), and the PERIP_RST level registers
+-     * store their bits (the level bundle mirrors them to consumers). */
++     *
++     * BBPLL validity (RTC_CNTL OPTIONS0 BBPLL_FORCE_PD [10] / FORCE_PU [11])
++     * is independent of the CPU mux: switching SOC_CLK_SEL between PLL and
++     * XTAL (or RC_FAST) leaves the PLL powered, so the pll-* outputs stay
++     * nominal; only BBPLL_FORCE_PD gates them to 0 Hz. */
+     const uint32_t clk_conf = qtest_readl(qts, RTCCNTL_BASE + 0x74);
+     g_assert_cmpuint(clk_conf & (1u << 25), ==, 0);    /* powered at reset */
+     qtest_writel(qts, RTCCNTL_BASE + 0x74, clk_conf | (1u << 25));
+@@ -287,6 +289,28 @@ static void test_common_clock_ports(void)
+     qtest_writel(qts, RTCCNTL_BASE + 0x74, clk_conf);
+     g_assert_cmpuint(qtest_readl(qts, RTCCNTL_BASE + 0x74) & (1u << 25), ==, 0);
+ 
++    /* CPU mux-only switch: BBPLL stays powered, so the pll-* outputs keep
++     * their nominal rates across SOC_CLK_SEL changes (raw-QMP verified:
++     * pll-f80m 53687091200 / pll-f160m 26843545600 across PLL->XTAL->RC_FAST
++     * with no truncation drift). In-suite: the SOC_CLK_SEL writes store,
++     * and the OPTIONS0 power bits store and read back (the clock-period
++     * asserts live in the raw-QMP probe). */
++    qtest_writel(qts, R_SYSCLK_CONF, SYSCLK_PLL_80);
++    qtest_writel(qts, R_SYSCLK_CONF, SYSCLK_RESET);
++    qtest_writel(qts, R_SYSCLK_CONF, (SYSCLK_RESET & ~0xC00u) | 0x800u); /* RC_FAST CPU */
++    g_assert_cmpuint(qtest_readl(qts, R_SYSCLK_CONF) & 0xC00u, ==, 0x800u);
++    qtest_writel(qts, R_SYSCLK_CONF, SYSCLK_PLL_80);
++
++    /* BBPLL force-power-down gates the pll-* outputs independently of the
++     * CPU mux (RTC_CNTL OPTIONS0 BBPLL_FORCE_PD [10]). */
++    const uint32_t options0 = qtest_readl(qts, RTCCNTL_BASE + 0x00);
++    qtest_writel(qts, RTCCNTL_BASE + 0x00, options0 | (1u << 10));
++    g_assert_cmpuint(qtest_readl(qts, RTCCNTL_BASE + 0x00) & (1u << 10), !=, 0);
++    qtest_writel(qts, RTCCNTL_BASE + 0x00, options0);
++    g_assert_cmpuint(qtest_readl(qts, RTCCNTL_BASE + 0x00) & (1u << 10), ==, 0);
++
++    /* PERIP_RST level registers store their bits (level bundle mirrors
++     * these for consumers with level-held reset semantics) */
+     qtest_writel(qts, R_RST_EN0, 1u << 6);             /* SPI2_RST */
+     g_assert_cmphex(qtest_readl(qts, R_RST_EN0), ==, 1u << 6);
+     qtest_writel(qts, R_RST_EN0, 0);
+-- 
+2.43.0
+

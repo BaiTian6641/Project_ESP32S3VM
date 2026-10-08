@@ -1,0 +1,625 @@
+{
+  "schema_version": 1,
+  "name": "native-foundations-memory-lcdcam-negative-spi1",
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "license": "GPL-2.0-or-later",
+  "copies": [
+    {
+      "source": "prototypes/hostbus/hostbus-probe.c",
+      "destination": "backends/hostbus-probe.c"
+    },
+    {
+      "source": "prototypes/hostbus/hostbus-probe.h",
+      "destination": "include/sysemu/hostbus-probe.h"
+    },
+    {
+      "source": "prototypes/hostbus/hostbus-json.h",
+      "destination": "backends/hostbus-json.h"
+    },
+    {
+      "source": "prototypes/gpio/copies/esp32_gpio.h",
+      "destination": "include/hw/gpio/esp32_gpio.h"
+    },
+    {
+      "source": "prototypes/gpio/copies/esp32_gpio.c",
+      "destination": "hw/gpio/esp32_gpio.c"
+    },
+    {
+      "source": "prototypes/gpio/copies/esp32s3_iomux.h",
+      "destination": "include/hw/gpio/esp32s3_iomux.h"
+    },
+    {
+      "source": "prototypes/gpio/copies/esp32s3_iomux.c",
+      "destination": "hw/gpio/esp32s3_iomux.c"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_adc_provider.h",
+      "destination": "include/hw/misc/esp32s3_adc_provider.h"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_sens.h",
+      "destination": "include/hw/misc/esp32s3_sens.h"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_sens.c",
+      "destination": "hw/misc/esp32s3_sens.c"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_apb_saradc.h",
+      "destination": "include/hw/misc/esp32s3_apb_saradc.h"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_apb_saradc.c",
+      "destination": "hw/misc/esp32s3_apb_saradc.c"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3_adc_net_provider.c",
+      "destination": "hw/adc/esp32s3_adc_net_provider.c"
+    },
+    {
+      "source": "prototypes/adc/copies/esp32s3-adc-test.c",
+      "destination": "tests/qtest/esp32s3-adc-test.c"
+    },
+    {
+      "source": "prototypes/electrical-runtime/copies/esp32s3_project.c",
+      "destination": "hw/adc/esp32s3_project.c"
+    },
+    {
+      "source": "prototypes/electrical-runtime/copies/esp32s3_project.h",
+      "destination": "hw/adc/esp32s3_project.h"
+    },
+    {
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical.c",
+      "destination": "hw/adc/esp32s3_electrical.c"
+    },
+    {
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical.h",
+      "destination": "include/hw/misc/esp32s3_electrical.h"
+    },
+    {
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_internal.h",
+      "destination": "hw/adc/esp32s3_electrical_internal.h"
+    },
+    {
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_models.c",
+      "destination": "hw/adc/esp32s3_electrical_models.c"
+    },
+    {
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_observers.c",
+      "destination": "hw/adc/esp32s3_electrical_observers.c"
+    },
+    {
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_observers.h",
+      "destination": "hw/adc/esp32s3_electrical_observers.h"
+    },
+    {
+      "source": "prototypes/electrical-runtime/copies/esp32s3-electrical-test.c",
+      "destination": "tests/qtest/esp32s3-electrical-test.c"
+    },
+    {
+      "source": "electrical/net-dc.c",
+      "destination": "hw/adc/net-dc.c"
+    },
+    {
+      "source": "electrical/net-dc.h",
+      "destination": "hw/adc/net-dc.h"
+    },
+    {
+      "source": "electrical/net-adapter.c",
+      "destination": "hw/adc/net-adapter.c"
+    },
+    {
+      "source": "electrical/net-adapter.h",
+      "destination": "hw/adc/net-adapter.h"
+    },
+    {
+      "source": "electrical/net-rc.c",
+      "destination": "hw/adc/net-rc.c"
+    },
+    {
+      "source": "electrical/net-rc.h",
+      "destination": "hw/adc/net-rc.h"
+    },
+    {
+      "source": "prototypes/memory/copies/ssi_psram.c",
+      "destination": "hw/misc/ssi_psram.c"
+    },
+    {
+      "source": "prototypes/memory/copies/ssi_psram.h",
+      "destination": "include/hw/misc/ssi_psram.h"
+    },
+    {
+      "source": "prototypes/memory/copies/esp32s3_cache.c",
+      "destination": "hw/misc/esp32s3_cache.c"
+    },
+    {
+      "source": "prototypes/memory/copies/esp32s3_cache.h",
+      "destination": "include/hw/misc/esp32s3_cache.h"
+    },
+    {
+      "source": "prototypes/memory/copies/esp32s3_psram_cache.c",
+      "destination": "hw/misc/esp32s3_psram_cache.c"
+    },
+    {
+      "source": "prototypes/memory/copies/esp32s3-memory-test.c",
+      "destination": "tests/qtest/esp32s3-memory-test.c"
+    },
+    {
+      "source": "prototypes/lcd-cam/copies/esp32s3_lcd_cam.c",
+      "destination": "hw/misc/esp32s3_lcd_cam.c"
+    },
+    {
+      "source": "prototypes/lcd-cam/copies/esp32s3_lcd_cam.h",
+      "destination": "include/hw/misc/esp32s3_lcd_cam.h"
+    },
+    {
+      "source": "prototypes/lcd-cam/copies/esp32s3_lcd_panel_service.c",
+      "destination": "hw/misc/esp32s3_lcd_panel_service.c"
+    },
+    {
+      "source": "prototypes/lcd-cam/copies/esp32s3_lcd_panel_service.h",
+      "destination": "include/hw/misc/esp32s3_lcd_panel_service.h"
+    },
+    {
+      "source": "prototypes/lcd-cam/copies/esp32s3_ov2640_service.c",
+      "destination": "hw/misc/esp32s3_ov2640_service.c"
+    },
+    {
+      "source": "prototypes/lcd-cam/copies/esp32s3_ov2640_service.h",
+      "destination": "include/hw/misc/esp32s3_ov2640_service.h"
+    },
+    {
+      "source": "prototypes/lcd-cam/copies/esp32s3-lcd-cam-test.c",
+      "destination": "tests/qtest/esp32s3-lcd-cam-test.c"
+    },
+    {
+      "source": "prototypes/memory/copies-frozen-i2c/esp32s3_i2c.h",
+      "destination": "include/hw/i2c/esp32s3_i2c.h"
+    },
+    {
+      "source": "prototypes/memory/copies-frozen-i2c/esp32s3_i2c.c",
+      "destination": "hw/i2c/esp32s3_i2c.c"
+    },
+    {
+      "source": "prototypes/memory/copies-frozen-i2c/esp32s3_i2c_service.h",
+      "destination": "include/hw/i2c/esp32s3_i2c_service.h"
+    },
+    {
+      "source": "prototypes/memory/copies-frozen-i2c/esp32s3_i2c_service.c",
+      "destination": "hw/i2c/esp32s3_i2c_service.c"
+    },
+    {
+      "source": "prototypes/memory/copies-frozen-i2c/esp32s3_i2c_binding.h",
+      "destination": "include/hw/i2c/esp32s3_i2c_binding.h"
+    },
+    {
+      "source": "prototypes/memory/copies-frozen-i2c/esp32s3_i2c_binding.c",
+      "destination": "hw/i2c/esp32s3_i2c_binding.c"
+    },
+    {
+      "source": "prototypes/memory/copies-frozen-i2c/esp32s3-i2c-test.c",
+      "destination": "tests/qtest/esp32s3-i2c-test.c"
+    },
+    {
+      "source": "prototypes/memory/copies-frozen-i2c/test-esp32s3-i2c-service.c",
+      "destination": "tests/unit/test-esp32s3-i2c-service.c"
+    }
+  ],
+  "patches": [
+    {
+      "source": "prototypes/hostbus/integration.patch",
+      "targets": [
+        "backends/meson.build",
+        "system/cpus.c"
+      ]
+    },
+    {
+      "source": "prototypes/hostbus/gdb-execution-preflight.patch",
+      "targets": [
+        "gdbstub/gdbstub.c"
+      ]
+    },
+    {
+      "source": "prototypes/hostbus/state-restore-guard.patch",
+      "targets": [
+        "migration/savevm.c",
+        "migration/migration.c",
+        "migration/migration-hmp-cmds.c"
+      ]
+    },
+    {
+      "source": "prototypes/hostbus/qom-options.patch",
+      "targets": [
+        "qapi/qom.json"
+      ]
+    },
+    {
+      "source": "prototypes/hostbus/creation-order.patch",
+      "targets": [
+        "system/vl.c"
+      ]
+    },
+    {
+      "source": "prototypes/simd-pie/qemu-simd-pie-01-vadds-vsubs-negative-rails.patch",
+      "targets": [
+        "target/xtensa/translate_tie_esp32s3.c"
+      ]
+    },
+    {
+      "source": "prototypes/simd-pie/qemu-simd-pie-02-vmulas-u8-qacc-saturate.patch",
+      "targets": [
+        "target/xtensa/translate_tie_esp32s3.c"
+      ]
+    },
+    {
+      "source": "prototypes/simd-pie/qemu-simd-pie-03-vmulas-s8-qacc-negative-rail.patch",
+      "targets": [
+        "target/xtensa/translate_tie_esp32s3.c"
+      ]
+    },
+    {
+      "source": "prototypes/coreclk/0001-hw-xtensa-esp32s3_clk-ESP32-S3-clock-tree-with-qdev-.patch",
+      "targets": [
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/xtensa/esp32s3_clk.h",
+        "include/hw/xtensa/esp32s3_clk_defs.h"
+      ]
+    },
+    {
+      "source": "prototypes/coreclk/0002-hw-misc-esp32s3_rtc_cntl-S3-RTC-clock-tables-and-XTA.patch",
+      "targets": [
+        "hw/misc/esp32s3_rtc_cntl.c",
+        "include/hw/misc/esp32s3_rtc_cntl.h"
+      ]
+    },
+    {
+      "source": "prototypes/coreclk/0003-hw-timer-live-clock-inputs-for-TIMG-and-SYSTIMER.patch",
+      "targets": [
+        "hw/timer/esp_timg.c",
+        "include/hw/timer/esp_timg.h",
+        "hw/timer/esp_systimer.c",
+        "include/hw/timer/esp_systimer.h",
+        "include/hw/xtensa/esp32s3_reset_domain.h"
+      ]
+    },
+    {
+      "source": "prototypes/coreclk/0004-hw-gate-digital-peripheral-holds-by-the-ESP32-S3-res.patch",
+      "targets": [
+        "hw/dma/esp_gdma.c",
+        "include/hw/dma/esp_gdma.h",
+        "hw/xtensa/esp32s3_intc.c",
+        "include/hw/xtensa/esp32s3_intc.h",
+        "hw/char/esp32_uart.c",
+        "include/hw/char/esp32_uart.h",
+        "hw/ssi/esp32s3_spi.c",
+        "include/hw/ssi/esp32s3_spi.h",
+        "hw/net/can/esp32s3_twai.c",
+        "hw/net/can/esp32s3_twai.h",
+        "hw/misc/esp_aes.c",
+        "include/hw/misc/esp_aes.h",
+        "hw/misc/esp_sha.c",
+        "include/hw/misc/esp_sha.h",
+        "hw/misc/esp_rsa.c",
+        "include/hw/misc/esp_rsa.h",
+        "hw/misc/esp_hmac.c",
+        "include/hw/misc/esp_hmac.h",
+        "hw/misc/esp_ds.c",
+        "include/hw/misc/esp_ds.h"
+      ]
+    },
+    {
+      "source": "prototypes/coreclk/0005-hw-xtensa-esp32s3-propagate-the-clock-tree-and-reset.patch",
+      "targets": [
+        "hw/xtensa/esp32s3.c"
+      ]
+    },
+    {
+      "source": "prototypes/coreclk/0006-tests-qtest-ESP32-S3-clock-tree-and-reset-domain-tes.patch",
+      "targets": [
+        "tests/qtest/esp32s3-coreclk-test.c",
+        "tests/qtest/meson.build"
+      ]
+    },
+    {
+      "source": "prototypes/gdma/0001-hw-dma-esp_gdma-bounded-descriptor-walking-persisten.patch",
+      "targets": [
+        "hw/dma/esp_gdma.c",
+        "include/hw/dma/esp_gdma.h"
+      ]
+    },
+    {
+      "source": "prototypes/gdma/0002-hw-dma-esp32s3_gdma-validate-GDMA_PERI_SEL-periphera.patch",
+      "targets": [
+        "hw/dma/esp32s3_gdma.c"
+      ]
+    },
+    {
+      "source": "prototypes/gdma/0003-tests-qtest-add-esp32s3-gdma-test-suite.patch",
+      "targets": [
+        "tests/qtest/esp32s3-gdma-test.c",
+        "tests/qtest/meson.build"
+      ]
+    },
+    {
+      "source": "prototypes/intc/0001-hw-xtensa-esp32s3_intc-model-source-OR-remap-disable.patch",
+      "targets": [
+        "hw/xtensa/esp32s3_intc.c",
+        "include/hw/xtensa/esp32s3_intc.h",
+        "tests/qtest/esp32s3-intmatrix-test.c",
+        "tests/qtest/meson.build"
+      ]
+    },
+    {
+      "source": "prototypes/intc/0002-tests-qtest-esp32s3-intmatrix-test-drive-matrix-OR-r.patch",
+      "targets": [
+        "tests/qtest/esp32s3-intmatrix-test.c"
+      ]
+    },
+    {
+      "source": "prototypes/intc/0003-tests-qtest-wire-intmatrix-test-and-align-coreclk-re.patch",
+      "targets": [
+        "tests/qtest/esp32s3-coreclk-test.c",
+        "tests/qtest/meson.build"
+      ]
+    },
+    {
+      "source": "prototypes/radio-bringup/0001-hw-xtensa-esp32s3_clk-store-SYSTEM_BT_LPCK-divider-r.patch",
+      "targets": [
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/xtensa/esp32s3_clk.h"
+      ]
+    },
+    {
+      "source": "prototypes/radio-bringup/0002-hw-xtensa-esp32s3-map-undocumented-BT-modem-EM-RAM-w.patch",
+      "targets": [
+        "hw/xtensa/esp32s3.c"
+      ]
+    },
+    {
+      "source": "prototypes/radio-bringup/0003-hw-misc-esp32s3_regi2c-model-REGI2C-analog-I2C-maste.patch",
+      "targets": [
+        "hw/misc/esp32s3_regi2c.c",
+        "hw/misc/meson.build",
+        "hw/xtensa/esp32s3.c",
+        "include/hw/misc/esp32s3_regi2c.h",
+        "include/hw/misc/esp32s3_regi2c_defs.h"
+      ]
+    },
+    {
+      "source": "prototypes/radio-bringup/0004-hw-misc-esp32s3_regi2c-model-BBPLL_CAL_DONE-0x40-BIT.patch",
+      "targets": [
+        "hw/misc/esp32s3_regi2c.c",
+        "include/hw/misc/esp32s3_regi2c.h",
+        "include/hw/misc/esp32s3_regi2c_defs.h"
+      ]
+    },
+    {
+      "source": "prototypes/coreclk/0008-hw-timer-esp_timg-hardware-divider-field-encoding-and-exact.patch",
+      "targets": [
+        "hw/timer/esp_timg.c",
+        "tests/qtest/esp32s3-coreclk-test.c"
+      ]
+    },
+    {
+      "source": "prototypes/coreclk/0009-hw-timer-esp_timg-exact-rational-tick-conversion.patch",
+      "targets": [
+        "hw/timer/esp_timg.c",
+        "include/hw/timer/esp_timg.h",
+        "tests/qtest/esp32s3-coreclk-test.c"
+      ]
+    },
+    {
+      "source": "prototypes/coreclk/0010-hw-xtensa-esp32s3_clk-common-clock-ports-for-SPI2-3.patch",
+      "targets": [
+        "hw/misc/esp32s3_rtc_cntl.c",
+        "hw/xtensa/esp32s3.c",
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/misc/esp32s3_rtc_cntl.h",
+        "include/hw/xtensa/esp32s3_clk.h",
+        "tests/qtest/esp32s3-coreclk-test.c"
+      ]
+    },
+    {
+      "source": "prototypes/coreclk/0011-hw-xtensa-esp32s3_clk-UHCI0-clock-gate-and-reset-lines.patch",
+      "targets": [
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/xtensa/esp32s3_clk.h"
+      ]
+    },
+    {
+      "source": "prototypes/coreclk/0012-hw-xtensa-esp32s3_clk-publish-the-0010-0011-gate-levels.patch",
+      "targets": [
+        "hw/xtensa/esp32s3_clk.c"
+      ]
+    },
+    {
+      "source": "prototypes/coreclk/0013-hw-xtensa-esp32s3-BBPLL-power-validity-decoupled-from.patch",
+      "targets": [
+        "hw/misc/esp32s3_rtc_cntl.c",
+        "hw/xtensa/esp32s3.c",
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/misc/esp32s3_rtc_cntl.h",
+        "include/hw/xtensa/esp32s3_clk.h",
+        "tests/qtest/esp32s3-coreclk-test.c"
+      ]
+    },
+    {
+      "source": "prototypes/coreclk/0014-hw-xtensa-esp32s3_clk-LEDC-PCNT-MCPWM-LCD_CAM-clock-ports.patch",
+      "targets": [
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/xtensa/esp32s3_clk.h"
+      ]
+    },
+    {
+      "source": "prototypes/coreclk/0015-hw-xtensa-esp32s3-CPU1-reset-gate-runstall-lifecycle.patch",
+      "targets": [
+        "hw/xtensa/esp32s3.c",
+        "hw/xtensa/esp32s3_clk.c",
+        "hw/xtensa/pic_cpu.c",
+        "include/hw/xtensa/esp32s3_clk.h",
+        "include/hw/xtensa/esp32s3_clk_defs.h",
+        "target/xtensa/cpu.c",
+        "target/xtensa/cpu.h",
+        "target/xtensa/gdbstub.c",
+        "target/xtensa/helper.c",
+        "target/xtensa/op_helper.c",
+        "tests/qtest/esp32s3-coreclk-test.c",
+        "tests/qtest/esp32s3-cpu1-lifecycle.py"
+      ]
+    },
+    {
+      "source": "prototypes/coreclk/0016-system-capture-reset-entry-cause-gate-S3-reset.patch",
+      "targets": [
+        "system/runstate.c",
+        "include/sysemu/runstate.h",
+        "hw/xtensa/esp32s3.c"
+      ]
+    },
+    {
+      "source": "prototypes/gpio/integration-native-foundations.patch",
+      "targets": [
+        "hw/gpio/esp32_gpio.c",
+        "hw/gpio/esp32s3_gpio.c",
+        "hw/gpio/meson.build",
+        "include/hw/gpio/esp32_gpio.h",
+        "include/hw/gpio/esp32s3_gpio.h",
+        "hw/misc/meson.build",
+        "hw/xtensa/esp32s3.c",
+        "tests/qtest/meson.build",
+        "hw/gpio/esp32s3_iomux.c",
+        "include/hw/gpio/esp32s3_iomux.h",
+        "hw/misc/esp32s3_rtc_io.c",
+        "include/hw/misc/esp32s3_rtc_io.h",
+        "tests/qtest/esp32s3-gpio-test.c"
+      ]
+    },
+    {
+      "source": "prototypes/radio-bringup/0005-regi2c-config-accessor-and-slave-range.patch",
+      "targets": [
+        "hw/misc/esp32s3_regi2c.c",
+        "include/hw/misc/esp32s3_regi2c.h",
+        "include/hw/misc/esp32s3_regi2c_defs.h"
+      ]
+    },
+    {
+      "source": "prototypes/gpio/pad-input-semantics-correction.patch",
+      "targets": [
+        "hw/gpio/esp32s3_gpio.c",
+        "include/hw/gpio/esp32s3_gpio.h",
+        "hw/misc/esp32s3_rtc_io.c",
+        "include/hw/misc/esp32s3_rtc_io.h"
+      ]
+    },
+    {
+      "source": "prototypes/gpio/pad-input-semantics-correction-tests.patch",
+      "targets": [
+        "tests/qtest/esp32s3-gpio-test.c"
+      ]
+    },
+    {
+      "source": "prototypes/gpio/gpio-c6fc-whole-feature.patch",
+      "targets": [
+        "hw/gpio/esp32s3_gpio.c",
+        "include/hw/gpio/esp32s3_gpio.h",
+        "hw/misc/esp32s3_rtc_io.c",
+        "include/hw/misc/esp32s3_rtc_io.h",
+        "hw/misc/esp32s3_rtc_cntl.c",
+        "include/hw/misc/esp32s3_rtc_cntl.h",
+        "tests/qtest/esp32s3-gpio-test.c",
+        "hw/xtensa/esp32s3.c"
+      ]
+    },
+    {
+      "source": "prototypes/gpio/gpio-hold-od-inversion-solver-correction.patch",
+      "targets": [
+        "hw/gpio/esp32s3_gpio.c",
+        "tests/qtest/esp32s3-gpio-test.c"
+      ]
+    },
+    {
+      "source": "prototypes/adc/integration-native-foundations-adc.patch",
+      "targets": [
+        "qapi/qom.json",
+        "hw/xtensa/esp32s3.c",
+        "hw/misc/meson.build",
+        "hw/adc/meson.build",
+        "tests/qtest/meson.build",
+        "hw/misc/esp32s3_regi2c.c",
+        "include/hw/misc/esp32s3_regi2c.h"
+      ]
+    },
+    {
+      "source": "prototypes/electrical-runtime/0001-native-v3-electrical-boundary.patch",
+      "targets": [
+        "hw/adc/meson.build",
+        "hw/xtensa/esp32s3.c",
+        "tests/qtest/meson.build"
+      ]
+    },
+    {
+      "source": "prototypes/memory/machine-integration-native-foundations.patch",
+      "targets": [
+        "hw/misc/meson.build",
+        "hw/xtensa/esp32s3.c"
+      ]
+    },
+    {
+      "source": "prototypes/memory/spi0-cache-phases.patch",
+      "targets": [
+        "hw/ssi/esp32s3_spi.c",
+        "include/hw/ssi/esp32s3_spi.h"
+      ]
+    },
+    {
+      "source": "prototypes/memory/qtest-integration.patch",
+      "targets": [
+        "tests/qtest/meson.build"
+      ]
+    },
+    {
+      "source": "prototypes/spi/0001-gdma-peripheral-rx-packet-end.patch",
+      "targets": [
+        "hw/dma/esp_gdma.c",
+        "include/hw/dma/esp_gdma.h"
+      ]
+    },
+    {
+      "source": "prototypes/gdma/0004-hw-dma-esp_gdma-served-RX-bytes-survive-post-store-a.patch",
+      "targets": [
+        "hw/dma/esp_gdma.c",
+        "tests/qtest/esp32s3-gdma-test.c"
+      ]
+    },
+    {
+      "source": "prototypes/uart/0001-gdma-uhci-demand-and-packet-status.patch",
+      "targets": [
+        "hw/dma/esp_gdma.c",
+        "include/hw/dma/esp_gdma.h"
+      ]
+    },
+    {
+      "source": "prototypes/i2c/integration-after-electrical.patch",
+      "targets": [
+        "hw/i2c/meson.build",
+        "hw/xtensa/esp32s3.c",
+        "tests/qtest/meson.build",
+        "tests/unit/meson.build"
+      ]
+    },
+    {
+      "source": "prototypes/lcd-cam/0001-native-lcd-cam-machine-integration.patch",
+      "targets": [
+        "hw/misc/meson.build",
+        "hw/xtensa/esp32s3.c"
+      ]
+    },
+    {
+      "source": "prototypes/lcd-cam/0002-native-lcd-cam-qtest-integration.patch",
+      "targets": [
+        "tests/qtest/meson.build"
+      ]
+    }
+  ],
+  "evidence_boundary": "Composed native GPIO/RTC_IO, verified CPU1 lifecycle/counter gating, ADC-01 typed-provider wiring, single SENS owner and v3 DC/RC electrical graph. The exact new binary still requires native graph, ordinary firmware, Qt Apply, boot/control, hostbus and SIMD proof. CPU1 lifecycle evidence belongs to executable 6069303f2d076041c51b4a3fe29a044d2cb28068f898aea1caf02f9ee3c8fde4 and is not inherited by this recipe. Separate SYSTEM storage 0016 is absent. Registered services, PSRAM and radios remain unqualified here. The superseded coreclk 0007 bridge is absent; the historical 26-patch default profile remains unchanged. Memory overlay appended: actual 8MiB SSI PSRAM on SPI1 CS1, finite CPU writeback cache with ROM EXTMEM maintenance, GDMA committed MMU view, SPI0 cache-port phase qualification, minimal SPI1 transfer index-bounds fix, 12-case native memory qtest. PSRAM/cache/GDMA visibility requires this recipe's own binary proof. LCD/CAM lane service overlay (controller, panel and OV2640 sensor services, machine/qtest integration) appended so external RGB/CAM consumers execute against the real PSRAM path on this same binary. Camera SCCB still requires the sibling I2C integration increment, which does not apply on this foundation and remains I2C-lane-owned. Negative transport control: spi1-transport.patch deliberately omitted. UART-owned GDMA TX-info extension (spi d0a, gdma 0004, uart 2626 in canonical lcd-cam order, ignore-space-change) added per Main directive so lcd-cam consumes the real esp_gdma_read_channel_ex/EspGdmaTxInfo API; no stubbing. I2C lane overlay (controllers, external service, binding, qtest/unit sources; integration-after-electrical.patch 73edec28 restacked by RubberSwallow onto 0e2ab, FINAL for integration) inserted between uart 2626 and lcd-cam so the OV2640 SCCB path compiles; camera profiles unblocked at composition level. I2C lane inputs frozen into prototypes/memory/copies-frozen-i2c/ at RubberSwallow-published known-good hashes (controller bb225850/ba5f9894, binding 5116fe50, qtest f68174f6 with qapi/error.h include fix) because the lane copies dir is mid-flight with unverified advanced-mode work.",
+  "patch_context": "ignore-space-change"
+}

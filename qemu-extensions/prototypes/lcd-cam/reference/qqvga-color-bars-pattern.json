@@ -1,0 +1,7 @@
+{
+  "source": "color-bars",
+  "scene": [400, 296],
+  "crop": [0, 0, 400, 296],
+  "mirror": false,
+  "flip": false
+}

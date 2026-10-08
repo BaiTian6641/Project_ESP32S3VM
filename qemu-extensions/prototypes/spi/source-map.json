@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "prefix_fingerprint": "dbe2a8a5ad4e07a607e76ab751e77ac85fe3bf30974359bd25a69354499f9b32",
+  "license": "GPL-2.0-or-later",
+  "status": "graph-restack-qualified-0e2ab32b",
+  "native_checkout": "/home/polar/.cache/esp32s3vm/qemu-spi-40edccac4156-0e2ab32b",
+  "build_dir": "build-spi",
+  "evidence": "build-runtime-state/spi-native-2026-10-07",
+  "dependency_patches": [
+    {
+      "source": "prototypes/gpio/integration-v3.patch",
+      "sha256": "66c2b80a9e3ce664b1b43fa1a7c0783cb79dbec5056cdd805b498aa9b66aea22"
+    },
+    {
+      "source": "prototypes/coreclk/0010-hw-xtensa-esp32s3_clk-common-clock-ports-for-SPI2-3.patch",
+      "sha256": "e8b1487b941f7f80c3920da9d56723bcb39b34fa0dedb2dd98c4b80deb88bf4d"
+    },
+    {
+      "source": "prototypes/coreclk/0011-hw-xtensa-esp32s3_clk-UHCI0-clock-gate-and-reset-lines.patch",
+      "sha256": "c1ebe584a6dbe178743da9874bbcb25880afac10242c16f8f1bb043362b47606"
+    },
+    {
+      "source": "prototypes/coreclk/0012-hw-xtensa-esp32s3_clk-publish-the-0010-0011-gate-levels.patch",
+      "sha256": "6b1e8f79f0e4194213c67d309c5a88930bcb13b396fb118232945e3697434f66"
+    },
+    {
+      "source": "prototypes/coreclk/0013-hw-xtensa-esp32s3-BBPLL-power-validity-decoupled-from.patch",
+      "sha256": "2203d4cca82a1ff4a62400517ff2fe1ff6d98e0e53417f16a5f5c7a65c5a8081"
+    }
+  ],
+  "copies": [
+    {
+      "source": "copies/esp32s3_gpspi.c",
+      "destination": "hw/misc/esp32s3_gpspi.c"
+    },
+    {
+      "source": "copies/esp32s3_gpspi.h",
+      "destination": "include/hw/misc/esp32s3_gpspi.h"
+    },
+    {
+      "source": "copies/esp32s3_spi_service.c",
+      "destination": "hw/ssi/esp32s3_spi_service.c"
+    },
+    {
+      "source": "copies/esp32s3_spi_service.h",
+      "destination": "include/hw/ssi/esp32s3_spi_service.h"
+    },
+    {
+      "source": "copies/test-esp32s3-spi-service.c",
+      "destination": "tests/unit/test-esp32s3-spi-service.c"
+    },
+    {
+      "source": "copies/esp32s3-spi-test.c",
+      "destination": "tests/qtest/esp32s3-spi-test.c"
+    }
+  ],
+  "patches": [
+    "0001-gdma-peripheral-rx-packet-end.patch",
+    "0002-spi-controller-service-integration.patch"
+  ],
+  "required_graph_contract": "integration-requirements.json",
+  "canonical_gates": [
+    "SPI0/1 official flash path remains unchanged",
+    "Slave remains SPI-03 unqualified",
+    "Dual/quad/octal/DDR remain SPI-03 unqualified",
+    "PSRAM/EDMA addresses are explicitly unsupported until CORE-04 reachable-memory qualification",
+    "No claimed fast/edge equivalence or replay until both paths are truly exercised",
+    "NOR mode1/2 unsupported; controller mode1/2 qualifies separately through actual loopback wire",
+    "ESP32-S3 half-duplex both TX and RX data phases are unsupported by the pinned target capability/ordinary driver"
+  ],
+  "graph_copies": [
+    {
+      "source": "copies/esp32s3_spi_binding.c",
+      "destination": "hw/ssi/esp32s3_spi_binding.c"
+    },
+    {
+      "source": "copies/esp32s3_spi_binding.h",
+      "destination": "include/hw/ssi/esp32s3_spi_binding.h"
+    }
+  ],
+  "graph_patch": "0003-spi-existing-electrical-binding.patch",
+  "graph_status": "restacked-qualified-against-0e2ab32b-foundation",
+  "restack": {
+    "foundation_source": "/home/polar/.cache/esp32s3vm/qemu-runtime-40edccac4156-0e2ab32b9d57dee3",
+    "foundation_fingerprint": "0e2ab32b9d57dee3d0454e063153f820877477e692a145a380640cd3a3193ccd",
+    "foundation_record": "build-runtime-state/runtime-0e2ab32b9d57dee3-source.json",
+    "increments": [
+      "0005-spi-overlay-0e2ab32b-context-rebase.patch",
+      "0006-spi-binding-fspiq-out-authority.patch"
+    ],
+    "binary_sha256": "3e95bf235a4655cf49b01bbc485a35709134498c9a5b6170ede54b580a0878f7",
+    "runner_migration": "run-native-fixture.py: native /tmp live UART/stderr/stdout/qtest-log during producer life, durable archive into evidence after exit; CHECKOUT rebased to the 0e2ab32b SPI-owned checkout",
+    "evidence_round": "build-runtime-state/spi-native-2026-10-07/graph-restack-20261008",
+    "prior_checkout_preserved": "/home/polar/.cache/esp32s3vm/qemu-spi-40edccac4156 (superseded standalone, no electrical/NOR graph binding)"
+  },
+  "after_patches": [
+    {
+      "source": "prototypes/gdma/0004-hw-dma-esp_gdma-served-RX-bytes-survive-post-store-a.patch",
+      "sha256": "7640a6e06bf9c7d9919cbd4837c25dab3e85f0dfb03da74eb77ee3718dead251"
+    }
+  ],
+  "qtest_registered_cases": 25,
+  "independent_clock_dependency": {
+    "source": "prototypes/coreclk/0013-hw-xtensa-esp32s3-BBPLL-power-validity-decoupled-from.patch",
+    "sha256": "2203d4cca82a1ff4a62400517ff2fe1ff6d98e0e53417f16a5f5c7a65c5a8081",
+    "owner": "CoreClockWorker",
+    "state": "FINAL-radio-safe-applied; RTC_BBPLL power independent CPU mux"
+  }
+}

@@ -1,0 +1,84 @@
+diff --git a/gdbstub/gdbstub.c b/gdbstub/gdbstub.c
+--- a/gdbstub/gdbstub.c
++++ b/gdbstub/gdbstub.c
+@@ -43,6 +43,9 @@
+ 
+ #include "sysemu/hw_accel.h"
+ #include "sysemu/runstate.h"
++#if defined(CONFIG_TCG) && !defined(CONFIG_USER_ONLY)
++#include "sysemu/hostbus-probe.h"
++#endif
+ #include "exec/replay-core.h"
+ #include "exec/hwaddr.h"
+ 
+@@ -56,6 +59,18 @@
+ } GDBRegisterState;
+ 
+ GDBState gdbserver_state;
++
++/* Reject execution commands before PC, signal, step or replay mutation. */
++static bool hostbus_execution_preflight(void)
++{
++#if defined(CONFIG_TCG) && !defined(CONFIG_USER_ONLY)
++    if (esp32s3vm_hostbus_resume_blocked()) {
++        gdb_put_packet("E16");
++        return false;
++    }
++#endif
++    return true;
++}
+ 
+ void gdb_init_gdbserver_state(void)
+ {
+@@ -1060,6 +1075,9 @@
+ 
+ static void handle_continue(GArray *params, void *user_ctx)
+ {
++    if (!hostbus_execution_preflight()) {
++        return;
++    }
+     if (params->len) {
+         gdb_set_cpu_pc(gdb_get_cmd_param(params, 0)->val_ull);
+     }
+@@ -1071,6 +1089,10 @@
+ static void handle_cont_with_sig(GArray *params, void *user_ctx)
+ {
+     unsigned long signal = 0;
++
++    if (!hostbus_execution_preflight()) {
++        return;
++    }
+ 
+     /*
+      * Note: C sig;[addr] is currently unsupported and we simply
+@@ -1341,6 +1363,9 @@
+ 
+ static void handle_step(GArray *params, void *user_ctx)
+ {
++    if (!hostbus_execution_preflight()) {
++        return;
++    }
+     if (params->len) {
+         gdb_set_cpu_pc(gdb_get_cmd_param(params, 0)->val_ull);
+     }
+@@ -1351,6 +1376,9 @@
+ 
+ static void handle_backward(GArray *params, void *user_ctx)
+ {
++    if (!hostbus_execution_preflight()) {
++        return;
++    }
+     if (!gdb_can_reverse()) {
+         gdb_put_packet("E22");
+     }
+@@ -1385,6 +1413,10 @@
+ static void handle_v_cont(GArray *params, void *user_ctx)
+ {
+     int res;
++
++    if (!hostbus_execution_preflight()) {
++        return;
++    }
+ 
+     if (!params->len) {
+         return;

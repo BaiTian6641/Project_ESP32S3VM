@@ -1,0 +1,329 @@
+--- a/hw/ssi/esp32s3_spi.c
++++ b/hw/ssi/esp32s3_spi.c
+@@ -24,6 +24,9 @@
+ 
+ #define SPI1_DEBUG      0
+ #define SPI1_WARNING    0
++
++/* IDF SYSTEM_PERIP_CLK_EN0 / RST_EN0: shared SPI01 bit. */
++#define ESP32S3_SPI01_MASK (1u << 1)
+ 
+ 
+ enum {
+@@ -58,9 +61,88 @@
+ } ESP32S3SpiTransaction;
+ 
+ 
++bool esp32s3_spi_psram_cache_ready(ESP32S3SpiState *s,
++                                  const SsiPsramState *psram, bool write)
++{
++    uint32_t ctrl;
++    uint32_t dummy;
++
++    /* Qualify the pinned 8 MiB STR QPI device, not an enable latch. */
++    if (!s || !s->cache_port || !s->system_clock ||
++        !(s->system_clock->perip_clk_en0 & ESP32S3_SPI01_MASK) ||
++        (s->system_clock->perip_rst_en0 & ESP32S3_SPI01_MASK) ||
++        !s->system_clock->pll_valid ||
++        !psram || psram->is_octal ||
++        psram->size_mbytes != 8 || !psram->qpi || psram->wrap32 ||
++        FIELD_EX32(s->misc, SPI_MEM_MISC, CS1_DIS)) {
++        return false;
++    }
++    ctrl = s->cache_sctrl;
++    if (!FIELD_EX32(ctrl, SPI_MEM_CACHE_SCTRL, USR_SRAM_QIO) ||
++        FIELD_EX32(ctrl, SPI_MEM_CACHE_SCTRL, USR_SRAM_DIO) ||
++        FIELD_EX32(ctrl, SPI_MEM_CACHE_SCTRL, SRAM_OCT) ||
++        FIELD_EX32(ctrl, SPI_MEM_CACHE_SCTRL, USR_SCMD_4BYTE) ||
++        FIELD_EX32(ctrl, SPI_MEM_CACHE_SCTRL, SRAM_ADDR_BITLEN) != 23 ||
++        (s->smem_ddr & 0x7f000001) ||
++        FIELD_EX32(s->smem_ac, SPI_MEM_SMEM_AC, ECC_16TO18_BYTE_EN)) {
++        return false;
++    }
++    /* Pinned native functional mode: 80 MHz MSPI core / 2 = 40 MHz.
++     * Actual shared SoC gate/reset checked above; no analogue timing claim. */
++    if (s->core_clk_sel != 0 || s->sram_clk != 0x00010001) {
++        return false;
++    }
++    if (write) {
++        return FIELD_EX32(ctrl, SPI_MEM_CACHE_SCTRL, USR_WCMD) &&
++               !FIELD_EX32(ctrl, SPI_MEM_CACHE_SCTRL, USR_WR_SRAM_DUMMY) &&
++               FIELD_EX32(s->sram_dwr_cmd, SPI_MEM_SRAM_DWR_CMD, BITLEN) == 7 &&
++               FIELD_EX32(s->sram_dwr_cmd, SPI_MEM_SRAM_DWR_CMD, VALUE) == 0x38;
++    }
++    dummy = FIELD_EX32(ctrl, SPI_MEM_CACHE_SCTRL, SRAM_RDUMMY_CYCLELEN) + 1;
++    if (FIELD_EX32(s->smem_timing_cali, SPI_MEM_SMEM_TIMING_CALI, TIMING_CALI)) {
++        dummy += FIELD_EX32(s->smem_timing_cali, SPI_MEM_SMEM_TIMING_CALI,
++                            EXTRA_DUMMY_CYCLELEN);
++    }
++    return FIELD_EX32(ctrl, SPI_MEM_CACHE_SCTRL, USR_RCMD) &&
++           FIELD_EX32(ctrl, SPI_MEM_CACHE_SCTRL, USR_RD_SRAM_DUMMY) &&
++           dummy == 6 &&
++           FIELD_EX32(s->sram_drd_cmd, SPI_MEM_SRAM_DRD_CMD, BITLEN) == 7 &&
++           FIELD_EX32(s->sram_drd_cmd, SPI_MEM_SRAM_DRD_CMD, VALUE) == 0xeb;
++}
++
++
+ static uint64_t esp32s3_spi_read(void *opaque, hwaddr addr, unsigned int size)
+ {
+     ESP32S3SpiState *s = ESP32S3_SPI(opaque);
++
++    if (s->cache_port) {
++        switch (addr) {
++        case A_SPI_MEM_CACHE_SCTRL:
++            return s->cache_sctrl;
++        case A_SPI_MEM_SRAM_DRD_CMD:
++            return s->sram_drd_cmd;
++        case A_SPI_MEM_SRAM_DWR_CMD:
++            return s->sram_dwr_cmd;
++        case A_SPI_MEM_SRAM_CLK:
++            return s->sram_clk;
++        case A_SPI_MEM_SMEM_AC:
++            return s->smem_ac;
++        case A_SPI_MEM_SMEM_DDR:
++            return s->smem_ddr;
++        case A_SPI_MEM_SMEM_TIMING_CALI:
++            return s->smem_timing_cali;
++        case A_SPI_MEM_SMEM_DIN_MODE:
++            return s->smem_din_mode;
++        case A_SPI_MEM_SMEM_DIN_NUM:
++            return s->smem_din_num;
++        case A_SPI_MEM_SMEM_DOUT_MODE:
++            return s->smem_dout_mode;
++        case A_SPI_MEM_CORE_CLK_SEL:
++            return s->core_clk_sel;
++        default:
++            break;
++        }
++    }
+ 
+     uint64_t r = 0;
+     switch (addr) {
+@@ -376,6 +458,49 @@
+     ESP32S3SpiState *s = ESP32S3_SPI(opaque);
+     uint32_t wvalue = (uint32_t) value;
+ 
++    if (s->cache_port) {
++        switch (addr) {
++        case A_SPI_MEM_CMD:
++            /* SPI0 cache service has no independent PIO/PSRAM bus. */
++            return;
++        case A_SPI_MEM_CACHE_SCTRL:
++            s->cache_sctrl = wvalue & 0x0fffcfff;
++            return;
++        case A_SPI_MEM_SRAM_DRD_CMD:
++            s->sram_drd_cmd = wvalue & 0xf000ffff;
++            return;
++        case A_SPI_MEM_SRAM_DWR_CMD:
++            s->sram_dwr_cmd = wvalue & 0xf000ffff;
++            return;
++        case A_SPI_MEM_SRAM_CLK:
++            s->sram_clk = wvalue & 0x80ffffff;
++            return;
++        case A_SPI_MEM_SMEM_AC:
++            s->smem_ac = wvalue & 0x7f01ffff;
++            return;
++        case A_SPI_MEM_SMEM_DDR:
++            s->smem_ddr = wvalue & 0x7f7fffff;
++            return;
++        case A_SPI_MEM_SMEM_TIMING_CALI:
++            s->smem_timing_cali = wvalue & 0x0000001f;
++            return;
++        case A_SPI_MEM_SMEM_DIN_MODE:
++            s->smem_din_mode = wvalue & 0x07ffffff;
++            return;
++        case A_SPI_MEM_SMEM_DIN_NUM:
++            s->smem_din_num = wvalue & 0x0003ffff;
++            return;
++        case A_SPI_MEM_SMEM_DOUT_MODE:
++            s->smem_dout_mode = wvalue & 0x000001ff;
++            return;
++        case A_SPI_MEM_CORE_CLK_SEL:
++            s->core_clk_sel = wvalue & 0x00000003;
++            return;
++        default:
++            break;
++        }
++    }
++
+ #if SPI1_DEBUG
+     info_report("[SPI1] Writing 0x%lx = %08lx", addr, value);
+ #endif
+@@ -448,9 +573,28 @@
+ }
+ 
+ 
++static MemTxResult esp32s3_spi_write_with_attrs(void *opaque, hwaddr addr,
++                                                uint64_t value, unsigned size,
++                                                MemTxAttrs attrs)
++{
++    ESP32S3SpiState *s = ESP32S3_SPI(opaque);
++
++    if (s->cache_port && s->system_clock &&
++        (s->system_clock->perip_rst_en0 & ESP32S3_SPI01_MASK)) {
++        /* Shared SPI01 reset is level-held: guest writes cannot rearm phases. */
++        return MEMTX_DECODE_ERROR;
++    }
++    if (s->cache_port && addr == A_SPI_MEM_CMD && value) {
++        /* No fake completion from an empty independent SPI0 SSI bus. */
++        return MEMTX_DECODE_ERROR;
++    }
++    esp32s3_spi_write(opaque, addr, value, size);
++    return MEMTX_OK;
++}
++
+ static const MemoryRegionOps esp32s3_spi_ops = {
+     .read =  esp32s3_spi_read,
+-    .write = esp32s3_spi_write,
++    .write_with_attrs = esp32s3_spi_write_with_attrs,
+     .endianness = DEVICE_LITTLE_ENDIAN,
+ };
+ 
+@@ -461,6 +605,24 @@
+     /* PERIPH reset domain: CPU-only resets keep the SPI1 controller state */
+     if (s->soc_reset && !esp32s3_reset_covers_periph(s->soc_reset)) {
+         return;
++    }
++
++    if (s->cache_port) {
++        /* Controller reset never resets the external SSI chip/mode/data. */
++        s->cache_sctrl = 0x0055c070;
++        s->sram_drd_cmd = 0x00000000;
++        s->sram_dwr_cmd = 0x00000000;
++        s->sram_clk = 0x00030103;
++        s->smem_ac = 0x0000b084;
++        s->smem_ddr = 0x00003020;
++        s->smem_timing_cali = 0x00000000;
++        s->smem_din_mode = 0x00000000;
++        s->smem_din_num = 0x00000000;
++        s->smem_dout_mode = 0x00000000;
++        s->core_clk_sel = 0x00000000;
++        s->misc = 0;
++        s->ddr_ctrl = 0x00003020;
++        s->clock_gate = 1;
+     }
+ 
+     memset(s->data_reg, 0, ESP32S3_SPI_BUF_WORDS * sizeof(uint32_t));
+@@ -484,6 +646,11 @@
+ {
+     ESP32S3SpiState *s = ESP32S3_SPI(dev);
+ 
++    /* Properties are assigned after instance_init; install SPI0 defaults now. */
++    if (s->cache_port) {
++        esp32s3_spi_reset_hold(OBJECT(s), RESET_TYPE_COLD);
++    }
++
+     /* Make sure XTS_AES was set or issue an error */
+     if (s->xts_aes == NULL) {
+         // error_report("[SPI1] XTS_AES controller must be set!");
+@@ -508,6 +675,9 @@
+ }
+ 
+ static Property esp32s3_spi_properties[] = {
++    DEFINE_PROP_BOOL("cache-port", ESP32S3SpiState, cache_port, false),
++    DEFINE_PROP_LINK("system-clock", ESP32S3SpiState, system_clock,
++                     TYPE_ESP32S3_CLOCK, ESP32S3ClockState *),
+     DEFINE_PROP_LINK("soc-reset", ESP32S3SpiState, soc_reset, TYPE_DEVICE, DeviceState *),
+     DEFINE_PROP_END_OF_LIST(),
+ };
+--- a/include/hw/ssi/esp32s3_spi.h
++++ b/include/hw/ssi/esp32s3_spi.h
+@@ -4,6 +4,8 @@
+ #include "hw/registerfields.h"
+ #include "hw/misc/esp32s3_xts_aes.h"
+ #include "hw/ssi/ssi.h"
++#include "hw/misc/ssi_psram.h"
++#include "hw/xtensa/esp32s3_clk.h"
+ 
+ #define TYPE_ESP32S3_SPI "ssi.esp32s3.spi"
+ #define ESP32S3_SPI(obj) OBJECT_CHECK(ESP32S3SpiState, (obj), TYPE_ESP32S3_SPI)
+@@ -47,6 +49,20 @@
+     uint32_t mem_rd_st;
+     uint32_t misc;
+     uint32_t cache_fctrl;
++    /* Same official controller class, SPI0 cache port versus SPI1 PIO. */
++    bool cache_port;
++    ESP32S3ClockState *system_clock;
++    uint32_t cache_sctrl;
++    uint32_t sram_drd_cmd;
++    uint32_t sram_dwr_cmd;
++    uint32_t sram_clk;
++    uint32_t smem_ac;
++    uint32_t smem_ddr;
++    uint32_t smem_timing_cali;
++    uint32_t smem_din_mode;
++    uint32_t smem_din_num;
++    uint32_t smem_dout_mode;
++    uint32_t core_clk_sel;
+     uint32_t fsm;
+     uint32_t data_reg[ESP32S3_SPI_BUF_WORDS];
+     uint32_t mem_sus_st;
+@@ -54,6 +70,10 @@
+     uint32_t clock_gate;
+     ESP32S3XtsAesState *xts_aes;
+ } ESP32S3SpiState;
++
++/* Eligibility only: caller translates MMU/cache accesses to the sole SSI chip. */
++bool esp32s3_spi_psram_cache_ready(ESP32S3SpiState *spi,
++                                  const SsiPsramState *psram, bool write);
+ 
+ 
+ REG32(SPI_MEM_CMD, 0x000)
+@@ -163,6 +183,31 @@
+     FIELD(SPI_MEM_CACHE_FCTRL, FDIN_DUAL , 3, 1)
+     FIELD(SPI_MEM_CACHE_FCTRL, CACHE_USR_ADDR_4BYTE, 1, 1)
+ 
++REG32(SPI_MEM_CACHE_SCTRL, 0x040)
++    FIELD(SPI_MEM_CACHE_SCTRL, SRAM_WDUMMY_CYCLELEN, 22, 6)
++    FIELD(SPI_MEM_CACHE_SCTRL, SRAM_OCT, 21, 1)
++    FIELD(SPI_MEM_CACHE_SCTRL, USR_WCMD, 20, 1)
++    FIELD(SPI_MEM_CACHE_SCTRL, SRAM_ADDR_BITLEN, 14, 6)
++    FIELD(SPI_MEM_CACHE_SCTRL, SRAM_RDUMMY_CYCLELEN, 6, 6)
++    FIELD(SPI_MEM_CACHE_SCTRL, USR_RCMD, 5, 1)
++    FIELD(SPI_MEM_CACHE_SCTRL, USR_RD_SRAM_DUMMY, 4, 1)
++    FIELD(SPI_MEM_CACHE_SCTRL, USR_WR_SRAM_DUMMY, 3, 1)
++    FIELD(SPI_MEM_CACHE_SCTRL, USR_SRAM_QIO, 2, 1)
++    FIELD(SPI_MEM_CACHE_SCTRL, USR_SRAM_DIO, 1, 1)
++    FIELD(SPI_MEM_CACHE_SCTRL, USR_SCMD_4BYTE, 0, 1)
++
++REG32(SPI_MEM_SRAM_DRD_CMD, 0x048)
++    FIELD(SPI_MEM_SRAM_DRD_CMD, BITLEN, 28, 4)
++    FIELD(SPI_MEM_SRAM_DRD_CMD, VALUE, 0, 16)
++REG32(SPI_MEM_SRAM_DWR_CMD, 0x04C)
++    FIELD(SPI_MEM_SRAM_DWR_CMD, BITLEN, 28, 4)
++    FIELD(SPI_MEM_SRAM_DWR_CMD, VALUE, 0, 16)
++REG32(SPI_MEM_SRAM_CLK, 0x050)
++    FIELD(SPI_MEM_SRAM_CLK, EQU_SYSCLK, 31, 1)
++    FIELD(SPI_MEM_SRAM_CLK, N, 16, 8)
++    FIELD(SPI_MEM_SRAM_CLK, H, 8, 8)
++    FIELD(SPI_MEM_SRAM_CLK, L, 0, 8)
++
+ REG32(SPI_MEM_FSM, 0x054)
+     FIELD(SPI_MEM_FSM, SPI_FSM, 0, 3)
+ 
+@@ -250,6 +295,25 @@
+ REG32(SPI_MEM_TIMING_CALI, 0x0A8)
+     FIELD(SPI_MEM_TIMING_CALI, EXTRA_DUMMY_CYCLELEN, 2, 3)
+     FIELD(SPI_MEM_TIMING_CALI, TIMING_CALI, 1, 1)
++
++REG32(SPI_MEM_SMEM_TIMING_CALI, 0x0BC)
++    FIELD(SPI_MEM_SMEM_TIMING_CALI, EXTRA_DUMMY_CYCLELEN, 2, 3)
++    FIELD(SPI_MEM_SMEM_TIMING_CALI, TIMING_CALI, 1, 1)
++    FIELD(SPI_MEM_SMEM_TIMING_CALI, TIMING_CLK_ENA, 0, 1)
++REG32(SPI_MEM_SMEM_DIN_MODE, 0x0C0)
++REG32(SPI_MEM_SMEM_DIN_NUM, 0x0C4)
++REG32(SPI_MEM_SMEM_DOUT_MODE, 0x0C8)
++REG32(SPI_MEM_SMEM_AC, 0x0DC)
++    FIELD(SPI_MEM_SMEM_AC, CS_HOLD_DELAY, 25, 6)
++    FIELD(SPI_MEM_SMEM_AC, ECC_16TO18_BYTE_EN, 16, 1)
++    FIELD(SPI_MEM_SMEM_AC, CS_HOLD_TIME, 7, 5)
++    FIELD(SPI_MEM_SMEM_AC, CS_SETUP_TIME, 2, 5)
++    FIELD(SPI_MEM_SMEM_AC, CS_HOLD, 1, 1)
++    FIELD(SPI_MEM_SMEM_AC, CS_SETUP, 0, 1)
++REG32(SPI_MEM_SMEM_DDR, 0x0E4)
++    FIELD(SPI_MEM_SMEM_DDR, DDR_EN, 0, 1)
++REG32(SPI_MEM_CORE_CLK_SEL, 0x0EC)
++    FIELD(SPI_MEM_CORE_CLK_SEL, SELECT, 0, 2)
+ 
+ REG32(SPI_MEM_INT_ENA, 0x0C0)
+     FIELD(SPI_MEM_INT_ENA, MST_ST_END_INT_ENA, 4, 1)

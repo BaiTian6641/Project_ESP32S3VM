@@ -1,0 +1,110 @@
+diff --git a/hw/i2c/meson.build b/hw/i2c/meson.build
+index e72dca0..abb799a 100644
+--- a/hw/i2c/meson.build
++++ b/hw/i2c/meson.build
+@@ -16,7 +16,8 @@ i2c_ss.add(when: 'CONFIG_ARM_SBCON_I2C', if_true: files('arm_sbcon_i2c.c'))
+ i2c_ss.add(when: 'CONFIG_OMAP', if_true: files('omap_i2c.c'))
+ i2c_ss.add(when: 'CONFIG_PPC4XX', if_true: files('ppc4xx_i2c.c'))
+ i2c_ss.add(when: 'CONFIG_XTENSA_ESP32', if_true: files('esp32_i2c.c'))
+-i2c_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files('esp32_i2c.c'))
++i2c_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files(
++  'esp32s3_i2c.c', 'esp32s3_i2c_service.c', 'esp32s3_i2c_binding.c'))
+ i2c_ss.add(when: 'CONFIG_PCA954X', if_true: files('i2c_mux_pca954x.c'))
+ i2c_ss.add(when: 'CONFIG_PMBUS', if_true: files('pmbus_device.c'))
+ i2c_ss.add(when: 'CONFIG_BCM2835_I2C', if_true: files('bcm2835_i2c.c'))
+diff --git a/hw/xtensa/esp32s3.c b/hw/xtensa/esp32s3.c
+index 8b4e0fc..8d9e0d1 100644
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -22,6 +22,7 @@
+ #include "hw/misc/unimp.h"
+ #include "hw/irq.h"
+ #include "hw/i2c/i2c.h"
++#include "hw/i2c/esp32s3_i2c_binding.h"
+ #include "hw/qdev-properties.h"
+ 
+ #include "qemu/osdep.h"
+@@ -145,6 +146,7 @@ typedef struct Esp32s3SocState {
+     Esp32s3RtcCntlState rtc_cntl;
+     ESP32S3SensState sens;
+     ESP32S3ApbSaradcState apb_saradc;
++    ESP32S3I2CState i2c[2];
+ 
+     BusState rtc_bus;
+     BusState periph_bus;
+@@ -486,6 +488,8 @@ static void esp32s3_periph_rst_req(void *opaque, int n, int level)
+     case ESP32S3_RST_RSA:      dev = DEVICE(&s->rsa); break;
+     case ESP32S3_RST_HMAC:     dev = DEVICE(&s->hmac); break;
+     case ESP32S3_RST_DS:       dev = DEVICE(&s->ds); break;
++    case ESP32S3_RST_I2C0:     dev = DEVICE(&s->i2c[0]); break;
++    case ESP32S3_RST_I2C1:     dev = DEVICE(&s->i2c[1]); break;
+     default:
+         break;
+     }
+@@ -992,6 +996,24 @@ static void esp32s3_machine_init(MachineState *machine)
+     object_initialize_child(OBJECT(ss), "sens", &ss->sens, TYPE_ESP32S3_SENS);
+     object_initialize_child(OBJECT(ss), "apb_saradc", &ss->apb_saradc,
+                             TYPE_ESP32S3_APB_SARADC);
++    for (int i = 0; i < 2; ++i) {
++        char name[16];
++        snprintf(name, sizeof(name), "i2c%d", i);
++        object_initialize_child(OBJECT(ss), name, &ss->i2c[i], TYPE_ESP32S3_I2C);
++        qdev_prop_set_uint32(DEVICE(&ss->i2c[i]), "controller", i);
++        object_property_set_link(OBJECT(&ss->i2c[i]), "soc-reset", OBJECT(ss), &error_abort);
++        qdev_connect_clock_in(DEVICE(&ss->i2c[i]), "xtal-clk",
++                              qdev_get_clock_out(DEVICE(&ss->clock), "xtal-clk"));
++        qdev_connect_clock_in(DEVICE(&ss->i2c[i]), "rc-fast-clk",
++                              qdev_get_clock_out(DEVICE(&ss->clock), "rc-fast-clk"));
++        qdev_connect_gpio_out_named(DEVICE(&ss->clock), ESP32S3_CLK_GATES_GPIO,
++                                   i ? ESP32S3_GATE_I2C1 : ESP32S3_GATE_I2C0,
++                                   qdev_get_gpio_in_named(DEVICE(&ss->i2c[i]), "clk-gate", 0));
++        qdev_connect_gpio_out_named(DEVICE(&ss->clock), ESP32S3_CLK_RST_LEVEL_GPIO,
++                                   i ? ESP32S3_RST_I2C1 : ESP32S3_RST_I2C0,
++                                   qdev_get_gpio_in_named(DEVICE(&ss->i2c[i]), "reset", 0));
++    }
++
+ 
+     /* ---------------------------------------------------------------------
+      * Clock tree and reset-domain wiring, second stage (coreclk lane).
+@@ -1384,6 +1406,21 @@ static void esp32s3_machine_init(MachineState *machine)
+                 qdev_get_gpio_in_named(DEVICE(&ss->regi2c), "tsens-dump-out", 0));
+     }
+ 
++    {
++        Object *electrical_object = object_resolve_path_component(OBJECT(ss), "electrical");
++        g_assert(electrical_object);
++        DeviceState *electrical = DEVICE(electrical_object);
++        for (int i = 0; i < 2; ++i) {
++            sysbus_realize(SYS_BUS_DEVICE(&ss->i2c[i]), &error_fatal);
++            memory_region_add_subregion_overlap(sys_mem,
++                i ? DR_REG_I2C1_EXT_BASE : DR_REG_I2C_EXT_BASE,
++                sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->i2c[i]), 0), 0);
++            sysbus_connect_irq(SYS_BUS_DEVICE(&ss->i2c[i]), 0,
++                qdev_get_gpio_in(intmatrix_dev, ETS_I2C_EXT0_INTR_SOURCE + i));
++        }
++        esp32s3_i2c_bind_electrical(&ss->i2c[0], &ss->i2c[1], &ss->gpio, electrical);
++    }
++
+     esp32s3_soc_add_unimp_device(sys_mem, "esp32s3.rmt", DR_REG_RMT_BASE, 0x1000);
+ 
+     esp32s3_machine_init_sd(ss);
+diff --git a/tests/unit/meson.build b/tests/unit/meson.build
+index d5248ae..c55136c 100644
+--- a/tests/unit/meson.build
++++ b/tests/unit/meson.build
+@@ -48,6 +48,7 @@ tests = {
+   'test-qapi-util': [],
+   'test-interval-tree': [],
+   'test-fifo': [],
++  'test-esp32s3-i2c-service': ['../../hw/i2c/esp32s3_i2c_service.c'],
+ }
+ 
+ if have_system or have_tools
+diff --git a/tests/qtest/meson.build b/tests/qtest/meson.build
+index aa28e27..7c63bc3 100644
+--- a/tests/qtest/meson.build
++++ b/tests/qtest/meson.build
+@@ -350,2 +350,3 @@ qtests_xtensa += ['esp32s3-adc-test']
+ qtests_xtensa += [ 'esp32s3-electrical-test' ]
++qtests_xtensa += [ 'esp32s3-i2c-test' ]
+ 

@@ -1,0 +1,84 @@
+--- a/hw/misc/meson.build
++++ b/hw/misc/meson.build
+@@ -161,3 +161,6 @@
+ system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files(
++  'esp32s3_lcd_cam.c',
++  'esp32s3_lcd_panel_service.c',
++  'esp32s3_ov2640_service.c',
+   'esp32s3_cache.c',
+   'ssi_psram.c',
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -59,3 +59,6 @@
+ #include "hw/misc/esp32s3_sha.h"
++#include "hw/misc/esp32s3_lcd_cam.h"
++#include "hw/misc/esp32s3_lcd_panel_service.h"
++#include "hw/misc/esp32s3_ov2640_service.h"
+ #include "hw/misc/esp32s3_aes.h"
+ #include "hw/misc/esp32s3_rsa.h"
+@@ -158,3 +161,4 @@
+ 
+     ESP32C3UsbJtagState jtag;
++    ESP32S3LcdCamState lcd_cam;
+     ESPRgbState rgb;
+@@ -230,3 +234,4 @@
+         device_cold_reset(DEVICE(&s->timg[0]));
+         device_cold_reset(DEVICE(&s->timg[1]));
++        device_cold_reset(DEVICE(&s->lcd_cam));
+         device_cold_reset(DEVICE(&s->systimer));
+@@ -342,3 +347,4 @@
+     case ESP32S3_RST_SHA:      dev = DEVICE(&s->sha); break;
+     case ESP32S3_RST_RSA:      dev = DEVICE(&s->rsa); break;
++    case ESP32S3_RST_LCD_CAM:  dev = DEVICE(&s->lcd_cam); break;
+     case ESP32S3_RST_HMAC:     dev = DEVICE(&s->hmac); break;
+@@ -817,3 +823,4 @@
+     object_initialize_child(OBJECT(ss), "pms", &ss->pms, TYPE_ESP32S3_PMS);
+ 
++    object_initialize_child(OBJECT(ss), "lcd_cam", &ss->lcd_cam, TYPE_ESP32S3_LCD_CAM);
+     object_initialize_child(OBJECT(ss), "xts_aes", &ss->xts_aes, TYPE_ESP32S3_XTS_AES);
+@@ -1125,3 +1132,45 @@
+     esp32s3_machine_init_sd(ss);
+ 
++    /* One S3 LCD_CAM block: LCD OUT and CAM IN independently use GDMA ID5.
++     * Actual electrical services never receive controller pixel shortcuts. */
++    {
++        DeviceState *dev = DEVICE(&ss->lcd_cam);
++        DeviceState *clk_dev = DEVICE(&ss->clock);
++        DeviceState *electrical = DEVICE(object_resolve_path_component(
++                                             OBJECT(ss), "electrical"));
++        esp32s3_lcd_panel_service_create(OBJECT(ss), electrical);
++        esp32s3_ov2640_service_create(OBJECT(ss), electrical);
++        object_property_set_link(OBJECT(dev), "gdma", OBJECT(&ss->gdma),
++                                 &error_fatal);
++        object_property_set_link(OBJECT(dev), "gpio", OBJECT(&ss->gpio),
++                                 &error_fatal);
++        object_property_set_link(OBJECT(dev), "electrical", OBJECT(electrical),
++                                 &error_fatal);
++        object_property_set_link(OBJECT(dev), "soc-reset", OBJECT(ss),
++                                 &error_fatal);
++        qdev_connect_clock_in(dev, "bus",
++                              qdev_get_clock_out(clk_dev, "apb-clk"));
++        qdev_connect_clock_in(dev, "xtal",
++                              qdev_get_clock_out(clk_dev, "xtal-clk"));
++        qdev_connect_clock_in(dev, "pll160",
++                              qdev_get_clock_out(clk_dev, "pll-f160m-clk"));
++        qdev_connect_clock_in(dev, "pll240",
++                              qdev_get_clock_out(clk_dev, "pll-f240m-clk"));
++        qdev_connect_gpio_out_named(clk_dev, ESP32S3_CLK_GATES_GPIO,
++                                   ESP32S3_GATE_LCD_CAM,
++                                   qdev_get_gpio_in_named(dev, "clk-gate", 0));
++        qdev_connect_gpio_out_named(clk_dev, ESP32S3_CLK_RST_LEVEL_GPIO,
++                                   ESP32S3_RST_LCD_CAM,
++                                   qdev_get_gpio_in_named(dev, "reset", 0));
++        qemu_set_irq(qdev_get_gpio_in_named(dev, "clk-gate", 0),
++                     !!(ss->clock.perip_clk_en1 & (1u << 8)));
++        qemu_set_irq(qdev_get_gpio_in_named(dev, "reset", 0),
++                     !!(ss->clock.perip_rst_en1 & (1u << 8)));
++        sysbus_realize(SYS_BUS_DEVICE(dev), &error_fatal);
++        memory_region_add_subregion_overlap(sys_mem, DR_REG_LCD_CAM_BASE,
++                sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 0), 0);
++        sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0,
++                           qdev_get_gpio_in(intmatrix_dev, ETS_LCD_CAM_INTR_SOURCE));
++    }
++
+     /* Need MMU initialized prior to ELF loading,

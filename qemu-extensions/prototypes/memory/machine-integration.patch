@@ -1,0 +1,156 @@
+--- a/hw/misc/meson.build
++++ b/hw/misc/meson.build
+@@ -211,3 +211,5 @@
+ 
+ # HPPA devices
+ system_ss.add(when: 'CONFIG_LASI', if_true: files('lasi.c'))
++
++system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files('esp32s3_psram_cache.c'))
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -140,6 +140,7 @@
+     BusState periph_bus;
+ 
+     MemoryRegion cpu_specific_mem[ESP32S3_CPU_COUNT];
++    ESP32S3SpiState spi0;
+     ESP32S3SpiState spi1;
+     ESP32S3CacheState cache;
+     ESP32S3EfuseState efuse;
+@@ -164,6 +165,9 @@
+     DeviceState *eth;
+     SsiPsramState *psram;
+     ESP32S3RegI2CState regi2c;
++    MemoryRegion gdma_memory;
++    MemoryRegion gdma_dram;
++    MemoryRegion gdma_sram2;
+ 
+     uint32_t requested_reset;
+ } Esp32s3SocState;
+@@ -233,6 +237,8 @@
+         device_cold_reset(DEVICE(&s->timg[1]));
+         device_cold_reset(DEVICE(&s->systimer));
+         device_cold_reset(DEVICE(&s->gdma));
++        device_cold_reset(DEVICE(&s->cache));
++        device_cold_reset(DEVICE(&s->spi0));
+         device_cold_reset(DEVICE(&s->spi1));
+         device_cold_reset(DEVICE(&s->sdmmc));
+         device_cold_reset(DEVICE(&s->twai));
+@@ -348,7 +354,10 @@
+     case ESP32S3_RST_UART0:    dev = DEVICE(&s->uart[0]); break;
+     case ESP32S3_RST_UART1:    dev = DEVICE(&s->uart[1]); break;
+     case ESP32S3_RST_UART2:    dev = DEVICE(&s->uart[2]); break;
+-    case ESP32S3_RST_SPI1:     dev = DEVICE(&s->spi1); break;
++    case ESP32S3_RST_SPI1:
++        device_cold_reset(DEVICE(&s->spi0));
++        dev = DEVICE(&s->spi1);
++        break;
+     case ESP32S3_RST_TWAI:     dev = DEVICE(&s->twai); break;
+     case ESP32S3_RST_AES:      dev = DEVICE(&s->aes); break;
+     case ESP32S3_RST_SHA:      dev = DEVICE(&s->sha); break;
+@@ -410,13 +419,17 @@
+                                 qdev_get_gpio_in_named(flash_dev, SSI_GPIO_CS, 0));
+ }
+ 
+-static void esp32s3_machine_init_psram(Esp32s3SocState *ms, uint32_t size_mbytes)
+-{
++static void esp32s3_machine_init_psram(Esp32s3SocState *ms, uint64_t size_bytes)
++{
++    if (size_bytes != 8 * MiB) {
++        error_report("Native ESP32-S3 PSRAM supports exactly 8 MiB; use -m 8M");
++        exit(1);
++    }
+     /* PSRAM attached to SPI1, CS1 */
+     DeviceState *spi_master = DEVICE(&ms->spi1);
+     BusState* spi_bus = qdev_get_child_bus(spi_master, "spi");
+     DeviceState *psram = qdev_new(TYPE_SSI_PSRAM);
+-    qdev_prop_set_uint32(psram, "size_mbytes", size_mbytes);
++    qdev_prop_set_uint32(psram, "size_mbytes", size_bytes / MiB);
+     qdev_prop_set_uint8(psram, "cs", 1);
+     qdev_realize(psram, spi_bus, &error_fatal);
+     ms->psram = SSI_PSRAM(psram);
+@@ -813,6 +826,7 @@
+     qdev_realize(DEVICE(ss), NULL, &error_fatal);
+ 
+     object_initialize_child(OBJECT(ss), "extmem", &ss->cache, TYPE_ESP32S3_CACHE);
++    object_initialize_child(OBJECT(ss), "spi0", &ss->spi0, TYPE_ESP32S3_SPI);
+     object_initialize_child(OBJECT(ss), "spi1", &ss->spi1, TYPE_ESP32S3_SPI);
+     object_initialize_child(OBJECT(ss), "efuse", &ss->efuse, TYPE_ESP32S3_EFUSE);
+     object_initialize_child(OBJECT(ss), "jtag", &ss->jtag, TYPE_ESP32C3_JTAG);
+@@ -847,6 +861,7 @@
+         DeviceState *clk_dev = DEVICE(&ss->clock);
+         DeviceState *peripherals[] = {
+             DEVICE(&ss->clock), DEVICE(&ss->gdma),
++            DEVICE(&ss->spi0), DEVICE(&ss->spi1), DEVICE(&ss->cache),
+             DEVICE(&ss->aes), DEVICE(&ss->sha),
+             DEVICE(&ss->rsa), DEVICE(&ss->hmac), DEVICE(&ss->ds),
+         };
+@@ -880,6 +895,18 @@
+         sysbus_realize(SYS_BUS_DEVICE(&ss->jtag), &error_fatal);
+         MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->jtag), 0);
+         memory_region_add_subregion_overlap(sys_mem, DR_REG_USB_SERIAL_JTAG_BASE, mr, 0);
++    }
++
++    /* SPI0 uses the official SPI class for cache PSRAM phase configuration.
++     * SPI1 CS1 remains the sole SSI chip/storage attachment. */
++    {
++        qdev_prop_set_bit(DEVICE(&ss->spi0), "cache-port", true);
++        object_property_set_link(OBJECT(&ss->spi0), "system-clock",
++                                 OBJECT(&ss->clock), &error_abort);
++        ss->spi0.xts_aes = &ss->xts_aes;
++        sysbus_realize(SYS_BUS_DEVICE(&ss->spi0), &error_fatal);
++        MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->spi0), 0);
++        memory_region_add_subregion_overlap(sys_mem, DR_REG_SPI0_BASE, mr, 0);
+     }
+ 
+     /* SPI1 controller (SPI Flash) */
+@@ -892,7 +919,7 @@
+             esp32s3_init_spi_flash(ss, blk);
+         }
+         if (machine->ram_size > 0) {
+-            esp32s3_machine_init_psram(ss, (uint32_t) (machine->ram_size / MiB));
++            esp32s3_machine_init_psram(ss, machine->ram_size);
+         }
+     }
+ 
+@@ -904,6 +931,8 @@
+         if (ss->psram) {
+             ss->cache.psram = ss->psram;
+         }
++        ss->cache.spi0 = &ss->spi0;
++        ss->cache.internal_ram = dram;
+         ss->cache.xts_aes = &ss->xts_aes;
+         sysbus_realize(SYS_BUS_DEVICE(&ss->cache), &error_fatal);
+         MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->cache), 0);
+@@ -911,6 +940,8 @@
+ 
+         memory_region_add_subregion(sys_mem, memmap[ESP32S3_MEMREGION_DCACHE].base, &ss->cache.dcache);
+         memory_region_add_subregion(sys_mem, memmap[ESP32S3_MEMREGION_ICACHE].base, &ss->cache.icache);
++        memory_region_add_subregion_overlap(sys_mem, 0x3fcf0000,
++                                           &ss->cache.sram2, 1);
+     }
+ 
+     /* eFuses realization */
+@@ -1046,7 +1077,22 @@
+ 
+     /* GDMA Realization */
+     {
+-        object_property_set_link(OBJECT(&ss->gdma), "soc_mr", OBJECT(dram), &error_abort);
++        /* Internal physical SRAM and external MMU-translated committed PSRAM.
++         * No CPU cache-data alias is reachable by the DMA master. */
++        memory_region_init(&ss->gdma_memory, OBJECT(ss), "esp32s3.gdma.memory",
++                           UINT64_C(1) << 32);
++        memory_region_init_alias(&ss->gdma_dram, OBJECT(ss), "esp32s3.gdma.dram",
++                                 dram, 0, 0x70000);
++        memory_region_add_subregion(&ss->gdma_memory, 0x3fc80000,
++                                   &ss->gdma_dram);
++        memory_region_init_alias(&ss->gdma_sram2, OBJECT(ss), "esp32s3.gdma.sram2",
++                                 &ss->cache.sram2, 0, 65536);
++        memory_region_add_subregion(&ss->gdma_memory, 0x3fcf0000,
++                                   &ss->gdma_sram2);
++        memory_region_add_subregion(&ss->gdma_memory, ESP32S3_DCACHE_BASE,
++                                   &ss->cache.psram_dma);
++        object_property_set_link(OBJECT(&ss->gdma), "soc_mr",
++                                 OBJECT(&ss->gdma_memory), &error_abort);
+         sysbus_realize(SYS_BUS_DEVICE(&ss->gdma), &error_fatal);
+         MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->gdma), 0);
+         memory_region_add_subregion_overlap(sys_mem, DR_REG_GDMA_BASE, mr, 0);

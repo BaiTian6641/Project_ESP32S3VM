@@ -1,0 +1,43 @@
+diff --git a/hw/xtensa/esp32s3.c b/hw/xtensa/esp32s3.c
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -65,3 +65,4 @@
+ #include "hw/timer/esp32s3_systimer.h"
+ #include "hw/misc/esp32s3_ledc.h"
++#include "hw/misc/esp32s3_sdm.h"
+ #include "hw/misc/esp32s3_pcnt.h"
+@@ -154,3 +155,4 @@
+     ESP32S3LedcState ledc;
+     ESP32S3PcntState pcnt;
+     ESP32S3McpwmState mcpwm[2];
++    ESP32S3SdmState sdm;
+@@ -826,3 +828,4 @@
+     qdev_prop_set_uint32(DEVICE(&ss->mcpwm[0]), "group", 0);
+     qdev_prop_set_uint32(DEVICE(&ss->mcpwm[1]), "group", 1);
++    object_initialize_child(OBJECT(ss), "sdm", &ss->sdm, TYPE_ESP32S3_SDM);
+ 
+@@ -1141,2 +1144,16 @@
++    /* Explicit named SDM functional profile. There is no S3 SYSTEM SDM
++     * gate/reset bit; its function gate is the GPIO SD MISC register. */
++    {
++        DeviceState *dev = DEVICE(&ss->sdm);
++        Object *electrical = object_resolve_path_component(OBJECT(ss), "electrical");
++        object_property_set_link(OBJECT(dev), "electrical", electrical, &error_abort);
++        object_property_set_link(OBJECT(dev), "soc-reset", OBJECT(ss), &error_abort);
++        qdev_connect_clock_in(dev, "apb-clk",
++                              qdev_get_clock_out(DEVICE(&ss->clock), "apb-clk"));
++        sysbus_realize(SYS_BUS_DEVICE(dev), &error_fatal);
++        memory_region_add_subregion_overlap(sys_mem, DR_REG_GPIO_SD_BASE,
++            sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 0), 2);
++    }
++
+     /* Pulse controllers depend on the one committed native electrical graph.
+      * Connect clock inputs before realization; never replace pad/input state. */
+diff --git a/hw/misc/meson.build b/hw/misc/meson.build
+--- a/hw/misc/meson.build
++++ b/hw/misc/meson.build
+@@ -215,3 +215,4 @@
+   'esp32s3_pcnt.c',
+   'esp32s3_mcpwm.c',
++  'esp32s3_sdm.c',
+ ))

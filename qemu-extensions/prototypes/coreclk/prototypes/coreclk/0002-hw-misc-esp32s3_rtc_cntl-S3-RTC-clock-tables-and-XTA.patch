@@ -1,0 +1,184 @@
+From 17374611937b0b37f22c48c7d8c969acf4880140 Mon Sep 17 00:00:00 2001
+From: ESP32S3VM coreclk <coreclk@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 11:52:02 +0800
+Subject: [PATCH 2/7] hw/misc/esp32s3_rtc_cntl: S3 RTC clock tables and XTAL
+ clock input
+
+RTC_SLOW_CLK sources become RC_SLOW 136 kHz / XTAL32K 32768 Hz /
+RC_FAST_DIV (RC_FAST 17.5 MHz / 256) and RTC_FAST_CLK sources become
+XTAL/2 (SOC_RTC_FAST_CLK_SRC_XTAL_D2) / RC_FAST per TRM v1.8 ch.7
+7.2.4.4, ch.10 RTC_CNTL_CLK_CONF and the IDF6.1 clock tree; the register
+reset default FAST_CLK_RTC_SEL=0 (XTAL/2) is now honored.
+
+The XTAL frequency arrives on a new qdev clock input (xtal-clk) wired by
+the SoC; the callback refreshes the derived frequencies without pulsing
+the clk_update line, so clock propagation never re-enters through the
+RTC reset/update callbacks. The hold phase only restarts the RTC_TIME
+base when the pending reset covers the RTC domain.
+---
+ hw/misc/esp32s3_rtc_cntl.c         | 66 +++++++++++++++++++++++++++---
+ include/hw/misc/esp32s3_rtc_cntl.h | 15 ++++++-
+ 2 files changed, 73 insertions(+), 8 deletions(-)
+
+diff --git a/hw/misc/esp32s3_rtc_cntl.c b/hw/misc/esp32s3_rtc_cntl.c
+index 76076c7..165d91f 100644
+--- a/hw/misc/esp32s3_rtc_cntl.c
++++ b/hw/misc/esp32s3_rtc_cntl.c
+@@ -18,12 +18,37 @@
+ #include "hw/sysbus.h"
+ #include "hw/irq.h"
+ #include "hw/qdev-properties.h"
++#include "hw/qdev-clock.h"
+ #include "hw/misc/esp32s3_reg.h"
+ #include "hw/misc/esp32s3_rtc_cntl.h"
++#include "hw/xtensa/esp32s3_reset_domain.h"
++#include "hw/xtensa/esp32s3_clk.h"
+ 
+ static void esp32s3_rtc_update_cpu_stall(Esp32s3RtcCntlState* s);
+ static void esp32s3_rtc_update_clk(Esp32s3RtcCntlState* s);
+ 
++/* Recompute the RTC_SLOW_CLK / RTC_FAST_CLK frequencies from the register
++ * selections without notifying the SoC.
++ *
++ * RTC_SLOW_CLK (RTC_CNTL_CLK_CONF ANA_CLK_RTC_SEL, TRM v1.8 ch.10) sources:
++ *   0: RC_SLOW_CLK, 136 kHz nominal (TRM v1.8 ch.7 §7.2.2;
++ *      IDF6.1 SOC_CLK_RC_SLOW_FREQ_APPROX)
++ *   1: XTAL32K_CLK, 32768 Hz (IDF6.1 SOC_CLK_XTAL32K_FREQ_APPROX)
++ *   2: RC_FAST_DIV_CLK = RC_FAST_CLK / 256 (TRM v1.8 ch.7 §7.2.2)
++ * RTC_FAST_CLK (RTC_CNTL_CLK_CONF FAST_CLK_RTC_SEL, TRM v1.8 ch.10) sources:
++ *   0: XTAL_DIV_CLK = XTAL_CLK / 2 (IDF6.1 SOC_RTC_FAST_CLK_SRC_XTAL_D2)
++ *   1: RC_FAST_CLK, 17.5 MHz nominal (IDF6.1 SOC_CLK_RC_FAST_FREQ_APPROX) */
++static void esp32s3_rtc_recompute_clk_freqs(Esp32s3RtcCntlState *s)
++{
++    static const uint32_t slowclk_freq[] = { 136000, 32768,
++                                             ESP32S3_CLK_RC_FAST_HZ / 256 };
++    const uint32_t fastclk_freq[] = { s->xtal_apb_freq / 2,
++                                      ESP32S3_CLK_RC_FAST_HZ };
++
++    s->rtc_slowclk_freq = slowclk_freq[s->rtc_slowclk];
++    s->rtc_fastclk_freq = fastclk_freq[s->rtc_fastclk];
++}
++
+ static uint64_t esp32s3_rtc_cntl_read(void *opaque, hwaddr addr, unsigned int size)
+ {
+     Esp32s3RtcCntlState *s = ESP32S3_RTC_CNTL(opaque);
+@@ -164,13 +189,27 @@ static void esp32s3_rtc_update_cpu_stall(Esp32s3RtcCntlState* s)
+ 
+ static void esp32s3_rtc_update_clk(Esp32s3RtcCntlState* s)
+ {
+-    const uint32_t slowclk_freq[] = {150000, 32768, 8000000/256};
+-    const uint32_t fastclk_freq[] = {s->xtal_apb_freq / 4, 8000000};
+-    s->rtc_slowclk_freq = slowclk_freq[s->rtc_slowclk];
+-    s->rtc_fastclk_freq = fastclk_freq[s->rtc_fastclk];
++    esp32s3_rtc_recompute_clk_freqs(s);
++    /* Let the SoC (re)propagate the whole clock tree, including the
++     * RTC_SLOW/RTC_FAST outputs driven from these frequencies. */
+     qemu_irq_pulse(s->clk_update);
+ }
+ 
++/* Clock-input callback: XTAL_CLK changed (SYSTEM_SYSCLK_CONF is the source of
++ * truth for the XTAL frequency). Only the XTAL-derived RTC_FAST_CLK rate
++ * changes; do not pulse the clk_update line from here — the SYSTEM clock
++ * device re-propagates the tree itself and pulsing would re-enter it. */
++static void esp32s3_rtc_xtal_clk_update(void *opaque, ClockEvent event)
++{
++    Esp32s3RtcCntlState *s = ESP32S3_RTC_CNTL(opaque);
++
++    if (event != ClockUpdate) {
++        return;
++    }
++    s->xtal_apb_freq = clock_get_hz(s->xtal_in);
++    esp32s3_rtc_recompute_clk_freqs(s);
++}
++
+ static const MemoryRegionOps esp32s3_rtc_cntl_ops = {
+     .read =  esp32s3_rtc_cntl_read,
+     .write = esp32s3_rtc_cntl_write,
+@@ -181,6 +220,13 @@ static void esp32s3_rtc_cntl_reset_hold(Object *obj, ResetType type)
+ {
+     Esp32s3RtcCntlState *s = ESP32S3_RTC_CNTL(obj);
+ 
++    /* RTC reset domain: RTC_CNTL state (including the RTC_TIME base) only
++     * restarts on a power-on/chip or RTC-domain reset. CPU-only resets leave
++     * the RTC counting (TRM v1.8 ch.7 §7.1 reset types). */
++    if (s->soc_reset && !esp32s3_reset_covers_rtc(s->soc_reset)) {
++        return;
++    }
++
+     s->time_base_ns = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+ }
+ 
+@@ -202,20 +248,28 @@ static void esp32s3_rtc_cntl_init(Object *obj)
+     qdev_init_gpio_out_named(DEVICE(sbd), &s->cpu_stall_req[0], ESP32S3_RTC_CPU_STALL_GPIO, ESP32S3_CPU_COUNT);
+     qdev_init_gpio_out_named(DEVICE(sbd), &s->clk_update, ESP32S3_RTC_CLK_UPDATE_GPIO, 1);
+ 
++    /* XTAL_CLK input (from the SYSTEM clock device "xtal-clk" output) */
++    s->xtal_in = qdev_init_clock_in(DEVICE(sbd), "xtal-clk",
++                                    esp32s3_rtc_xtal_clk_update, s, ClockUpdate);
++
+     for (int i = 0; i < ESP32S3_CPU_COUNT; ++i) {
+         s->reset_cause[i] = ESP32_POWERON_RESET;
+         s->stat_vector_sel[i] = true;
+     }
+ 
+     s->rtc_slowclk = ESP32_SLOW_CLK_RC;
+-    s->rtc_fastclk = ESP32_FAST_CLK_8M;
++    /* Register reset default: FAST_CLK_RTC_SEL = 0 (XTAL/2),
++     * IDF6.1 soc/esp32s3/register/soc/rtc_cntl_reg.h "default: 1'b0". */
++    s->rtc_fastclk = ESP32_FAST_CLK_XTAL_D2;
+     s->soc_clk = ESP32_SOC_CLK_XTAL;
+     s->xtal_apb_freq = 40000000;
+     s->pll_apb_freq = 80000000;
+-    esp32s3_rtc_update_clk(s);
++    esp32s3_rtc_recompute_clk_freqs(s);
+ }
+ 
+ static Property esp32s3_rtc_cntl_properties[] = {
++    DEFINE_PROP_LINK("soc-reset", Esp32s3RtcCntlState, soc_reset,
++                     TYPE_DEVICE, DeviceState *),
+     DEFINE_PROP_END_OF_LIST(),
+ };
+ 
+diff --git a/include/hw/misc/esp32s3_rtc_cntl.h b/include/hw/misc/esp32s3_rtc_cntl.h
+index 45bd7e2..5dbb1f3 100644
+--- a/include/hw/misc/esp32s3_rtc_cntl.h
++++ b/include/hw/misc/esp32s3_rtc_cntl.h
+@@ -10,6 +10,7 @@
+ 
+ #pragma once
+ 
++#include "hw/clock.h"
+ #include "hw/hw.h"
+ #include "hw/sysbus.h"
+ #include "hw/registerfields.h"
+@@ -48,8 +49,12 @@ typedef enum Esp32s3SocClkSel {
+ } Esp32s3SocClkSel;
+ 
+ typedef enum Esp32s3FastClkSel {
+-    ESP32_FAST_CLK_XTALD4 = 0,
+-    ESP32_FAST_CLK_8M = 1
++    /* RTC_CNTL_FAST_CLK_RTC_SEL (TRM v1.8 ch.10): 0 = XTAL_DIV_CLK, which is
++     * XTAL/2 per the IDF6.1 clock tree (SOC_RTC_FAST_CLK_SRC_XTAL_D2,
++     * soc/esp32s3/clk_tree_defs.h); register reset default is 0. */
++    ESP32_FAST_CLK_XTAL_D2 = 0,
++    /* 1 = RC_FAST_CLK (17.5 MHz nominal) */
++    ESP32_FAST_CLK_RC = 1
+ } Esp32s3FastClkSel;
+ 
+ typedef enum Esp32s3SlowClkSel {
+@@ -69,6 +74,12 @@ typedef struct Esp32s3RtcCntlState {
+     qemu_irq clk_update;
+     bool cpu_stall_state[ESP32S3_CPU_COUNT];
+ 
++    /* XTAL_CLK input from the SYSTEM clock device; drives the XTAL-derived
++     * RTC_FAST_CLK frequency (XTAL/2, see Esp32s3FastClkSel). */
++    Clock *xtal_in;
++    /* ESP32-S3 SoC, used to gate the hold phase by reset domain */
++    DeviceState *soc_reset;
++
+     uint32_t xtal_apb_freq;
+     uint32_t pll_apb_freq;
+     Esp32s3SocClkSel soc_clk;
+-- 
+2.43.0
+

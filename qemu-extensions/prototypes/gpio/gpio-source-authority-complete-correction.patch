@@ -1,0 +1,264 @@
+--- a/hw/gpio/esp32s3_gpio.c
++++ b/hw/gpio/esp32s3_gpio.c
+@@ -183,14 +183,66 @@
+     uint32_t out_val, oe;
+     ESP32S3GpioNet *net = &s->net[n];
+ 
+-    /* Pad hold (RTC_CNTL hold registers, TRM ch.6.9): the pad is clamped
+-     * at its latched level regardless of the matrix/IO_MUX configuration;
+-     * deterministic, never UNKNOWN. */
++    /* Hold transitions (RTC_CNTL hold registers via the rtc-cntl link):
++     * refresh hold_active BEFORE any held/owned early return so a cleared
++     * RTC_HOLD bit immediately un-holds the pad (never stale). */
++    {
++        bool held_now = false;
++        if (s->rtc_cntl != NULL) {
++            if (n < 32) {
++                held_now = (s->rtc_cntl->dig_pad_hold >> n) & 1u;
++            }
++            if (n < 22) {
++                held_now |= (s->rtc_cntl->rtc_pad_hold >> n) & 1u;
++            }
++        }
++        if (held_now && !s->hold_active[n]) {
++            uint32_t osc = s->func_out_sel_cfg[n];
++
++            /* Latch the DESIRED output config (raw register truth) */
++            s->hold_level[n] = in_bit(s, n);
++            s->hold_oe[n] = enable_bit(s, n);
++            s->hold_od[n] = pin_open_drain(s, n);
++            s->hold_pull_up[n] = s->iomux != NULL &&
++                FIELD_EX32(esp32s3_iomux_get(s->iomux, n), IO_MUX_GPIOn, FUN_PU);
++            s->hold_pull_down[n] = s->iomux != NULL &&
++                FIELD_EX32(esp32s3_iomux_get(s->iomux, n), IO_MUX_GPIOn, FUN_PD);
++            s->hold_matrix_routed[n] =
++                FIELD_EX32(osc, GPIO_FUNCn_OUT_SEL_CFG, FUNC_OUT_SEL) !=
++                GPIO_FUNC_OUT_SEL_NONE;
++        }
++        if (!held_now && s->hold_active[n]) {
++            /* Hold bit cleared: release the pad */
++            s->hold_active[n] = false;
++        }
++        s->hold_active[n] = held_now;
++    }
++
++    /* Pad hold (RTC_CNTL hold registers, TRM ch.6.9): the frozen DRIVE
++     * configuration latched at hold-set is authoritative for the output
++     * side; the input/net validity is NOT mutated (solver-owned pads
++     * keep solver validity even held; a released held pad follows the
++     * net; a genuinely floating held pad stays UNKNOWN under strict
++     * profiles).  A latched PERIPHERAL route cannot be re-driven without
++     * its source model: strict-unsupported (consumption pauses under
++     * strict profiles). */
+     if (s->hold_active[n]) {
+-        net->valid = true;
+-        net->level = s->hold_level[n];
+-        net->diag = ESP32S3_GPIO_PAD_DRIVEN;
+-        return;
++        if (s->hold_matrix_routed[n]) {
++            net->valid = false;
++            net->diag = ESP32S3_GPIO_PAD_UNKNOWN;
++            return;
++        }
++        if (s->hold_oe[n] && !(s->hold_od[n] && s->hold_level[n] == 0)) {
++            net->valid = true;
++            net->level = s->hold_level[n];
++            net->diag = (s->net[n].valid &&
++                         s->net[n].diag == ESP32S3_GPIO_PAD_EXTERNAL &&
++                         s->net[n].level != s->hold_level[n])
++                        ? ESP32S3_GPIO_PAD_CONTENTION
++                        : ESP32S3_GPIO_PAD_DRIVEN;
++            return;
++        }
++        /* Held released: external/pulls/floating as usual (fall through) */
+     }
+ 
+     /* S3 FUNC_OEN_SEL: 1 = OE from GPIO_ENABLE, 0 = OE from the routed
+@@ -254,7 +306,9 @@
+         net->diag = ESP32S3_GPIO_PAD_UNKNOWN;
+         return;
+     }
+-    if (s->iomux != NULL) {
++    /* Pulls are disabled by hold for held pads (held released pads follow
++     * solver/external/floating — never a latched pull rail). */
++    if (s->iomux != NULL && !s->hold_active[n]) {
+         uint32_t pad = esp32s3_iomux_get(s->iomux, n);
+         /* Effective pulls: awake FUN_PU/FUN_PD, or the SLP_* set when
+          * the RTC domain latched sleep and the pad selects it. */
+@@ -314,7 +368,9 @@
+      * the unresolved state either way. */
+     bool strict = s->strict_unknown || s->solver_owned || s->solver_attached[n];
+ 
+-    if (!esp32s3_gpio_input_enable(s, n)) {
++    if (s->hold_active[n] && s->hold_oe[n] && !s->hold_matrix_routed[n]) {
++        sample = esp32s3_gpio_eff_ie(s, n) ? s->hold_level[n] : 0;
++    } else if (!esp32s3_gpio_eff_ie(s, n)) {
+         sample = 0;
+     } else if (s->net[n].valid) {
+         sample = s->net[n].level;
+@@ -327,24 +383,6 @@
+         sample = 0;
+     }
+ 
+-    /* Hold transitions (RTC_CNTL hold registers via the rtc-cntl link):
+-     * latch the CURRENT resolved level when the hold bit turns on;
+-     * release resumes normal resolution. */
+-    {
+-        bool held_now = false;
+-        if (s->rtc_cntl != NULL) {
+-            if (n < 32) {
+-                held_now = (s->rtc_cntl->dig_pad_hold >> n) & 1u;
+-            }
+-            if (n < 22) {
+-                held_now |= (s->rtc_cntl->rtc_pad_hold >> n) & 1u;
+-            }
+-        }
+-        if (held_now && !s->hold_active[n]) {
+-            s->hold_level[n] = s->net[n].valid ? s->net[n].level : 0;
+-        }
+-        s->hold_active[n] = held_now;
+-    }
+ 
+     switch (type) {
+     case ESP32S3_GPIO_INT_RISING:
+@@ -599,7 +637,7 @@
+         for (n = (a == A_GPIO_IN) ? 0 : 32;
+              n < ((a == A_GPIO_IN) ? 32 : ESP32S3_GPIO_COUNT); n++) {
+             if ((s->strict_unknown || s->solver_owned || s->solver_attached[n])
+-                && !s->net[n].valid && esp32s3_gpio_input_enable(s, n)) {
++                && !s->net[n].valid && esp32s3_gpio_eff_ie(s, n)) {
+                 /* Synchronous hook: the native owner may abort/retry this
+                  * access from inside the handler; the default handler
+                  * schedules the main-context paused dependency instead. */
+@@ -994,6 +1032,11 @@
+     out->sleep_active = esp32s3_gpio_sleep_active(s);
+     out->hold = s->hold_active[pad];
+     out->hold_level = s->hold_level[pad];
++    out->hold_oe = s->hold_oe[pad];
++    out->hold_open_drain = s->hold_od[pad];
++    out->hold_pull_up = s->hold_pull_up[pad];
++    out->hold_pull_down = s->hold_pull_down[pad];
++    out->hold_matrix_routed = s->hold_matrix_routed[pad];
+ }
+ 
+ void esp32s3_gpio_get_drive_snapshot(ESP32S3GPIOState *s, unsigned pad,
+--- a/include/hw/gpio/esp32s3_gpio.h
++++ b/include/hw/gpio/esp32s3_gpio.h
+@@ -235,6 +235,11 @@
+     bool sleep_active;
+     bool hold;
+     bool hold_level;
++    bool hold_oe;
++    bool hold_open_drain;
++    bool hold_pull_up;
++    bool hold_pull_down;
++    bool hold_matrix_routed;    /* strict-unsupported: latched peripheral route */
+     /* Sleep / hold ownership: slp_sel mirrors IO_MUX SLP_SEL (raw config
+      * field; the sleep set above is the effective view); hold reflects
+      * the RTC_CNTL hold latch for this pad.  analog_owned stays false on
+@@ -293,7 +298,12 @@
+     bool strict_unknown;                        /* pause-before-consumption on
+                                                  * any floating/unknown input */
+     bool hold_active[ESP32S3_GPIO_COUNT];       /* RTC_CNTL hold latched */
+-    bool hold_level[ESP32S3_GPIO_COUNT];        /* latched level */
++    bool hold_level[ESP32S3_GPIO_COUNT];        /* latched output bit */
++    bool hold_oe[ESP32S3_GPIO_COUNT];           /* latched output enable */
++    bool hold_od[ESP32S3_GPIO_COUNT];           /* latched open-drain */
++    bool hold_pull_up[ESP32S3_GPIO_COUNT];      /* latched pull-up */
++    bool hold_pull_down[ESP32S3_GPIO_COUNT];    /* latched pull-down */
++    bool hold_matrix_routed[ESP32S3_GPIO_COUNT];/* latched peripheral route (strict unsupported) */
+     DeviceState *soc_reset;                     /* link: "soc-reset" (domain
+                                                  * gating, esp32s3_reset_domain) */
+     ESP32S3GpioUnknownFn unknown_handler;       /* strict pause hook */
+--- a/hw/misc/esp32s3_rtc_cntl.c
++++ b/hw/misc/esp32s3_rtc_cntl.c
+@@ -128,16 +128,19 @@
+          * mode until a reset/wake covers the RTC domain. */
+         s->sleep_requested =
+             FIELD_EX32(value, RTC_CNTL_STATE0, SLEEP_EN) != 0;
+-        qemu_irq_pulse(s->hold_change);
++        qemu_irq_pulse(s->hold_change_out[0]); /* GPIO model */
++        qemu_irq_pulse(s->hold_change_out[1]); /* RTC_IO model */
+         break;
+     case A_RTC_CNTL_PAD_HOLD:
+         /* RTC pad hold bits survive digital resets per TRM ch.6.9 */
+         s->rtc_pad_hold = value & 0x3fffff;
+-        qemu_irq_pulse(s->hold_change);
++        qemu_irq_pulse(s->hold_change_out[0]); /* GPIO model */
++        qemu_irq_pulse(s->hold_change_out[1]); /* RTC_IO model */
+         break;
+     case A_RTC_CNTL_DIG_PAD_HOLD:
+         s->dig_pad_hold = value;
+-        qemu_irq_pulse(s->hold_change);
++        qemu_irq_pulse(s->hold_change_out[0]); /* GPIO model */
++        qemu_irq_pulse(s->hold_change_out[1]); /* RTC_IO model */
+         break;
+     case A_RTC_CNTL_OPTIONS0:
+         if (value & R_RTC_CNTL_OPTIONS0_SW_SYS_RESET_MASK) {
+@@ -282,7 +285,12 @@
+     qdev_init_gpio_out_named(DEVICE(sbd), &s->cpu_reset_req[0], ESP32S3_RTC_CPU_RESET_GPIO, ESP32S3_CPU_COUNT);
+     qdev_init_gpio_out_named(DEVICE(sbd), &s->cpu_stall_req[0], ESP32S3_RTC_CPU_STALL_GPIO, ESP32S3_CPU_COUNT);
+     qdev_init_gpio_out_named(DEVICE(sbd), &s->clk_update, ESP32S3_RTC_CLK_UPDATE_GPIO, 1);
+-    qdev_init_gpio_out_named(DEVICE(sbd), &s->hold_change, ESP32S3_RTC_HOLD_CHANGE_GPIO, 1);
++    /* pad-hold-change outputs: qdev retains the caller's array by
++     * reference (runtime connects write these exact slots), so the
++     * storage must be device state — never a function-local/static
++     * buffer. */
++    qdev_init_gpio_out_named(DEVICE(sbd), s->hold_change_out,
++                             ESP32S3_RTC_HOLD_CHANGE_GPIO, 2);
+ 
+     /* XTAL_CLK input (from the SYSTEM clock device "xtal-clk" output) */
+     s->xtal_in = qdev_init_clock_in(DEVICE(sbd), "xtal-clk",
+--- a/include/hw/misc/esp32s3_rtc_cntl.h
++++ b/include/hw/misc/esp32s3_rtc_cntl.h
+@@ -105,7 +105,10 @@
+     uint32_t dig_pad_hold;
+     uint32_t rtc_pad_hold;
+     bool sleep_requested;
+-    qemu_irq hold_change;
++    /* Named "pad-hold-change" outputs: qdev keeps the caller's array by
++     * reference and the runtime connect writes into it, so this MUST be
++     * device state (pulses read these exact slots). */
++    qemu_irq hold_change_out[2]; /* [0] GPIO model, [1] RTC_IO model */
+ } Esp32s3RtcCntlState;
+ 
+ #define ESP32S3_RTC_HOLD_CHANGE_GPIO "pad-hold-change"
+--- a/tests/qtest/esp32s3-gpio-test.c
++++ b/tests/qtest/esp32s3-gpio-test.c
+@@ -456,6 +456,7 @@
+     qtest_quit(slp);
+ }
+ 
++
+ /*
+  * Pad hold through the RTC domain: RTC_CNTL_RTC_PAD_HOLD (0xd8, RTC
+  * pad 4 = bit 14) latches the resolved level; GPIO_OUT changes are
+@@ -468,10 +469,12 @@
+ 
+     slp = qtest_initf("-machine esp32s3 -L pc-bios -accel qtest "
+                       "-global driver=esp32s3.gpio,property=strict-unknown,value=true");
+-    /* RTC pad 4 = GPIO4: drive output high, enable, then hold */
+-    qtest_writel(slp, RTC_BASE + 0xd8 + 4 * 4, BIT(14)); /* RTC_CNTL_PAD_HOLD bit (4+14) */
++    /* RTC pad 4 = GPIO4: input buffer + drive first (hold latches at
++     * hold-set), then hold */
++    qtest_writel(slp, IO_MUX_PAD(4), IOMUX_GPIO_IN_EN);
+     qtest_writel(slp, GPIO(A_GPIO_ENABLE_W1TS), BIT(4));
+     qtest_writel(slp, GPIO(A_GPIO_OUT_W1TS), BIT(4));
++    qtest_writel(slp, RTC_BASE + 0xd8, BIT(4));
+     g_assert_cmphex(qtest_readl(slp, GPIO(A_GPIO_IN)) & BIT(4), ==, BIT(4));
+ 
+     /* Flip GPIO_OUT low: hold keeps the pad at the latched level */
+@@ -479,11 +482,12 @@
+     g_assert_cmphex(qtest_readl(slp, GPIO(A_GPIO_IN)) & BIT(4), ==, BIT(4));
+ 
+     /* Clear hold: the pad follows GPIO_OUT again */
+-    qtest_writel(slp, RTC_BASE + 0xd8 + 4 * 4, 0);
++    qtest_writel(slp, RTC_BASE + 0xd8, 0);
+     g_assert_cmphex((qtest_readl(slp, GPIO(A_GPIO_IN)) & BIT(4)), ==, 0);
+     qtest_quit(slp);
+ }
+ 
++
+ #ifdef GPIO_TEST_HAS_MATRIX_DELIVERY
+ /*
+  * End-to-end GPIO -> interrupt matrix -> CPU line proof on the current

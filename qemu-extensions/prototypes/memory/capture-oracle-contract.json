@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "status": "AUTHORED_SOURCE_ONLY_NOT_EXECUTED",
+  "verification_performed": [],
+  "implementation": "lcd_cam_consumer_oracle.py",
+  "interface": "verify(profile: str, uart_text: str, panel_frames: list, sensor_captures: list, controller_snapshots: list) -> dict; raises RuntimeError on any missing, malformed or failing required observation",
+  "profiles": ["lcd-rgb-double", "lcd-rgb-bounce", "lcd-camera-rgb565", "lcd-camera-yuv422", "lcd-camera-jpeg"],
+  "result_policy": {
+    "status": "PASS only after all actual consumer observations below satisfy the oracle; no default, fixture-summary-only or source-only success",
+    "qualification_scope": "consumer_observations_requires_same_binary_memory_foundation",
+    "combined_acceptance": "Runner MUST independently validate an actual renewed memory-qualification receipt for the SAME final QEMU binary SHA256, STANDARD prepared-source fingerprint and runtime-manifest identity: all twelve memory qtest cases plus real ordinary SDK CPU/GDMA C2M/M2C behavior. Reject stale/different-prefix/memory-only source receipts. Oracle consumer PASS alone is not combined qualification.",
+    "hash_policy": "Panel SHA256 and source FNV1a32/FNV1a64/SHA256 derive from actual collected byte windows. Generation/epoch are identity, never artifact hashes.",
+    "output": "Compact per-frame hashes, observed callback/ownership facts and required observation counters; no embedded image bytes or synthetic trace data. Runner preserves full raw JSON, binary files, UART and HMP/QMP transcripts."
+  },
+  "same_binary_memory_receipt": {
+    "validated_by": "run-lcd-cam-consumers.py --memory-qualification-receipt; consumed before combined acceptance, not fabricated by pure oracle",
+    "root": "schema_version1,statusPASS,qemu/prepared_source_record/runtime_manifest each actual {path,sha256}",
+    "qtest": "Actual {command:list,environment:{QTEST_QEMU_BINARY:path},binary_sha256,source_sha256,returncode:0,stdout:{path,sha256},stderr:{path,sha256}}; twelve canonical Xtensa memory TAP case names all successful, matching current final binary and complete STANDARD prepared target hashes",
+    "sdk_consumers": "Exactly FOUR (idf_profile,mode) rows: idf-5.5.5/idf-6.1 times internal/psram; each {idf_profile,mode,result:{path,sha256},uart_logs:[{path,sha256}]}. Real ordinary results bind current QEMU artifact hash/source identity, locked SDKcommit and compiled firmware provenance. Existing run-native-fixture.validate_uart checks every retained real UART using its actual mode for CPU/GDMA/cache source bytes and actual DMA success/error states.",
+    "additional_required_gates": "Runner receipt also binds actual SPI transport before/after evidence and all three actual boot-control evidence rows using its final documented schema; these are independently executed prerequisite evidence, never consumer UART summaries or old-prefix substitutes.",
+    "negative_policy": "Missing raw logs, test failures, changed binary/source/runtime identity, authored SOURCE_READY, or older memory-only preparation are hard failures. No qualification receipt has been executed by this authoring worker."
+  },
+  "independent_reference": {
+    "module": "../lcd-cam/reference/capture_reference.py",
+    "helpers": ["fnv1a", "fnv1a64", "expected565", "expected_rgb", "rgb_contract", "qualify"],
+    "jpeg_dependency": "../lcd-cam/reference/requirements.txt: Pillow>=11.3.0,<13; missing decoder is a hard failure, never marker-only fallback",
+    "prohibited": ["renderer imports", "sensor encoder imports", "reconstructed expected bytes used as actual capture", "payload injection", "private MMIO writes", "clock stepping", "mock API successes"]
+  },
+  "caller_inputs": {
+    "uart_text": "Complete actual UART from fresh boot through LCDCAM END, preserving all fixture/API/error records. The shared literal idf banner is NOT SDK provenance.",
+    "panel_frames": {
+      "lane": "RGB only; empty for camera",
+      "item": {"metadata": "Exact first framebuffer-json dictionary", "rgb888": "Python bytes joined only from actual QOM hex windows", "windows": "All exact raw framebuffer-json windows in offset order", "capture": "Exact capture-json dictionary containing the selected retained frame metadata"},
+      "required": "Full 9216-byte64x48 RGB888 snapshots for formula frame0 and frame1 in double mode, frame0 in bounce; actual stable1000ns and2000ns PCLK captures in both. Metadata SHA alone never substitutes for unavailable old bytes. Every provided snapshot is validated; malformed/invisible/electrical-error/mixed-cadence snapshots are not silently filtered.",
+      "immutable_keys": ["component_id", "config_identity", "sequence", "power_epoch", "start_ns", "end_ns", "sha256_rgb888", "valid", "visible", "errors", "width", "height", "total_bytes", "bus_width", "bits_per_pixel", "pixels", "pclk_samples", "lines", "period_min_ns", "period_max_ns", "observed_width", "observed_wire_width", "observed_height", "observed_hsync_width", "observed_h_back_porch", "observed_h_front_porch", "observed_vsync_width", "observed_v_back_porch", "observed_v_front_porch"],
+      "window_fields": ["offset", "count", "hex"],
+      "lease": "Only latest or already-frozen physical bytes are obtainable; ring eviction/unavailable frame bytes cannot be ignored or reconstructed. Exact capture.frames row must bind the framebuffer snapshot."
+    },
+    "sensor_captures": {
+      "lane": "Camera only; empty for RGB",
+      "item": {"metadata": "Exact count0 capture-json lease metadata or exact first actual byte-window dictionary", "data": "Python bytes joined only from actual capture-json bytes lists", "windows": "All exact raw capture-json windows, contiguous4096-byte maximum windows including actual timestamps_ns", "lease_status": "Exact stopped status-json sensor row for component_id D"},
+      "required": "At least four chronological actual completed emissions; QQVGA RGB565/YUV422 exact38400 bytes or JPEG0<len<=278528. Same config identity/power epoch/generation, no duplicate frame, exact source scene/crop/register-mode ordering and actual DVP latch cadence.",
+      "immutable_keys": ["component_id", "config_identity", "format", "source", "timing_profile", "frame", "power_epoch", "generation", "width", "height", "image_mode", "ctrl0", "scene_width", "scene_height", "crop_x", "crop_y", "crop_width", "crop_height", "mirror", "flip", "byte_count", "frame_start_ns", "frame_end_ns", "half_period_ns", "line_bytes", "line_count", "frame_hash_fnv1a64"],
+      "window_fields": ["offset", "count", "bytes", "timestamps_ns"],
+      "lease_status_fields": ["component_id", "config_identity", "source", "timing_profile", "power_known", "powered", "sccb_ready", "failed", "power_epoch", "generation", "capture_frame", "capture_byte_count", "last_frame_hash_fnv1a64"],
+      "lease": "Runner stops actual QEMU at a real completed emission for every full-frame window collection. No copying lease assumption, generation hash, clock_step or payload injection. All immutable fields must remain equal across windows; metadata/frame hash must equal actual collected bytes."
+    },
+    "controller_snapshots": {
+      "shape": "Chronological exact LCD_CAM status-json fields at root; append only _host_observation with actual stopped UART prefix and read-only HMP register/descriptor observations",
+      "raw_fields": ["profile", "lcd_running", "lcd_words", "lcd_frames", "cam_bytes", "cam_frames", "tx_underflow", "rx_overflow", "invalid_edges", "dropped_frames", "last_lcd_eof_ns", "last_lcd_done_ns", "last_cam_frame_ns", "tx_fifo_bytes", "rx_fifo_bytes", "lcd_stalled"],
+      "host_shape": {"paused": true, "uart_prefix": "Actual complete UART prefix read at this pause; must be chronological prefix of final uart_text", "gdma": {"channels": "All five IN and all five OUT channel objects, no omitted channel"}},
+      "channel_shape": {"channel": "uint0..4", "direction": "IN or OUT", "registers": "Actual uint32 values: conf0,conf1,int_raw,link,state,peri_sel,suc_eof_desc,desc,bf0_desc,bf1_desc", "descriptors": "Bounded complete internal walk <=1024 objects each with address:uint and words:[DW0,DW1,DW2]; optional derived fields ignored"},
+      "read_only_transport": "Actual HMP xp physical reads with raw commands/replies retained. No fabricated QOM trace property. MMIO base0x6003f000 +channel*0xc0 +OUT0x60; conf0/conf1/int_raw0/4/8, LINK0x20, STATE0x24, successfulEOF0x28, DSCR0x30,BF0x34,BF1x38,PERI_SEL0x48. Never POP/PUSH, W1C or register writes.",
+      "descriptor_encoding": "LINK root=(0x3fc00000|(link&0xfffff)); PARK INbit24/OUTbit23. DW0 sizebits0..11,length12..23,err_eof28,suc_eof30,owner31; DW1 actual payload CPU-alias address; DW2 internal next descriptor or0. All nonzero DW2 nodes must be present in full bounded walk. Read root/trail/EOF while allocated; skip freed descriptor walks after actual delete/deinit.",
+      "required": "Initial-before-CPU plus actual live/final snapshots. Nonzero actual fulfilled LCD OUT words/EOF or CAM IN bytes>=four guest buffers/completedframes>=4; controller errors fatal. Live readouts must show actual peri5 and both public consumer payload spans. External camera IN actual node3840(raw)/1024(JPEG), actual16/32/64 block alignment, internal descriptors, direct external DW1 and completed owner0 observations for both slots. Actual pre-first-return CAM_TWO_HELD UART-prefix pause must show all peri5 IN parked. After both real recovery records actual CAM bytes/frames must advance beyond held pause. No private camera struct access.",
+      "bounds": "FIFO32 bytes; no nonzero RX overflow, invalid edges, dropped frames, LCD underflow, GDMA DSCR_ERR or IN_ERR_EOF accepted. Lifetime counters cannot regress."
+    }
+  },
+  "required_uart": {
+    "common": ["actual SDK esp_psram: Found 8MB PSRAM device", "actual SDK esp_psram: Speed: 40MHz", "actual SDK esp_psram: SPI SRAM memory test OK", "actual positive esp_psram heap pool before LCDCAM BEGIN", "PSRAM_REQUEST initialized=1 capacity=8388608", "BEGIN camera=v2.1.3 hash=fnv1a32", "END", "all API rows err=ESP_OK code=0"],
+    "fatal": ["LCDCAM ERROR", "LCDCAM UNQUALIFIED", "CAM_TIMEOUT", "CAM_PHYSICAL_FAULT", "SDK E log", "Guru Meditation", "assert failed", "abort()", "Backtrace", "SPI SRAM memory test fail", "Stack smashing"],
+    "rgb_common": ["RGB_PAYLOAD geometry16bit64x48 stride128 bytes6144 actual FNV/head/tail", "RGB_VSYNC advancing counts and actual callback_us", "API rgb_panel/rgb_callbacks/rgb_reset/rgb_init/pclk_divider/restart/rgb_delete", "RGB_STOPPED driver_deleted=1"],
+    "rgb_double": ["RGB_FRAMEBUFFERS num_fbs=2 distinct_spans=1 external_requested=1", "RGB_EXTERNAL_BUFFER fb0/fb1 actual aliases and allocated capacity", "RGB_CACHE rgb_fb0_initial_writeback/rgb_fb1_initial_writeback C2M_WB before init", "RGB_CACHE rgb_fb1_before_draw C2M_WB before RGB_SWAP_REQUEST/API rgb_swap", "RGB_RETENTION prepared/before_swap/after_swap_events/before_stop with actual M2C readback, hash/tags, mismatch0 bytes_equal1", "RGB_OWNERSHIP reusable_events>0 old_retained_until_delete=1 overwrite_permitted=0", "new VSYNC/reusable timestamps after swap and retention before actual delete"],
+    "rgb_bounce": ["RGB_EXTERNAL_BUFFER bounce_source external1 mod64=0 allocated>=6144", "RGB_CACHE rgb_bounce_source_writeback C2M_WB then rgb_bounce_source_readback M2C_INV before init", "RGB_BOUNCE_STORAGE two actual distinct nonoverlap internal DMA aliases, errors0, advancing callback/ISR counts and external_isr_bytes=512*isr_count>=6144", "RGB_BOUNCE_PAYLOAD actual contiguous6144-byte source frame0 FNV complete_frames>0"],
+    "camera_common": ["CAM_EXTERNAL_REQUEST profile=quad40 peri=5 direction=IN buffers=2", "API camera_init", "CAM_PROBE pid0026 ver41 midh7f midla2", "CAM_GET_BEGIN/CAM_EXTERNAL_BUFFER/CAM_CACHE acquire/CAM_FRAME for0,1,2,3", "CAM_FRAME format RGB5650/YUV4221/JPEG4 width160 height120 valid1 actual count/FNV/head/tail match actual emitted bytes", "CAM_TWO_HELD requested2 actual2 distinct_handles_and_payloads1 first_return_not_yet1", "CAM_HOLD_BEGIN and CAM_HOLD_END elapsed>=requested>=actual positive producer timestamp interval", "CAM_RETAIN0/1 two_held_after_interval", "CAM_RETAIN1/2 other_slot_rearmed", "CAM_RETAIN0/1/2/3 before_return_rearm", "all twelve CAM_CACHE M2C invalidate1 publicAPI calls with capacity-owned32-byte aligned spans before CPU reads", "CAM_RETURN_BEGIN then actual CAM_RETURN0,1,2,3", "CAM_REARM returned0->recovery2 and returned1->recovery3 same slot/new producer timestamp>=return begin/resumed1 while other slot still held", "API camera_external_deinit", "CAM_EXTERNAL_SUMMARY requested_buffers2 completed1 no_fallback1 qualification=not_claimed"],
+    "camera_jpeg": ["CAM_DECODE0,1,2,3 source_hash matches actual compressed CAM_FRAME hash", "decoder=fmt2rgb888 sof=baseline8_3component width160 height120 output_type=RGB888 output_bytes57600 decoded1", "observed actual decoded full FNV/hash head/tail tags, never hardcoded expected output"]
+  },
+  "image_rules": {
+    "rgb": "frame f=0/1: (((x+3*f)&31)<<11)|(((3*y+f)&63)<<5)|((x^y^f)&31); independent RGB565-LE source FNV and normalized RGB888 exact full-byte comparison/SHA. Wire line74 clocks,54lines,3996 PCLK samples; stable1MHz/500kHz frame durations3996000/7992000ns.",
+    "camera_raw": "color-bars source scene400x296 crop0,0,400,296 no mirror/flip,160x120. Independent raw bytes use actual IMAGE_MODE/CTRL0 ordering, not imported sensor encoder.",
+    "camera_jpeg": "Bounded baseline8-bit three-component single-scan160x120 SOF0/scan/entropy/EOI validation by independent primary parser. Pillow must really entropy-decode actual captured compressed bytes; compare known color-bars with max channel error12/mean3. Guest software fmt2rgb888 success and observed57600-byte output hash/tags are distinct evidence. No exact guest decoded pixel comparison from hash alone."
+  },
+  "explicit_unclaimed_stronger_rows": [
+    "Static repeated color-bars do not uniquely identify a guest source frame without independent guest/virtual timebase binding. Oracle retains actual source candidate frame IDs rather than inventing a unique source identity.",
+    "Two-held PARK/completed owner0/direct descriptor/public ownership/recovery observations qualify the named producer relationship, but isolated snapshots cannot prove absence of every identical-value write between observations. No continuous write-address trace is fabricated.",
+    "Guest JPEG decoded RGB888 bytes are not provided by these firmware markers; guest entropy decoder execution/source/cache relationship is qualified, not byte-exact independently decoded guest output.",
+    "Stable captured PCLK cadence qualifies actual divider behavior; exact guest API-to-physical VSYNC/restart time binding and silicon timing are not inferred without independent timebase evidence.",
+    "External CPU aliases and host HMP address observations alone cannot prove shared physical SSI/cache backing. Only renewed same-final-binary independent memory qualification can bind this inherited functional invariant."
+  ],
+  "changelog": [
+    "2026-10-07: Authored complete pure consumer oracle and mandatory raw UART/QOM/RO-HMP contract for five real external profiles; no verification executed.",
+    "2026-10-07: Required public ownership/cache sequencing, full immutable captured bytes, independent source checks and actual peri5 descriptor/park/owner/recovery observations; conditional consumer-only PASS requires runner-bound same-final-binary memory foundation receipts."
+  ]
+}

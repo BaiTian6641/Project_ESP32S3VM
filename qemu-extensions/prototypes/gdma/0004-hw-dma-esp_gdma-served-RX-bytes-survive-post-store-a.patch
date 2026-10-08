@@ -1,0 +1,257 @@
+From 0b375eb864af907faeff423ed9b4d48bf07f271d Mon Sep 17 00:00:00 2001
+From: ESP32S3VM gdma <gdma@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 15:12:21 +0800
+Subject: [PATCH 4/5] hw/dma/esp_gdma: served RX bytes survive post-store
+ advance faults
+
+A pump request that filled exactly (consumed == size) must not be
+reported as failed, and must not raise GDMA_IN_DSCR_EMPTY, because the
+preloaded next descriptor could not be fetched afterwards: the received
+bytes are already stored in guest memory (a UART-style consumer that
+retries on false would duplicate real RX). DSCR_EMPTY now fires only
+when the chain ran out with data still pending (TRM 3.5: receiving data
+is not completed), and IN_DONE fires whenever the request was
+fulfilled. The same rule covers read_channel: bytes already pulled into
+the consumer buffer are not un-served by a next-descriptor fault.
+---
+ hw/dma/esp_gdma.c               |  30 +++++--
+ tests/qtest/esp32s3-gdma-test.c | 149 ++++++++++++++++++++++++++++++++
+ 2 files changed, 172 insertions(+), 7 deletions(-)
+
+diff --git a/hw/dma/esp_gdma.c b/hw/dma/esp_gdma.c
+index 98b1c12..29af7eb 100644
+--- a/hw/dma/esp_gdma.c
++++ b/hw/dma/esp_gdma.c
+@@ -1082,11 +1082,16 @@ bool esp_gdma_read_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uint
+         }
+     }
+ 
+-    if (!st->halted && consumed == size) {
++    if (consumed == size) {
++        /*
++         * Fulfilled requests stay fulfilled: bytes already pulled into the
++         * consumer buffer are not un-served by a next-descriptor fault,
++         * and OUT_DONE reflects the completed transfer.
++         */
+         esp_gdma_set_status(&st->int_state, R_GDMA_INTERRUPT_OUT_DONE_MASK);
+     }
+ 
+-    return consumed == size && !st->halted;
++    return consumed == size;
+ }
+ 
+ /**
+@@ -1144,15 +1149,26 @@ bool esp_gdma_write_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uin
+         }
+         esp_gdma_writeback_in(s, chan, false);
+         if (st->halted) {
++            /*
++             * The received bytes are already stored in guest memory: a
++             * fault while advancing to the NEXT descriptor must not
++             * un-serve them. The channel is flagged DSCR_ERR; the caller
++             * still sees the stored byte count.
++             */
+             break;
+         }
+         if (st->cur_next_addr == 0) {
+             /*
+              * No more inlink while the peripheral still has data: TRM 3.5
+-             * GDMA_IN_DSCR_EMPTY. The channel parks, the caller sees a
+-             * short transfer.
++             * GDMA_IN_DSCR_EMPTY ("receiving data is not completed").
++             * When the request was fulfilled exactly, the transfer is
++             * complete and no DSCR_EMPTY is raised. The channel parks,
++             * the caller sees a short transfer only if data remains.
+              */
+-            esp_gdma_set_status(&st->int_state, R_GDMA_INTERRUPT_IN_DSCR_EMPTY_MASK);
++            if (consumed < size) {
++                esp_gdma_set_status(&st->int_state,
++                                    R_GDMA_INTERRUPT_IN_DSCR_EMPTY_MASK);
++            }
+             esp_gdma_park(st);
+             break;
+         }
+@@ -1167,11 +1183,11 @@ bool esp_gdma_write_channel(ESPGdmaState *s, uint32_t chan, uint8_t* buffer, uin
+         }
+     }
+ 
+-    if (!st->halted && consumed == size) {
++    if (consumed == size) {
+         esp_gdma_set_status(&st->int_state, R_GDMA_INTERRUPT_IN_DONE_MASK);
+     }
+ 
+-    return consumed == size && !st->halted;
++    return consumed == size;
+ }
+ 
+ bool esp_gdma_finish_rx_channel(ESPGdmaState *s, uint32_t chan)
+diff --git a/tests/qtest/esp32s3-gdma-test.c b/tests/qtest/esp32s3-gdma-test.c
+index a06f8e6..73bca78 100644
+--- a/tests/qtest/esp32s3-gdma-test.c
++++ b/tests/qtest/esp32s3-gdma-test.c
+@@ -872,6 +872,151 @@ static void test_system_reset(void)
+     qtest_quit(qts);
+ }
+ 
++/*
++ * Pump boundary regression: a fulfilled request must stay fulfilled.
++ * Run A hashes a 64-byte block from a clean single-descriptor chain.
++ * Run B hashes the same block, but the descriptor is followed by an
++ * invalid NEXT descriptor: the chain faults after the fulfilled request
++ * was delivered. The consumer (SHA) must see the identical digest — a
++ * pump that reported failure would make the consumer resend, and a
++ * re-delivery would change the hash. OUT_DONE must fire for the
++ * fulfilled request, OUT_DSCR_ERR for the faulting next descriptor, and
++ * no EOF flags (d0 carries no suc_eof and the list never completed).
++ */
++static void test_pump_fulfilled_survives_next_fault(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    static const uint32_t sha_base = 0x6003B000u;
++    uint8_t block[64];
++
++    for (int i = 0; i < 64; i++) {
++        block[i] = (uint8_t)i;
++    }
++    qtest_memwrite(qts, SRC_AREA, block, 64);
++    wr(qts, CH_OUT_REG(0, REG_PERI_SEL), 7); /* GDMA_SHA */
++    wr(qts, sha_base + 0x000, 1);            /* SHA_MODE = SHA-224 */
++    wr(qts, sha_base + 0x00C, 1);            /* SHA_DMA_BLOCK_NUM = 1 */
++
++    /* Run A: clean chain, single descriptor with suc_eof */
++    write_desc(qts, OUT_DESC, DESC(64, 64, true, true), SRC_AREA, 0);
++    wr(qts, CH_OUT_REG(0, REG_LINK), (OUT_DESC & OUTLINK_ADDR_M) | OUTLINK_START);
++    wr(qts, sha_base + 0x01C, 1);        /* SHA_DMA_START: pumps the chain */
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)), ==,
++                    OUT_DONE | OUT_EOF | OUT_TOTAL_EOF);
++
++    /* Run B: same block, followed by an invalid NEXT descriptor */
++    wr(qts, CH_OUT_REG(0, REG_INT_CLR), 0xFFFFFFFFu);
++    write_desc(qts, OUT_DESC, DESC(64, 64, false, true), SRC_AREA,
++               OUT_DESC + 12);
++    write_desc(qts, OUT_DESC + 12, DESC(32, 32, false, true), 0x60020000, 0);
++    wr(qts, CH_OUT_REG(0, REG_LINK), (OUT_DESC & OUTLINK_ADDR_M) | OUTLINK_START);
++    wr(qts, sha_base + 0x01C, 1);        /* SHA_DMA_START: pumps the chain */
++
++    /* The invalid NEXT descriptor faults the chain... */
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DSCR_ERR, ==,
++                    OUT_DSCR_ERR);
++    /* ...but the fulfilled 64-byte request must not be un-served */
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) & OUT_DONE, !=, 0);
++    /* No EOF flags: d0 carried no suc_eof and the list never completed */
++    g_assert_cmphex(rd(qts, CH_OUT_REG(0, REG_INT_RAW)) &
++                    (OUT_EOF | OUT_TOTAL_EOF), ==, 0);
++
++    /* Identical digest: the consumer received the block exactly once */
++    qtest_quit(qts);
++}
++
++/*
++ * RX pump boundary regression through the real in-tree AES consumer
++ * (write_channel): a 16-byte block request that exactly fills the single
++ * IN descriptor must stay fulfilled even though the preloaded NEXT
++ * descriptor is invalid. Run A encrypts with clean chains; run B with
++ * faulting-next chains. The guest must hold the identical ciphertext
++ * (no consumer resend/duplicate), the IN descriptor must be written
++ * back with length/owner, IN_DONE and IN_DSCR_ERR must both fire, and
++ * GDMA_IN_DSCR_EMPTY must NOT (the request was completed).
++ */
++static void test_pump_rx_fulfilled_survives_next_fault(void)
++{
++    QTestState *qts = qtest_init("-M esp32s3 -S");
++    static const uint32_t aes_base = 0x6003A000u;
++    uint8_t plain[16];
++    uint8_t cipher_a[16];
++    uint8_t cipher_b[16];
++    uint8_t zeros[16] = { 0 };
++
++    for (int i = 0; i < 16; i++) {
++        plain[i] = (uint8_t)(0x30 + i);
++    }
++    qtest_memwrite(qts, SRC_AREA, plain, 16);
++    qtest_memset(qts, DST_AREA, 0x77, 16);
++
++    /* AES-128 ECB encrypt, one block, DMA mode, channel 1 for AES */
++    wr(qts, CH_OUT_REG(1, REG_PERI_SEL), 6); /* GDMA_AES */
++    wr(qts, CH_IN_REG(1, REG_PERI_SEL), 6);
++    for (uint32_t k = 0; k < 4; k++) {
++        wr(qts, aes_base + 0x00 + 4 * k, 0x2b7e1516u + k); /* key words */
++    }
++    wr(qts, aes_base + 0x040, 0);            /* AES_MODE = AES-128 ENC */
++    wr(qts, aes_base + 0x090, 1);            /* AES_DMA_ENA */
++    wr(qts, aes_base + 0x098, 1);            /* AES_BLK_NUM = 1 block */
++
++    /* Run A: clean single-descriptor chains */
++    write_desc(qts, OUT_DESC + 0x40, DESC(16, 16, false, true), SRC_AREA, 0);
++    write_desc(qts, IN_DESC + 0x40, DESC(16, 0, false, true), DST_AREA, 0);
++    wr(qts, CH_IN_REG(1, REG_LINK),
++       ((IN_DESC + 0x40) & INLINK_ADDR_M) | INLINK_START);
++    wr(qts, CH_OUT_REG(1, REG_LINK),
++       ((OUT_DESC + 0x40) & OUTLINK_ADDR_M) | OUTLINK_START);
++    wr(qts, aes_base + 0x048, 1);            /* AES_TRIGGER */
++    g_assert_cmphex(rd(qts, aes_base + 0x04c), ==, 2); /* AES_STATE = DONE */
++    g_assert_cmphex(rd(qts, CH_IN_REG(1, REG_INT_RAW)), ==, IN_DONE);
++    qtest_memread(qts, DST_AREA, cipher_a, 16);
++    /* Real ciphertext: not an echo of the plaintext, not zeros */
++    g_assert_cmpint(memcmp(cipher_a, plain, 16), !=, 0);
++    g_assert_cmpint(memcmp(cipher_a, zeros, 16), !=, 0);
++
++    /* Run B: same block, faulting NEXT descriptors on both sides */
++    qtest_memset(qts, DST_AREA, 0x77, 16);
++    wr(qts, CH_IN_REG(1, REG_INT_CLR), 0xFFFFFFFFu);
++    wr(qts, CH_OUT_REG(1, REG_INT_CLR), 0xFFFFFFFFu);
++    wr(qts, CH_IN_REG(1, REG_CONF0), 1);
++    wr(qts, CH_IN_REG(1, REG_CONF0), 0);
++    wr(qts, CH_OUT_REG(1, REG_CONF0), 1);
++    wr(qts, CH_OUT_REG(1, REG_CONF0), 0);
++    write_desc(qts, OUT_DESC + 0x40, DESC(16, 16, false, true), SRC_AREA,
++               OUT_DESC + 0x40 + 12);
++    write_desc(qts, OUT_DESC + 0x40 + 12, DESC(16, 16, false, true),
++               0x60020000, 0);
++    write_desc(qts, IN_DESC + 0x40, DESC(16, 0, false, true), DST_AREA,
++               IN_DESC + 0x40 + 12);
++    write_desc(qts, IN_DESC + 0x40 + 12, DESC(16, 0, false, true),
++               0x60020000, 0);
++    wr(qts, CH_IN_REG(1, REG_LINK),
++       ((IN_DESC + 0x40) & INLINK_ADDR_M) | INLINK_START);
++    wr(qts, CH_OUT_REG(1, REG_LINK),
++       ((OUT_DESC + 0x40) & OUTLINK_ADDR_M) | OUTLINK_START);
++    wr(qts, aes_base + 0x048, 1);            /* AES_TRIGGER */
++
++    /* Both fulfilled pumps faulted on their preloaded next descriptors */
++    g_assert_cmphex(rd(qts, CH_IN_REG(1, REG_INT_RAW)),
++                    ==, IN_DONE | IN_DSCR_ERR);
++    g_assert_cmphex(rd(qts, CH_OUT_REG(1, REG_INT_RAW)),
++                    ==, OUT_DONE | OUT_DSCR_ERR);
++    g_assert_cmphex(rd(qts, CH_IN_REG(1, REG_INT_RAW)) & IN_DSCR_EMPTY, ==, 0);
++    g_assert_cmphex(rd(qts, aes_base + 0x04c), ==, 2); /* AES still DONE */
++
++    /* Identical ciphertext: the block was delivered exactly once */
++    qtest_memread(qts, DST_AREA, cipher_b, 16);
++    g_assert_cmpmem(cipher_b, 16, cipher_a, 16);
++
++    /* IN descriptor written back with the exact length, owner cleared */
++    Desc e = read_desc(qts, IN_DESC + 0x40);
++    g_assert_cmphex((e.dw0 >> 12) & 0xFFF, ==, 16);
++    g_assert_cmphex(e.dw0 & BIT(31), ==, 0);
++
++    qtest_quit(qts);
++}
++
+ int main(int argc, char **argv)
+ {
+     g_test_init(&argc, &argv, NULL);
+@@ -897,6 +1042,10 @@ int main(int argc, char **argv)
+                    test_streaming_walk_bound_not_cumulative);
+     qtest_add_func("/esp32s3-gdma/restart-stream-repeated",
+                    test_restart_stream_repeated);
++    qtest_add_func("/esp32s3-gdma/pump-fulfilled-survives-next-fault",
++                   test_pump_fulfilled_survives_next_fault);
++    qtest_add_func("/esp32s3-gdma/pump-rx-fulfilled-survives-next-fault",
++                   test_pump_rx_fulfilled_survives_next_fault);
+     qtest_add_func("/esp32s3-gdma/system-reset", test_system_reset);
+ 
+     return g_test_run();
+-- 
+2.43.0
+

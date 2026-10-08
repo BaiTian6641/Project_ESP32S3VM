@@ -1,0 +1,74 @@
+From: SpiNativeWorker <spi-native@localhost>
+Date: Wed, 8 Oct 2026 00:00:00 +0000
+Subject: [PATCH] gdma: per-direction RST disarm for peripheral-handshake channels
+
+Additive increment on top of the 0e2ab32b overlay restack; frozen inputs
+are NOT rewritten.
+
+First full-duplex loopback execution strict-paused at transfer start:
+"SPI2 strict dependency: RX GDMA unavailable/short/owner or address
+error" with the IN channel parked and zero error/DONE raw bits. Trace
+evidence (temporary instrumented diagnostic build, reverted):
+
+  GDMA_ARM chan=0 dir=IN  restart=0     <- driver arms RX inlink
+  GDMA_PARK st=IN  fsm=1->0             <- driver's TX-channel reset
+  GDMA_ARM chan=0 dir=OUT restart=0     <- driver arms TX outlink
+  rx_channel resolution = UINT32_MAX    <- strict pause at USR
+
+Root cause: the ordinary IDF6.1 SPI driver sets up a full-duplex DMA
+transaction as gdma_reset(rx); arm(rx); gdma_reset(tx); arm(tx) on the
+SAME GDMA channel (ESP32-S3 channels are duplex pairs; SPI_DMA_CH_AUTO
+allocates one channel for both directions). The model performed a
+channel-wide disarm (both directions parked, cursors cleared) on either
+direction's CONF0.RST 1->0 edge, so the TX reset disarmed the just-armed
+RX inlink.
+
+TRM 3.6.2 gives each direction its own RST: GDMA_IN_RST_CHn resets the
+RX FSM and RX FIFO pointer, GDMA_OUT_RST_CHn the TX side. The
+channel-wide disarm (and quantum-BH cancel) remains for a coupled
+memory-to-memory pair (MEM_TRANS_EN), whose transfer spans both
+directions; peripheral-handshake chains are driven by peripheral
+read/write calls, not the quantum BH.
+
+Why connected passed but loopback failed: the connected NOR read has no
+TX buffer, so no TX reset ever follows the RX arm; the loopback
+full-duplex transaction has both send and receive buffers, hitting the
+reset-after-arm ordering.
+
+No interrupt semantics, descriptor cursor, EOF or 0001/0004 finish-path
+behavior change; esp32c3 shares the same generic engine and TRM-faithful
+semantics.
+---
+ hw/dma/esp_gdma.c | 20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/hw/dma/esp_gdma.c b/hw/dma/esp_gdma.c
+--- a/hw/dma/esp_gdma.c
++++ b/hw/dma/esp_gdma.c
+@@ -810,7 +810,25 @@ static void esp_gdma_write_chan_conf(ESPGdmaState *state, uint32_t dir,
+             if (FIELD_EX32(value,  GDMA_IN_CONF0, RST) == 0 &&
+                 FIELD_EX32(s->conf0, GDMA_IN_CONF0, RST) != 0)
+             {
+-                esp_gdma_channel_disarm(state, chan);
++                /* TRM 3.6.2: each direction's RST resets only its own FSM and
++                 * FIFO pointer; GDMA_OUT_RST_CHn must not disarm the IN side
++                 * of a peripheral-handshake channel (the ordinary SPI driver
++                 * resets RX then TX of the same channel while setting up a
++                 * full-duplex transaction). The channel-wide disarm remains
++                 * for a coupled memory-to-memory pair, whose quantum-driven
++                 * transfer spans both directions. */
++                if (FIELD_EX32(state->ch_conf[ESP_GDMA_IN_IDX][chan].conf0,
++                               GDMA_IN_CONF0, MEM_TRANS_EN)) {
++                    esp_gdma_channel_disarm(state, chan);
++                } else {
++                    esp_gdma_park(s);
++                    s->pending_start = false;
++                    s->pending_restart = false;
++                    s->rx_last_desc_addr = 0;
++                    s->rx_last_prev_addr = 0;
++                    s->rx_packet_ended = false;
++                }
+                 esp_gdma_fsm_reset(s);
+             }
+-- 
+2.43.0

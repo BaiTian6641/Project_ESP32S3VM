@@ -1,0 +1,16 @@
+{
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "status": "prototype-unqualified",
+  "license": "GPL-2.0-or-later",
+  "copies": [
+    {"source": "hostbus-probe.c", "destination": "backends/hostbus-probe.c"},
+    {"source": "hostbus-probe.h", "destination": "include/sysemu/hostbus-probe.h"},
+    {"source": "hostbus-json.h", "destination": "backends/hostbus-json.h"}
+  ],
+  "integration_patch": "integration.patch",
+  "additional_patches": ["gdb-execution-preflight.patch", "state-restore-guard.patch", "qom-options.patch", "creation-order.patch"],
+  "additional_core_paths": ["gdbstub/gdbstub.c", "migration/savevm.c", "migration/migration.c", "migration/migration-hmp-cmds.c", "qapi/qom.json", "system/vl.c"],
+  "native_peripheral_support": false,
+  "auto_resume": false,
+  "qualification_profile": "tcg,thread=single; icount shift=0,align=off,sleep=off; ESP32-S3 dual core"
+}

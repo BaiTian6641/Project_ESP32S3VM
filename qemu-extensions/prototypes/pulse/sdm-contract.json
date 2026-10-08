@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "work_id": "SOC-16",
+  "target": "ESP32-S3",
+  "status": "named-functional-implementation-unqualified; exact-pulse-recurrence-source-blocked",
+  "physical_qualification": false,
+  "implementation": [
+    {"path": "qemu-extensions/prototypes/pulse/copies/esp32s3_sdm.c", "sha256": "07713d4440c269978d8047a40ea177e9639fd294b0e93c19db4d3e62ce89619e"},
+    {"path": "qemu-extensions/prototypes/pulse/copies/esp32s3_sdm.h", "sha256": "aa64ffd83cadbab92c0a801fceaecca52196360d8b3050d9b0b22155d03487fd"}
+  ],
+  "functional_profile": {
+    "id": "s3-sdm-second-order-transfer-v1",
+    "silicon_bit_exact": false,
+    "parent_approval": "Explicit reachable second-order functional profile only; SOC-16 full completion and exact S3 waveform gates remain open",
+    "quantizer": "q(v)=+128 when v>=0, else -128; physical bit=(q+128)/256",
+    "recurrence": "v[n]=x[n-1]-2e[n-1]+e[n-2]; y[n]=q(v[n]); e[n]=y[n]-v[n]",
+    "identity": "y[n]=x[n-1]+e[n]-2e[n-1]+e[n-2]",
+    "bounded_state": {
+      "evidence": "build-runtime-state/pulse-native-2026-10-07/firmware-verification/sdm-reference.log",
+      "oracle": "Independent double-cumulative output-minus-input discrepancy, not production tick-copy",
+      "densities": 256,
+      "ticks_per_density": 65536,
+      "certified_bounded_orbits": 256,
+      "unproven_densities": [],
+      "max_abs_error": 28800,
+      "max_abs_delta_error": 240,
+      "max_cycle_period": 512,
+      "native_error_storage": "signed32; v bound 3*28800+128 = 86528; never wraps/saturates",
+      "invariant": "Every density-changing path restarts zero errors. Divider/source/gate changes do not change density or errors. Arbitrary nonzero-error seeds are NOT generally stable.",
+      "transfer_identity": "Checked every independent reference pulse; each certified orbit has exact documented mean",
+      "qualification_boundary": "Exercised mathematical profile reference only, not native pulses/RC/ADC or silicon bitstream"
+    },
+    "reset": "error1=error2=0; density=0; divider=256; pulse phase=0; physical output-low; function clock disabled",
+    "density_change": "Seeds delayed input from new density and restarts zero-error trajectory; explicit functional assumption, NOT claimed silicon behavior",
+    "divider_change": "Retains relative progress through divided pulse cycle and both error states",
+    "clock_source_change_and_stop": "Source-phase progress and both error states retained; output holds actual last value, not high-Z or fictitious unpowered",
+    "timing": "Integer-nanosecond deadline ceil with retained source-cycle phase in billionths; one persistent timer, at most eight pulse evolutions per dispatch; overdue phase retained with positive-time rescheduling",
+    "qom": {"path": "/machine/soc/sdm", "profile": "waveform-profile", "assumptions": "waveform-assumptions"},
+    "analog_boundary": "Only raw physical PDM edges enter ONE matrix-source authority. External finite rails/drivers/passive RC solver produces measured mean and ripple; connected ADC samples solver voltage, never a fixed mean/code."
+  },
+  "sources": [
+    {"url": "https://documentation.espressif.com/esp32-s3_technical_reference_manual_en.pdf", "version": "1.8", "pages": [478, 479, 515, 516], "sections": ["6.5.4", "6.15.3"]},
+    {"url": "https://docs.espressif.com/projects/esp-idf/en/v6.1/esp32s3/api-reference/peripherals/sdm.html"},
+    {"path": "build-idf-6.1/components/soc/esp32s3/register/soc/gpio_sd_struct.h"},
+    {"path": "build-idf-6.1/components/soc/esp32s3/register/soc/gpio_sd_reg.h"},
+    {"path": "build-idf-6.1/components/esp_hal_gpio/esp32s3/include/hal/sdm_ll.h"},
+    {"path": "build-idf-6.1/components/esp_hal_gpio/esp32s3/sdm_periph.c"},
+    {"path": "build-idf-6.1/components/esp_driver_sdm/src/sdm.c"}
+  ],
+  "documented_hardware": {
+    "channels": 8,
+    "matrix_output_indices": [93, 94, 95, 96, 97, 98, 99, 100],
+    "register_region": "GPIO base + 0x0f00; 0x2c bytes",
+    "channel_registers": {"offset": "4*channel", "signed_density_bits": [7, 0], "prescale_bits": [15, 8], "reset": "0x0000ff00"},
+    "cg": {"offset": "0x20", "bit": 31, "meaning": "configuration-register clock enable, not function-clock enable", "reset": 0},
+    "misc": {"offset": "0x24", "function_clock_enable_bit": 30, "spi_swap_bit": 31, "spi_swap_meaning": "reserved", "reset": 0},
+    "version": {"offset": "0x28", "write_mask": "0x0fffffff", "reset": "0x01802260"},
+    "clock": "APB_CLK / (prescale_field + 1)",
+    "pulse_cycle": "One divided clock cycle per PDM pulse output cycle",
+    "density": "(signed_density + 128) / 256",
+    "transfer": "Y(z) = X(z) z^-1 + E(z) (1 - z^-1)^2",
+    "output_enable": "All eight peripheral outputs enabled by default; GPIO matrix/pad enable determines external drive",
+    "dedicated_system_gate_reset": false,
+    "internal_sar_dac": false
+  },
+  "idf_driver_semantics": {
+    "allocation": "One shared group, eight independent software-owned channels; ninth allocation ESP_ERR_NOT_FOUND; deletion releases channel/pad",
+    "invert_out": "GPIO matrix inversion, not an invented SDM register",
+    "enable_disable": "IDF6.1 channel_enable/disable change software FSM and PM lock only; no per-channel hardware enable register",
+    "group_clock": "sdm_hal_init/deinit toggles shared MISC.function_clk_en"
+  },
+  "missing_prerequisite": {
+    "needed_for": "Exact S3 physical pulse sequence and reset/gate/reconfiguration sequence comparison",
+    "information": ["Integrator/error state register widths", "Quantizer threshold and equal-threshold choice", "Overflow saturation versus wrapping", "Power-on/peripheral-reset state of quantizer/error accumulators", "Density/divider-update pipeline and clock-stop accumulator behavior"],
+    "research": ["Official TRM v1.8 primary pages extracted from original PDF", "Pinned official IDF6.1 S3 register/LL/HAL/driver sources", "Official legacy v4.4.8 and modern v6.1 SDM driver reference", "Expanded Espressif GitHub accumulator/quantizer and Espressif forum searches"],
+    "not_acceptable_substitutes": ["First-order accumulator PDM claimed as S3", "Arbitrary second-order coefficients claimed bit-exact", "Averaged GPIO voltage or fixed ADC code", "Invented dedicated SYSTEM gate/reset bit", "Invented per-channel hardware enable bit"]
+  },
+  "qualification": "Independent mathematical profile reference exercised: all 256 densities bounded with exact transfer and certified-orbit density. Native execution, ADC comparison, passive-RC native mean/ripple, firmware runtime and hardware qualification have not yet been exercised."
+}

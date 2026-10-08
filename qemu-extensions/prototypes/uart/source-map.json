@@ -1,0 +1,212 @@
+{
+  "schema_version": 1,
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "frozen_prefix": "build-runtime-state/runtime-dbe2a8a5ad4e07a6-source.json",
+  "frozen_prefix_fingerprint": "dbe2a8a5ad4e07a607e76ab751e77ac85fe3bf30974359bd25a69354499f9b32",
+  "license": "GPL-2.0-or-later",
+  "status": "native-vectors-pass-fixtures-executed-with-residuals",
+  "packages": [
+    "UART-01",
+    "UART-02",
+    "UART-03"
+  ],
+  "native_peripheral_support": false,
+  "copies": [
+    {
+      "source": "copies/esp32s3_uart.c",
+      "destination": "hw/char/esp32s3_uart.c"
+    },
+    {
+      "source": "copies/esp32s3_uart.h",
+      "destination": "include/hw/char/esp32s3_uart.h"
+    },
+    {
+      "source": "copies/esp32s3_uhci.c",
+      "destination": "hw/char/esp32s3_uhci.c"
+    },
+    {
+      "source": "copies/esp32s3_uhci.h",
+      "destination": "include/hw/char/esp32s3_uhci.h"
+    },
+    {
+      "source": "uhci-binding.inc",
+      "destination": "hw/xtensa/esp32s3_uart_binding.inc"
+    },
+    {
+      "source": "copies/esp32s3-uart-test.c",
+      "destination": "tests/qtest/esp32s3-uart-test.c"
+    },
+    {
+      "source": "copies/test-esp32s3-uhci.c",
+      "destination": "tests/unit/test-esp32s3-uhci.c"
+    }
+  ],
+  "ordering": [
+    "Immutable frozen26 prefix from the recorded profile and recorded input hashes",
+    "Central coreclk0010 and0011, authoritative GPIO strict/raw interface, ADC single-owner SENS, native v3 electrical graph multi-observer/published-frame interfaces; no sibling modifications",
+    "Frozen SPI RX-EOF patch 0001-gdma-peripheral-rx-packet-end.patch sha256d0a472c53f444304e29dbd4c979d60840e73a42bfbc935277041deec6b8ad422",
+    "GDMA-owner 0004-hw-dma-esp_gdma-served-RX-bytes-survive-post-store-a.patch sha2567640a6e06bf9c7d9919cbd4837c25dab3e85f0dfb03da74eb77ee3718dead251 (HEAD0b375eb; regression only after153a6ee source fix), never duplicated in this lane",
+    "Frozen UART-owned 0001-gdma-uhci-demand-and-packet-status.patch RAWsha2562626ab0cad1955d02bc20cb9a190bc782a388eea0fac452b3524f15b4ab7b9fa, GDMA owner reviewed served-count/demand/packet and actual I2S continuous-segment APIs",
+    "0002-parent-uart-defer-fifo.patch avoids temporary private S3 FIFO allocation while preserving ESP32/C3 parent allocation",
+    "UART copies above, integration.patch machine/build wiring",
+    "integration-electrical.patch late subscriptions after electrical_create; integration-qtest.patch adds esp32s3-uart-test",
+    "integration-unit.patch root Meson native UHCI vectors using exact configured native system objects"
+  ],
+  "integration_patch": "integration.patch",
+  "unit_integration_patch": "integration-unit.patch",
+  "gdma_additive_patch": "0001-gdma-uhci-demand-and-packet-status.patch",
+  "gdma_additive_sha256": "2626ab0cad1955d02bc20cb9a190bc782a388eea0fac452b3524f15b4ab7b9fa",
+  "gdma_hash_provenance": "Historical3a8169e167b35ca48daa813161be7727911a986b35df165a770e79c2ead733d4 was measured from normalized text, not raw artifact bytes. It is not an alternative accepted runtime input. Canonical CRLF bytes remain unchanged; Main approved RAW2626.",
+  "additional_patches": [
+    "0002-parent-uart-defer-fifo.patch",
+    "integration-electrical.patch",
+    "integration-qtest.patch"
+  ],
+  "source_preparation": "prepare.py --dependencies authoritative frozen common source record including profile and input hashes; unique new qemu-uart cache, no mutable cache borrowing",
+  "authored_native_vectors": {
+    "uart_qtests": 60,
+    "uhci_system_vectors": 17,
+    "executed": true,
+    "results": {
+      "uart_qtests": "60/60 PASS on clean checkout qemu-uart-40edccac4156-9c13378e7afd27ff (binary sha256 40932b7ed4270b046ee6d2910f0a43b03d7c5f486a360309faf636b61676ffd0); log build-runtime-state/uart-native-2026-10-07/qtests/esp32s3-uart-test-final2.log",
+      "uhci_system_vectors": "17/17 PASS (test-esp32s3-uhci --tap -k) on the same checkout",
+      "build": "ninja rc0 for qemu-system-xtensa, tests/qtest/esp32s3-uart-test, test-esp32s3-uhci; clean tree, no diagnostics"
+    }
+  },
+  "qtests": [
+    "esp32s3-uart-test"
+  ],
+  "unit_targets": [
+    "test-esp32s3-uhci"
+  ],
+  "patch_context": {
+    "0001-gdma-uhci-demand-and-packet-status.patch": "ignore-space-change"
+  },
+  "patch_targets": {
+    "0001-gdma-uhci-demand-and-packet-status.patch": [
+      "hw/dma/esp_gdma.c",
+      "include/hw/dma/esp_gdma.h"
+    ],
+    "0002-parent-uart-defer-fifo.patch": [
+      "hw/char/esp32_uart.c",
+      "include/hw/char/esp32_uart.h"
+    ],
+    "integration.patch": [
+      "hw/xtensa/esp32s3.c",
+      "hw/char/meson.build"
+    ],
+    "integration-electrical.patch": [
+      "hw/xtensa/esp32s3.c"
+    ],
+    "integration-qtest.patch": [
+      "tests/qtest/meson.build"
+    ],
+    "integration-unit.patch": [
+      "meson.build"
+    ]
+  },
+  "machine": {
+    "uart_paths": [
+      "/machine/soc/uart0",
+      "/machine/soc/uart1",
+      "/machine/soc/uart2"
+    ],
+    "uart_bases": [
+      "0x60000000",
+      "0x60010000",
+      "0x6002e000"
+    ],
+    "uart_region_bytes": 132,
+    "fifo_memory": "/machine/soc/uart-memory, one actual1024-byte shared RAM",
+    "uhci": "one /machine/soc/uhci at0x60014000 size0x1000, ETS_UHCI0_INTR_SOURCE, GDMA peripheral2",
+    "late_binding": "For each UART i, require esp32s3_uart_bind(&ss->uart[i], &ss->gpio, electrical) after esp32s3_electrical_create; FALSE is a machine-creation error",
+    "clocks": {
+      "apb": "apb-clk",
+      "xtal": "xtal-clk",
+      "rc-fast": "rc-fast-clk"
+    },
+    "uart_gate_inputs": "clock-enable from ESP32S3_CLK_GATES_GPIO UART0/1/2",
+    "uart_reset_inputs": "reset from ESP32S3_CLK_RST_LEVEL_GPIO UART0/1/2; existing SoC strobe/reset-domain wiring remains",
+    "uhci_gate_reset": "clk-gate/reset from common UHCI0 gate/reset-level ports",
+    "tx_matrix": [
+      12,
+      15,
+      18
+    ],
+    "rx_matrix": [
+      12,
+      15,
+      18
+    ],
+    "rts_matrix": [
+      13,
+      16,
+      19
+    ],
+    "cts_matrix": [
+      13,
+      16,
+      19
+    ],
+    "dtr_matrix": [
+      14,
+      17,
+      20
+    ],
+    "trace": "per-controller bool trace property: tx-drive/rx-sample events use virtual ns and qemu_log_flush; not hardware timing qualification",
+    "console": "Independent completed-TX observer plus bounded host-console sender queue; 8N1 console-baud defaults115200 and actual timed input edges feed autobaud, never external nets"
+  },
+  "mode_qualification": {
+    "routed_uart0_1_2": "not exercised",
+    "baud_source_fractional_dividers": "not exercised",
+    "fifo_threshold_timeout_overflow": "not exercised",
+    "width5_6_7_8_parity_stop1_1p5_2": "not exercised",
+    "break_framing_parity_errors": "not exercised",
+    "cts_rts_stall_resume": "not exercised",
+    "rs485_echo_gating_collision": "not exercised; digital UART/net comparison only, no differential transceiver claim",
+    "irda_native_sir": "not exercised; target half-duplex TX_EN gating, active-LOW receive, encoder mid-bit pulse ticks8..10 or8..11 accordingWCTL, vectorsat100kbit/s within115.2k range; no optical-medium claim",
+    "irda_ordinary_idf_receive": "not exercised; genuineGPIO17->UART2RX16 low pulses at9600 viaordinaryGPIO/delay/UART APIs",
+    "irda_ordinary_idf_transmit_wctl": "unavailable: pinnedpublicUARTAPI setsIRDA_EN but exposesnoTX_EN/WCTL controls; no guestMMIO helper proof",
+    "autobaud": "not exercised; actual routed or explicitly clocked console input events only",
+    "at_command_guard_gap_post": "not exercised",
+    "shared_fifo_nonzero_sizes": "not exercised; physical backing aliases, fixed bases, no private expansion",
+    "uhci_raw_escape_separator_len_idle_break": "native unit vectors PASS (17/17) on the prepared runtime; ordinary firmware rows remain unexercised",
+    "uhci_ordinary_idf_full_duplex513": "not exercised; real UART1 selected UHCI0 and crossed UART2 ordinary peer, concurrent UART0 physical loopback",
+    "uhci_ordinary_separator_escape_api": "unavailable in pinned public driver/uhci.h; source driver disables separator substitution, native register vectors are separate evidence",
+    "uhci_descriptor_owner_completion_errors": "native unit vectors PASS (17/17) on the prepared runtime; ordinary firmware rows remain unexercised",
+    "uhci_header_crc_quick_send_hung": "unqualified: exact primary target format/timing semantics unavailable; see uhci-integration.json",
+    "source_clock_fraction_ab": "unqualified: TRMv1.8 formulaB/A conflictswithregistercommentsA/B; pinnedHALprogramsonlyNUM+1. NonzeroA/Btiming is a model interpretation [INFERENCE], not target-qualified",
+    "uart_clkdiv_frag_cycle_jitter": "unqualified: rational-average baud model has no independently referenced16pulse phase/interleave fidelity; integer and average-rate behavior are separate",
+    "uhci_break_delimiter_payload": "modelcontractexcludesonlyexplicitlyidentifiedactuallyqueuedphysicalNULLdelimiter; targetTRMdoesnotenumerateGDMApayloadinclusion, independenthardwareboundaryreference required",
+    "fifo_size_zero": "unqualified: primary sources do not resolve zero encoding versus eight-block UART0 TX limit",
+    "rom_download_and_ordinary_boot": "pending fresh delegated regression against this exact additive binary",
+    "hardware_timing": "not independently qualified; no approved physical reference operation performed",
+    "arduino": "not exercised; separate realHardwareSerial wrapper onpinnedArduino3.3.12/IDF5.5.5 existinglockedcomponent infrastructure, not anunlockedArduino-on6.1 profile"
+  },
+  "firmware": "tests/firmware/uart_native; firmware/build-idf-fixture.sh freezes original images before run-native-fixture.py creates writable evidence disks",
+  "evidence": "build-runtime-state/uart-native-2026-10-07/",
+  "blocked_by": [
+    "Ordinary fixture loopback row (measured): uart0_physical_loopback513 fails in all five modes with sent=513, received=0, done=ESP_OK; the driver accepts every byte and the TX path runs (the chardev observes the frames) but nothing reaches the driver's RX. The signal-ID and sig_in_sel conventions match IDF (gpio_ll.h:520, gpio_sig_map.h:30-43); the next probe is the model's sample() branch (matrix vs direct pad 44) for signal 12 during the driver's pin setup. uart0_physical_loopback513 remains the unqualified row of UART-01/02 ordinary-firmware qualification.",
+    "Arduino wrapper build is blocked by the pinned vendor component's missing esp_netif REQUIRES (see ordinary_fixture_results.arduino_build).",
+    "ROM download SYNC parsing is blocked by banner-byte interleaving into the first SLIP frame.",
+    "Hardware timing comparison still requires independent instruments (EHW-02); native vector timestamps are virtual-time oracles, not silicon evidence."
+  ],
+  "primary_source_grounding": {
+    "uart_rs485_conf": "TRM v1.8 register 26.17 UART_RS485_CONF_REG (0x004C): bit0 UART_RS485_EN, bit1 DL0_EN (1-bit turnaround delay before the start bit), bit2 DL1_EN (1-bit turnaround delay after the stop bit), bit3 RS485TX_RX_EN (receiver works while transmitting), bit4 RS485RXBY_TX_EN (transmitter sends while the receiver line is busy), bits[9:6] TX_DLY_NUM, bit5 RX_DLY_NUM. The model's usage matches this map; the vector previously omitted bit4 for the mirror rows.",
+    "pdf_sha256": "4484bf8a69035ec42a731c58c64ada6fbd1f1618c5559409f134d9ea083f444f"
+  },
+  "ordinary_fixture_results": {
+    "binary": "qemu-uart-40edccac4156-5b793f4831194b26/build-wsl/qemu-system-xtensa sha256 b35f293a2c374b428390c898a1875ed56ff94fb361680c2e6a3f8929cfadede1",
+    "frozen": "build-runtime-state/uart-native-2026-10-07/frozen-final/<mode>",
+    "runs": "build-runtime-state/uart-native-2026-10-07/runs-final4/<mode>-*",
+    "connected": "executes the ordinary duplex matrix; normal_restore FAIL before the watchdog expired at 120 s (needs a longer watchdog to finish the threshold/timeout rows)",
+    "absent": "executes; uart0_physical_loopback513 FAIL, everything else PASS",
+    "disconnected": "executes; uart0_physical_loopback513 FAIL, everything else PASS",
+    "wrong": "executes; uart0_physical_loopback513 FAIL, everything else PASS",
+    "uhci": "executes; uart0_physical_loopback513 FAIL, everything else PASS (UHCI ordinary rows PASS)",
+    "common_failing_row": "uart0_physical_loopback513: UART0 at 57600 8E2 on GPIO4->GPIO5, 513 bytes each way. Measured with a temporary fixture counter: sent=513, received=0, done=ESP_OK (evidence diagnostics/loopback-counters.txt) - the driver accepted every byte and the TX path runs (the chardev observes the frames) but nothing reaches the driver's RX. Model and IDF agree that GPIO_FUNCn_IN_SEL_CFG.sig_in_sel=1 selects the GPIO matrix (IDF 6.1 gpio_ll.h:520), and U0RXD_IN_IDX/U0TXD_OUT_IDX are 12/15/18 for uart0/1/2 (IDF gpio_sig_map.h:30-43), so the next step is to instrument the model's sample() for signal 12 to report which branch it takes (matrix vs direct pad 44) and the pad level it reads during the ordinary-driver run.",
+    "arduino_build": "BLOCKED: the pinned Arduino 3.3.12 component reaches IPAddress.h -> esp_netif_ip_addr.h but its CMakeLists does not list esp_netif under REQUIRES for IDF 5.5.5; the builder's snapshot hash would change if the vendor CMakeLists were edited, so this row is reported blocked rather than patched silently.",
+    "rom_download": "freeze OK (frozen-r2/rom-download). Run reaches the real ROM banner and download mode on the wire ('ESP-ROM:esp32s3-20210327 ... waiting for download'), then fails at SYNC with FatalError: Invalid head of packet (0x45): Possible serial noise or corruption. 0x45 = 'E' = the banner byte interleaving into the first SLIP frame; the relay/esptool ordering must be fixed. Evidence runs/rom-download-uot63o7s (rom-to-host.bin holds the banner, host-to-rom.bin the sync packet).",
+    "crash_note": "The review-era console-retry prototype crashed QEMU at teardown (heap corruption); reverted, and the ordinary fixtures then ran cleanly. The console TX drop-on-busy-backend gap remains documented and unfixed (the original single-shot qemu_chr_fe_write stays)."
+  }
+}

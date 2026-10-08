@@ -1,0 +1,174 @@
+{
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "status": "SOURCE_READY",
+  "license": "GPL-2.0-or-later",
+  "work_package": "ADC-01 typed-provider SENS/APB foundation; ADC-02..05 and hardware qualification excluded",
+  "native_checkout": "/home/polar/.cache/esp32s3vm/adc-independent-final-20261007/qemu-adc-kernel-only-proof-epoch-final",
+  "upstream_adc_head": "edaa7ad72d066d7f8e2e9e0663b7a403e09c5bbe",
+  "integration_patch": "integration-native-foundations-adc.patch",
+  "patch_sha256": "21dbb41996ec5450aa2bcd43d1cf9801f15d3103ac1f3ffc915df5e0bb09eefd",
+  "targets": [
+    "qapi/qom.json",
+    "hw/xtensa/esp32s3.c",
+    "hw/misc/meson.build",
+    "hw/adc/meson.build",
+    "tests/qtest/meson.build",
+    "hw/misc/esp32s3_regi2c.c",
+    "include/hw/misc/esp32s3_regi2c.h"
+  ],
+  "pipeline": "Apply all patches in order, then install canonical copies. eAD owns its real provider preinstantiate/prelink before SENS realization.",
+  "prefix_order": [
+    "current26 dbe2a8a5ad4e07a607e76ab751e77ac85fe3bf30974359bd25a69354499f9b32 (no coreclk0007)",
+    "coreclk0010..0014",
+    "GPIO integration-native-foundations.patch e1a45cdb2e8e388fea1e0775a29b7639f236ff226e39dd3ad08f0df9a2a030bf",
+    "radio0005 d1d4966b5185ffcec53a15db5a19375e6ca0b9b34a6c9edd4c142075bf444719",
+    "ADC integration-native-foundations-adc.patch",
+    "electrical eAD integration"
+  ],
+  "copies": [
+    {
+      "source": "copies/esp32s3_adc_provider.h",
+      "destination": "include/hw/misc/esp32s3_adc_provider.h",
+      "sha256": "63530e845df5830b6ec61f165f68fbf174c57373d9947969eb57399ee3530fd0"
+    },
+    {
+      "source": "copies/esp32s3_sens.h",
+      "destination": "include/hw/misc/esp32s3_sens.h",
+      "sha256": "e32e19e2c3aa854f39ff05e272aceae98d47ea14aec26f08f8fd52ca97e70c10"
+    },
+    {
+      "source": "copies/esp32s3_sens.c",
+      "destination": "hw/misc/esp32s3_sens.c",
+      "sha256": "56ad19a7b0ef36d8b0bd8f43a593a2cca819b160546c0ebbc753cf9760b7251c"
+    },
+    {
+      "source": "copies/esp32s3_apb_saradc.h",
+      "destination": "include/hw/misc/esp32s3_apb_saradc.h",
+      "sha256": "28d3fd635d21a0943a0d0f117f0a89842ff72bb3ddf9dd26fd1758ce0bb82713"
+    },
+    {
+      "source": "copies/esp32s3_apb_saradc.c",
+      "destination": "hw/misc/esp32s3_apb_saradc.c",
+      "sha256": "be0c55b24b4ff213ed6941e42def288be9d7e17b3ccb9383cdaa484e6ae24248"
+    },
+    {
+      "source": "copies/esp32s3_adc_net_provider.c",
+      "destination": "hw/adc/esp32s3_adc_net_provider.c",
+      "sha256": "41e78fa5b94ec9f58e7f0de60575c727f906d853584e5e4d2e3b0c2bc799241b"
+    },
+    {
+      "source": "copies/esp32s3-adc-test.c",
+      "destination": "tests/qtest/esp32s3-adc-test.c",
+      "sha256": "693acac556f0040459e733962cb8c6e8579cb39c9ca9513de75ba07a847c1977"
+    }
+  ],
+  "external_dependencies": {
+    "REGI2C": "Authoritative radio1..5 only; ADC delta retires SENS submaps/handlers and connects named signals, never copies radio bodies.",
+    "DC_kernel": "eAD canonical hw/adc/net-dc.c and net-dc.h, compiled exactly once by eAD, shared by test provider and runtime."
+  },
+  "ownership": {
+    "SENS": "0x60008800..0x600089ff single owner",
+    "APB_SARADC": "0x60040000 IRQ65",
+    "sample-provider": "Typed class DEFINE_PROP_LINK; QAPI adc-dc-provider created object before machine; eAD provider prelinked before SENS realize",
+    "REGI2C_config": "Canonical bool getter; invalid=false fails closed, written=false external/unknown reset route; slave0x69 reg7 bits5/7 internal ground precedes external provider",
+    "pause": "One main-loop BH per SENS. Pending unit/channel errors retain source revision and reset epoch; physical revision changes discard stale requests, reset/finalize cancel them. No timer/IRQ vm_stop, per-conversion allocations, automatic resume or fabricated DONE/data.",
+    "provider_revision": "Required typed class source_generation(provider, unit, channel), allocation/solve-free; actual DC provider tracks changed physical QOM state and scheduled steps; eAD implements its authoritative source_generation."
+  },
+  "evidence": "build-runtime-state/adc-2026-10-07/; older PASS retained as historical, not final receipt",
+  "prefix_inputs": [
+    {
+      "source": "prototypes/coreclk/0010-hw-xtensa-esp32s3_clk-common-clock-ports-for-SPI2-3.patch",
+      "sha256": "e8b1487b941f7f80c3920da9d56723bcb39b34fa0dedb2dd98c4b80deb88bf4d"
+    },
+    {
+      "source": "prototypes/coreclk/0011-hw-xtensa-esp32s3_clk-UHCI0-clock-gate-and-reset-lines.patch",
+      "sha256": "c1ebe584a6dbe178743da9874bbcb25880afac10242c16f8f1bb043362b47606"
+    },
+    {
+      "source": "prototypes/coreclk/0012-hw-xtensa-esp32s3_clk-publish-the-0010-0011-gate-levels.patch",
+      "sha256": "6b1e8f79f0e4194213c67d309c5a88930bcb13b396fb118232945e3697434f66"
+    },
+    {
+      "source": "prototypes/coreclk/0013-hw-xtensa-esp32s3-BBPLL-power-validity-decoupled-from.patch",
+      "sha256": "2203d4cca82a1ff4a62400517ff2fe1ff6d98e0e53417f16a5f5c7a65c5a8081"
+    },
+    {
+      "source": "prototypes/coreclk/0014-hw-xtensa-esp32s3_clk-LEDC-PCNT-MCPWM-LCD_CAM-clock-ports.patch",
+      "sha256": "0e7a5c62e8a62e2425073ea5474bfea1068b970da2b007b6c84f10be295c67f3"
+    },
+    {
+      "source": "prototypes/gpio/integration-native-foundations.patch",
+      "sha256": "e1a45cdb2e8e388fea1e0775a29b7639f236ff226e39dd3ad08f0df9a2a030bf"
+    },
+    {
+      "source": "prototypes/radio-bringup/0005-regi2c-config-accessor-and-slave-range.patch",
+      "sha256": "d1d4966b5185ffcec53a15db5a19375e6ca0b9b34a6c9edd4c142075bf444719"
+    }
+  ],
+  "foundation_prefix_profile": "qemu-extensions/runtime-profile-native-foundations-prefix.json",
+  "source_proof": {
+    "prefix": "ALL current26 recorded applied_files hashes verified independently before additive clock10..14/GPIOe1/radio5",
+    "adc_application": "Strict git apply --check exit0 and applied actual raw LF21dbb419",
+    "evidence": "build-runtime-state/adc-independent-final-20261007/",
+    "boundary": "Final epoch-safe ADC-only native build and 14 QTests passed; actual eAD source_generation callback migrated and independently reviewed. Full eAD graph composition/qualification remains parent-owned."
+  },
+  "foundation_prefix_fingerprint": "486cb408a31afae28b1a93896efd0a2909de13300f6fc050c696f10269fa2a92",
+  "foundation_prefix_receipt": "build-runtime-state/clock-10-12-raw-metadata-classification/20261007T115213Z/canonical-prefix-equivalence-publication.json",
+  "foundation_prefix_receipt_sha256": "b19fc13828c276e41f49162ac42416fa9864d4824c8205082d53707ae7031630",
+  "native_prefix_history": {
+    "fingerprint": "a4275a6147f6381795ff5b3fe77a5cd799f5fd6495400f91eae931b7be5ce6c5",
+    "receipt": "build-runtime-state/native-foundations-prefix-preparation/20261007T110252Z/coherent-source-receipt.json",
+    "source_map": "build-runtime-state/adc-independent-final-20261007/ADC-01-source-map-a427-history.json",
+    "source_map_sha256": "bdaec0d6885736e61b53af57fcffc2f085caf134b8e45439efe290934054e285",
+    "boundary": "CombinedVerify proves all62 applied file bytes/hashes and all12 copies equal. Canonical clock10..12 raw differences are mail-envelope-only; original11967 native proof and receipt577a remain unchanged, with no rebuild or new runtime qualification."
+  },
+  "canonical_dc_kernel": [
+    {
+      "source": "qemu-extensions/electrical/net-dc.c",
+      "destination": "hw/adc/net-dc.c",
+      "sha256": "63ee6c60cea2e77a7c33b31a8af4db8a4ecc2b76079453322cf335e5c49e1e69"
+    },
+    {
+      "source": "qemu-extensions/electrical/net-dc.h",
+      "destination": "hw/adc/net-dc.h",
+      "sha256": "578bc7c05ae6ee53b9819624674fbc31cd5d40ab0ddf223fdcf2eb9de8d738eb"
+    }
+  ],
+  "qualification": "ADC-01 epoch-safe source build-ready with independent native compile and 14 real QTests; not full eAD graph, future buses, ADC02..05 or hardware qualification.",
+  "native_proof": {
+    "binary_sha256": "11967a87cd9a3930a51290c78b55751f92a883dab4e94e6ab503535da9d93a46",
+    "source_delta_identity_sha256": "de2d317b36079d5b0231b8661d13b4cff0711c42f56eaf79c4b43b2a5f167590",
+    "receipt": "build-runtime-state/adc-independent-final-20261007/epoch-final/immutable-proof-receipt.json",
+    "receipt_sha256": "038f80f71eef57ec68e1e9cbecc345182ce6dde0040266321d2b0c3eccbedeed",
+    "qtests": {
+      "passed": 14,
+      "failed": 0,
+      "log": "build-runtime-state/adc-independent-final-20261007/epoch-final/qtest-adc.tap"
+    },
+    "runtime": {
+      "passed": true,
+      "scope": "ADC-only ordinary SDK solved-DC proof, not eAD graph qualification",
+      "evidence_root": "build-runtime-state/adc-independent-final-20261007/epoch-final/native/run-vyo9ewao",
+      "manifest_sha256": "1483e5f5aabdc3e19bc2e6bee160015d7dc5cfb139f248ac977a63ac6e880c45",
+      "DIVIDER": "3079/3350/3350 in three rounds",
+      "STEP": "Fourth actual adc_oneshot_read PC0x4200d6bc boundary; QMP CH2 rail3300->0 acknowledged/readback; later0/3350/3350 twice, ADC2 unchanged3350",
+      "FLOAT": "First actual read boundary; physical float-net=true; real status paused/running=false; invalid1/floating1/unknown0; noDONE/noinventeddata/FSMidle/APB mirrors and INT_RAW unchanged; physicalrepair stayspaused; explicit system_reset+cont restores3dividerrounds andzero diagnostics",
+      "boot3": {
+        "idf-6.1": "3 passed,0 failed,0 skipped",
+        "idf-5.5.5": "3 passed,0 failed,0 skipped",
+        "arduino-3.3.12": "3 passed,0 failed,0 skipped"
+      },
+      "original_inputs_unchanged": true,
+      "firmware_elf_sha256": "84e0694a16adba650156e4e6b6d08b0e5b9e1789dbbacb3c39e685ae4f3e3a7c",
+      "firmware_image_sha256": "02cf62ede1e94b42bd4e8ce1a62e3fc210314d7974feae7bd4b661bd2533e834"
+    },
+    "prefix_equality": {
+      "unaffected_match": 56,
+      "intentional_adc_overlays": 6,
+      "mismatches": 0,
+      "receipt": "build-runtime-state/adc-independent-final-20261007/epoch-final/parent-prefix-equality-receipt.json",
+      "receipt_sha256": "6a7c04e1192ca8c9060ccf75b5105d7ca399a367a773990272b2be31d3677fcd"
+    }
+  },
+  "independent_review": "Final ADC epoch/generation lifecycle and both actual provider callbacks reviewed correct; full eAD graph source composition is NativeNet/Main-owned."
+}

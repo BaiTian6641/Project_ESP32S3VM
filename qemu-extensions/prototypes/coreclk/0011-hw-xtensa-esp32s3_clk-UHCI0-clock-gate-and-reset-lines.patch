@@ -1,0 +1,61 @@
+From 73b6ce3af802439230ac464328d983e4810e9021 Mon Sep 17 00:00:00 2001
+From: ESP32S3VM coreclk <coreclk@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 15:19:25 +0800
+Subject: [PATCH] hw/xtensa/esp32s3_clk: UHCI0 clock-gate and reset lines
+
+Extends the common clock port bundle with UHCI0 for the UART-overlay
+lane: gate level ESP32S3_GATE_UHCI0 (SYSTEM_PERIP_CLK_EN0 UHCI0_CLK_EN
+[8]) and reset strobe + level ESP32S3_RST_UHCI0 (SYSTEM_PERIP_RST_EN0
+UHCI0_RST [8]) in the periph-clk-gate / periph-rst-req / periph-rst-level
+bundles.
+---
+ hw/xtensa/esp32s3_clk.c         | 5 +++++
+ include/hw/xtensa/esp32s3_clk.h | 2 ++
+ 2 files changed, 7 insertions(+)
+
+diff --git a/hw/xtensa/esp32s3_clk.c b/hw/xtensa/esp32s3_clk.c
+index d6f4b2f..8e724c4 100644
+--- a/hw/xtensa/esp32s3_clk.c
++++ b/hw/xtensa/esp32s3_clk.c
+@@ -158,6 +158,8 @@ static void esp32s3_clock_update_rst_levels(ESP32S3ClockState *s)
+                  (en0 & R_SYSTEM_PERIP_RST_EN0_I2S0_RST_MASK) != 0);
+     qemu_set_irq(s->rst_level_irqs[ESP32S3_RST_I2S1],
+                  (en0 & R_SYSTEM_PERIP_RST_EN0_I2S1_RST_MASK) != 0);
++    qemu_set_irq(s->rst_level_irqs[ESP32S3_RST_UHCI0],
++                 (en0 & R_SYSTEM_PERIP_RST_EN0_UHCI0_RST_MASK) != 0);
+     qemu_set_irq(s->rst_level_irqs[ESP32S3_RST_GDMA],
+                  (en1 & R_SYSTEM_PERIP_RST_EN1_DMA_RST_MASK) != 0);
+     qemu_set_irq(s->rst_level_irqs[ESP32S3_RST_UART2],
+@@ -246,6 +248,9 @@ static void esp32s3_clock_strobe_rst(ESP32S3ClockState *s, uint32_t risen0,
+     if (risen0 & R_SYSTEM_PERIP_RST_EN0_I2S1_RST_MASK) {
+         qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_I2S1]);
+     }
++    if (risen0 & R_SYSTEM_PERIP_RST_EN0_UHCI0_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_UHCI0]);
++    }
+ }
+ 
+ static uint32_t esp32s3_read_cpu_intr(ESP32S3ClockState *s, uint32_t index)
+diff --git a/include/hw/xtensa/esp32s3_clk.h b/include/hw/xtensa/esp32s3_clk.h
+index 8bb9391..ac71b99 100644
+--- a/include/hw/xtensa/esp32s3_clk.h
++++ b/include/hw/xtensa/esp32s3_clk.h
+@@ -63,6 +63,7 @@ enum Esp32s3PeriphClkGate {
+     ESP32S3_GATE_UART0,         /* SYSTEM_PERIP_CLK_EN0: UART_CLK_EN [2]     */
+     ESP32S3_GATE_UART1,         /* SYSTEM_PERIP_CLK_EN0: UART1_CLK_EN [5]    */
+     ESP32S3_GATE_UART2,         /* SYSTEM_PERIP_CLK_EN1: UART2_CLK_EN [9]    */
++    ESP32S3_GATE_UHCI0,         /* SYSTEM_PERIP_CLK_EN0: UHCI0_CLK_EN [8]    */
+     ESP32S3_GATE_COUNT
+ };
+ 
+@@ -94,6 +95,7 @@ enum Esp32s3PeriphRstReq {
+     ESP32S3_RST_RMT,        /* RMT_RST [9]                            */
+     ESP32S3_RST_I2S0,       /* I2S0_RST [4]                           */
+     ESP32S3_RST_I2S1,       /* I2S1_RST [21]                          */
++    ESP32S3_RST_UHCI0,      /* UHCI0_RST [8]                          */
+     ESP32S3_RST_COUNT
+ };
+ 
+-- 
+2.43.0
+

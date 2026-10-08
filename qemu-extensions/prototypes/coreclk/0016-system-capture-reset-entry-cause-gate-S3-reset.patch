@@ -1,0 +1,135 @@
+From 02ae330e0687274bd2cd98a5714e0fd269be7f6e Mon Sep 17 00:00:00 2001
+From: ESP32S3VM coreclk <coreclk@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 23:42:19 +0800
+Subject: [PATCH] system: capture reset entry cause and gate S3 reset domains
+ by it
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Packaged from qemu-extensions/prototypes/gpio/esp32s3-reset-transaction-fix
+.reference.patch (sha256 58341634301e4fc8d1b3e1e830d69e3cf4f6d79e3eb6be630
+e3da409485adf5c), Main directive; semantic content identical to the
+reference, with two compile-truth repairs:
+
+1. Reference declares qemu_last_reset_request_cause() in runstate.h but
+   defines and calls qemu_last_reset_cause() — aligned the declaration to
+   the defined/called name so the increment links.
+2. Reference header comment claimed SHUTDOWN_CAUSE_NONE after a dispatched
+   pass; the implementation never clears — comment made truthful.
+
+Semantics (unchanged from reference): qemu_system_reset() captures the
+cause of THIS pass at ENTRY, before any device reset runs, covering direct
+entries (snapshot load, power-on NONE) with no recorded request;
+qemu_system_reset_request() additionally records non-consumingly. The S3
+SoC reset prologue treats any cause other than GUEST_RESET/SUBSYSTEM_RESET
+as a full-chip reset: requested_reset = ALL overrides a stale guest CPU/
+RTC latch so PERIPH/RTC/CPU domains clear in the same pass; guest requests
+honor the latched domain (CPU-only semantics preserved).
+
+A/B proof (build-runtime-state/coreclk-common-clock-ports-2026-10-07/
+reset-latch-AB-proof.txt): frozen 0014 binary — planted GDMA=0x3E/
+ST_ENA=0x7 survives a host QMP system_reset (defect); this binary — host
+reset clears to 0x0/0x0 while a guest CPU0-only reset still preserves the
+planted state. Suite 11/11, boot smoke 3/3.
+---
+ hw/xtensa/esp32s3.c       | 16 ++++++++++++++++
+ include/sysemu/runstate.h | 10 ++++++++++
+ system/runstate.c         | 19 +++++++++++++++++++
+ 3 files changed, 45 insertions(+)
+
+diff --git a/hw/xtensa/esp32s3.c b/hw/xtensa/esp32s3.c
+index f671048..39c2946 100644
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -207,6 +207,22 @@ static void esp32s3_soc_update_clocks(Esp32s3SocState *s);
+ static void esp32s3_soc_reset(DeviceState *dev)
+ {
+     Esp32s3SocState *s = ESP32S3_SOC(dev);
++
++    /* A host-initiated system reset (QMP/HMP/monitor system_reset,
++     * snapshot load, initial power-on) is a FULL chip reset: it overrides
++     * any latched guest CPU/RTC domain request.  Guest requests arrive
++     * with SHUTDOWN_CAUSE_GUEST_RESET / SUBSYSTEM_RESET and honor the
++     * latched domain.  Without this override a stale CPU-only latch
++     * would leak into the next host reset and skip peripheral domains. */
++    ShutdownCause cause = qemu_last_reset_cause();
++    if (cause != SHUTDOWN_CAUSE_GUEST_RESET &&
++        cause != SHUTDOWN_CAUSE_SUBSYSTEM_RESET) {
++        /* Host-initiated (QMP/HMP/snapshot/power-on): full chip reset.
++         * A stale latched guest CPU/RTC request must not leak into this
++         * pass and skip peripheral domains. */
++        s->requested_reset = ESP32S3_SOC_RESET_ALL;
++    }
++
+     if (s->requested_reset == 0) {
+         s->requested_reset = ESP32S3_SOC_RESET_ALL;
+     }
+diff --git a/include/sysemu/runstate.h b/include/sysemu/runstate.h
+index 11c7ff3..a3dfb2b 100644
+--- a/include/sysemu/runstate.h
++++ b/include/sysemu/runstate.h
+@@ -101,6 +101,16 @@ void qemu_system_vmstop_request_prepare(void);
+ bool qemu_vmstop_requested(RunState *r);
+ ShutdownCause qemu_shutdown_requested_get(void);
+ ShutdownCause qemu_reset_requested_get(void);
++/*
++ * Cause of the most recently dispatched reset pass: captured at
++ * qemu_system_reset() entry, before any device reset runs (also covers
++ * direct entries such as startup and snapshot load), and additionally
++ * recorded at qemu_system_reset_request() time. The value is kept until
++ * the next pass/request replaces it — it is never cleared in between.
++ * Machine/device reset handlers use it to gate reset-domain coverage at
++ * device-reset time.
++ */
++ShutdownCause qemu_last_reset_cause(void);
+ void qemu_system_killed(int signal, pid_t pid);
+ void qemu_system_reset(ShutdownCause reason);
+ void qemu_system_guest_panicked(GuestPanicInformation *info);
+diff --git a/system/runstate.c b/system/runstate.c
+index c2c9afa..a6fa31e 100644
+--- a/system/runstate.c
++++ b/system/runstate.c
+@@ -427,6 +427,15 @@ static NotifierList shutdown_notifiers =
+     NOTIFIER_LIST_INITIALIZER(shutdown_notifiers);
+ static uint32_t wakeup_reason_mask = ~(1 << QEMU_WAKEUP_REASON_NONE);
+ 
++/* Cause of the most recently dispatched reset pass, captured at
++ * qemu_system_reset() entry (see qemu_last_reset_cause). */
++static ShutdownCause last_reset_cause = SHUTDOWN_CAUSE_NONE;
++
++ShutdownCause qemu_last_reset_cause(void)
++{
++    return last_reset_cause;
++}
++
+ ShutdownCause qemu_shutdown_requested_get(void)
+ {
+     return shutdown_requested;
+@@ -510,6 +519,12 @@ void qemu_system_reset(ShutdownCause reason)
+     MachineClass *mc;
+     ResetType type;
+ 
++    /* Capture the cause of THIS pass at entry: qemu_register_reset
++     * handlers (e.g. ESP32-S3 domain gating) run below and need the
++     * actual reason, including direct calls (snapshot load, power-on
++     * NONE) where no reset request was recorded. */
++    last_reset_cause = reason;
++
+     mc = current_machine ? MACHINE_GET_CLASS(current_machine) : NULL;
+ 
+     cpu_synchronize_all_states();
+@@ -635,6 +650,10 @@ void qemu_system_reset_request(ShutdownCause reason)
+     } else {
+         reset_requested = reason;
+     }
++    /* Non-consuming record for machine reset handlers that gate domain
++     * coverage at device-reset time (the main loop consumes
++     * reset_requested before dispatching the pass). */
++    last_reset_cause = reason;
+     cpu_stop_current();
+     qemu_notify_event();
+ }
+-- 
+2.43.0
+

@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "status": "native-engines-written-awaiting-authoritative-registry-integration",
+  "registry_approval": "Main approved exact model/role/parameter schemas and real power range 2.7..3.6V",
+  "project_quantity_encoding": "Parameters use canonical {value: integer, unit: count}; period_ms counts milliseconds as named by its field (the existing graph quantity grammar has no ms unit). No default or MCU-derived source vector.",
+  "models": [
+    {
+      "model_type": "ws2812-functional-3v3",
+      "roles": {"vdd": "power", "gnd": "ground", "din": "digital-input"},
+      "parameters": {"led_count": {"type": "integer", "minimum": 1, "maximum": 256}},
+      "fixed_profile": {
+        "supply": "Explicit functional 3.3V rail profile, known powered at VDD-GND 2.7..3.6V; not a classic WS2812 supply-voltage compliance claim",
+        "t0h_ns": [250, 550], "t0l_ns": [700, 1000],
+        "t1h_ns": [650, 950], "t1l_ns": [300, 600],
+        "cell_ns": [950, 1550], "reset_low_ns_min": 50000,
+        "ordering": "24-bit MSB-first GRB per LED",
+        "input_truth": "Authoritative actual registered DIN terminal samples after the shared graph settles",
+        "latch": "Only a continuous known-low reset latches complete valid first-N pixel words. Last data low may merge into reset. Empty, partial, malformed or unknown frames cannot replace held pixels.",
+        "forwarding_boundary": "Pulse values/timing beyond first-N words do not invalidate first-N pixels; actual low-reset tracking continues. No hidden DOUT wire is modeled.",
+        "power": "Known actual power cycle clears decoder/latch validity. Unknown rails suspend input/reset evaluation without inventing a power cycle.",
+        "not_modeled": ["DOUT propagation", "PWM", "optical output", "thermal behavior", "LED current loading"]
+      },
+      "sources": [
+        "https://d2j2m4p6r3pg95.cloudfront.net/module_files/led-cube/assets/datasheets/WS2812B.pdf",
+        "https://www.luxalight.eu/sites/default/files/downloads/2020-03/Datasheet_WS2812B.pdf",
+        "https://docs.electrokit.com/modules/EKM019/WS2812B.pdf"
+      ]
+    },
+    {
+      "model_type": "nec-envelope-source",
+      "roles": {"vdd": "power", "gnd": "ground", "out": "digital-output"},
+      "parameters": {
+        "address": {"type": "integer", "minimum": 0, "maximum": 255},
+        "command": {"type": "integer", "minimum": 0, "maximum": 255},
+        "period_ms": {"type": "integer", "minimum": 100, "maximum": 60000}
+      },
+      "fixed_profile": {
+        "supply": "Explicit actual VDD-GND 2.7..3.6V rails; registered OUT is a finite 40-ohm open-drain ground branch, never GPIO input injection",
+        "polarity": "Active-low demodulated receiver envelope; LOW enables the ground branch, HIGH/off/unknown releases it. Actual high requires an explicitly wired pullup and comes from the one shared electrical kernel, never a cached source bit.",
+        "first_frame_delay_ns": 100000000,
+        "leader_mark_ns": 9000000, "leader_space_ns": 4500000,
+        "data_mark_ns": 560000, "zero_space_ns": 560000,
+        "one_space_ns": 1690000, "final_mark_ns": 560000,
+        "ordering": "32 LSB-first bits: address, inverted address, command, inverted command",
+        "dataset": "Immutable explicitly configured bytes, never derived from MCU TX or RX payload",
+        "schedule": "First frame at actual power_on_ns+100ms, complete frames first+k*period. Semantic dataset replacement explicitly reanchors at configuration time+100ms.",
+        "power": "Exact future events canceled on known off/unknown; unknown restoration in the same real epoch schedules the next whole future frame, not past-edge replay or a fake power cycle",
+        "bounds": "One transition per callback; checked int64 virtual timestamps and fixed-size state. Unschedulable late phases abort explicitly rather than emit past-edge bursts.",
+        "not_modeled": ["optical carrier propagation", "receiver AGC", "ESP32-S3 RMT RX demodulation silicon"]
+      },
+      "sources": ["https://www.vishay.com/docs/80071/dataform.pdf", "https://www.vishay.com/docs/82491/tsop382.pdf"]
+    }
+  ],
+  "qualification": "Source contracts and engines are not runtime proof. Registry/API integration, actual graph-powered native firmware/QTests and independent review are required. Functional modeled timing only, never measured pulse metrology."
+}

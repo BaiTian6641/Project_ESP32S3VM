@@ -1,0 +1,106 @@
+[
+ {
+  "date": "2026-10-07",
+  "packages": [
+   "UART-01",
+   "UART-02",
+   "UART-03"
+  ],
+  "qualification": "Source changes and authored vectors are not runtime or hardware qualification; source-map.json owns individual evidence rows",
+  "changes": [
+   "Replace the S3 inherited instant-FIFO wrapper with persistent virtual-time physical TX/RX bit progression for all three controllers, keeping the ordinary parent and console transport separate",
+   "Use the one native electrical desired-output store, strict raw GPIO/IO_MUX sampling and published-frame subscriptions; migrate exact S3 matrix IDs12/15/18 and13/16/19",
+   "Model widths5..8, parity, 1/1.5/2 stop bits, real break/parity/frame/overflow status, threshold/timeout IRQs, RTS/CTS backpressure and shadow REG_UPDATE synchronization",
+   "Keep clock/gate/held-reset refresh from copying unlatched register shadows; per-register high-speed writes avoid whole-bank copies",
+   "Attach all six FIFO windows to one actual1024-byte RAM; remove temporary S3 private FIFO allocation, preserve legacy ESP32/C3 allocation and reset-domain compatibility",
+   "Implement RX-idle EOF independently of FIFO occupancy/timeout IRQ enable and console traffic; snapshot exact physical FIFO boundaries and actually queued break delimiter metadata into bounded UHCI storage",
+   "Add real UHCI0 controller/channel/descriptor demand, accepted-count/error/EOF transitions and the reviewed shared I2S continuous-segment hook without mutating the frozen SPI RX-EOF artifact",
+   "Implement separate advanced modes: physical RS485 snooping/echo exclusion/turnaround/DE, actual-edge autobaud counter encodings, AT guards, and target half-duplex IrDA centered zero pulses with WCTL/direction/polarity semantics",
+   "Author actual-machine native UART/UHCI/GDMA timing and ownership vectors plus isolated full-system UHCI vectors; ordinary pinned IDF6.1 full-duplex/negative/advanced/UHCI fixtures, pinned Arduino3.3.12-IDF5.5.5 HardwareSerial wrapper, and QEMU-only real ROM download regression",
+   "Freeze original firmware/config/source/graphs/executable identity before launches and use evidence-local writable flash copies only"
+  ],
+  "review_fixes": [
+   "Apply RX/TX capacities independently, including safety-only zero allocations, preventing Fifo8 capacity mismatch assertions",
+   "Correct ten-bit RX flow threshold and documented MEM_CONF/IDLE_CONF/CLK_CONF defaults",
+   "Treat unresolved matrix inputs like direct pads: invoke the canonical unknown gate and never consume held levels",
+   "Pin independently reviewed RAW provider SHA2626ab0cad1955d02bc20cb9a190bc782a388eea0fac452b3524f15b4ab7b9fa; historical3a8169 was normalized text, not alternative input",
+   "Use primary TRM rather than generic IrDA assumptions: TX and RX opposite polarity, half-duplex TX_EN, mid-bit pulse ticks8..10/11, and honest ordinary SDK RX-only/unavailable-control evidence",
+   "Use primary autobaud counts cycles-minus-one and RS485 transmitter-only error status; update physical vectors rather than relax the model to make stale oracles pass"
+  ],
+  "unqualified_boundaries": [
+   "No independently approved hardware timing reference; source A/B arithmetic conflict and fractional-divider cycle phase/interleave remain unqualified",
+   "UHCI header/CRC/quick-send/hung timing and FIFO SIZE=0 exact primary semantics remain unresolved",
+   "Terminating break NULL inclusion in GDMA payload requires independent target boundary reference",
+   "Digital RS485 and IrDA proof is not differential-transceiver or optical-medium qualification",
+   "Pinned ordinary UHCI public API does not expose separator/escape configuration; pinned ordinary UART API does not expose IrDA TX_EN/WCTL controls",
+   "Actual same-source build/runtime/boot/download checks are delegated and pending the authoritative shared native-foundation source record and native SDK build contract"
+  ]
+ },
+ {
+  "date": "2026-10-08",
+  "packages": [
+   "UART-01",
+   "UART-02",
+   "UART-03"
+  ],
+  "qualification": "Preparation and integration fixes only; no runtime or hardware qualification claimed by this entry",
+  "changes": [
+   "prepare.py honors the lane's declared patch_context for the shared RAW2626 artifact when the dependency record supplies it, instead of silently re-tightening it to a strict match",
+   "integration.patch re-authored (LF, exact frozen-foundation context): the authored CRLF bytes could not match the LF parent files, and its struct-field hunk context predated the native-foundations GPIO/IOMUX/RTC_IO fields; added/removed content byte-identical modulo line endings, now strict-applies",
+   "integration-electrical.patch and integration-qtest.patch re-authored the same way; both had synthetic hunk headers and CRLF context that no strict or whitespace-tolerant apply could place reliably",
+   "source-map patch_context reduced to the shared RAW2626 artifact only",
+   "GDMA owner 0004 prerequisite pin updated to the current reviewed revision 77b87556 (author's 7640a6e0 was superseded upstream and no longer exists in the tree)",
+   "Authored qtest array signal[] renamed to matrix_signal[]: the libc signal() declaration made the file uncompilable against the pinned tree",
+   "esp32s3_uart.c trace barrier now uses the pinned log API (qemu_log_trylock/qemu_log_unlock, whose unlock flushes) instead of the absent qemu_log_flush symbol"
+  ]
+ },
+ {
+  "date": "2026-10-08",
+  "packages": [
+   "UART-01",
+   "UART-02",
+   "UART-03"
+  ],
+  "qualification": "First delegated execution of this lane. Native unit vectors pass; the native qtest set executes and its first failure is localized. No firmware fixture, ROM-download or hardware row is claimed.",
+  "changes": [
+   "Delegated build/run performed on prepared checkout qemu-uart-40edccac4156-d7f4bed46d77c73a (dependency record runtime-8ba824296e44c0fd-source.json): ninja rc0 for qemu-system-xtensa, tests/qtest/esp32s3-uart-test and test-esp32s3-uhci",
+   "test-esp32s3-uhci: 17/17 PASS (UHCI raw/escape/separator/length/idle/break framing, owner isolation, descriptor completion and errors, demand/segment/reset vectors)",
+   "esp32s3-uart-test: executes; first case uart0/formats-physical-timing fails at the stop-bit physical sample (receiver pad low, expected high) while every start/data-bit sample of the same frame passes; electrical snapshot at the failing instant shows TX pad out_sel12 with gpio_output_enable, driven low, and the peer pad low with the idle pad high. TX/RX trace events are emitted, so the model-to-electrical path is live; the outstanding defect is the frame's stop-bit/idle transition timing",
+   "Deferred fixtures: connected/absent/disconnected/wrong/uhci Arduino ordinary-IDF images and the ROM-download regression are not run yet; they are required before any UART-01/02/03 qualification row is promoted",
+   "Diagnostics (evidence build-runtime-state/uart-native-2026-10-07/diagnostics/): frame-timeline probe shows qtest clock_step never advances the virtual clock because no QEMU_CLOCK_VIRTUAL timer is armed in the setup state, and the GPIO input register reads 0 while the solved pad is high. Model-side TX start-bit half-bit framing also found and corrected (start bit now one full bit; unit vectors unchanged 17/17). These three items gate every timing vector in the qtest set.",
+   "HARNESS FIX (unblocks the whole vector set): the qtest setup passed -S, so QEMU never enabled the virtual clock (enabled only on vm_start) and qtest clock_step was a permanent no-op; setup now starts paused, applies the electrical project at the quiescent boundary, then continues the VM. 14 of 60 vectors pass on the first run with a working clock.",
+   "Reverted an interim TX tick->bit remap: the authored convention pre-shifts tx_frame by one so the original mapping was already correct; the earlier stop-bit symptom was caused by the frozen clock, not by the frame engine.",
+   "RS485 mirror vectors: the peer frame's stop sample lands half a bit after the two-byte TX window at the model's verified 10-bit framing, so the vector now queues three bytes (removes a boundary artifact); the remaining failure is the model's RS485 TX arbitration pausing the transmitter while the receiver is active, which the TRM bit semantics must settle."
+  ]
+ },
+ {
+  "date": "2026-10-08",
+  "packages": [
+   "UART-01",
+   "UART-02",
+   "UART-03"
+  ],
+  "qualification": "Native vector sets pass on a clean prepared checkout. Ordinary firmware images and the ROM regression remain to be run (separate rows).",
+  "changes": [
+   "Harness: vector setup starts paused, applies the electrical project at the quiescent boundary, then continues the VM (QEMU enables QEMU_CLOCK_VIRTUAL only on start; without cont every clock_step was a no-op).",
+   "Vectors: RS485 mirror rows now set TRM bit4 RS485RXBY_TX_EN (truth table from TRM v1.8 register 26.17) instead of expecting the model to transmit while the receiver line is busy; the RS485 window queues three bytes and a graph change after start is bracketed by stop/cont.",
+   "Model: no behavioural change was needed for these rows; the interim TX tick->bit remap was reverted after measurement confirmed the authored 10-bit framing.",
+   "Result: esp32s3-uart-test 60/60 PASS and test-esp32s3-uhci 17/17 PASS on qemu-uart-40edccac4156-5b793f4831194b26 (clean tree, diagnostics removed).",
+   "Runner: live session artifacts moved to native disk and published into the evidence directory after close, with transient drvfs read faults retried (same fault class the memory lane hit); frozen artifacts re-created as frozen-r2 so their manifests bind the current runner hash.",
+   "Ordinary fixtures executed for the first time: five IDF6.1 modes run to completion with only uart0_physical_loopback513 failing; the connected mode additionally fails normal_restore and needs a longer host watchdog. Arduino build and ROM-download SYNC are separately blocked (component REQUIRES, banner/SLIP interleaving)."
+  ]
+ },
+ {
+  "date": "2026-10-08",
+  "packages": [
+   "UART-01",
+   "UART-02",
+   "UART-03"
+  ],
+  "qualification": "Post-review state: vectors 60/60 and unit 17/17 on the clean checkout; ordinary fixtures execute cleanly with the loopback row failing; the console-retry prototype was reverted after a teardown heap corruption.",
+  "changes": [
+   "Review-driven fixes: the gpio/electrical link bind now takes explicit references (the strong link properties' teardown release otherwise unrefs objects nobody ref'd); the shared Xtensa qtest suite no longer aborts when UART_QTEST_PROJECT_DIR is unset (the suite registers one skip entry); the runner's drvfs retry is limited to the transient errno class; the writable flash and session artifacts live on native disk and are published after QEMU exits; the memory lane's IOMMU UNMAP event reports the alias-rebased physical address.",
+   "Reverted the console-TX retry prototype (fifo+watch): it corrupted the heap at teardown (physmem flatview cleanup), so the original single-shot write stays and the busy-backend drop gap is recorded, not silently fixed."
+  ]
+ }
+]

@@ -1,0 +1,315 @@
+--- a/hw/gpio/esp32s3_gpio.c
++++ b/hw/gpio/esp32s3_gpio.c
+@@ -199,8 +199,13 @@
+         if (held_now && !s->hold_active[n]) {
+             uint32_t osc = s->func_out_sel_cfg[n];
+ 
+-            /* Latch the DESIRED output config (raw register truth) */
+-            s->hold_level[n] = in_bit(s, n);
++            /* Latch the DESIRED output config (raw register truth); the
++             * drive bit is latched EFFECTIVE (FUNC_OUT_INV_SEL applied)
++             * so the held clamp reproduces the awake driven level
++             * bit-for-bit (hold-latch effective drive correction). */
++            s->hold_level[n] = in_bit(s, n) ^
++                (FIELD_EX32(osc, GPIO_FUNCn_OUT_SEL_CFG, FUNC_OUT_INV_SEL)
++                 ? 1u : 0u);
+             s->hold_oe[n] = enable_bit(s, n);
+             s->hold_od[n] = pin_open_drain(s, n);
+             s->hold_pull_up[n] = s->iomux != NULL &&
+@@ -232,14 +237,35 @@
+             net->diag = ESP32S3_GPIO_PAD_UNKNOWN;
+             return;
+         }
+-        if (s->hold_oe[n] && !(s->hold_od[n] && s->hold_level[n] == 0)) {
++        /* Awake clamp predicate: an open-drain pad driving 1 RELEASES the
++         * pad (bit1 releases, bit0 clamps low) — the held clamp matches
++         * the awake semantics, never the inverse (held OD polarity
++         * correction). */
++        if (s->hold_oe[n] && !(s->hold_od[n] && s->hold_level[n] == 1)) {
++            bool attached = s->solver_owned || s->solver_attached[n];
++            bool ext = net->valid && net->diag == ESP32S3_GPIO_PAD_EXTERNAL;
++            bool ext_level = net->level;
++
++            if (attached) {
++                /* Solver authority (hold-clamp solver-validity
++                 * correction): the held clamp never overwrites the
++                 * solver's net validity/level report — solver-owned pads
++                 * keep solver validity even held (block comment above);
++                 * with a valid solver report only the CONTENTION
++                 * diagnostic updates, exactly like the awake attached
++                 * branch. */
++                if (ext) {
++                    net->diag = (net->level != s->hold_level[n]) ?
++                                ESP32S3_GPIO_PAD_CONTENTION :
++                                ESP32S3_GPIO_PAD_DRIVEN;
++                }
++                return;
++            }
+             net->valid = true;
+             net->level = s->hold_level[n];
+-            net->diag = (s->net[n].valid &&
+-                         s->net[n].diag == ESP32S3_GPIO_PAD_EXTERNAL &&
+-                         s->net[n].level != s->hold_level[n])
+-                        ? ESP32S3_GPIO_PAD_CONTENTION
+-                        : ESP32S3_GPIO_PAD_DRIVEN;
++            net->diag = (ext && ext_level != s->hold_level[n]) ?
++                        ESP32S3_GPIO_PAD_CONTENTION :
++                        ESP32S3_GPIO_PAD_DRIVEN;
+             return;
+         }
+         /* Held released: external/pulls/floating as usual (fall through) */
+@@ -368,7 +394,12 @@
+      * the unresolved state either way. */
+     bool strict = s->strict_unknown || s->solver_owned || s->solver_attached[n];
+ 
+-    if (s->hold_active[n] && s->hold_oe[n] && !s->hold_matrix_routed[n]) {
++    /* A held output pad samples its latched level only while the frozen
++     * config actually CLAMPS the pad: an OD pad latched at 1 is released
++     * and samples the net (external/pulls/floating) like the awake path
++     * (held OD polarity correction). */
++    if (s->hold_active[n] && s->hold_oe[n] && !s->hold_matrix_routed[n] &&
++        !(s->hold_od[n] && s->hold_level[n] == 1)) {
+         sample = esp32s3_gpio_eff_ie(s, n) ? s->hold_level[n] : 0;
+     } else if (!esp32s3_gpio_eff_ie(s, n)) {
+         sample = 0;
+--- a/tests/qtest/esp32s3-gpio-test.c
++++ b/tests/qtest/esp32s3-gpio-test.c
+@@ -487,6 +487,228 @@
+     qtest_quit(slp);
+ }
+ 
++/*
++ * Held open-drain polarity (gpio-hold-od-inversion-solver-correction):
++ * awake semantics — an open-drain pad driving 1 RELEASES the pad, driving
++ * 0 clamps it low.  The held clamp must match: a latched 1 releases the
++ * pad (external/floating follow the net), a latched 0 clamps it low
++ * against an external high driver.  Observable through the resolved
++ * gpio-out line (net->valid ? net->level : 0) and GPIO_IN.
++ */
++static void test_hold_open_drain_polarity(void)
++{
++    QTestState *slp;
++    const uint64_t RTC_BASE = 0x60008000ULL;
++
++    slp = qtest_initf("-machine esp32s3 -L pc-bios -accel qtest");
++    qtest_irq_intercept_out_named(slp, "/machine/soc/gpio", "gpio-out");
++
++    /* Latched 1: OD output high RELEASES.  No pull, no external driver:
++     * the released held net floats — the line reads 0 (unresolved) and
++     * the input samples 0 (permissive profile), never a fabricated
++     * driven-high bit. */
++    qtest_writel(slp, IO_MUX_PAD(4), IOMUX_GPIO_IN_EN);
++    qtest_writel(slp, GPIO(A_GPIO_ENABLE_W1TS), BIT(4));
++    qtest_writel(slp, GPIO(A_GPIO_OUT_W1TS), BIT(4));
++    qtest_writel(slp, PIN_REG(4), R_GPIO_PINn_PAD_DRIVER_MASK);
++    qtest_writel(slp, RTC_BASE + 0xd8, BIT(4));
++    g_assert_cmpint(qtest_get_irq(slp, 4), ==, 0);
++    g_assert_cmphex(qtest_readl(slp, GPIO(A_GPIO_IN)) & BIT(4), ==, 0);
++
++    /* A released held pad follows a valid external driver */
++    qtest_set_irq_in(slp, "/machine/soc/gpio", "gpio-in", 4, 1);
++    g_assert_cmpint(qtest_get_irq(slp, 4), ==, 1);
++    g_assert_cmphex(qtest_readl(slp, GPIO(A_GPIO_IN)) & BIT(4), ==, BIT(4));
++
++    /* Latched 0: OD output low CLAMPS.  A re-asserted external high
++     * driver meets the clamp: CONTENTION resolves to the clamped low
++     * under the digital policy — never a released pad following the
++     * external 1. */
++    qtest_writel(slp, RTC_BASE + 0xd8, 0);
++    qtest_writel(slp, GPIO(A_GPIO_OUT_W1TC), BIT(4));
++    qtest_writel(slp, RTC_BASE + 0xd8, BIT(4));
++    g_assert_cmpint(qtest_get_irq(slp, 4), ==, 0);
++    qtest_set_irq_in(slp, "/machine/soc/gpio", "gpio-in", 4, 1);
++    g_assert_cmpint(qtest_get_irq(slp, 4), ==, 0);
++    g_assert_cmphex(qtest_readl(slp, GPIO(A_GPIO_IN)) & BIT(4), ==, 0);
++
++    /* Clearing the hold bit un-holds immediately: the awake OD pad with
++     * output 0 still clamps low; flipping the output to 1 releases it and
++     * the re-asserted external high driver shows through again. */
++    qtest_writel(slp, RTC_BASE + 0xd8, 0);
++    g_assert_cmpint(qtest_get_irq(slp, 4), ==, 0);
++    qtest_writel(slp, GPIO(A_GPIO_OUT_W1TS), BIT(4));
++    qtest_set_irq_in(slp, "/machine/soc/gpio", "gpio-in", 4, 1);
++    g_assert_cmpint(qtest_get_irq(slp, 4), ==, 1);
++
++    /* Cleanup */
++    qtest_set_irq_in(slp, "/machine/soc/gpio", "gpio-in", 4, 0);
++    qtest_writel(slp, PIN_REG(4), 0);
++    qtest_writel(slp, GPIO(A_GPIO_ENABLE_W1TC), BIT(4));
++    qtest_writel(slp, GPIO(A_GPIO_OUT_W1TC), BIT(4));
++    qtest_writel(slp, IO_MUX_PAD(4), 0);
++    qtest_quit(slp);
++}
++
++/*
++ * Held FUNC_OUT_INV_SEL (gpio-hold-od-inversion-solver-correction): the
++ * hold latch stores the EFFECTIVE (post-inversion) drive bit, so a held
++ * pad keeps driving the level the awake path drove (OUT bit 0 + INV ->
++ * held 1; OUT bit 1 + INV -> held 0).  Register writes after hold-set
++ * never change the frozen level.
++ */
++static void test_hold_out_inversion(void)
++{
++    QTestState *slp;
++    const uint64_t RTC_BASE = 0x60008000ULL;
++
++    slp = qtest_initf("-machine esp32s3 -L pc-bios -accel qtest");
++    qtest_irq_intercept_out_named(slp, "/machine/soc/gpio", "gpio-out");
++
++    /* Awake: OUT bit 0 + FUNC_OUT_INV_SEL -> drives 1 */
++    qtest_writel(slp, IO_MUX_PAD(4), IOMUX_GPIO_IN_EN);
++    qtest_writel(slp, GPIO(A_GPIO_ENABLE_W1TS), BIT(4));
++    qtest_writel(slp, FUNC_OUT(4), GPIO_FUNC_OUT_SEL_NONE |
++                 R_GPIO_FUNCn_OUT_SEL_CFG_FUNC_OUT_INV_SEL_MASK);
++    g_assert_cmpint(qtest_get_irq(slp, 4), ==, 1);
++    g_assert_cmphex(qtest_readl(slp, GPIO(A_GPIO_IN)) & BIT(4), ==, BIT(4));
++
++    /* Hold latches the effective bit (1): flipping GPIO_OUT or the
++     * inversion register afterwards never changes the held level */
++    qtest_writel(slp, RTC_BASE + 0xd8, BIT(4));
++    g_assert_cmpint(qtest_get_irq(slp, 4), ==, 1);
++    g_assert_cmphex(qtest_readl(slp, GPIO(A_GPIO_IN)) & BIT(4), ==, BIT(4));
++    qtest_writel(slp, GPIO(A_GPIO_OUT_W1TS), BIT(4));
++    g_assert_cmpint(qtest_get_irq(slp, 4), ==, 1);
++    qtest_writel(slp, FUNC_OUT(4), GPIO_FUNC_OUT_SEL_NONE);
++    g_assert_cmpint(qtest_get_irq(slp, 4), ==, 1);
++
++    /* Clearing the hold bit un-holds immediately (raw OUT bit 1, no
++     * inversion -> still 1), then re-latch the inverted LOW: raw OUT 1
++     * + INV -> effective 0 -> the held pad clamps low */
++    qtest_writel(slp, RTC_BASE + 0xd8, 0);
++    g_assert_cmpint(qtest_get_irq(slp, 4), ==, 1);
++    qtest_writel(slp, FUNC_OUT(4), GPIO_FUNC_OUT_SEL_NONE |
++                 R_GPIO_FUNCn_OUT_SEL_CFG_FUNC_OUT_INV_SEL_MASK);
++    qtest_writel(slp, RTC_BASE + 0xd8, BIT(4));
++    g_assert_cmpint(qtest_get_irq(slp, 4), ==, 0);
++    g_assert_cmphex(qtest_readl(slp, GPIO(A_GPIO_IN)) & BIT(4), ==, 0);
++
++    /* Cleanup */
++    qtest_writel(slp, RTC_BASE + 0xd8, 0);
++    qtest_writel(slp, FUNC_OUT(4), GPIO_FUNC_OUT_SEL_NONE);
++    qtest_writel(slp, GPIO(A_GPIO_ENABLE_W1TC), BIT(4));
++    qtest_writel(slp, GPIO(A_GPIO_OUT_W1TC), BIT(4));
++    qtest_writel(slp, IO_MUX_PAD(4), 0);
++    qtest_quit(slp);
++}
++
++/* ProjectDocument v3 fixture for the solver-authority test: MCU + 3.3 V
++ * supply + 10k pulldown on GPIO4 (the public shape the electrical
++ * prototype test drives through qom-set). */
++#define GPIO_HOLD_SOLVER_PROJECT_JSON \
++    "{\"version\":3,\"id\":\"gpio-hold-solver\"," \
++    "\"name\":\"GPIO hold solver authority fixture\"," \
++    "\"profile\":{\"chip\":\"esp32s3\",\"board\":\"esp32-s3-devkitc-1\"," \
++    "\"module\":\"esp32-s3-wroom-1\"},\"firmware\":{}," \
++    "\"runtime\":{\"electrical\":{" \
++    "\"driver_profile\":\"s3-explicit-finite-v1\",\"mode\":\"dc\"}}," \
++    "\"geometry\":{\"components\":{},\"nets\":{}},\"components\":[" \
++    "{\"id\":\"U1\",\"name\":\"U1\",\"type\":\"mcu\",\"kind\":\"mcu\"," \
++    "\"parameters\":{}," \
++    "\"terminals\":[{\"id\":\"U1.vdd\",\"name\":\"U1.vdd\"," \
++    "\"role\":\"vdd\",\"domain\":\"power\"," \
++    "\"direction\":\"unspecified\"}," \
++    "{\"id\":\"U1.gnd\",\"name\":\"U1.gnd\"," \
++    "\"role\":\"gnd\",\"domain\":\"ground\"," \
++    "\"direction\":\"unspecified\"}," \
++    "{\"id\":\"U1.io4\",\"name\":\"U1.io4\"," \
++    "\"role\":\"io4\",\"domain\":\"digital\"," \
++    "\"direction\":\"unspecified\",\"gpio\":4}]}," \
++    "{\"id\":\"G\",\"name\":\"G\",\"type\":\"ground\",\"kind\":\"ground\"," \
++    "\"parameters\":{}," \
++    "\"terminals\":[{\"id\":\"G.ref\",\"name\":\"G.ref\"," \
++    "\"role\":\"ref\",\"domain\":\"ground\"," \
++    "\"direction\":\"unspecified\"}]}," \
++    "{\"id\":\"V\",\"name\":\"V\",\"type\":\"voltage-source\"," \
++    "\"kind\":\"voltage-source\"," \
++    "\"parameters\":{\"voltage\":{\"value\":3.3,\"unit\":\"V\"}}," \
++    "\"terminals\":[{\"id\":\"V.p\",\"name\":\"V.p\"," \
++    "\"role\":\"p\",\"domain\":\"power\"," \
++    "\"direction\":\"unspecified\"}," \
++    "{\"id\":\"V.n\",\"name\":\"V.n\"," \
++    "\"role\":\"n\",\"domain\":\"ground\"," \
++    "\"direction\":\"unspecified\"}]}," \
++    "{\"id\":\"R4\",\"name\":\"R4\",\"type\":\"resistor\"," \
++    "\"kind\":\"resistor\"," \
++    "\"parameters\":{\"resistance\":{\"value\":10000,\"unit\":\"ohm\"}}," \
++    "\"terminals\":[{\"id\":\"R4.a\",\"name\":\"R4.a\"," \
++    "\"role\":\"a\",\"domain\":\"passive\"," \
++    "\"direction\":\"unspecified\"}," \
++    "{\"id\":\"R4.b\",\"name\":\"R4.b\"," \
++    "\"role\":\"b\",\"domain\":\"passive\"," \
++    "\"direction\":\"unspecified\"}]}]," \
++    "\"nets\":[{\"id\":\"gnd\",\"name\":\"gnd\"," \
++    "\"endpoints\":[\"G.ref\",\"V.n\",\"U1.gnd\",\"R4.b\"]}," \
++    "{\"id\":\"vdd\",\"name\":\"vdd\"," \
++    "\"endpoints\":[\"V.p\",\"U1.vdd\"]}," \
++    "{\"id\":\"n4\",\"name\":\"n4\"," \
++    "\"endpoints\":[\"U1.io4\",\"R4.a\"]}]}"
++
++/*
++ * Held pad under solver ownership (gpio-hold-od-inversion-solver-
++ * correction): while an electrical project is applied the solver owns
++ * the net report, and the held clamp must NOT overwrite net
++ * validity/level.  Setting a hold bit is strict-unsupported in the
++ * electrical profile: the solver fails and invalidates every net — the
++ * held clamp keeps that unresolved report (gpio-out reads 0) instead of
++ * fabricating a valid driven bit; clearing the hold restores the
++ * solver-resolved level.
++ */
++static void test_hold_solver_authority(void)
++{
++    QTestState *slp;
++    const uint64_t RTC_BASE = 0x60008000ULL;
++    QDict *r;
++
++    slp = qtest_initf("-machine esp32s3 -S -L pc-bios "
++                      "-global driver=esp32s3.gpio,property=strap_mode,value=0x00");
++    qtest_irq_intercept_out_named(slp, "/machine/soc/gpio", "gpio-out");
++
++    /* Pad 4 driven high by firmware: the solver resolves it HIGH
++     * (40 R native drive vs 10k pulldown -> ~3.29 V). */
++    qtest_writel(slp, IO_MUX_PAD(4), IOMUX_GPIO_IN_EN);
++    qtest_writel(slp, GPIO(A_GPIO_ENABLE_W1TS), BIT(4));
++    qtest_writel(slp, GPIO(A_GPIO_OUT_W1TS), BIT(4));
++    r = qtest_qmp(slp, "{'execute':'qom-set','arguments':{"
++                  "'path':'/machine/soc/electrical','property':'project-json',"
++                  "'value':%s}}", GPIO_HOLD_SOLVER_PROJECT_JSON);
++    g_assert_false(qdict_haskey(r, "error"));
++    qobject_unref(r);
++
++    /* Solver-resolved HIGH before the hold */
++    g_assert_cmpint(qtest_get_irq(slp, 4), ==, 1);
++
++    /* Hold latches the effective HIGH; the electrical profile rejects
++     * the hold request (strict-unsupported) and invalidates the net:
++     * the clamp keeps the solver's unresolved report (line 0), never
++     * resurrects a fabricated driven bit. */
++    qtest_writel(slp, RTC_BASE + 0xd8, BIT(4));
++    g_assert_cmpint(qtest_get_irq(slp, 4), ==, 0);
++
++    /* Clearing the hold bit re-enables the solver: pad 4 resolves HIGH
++     * again (hold-transition refresh ordering, end to end). */
++    qtest_writel(slp, RTC_BASE + 0xd8, 0);
++    g_assert_cmpint(qtest_get_irq(slp, 4), ==, 1);
++
++    /* Cleanup */
++    qtest_writel(slp, GPIO(A_GPIO_ENABLE_W1TC), BIT(4));
++    qtest_writel(slp, GPIO(A_GPIO_OUT_W1TC), BIT(4));
++    qtest_writel(slp, IO_MUX_PAD(4), 0);
++    qtest_quit(slp);
++}
++
++
+ 
+ #ifdef GPIO_TEST_HAS_MATRIX_DELIVERY
+ /*
+@@ -669,6 +891,9 @@
+     qtest_add_func("esp32s3-gpio/strict-unknown-hole-pad", test_strict_unknown_hole_pad);
+     qtest_add_func("esp32s3-gpio/sleep-effective-config", test_sleep_effective_config);
+     qtest_add_func("esp32s3-gpio/sleep-hold-latch", test_sleep_hold_latch);
++    qtest_add_func("esp32s3-gpio/hold-open-drain-polarity", test_hold_open_drain_polarity);
++    qtest_add_func("esp32s3-gpio/hold-out-inversion", test_hold_out_inversion);
++    qtest_add_func("esp32s3-gpio/hold-solver-authority", test_hold_solver_authority);
+ #ifdef GPIO_TEST_HAS_MATRIX_DELIVERY
+     qtest_add_func("esp32s3-gpio/matrix-irq-delivery", test_gpio_matrix_irq_delivery);
+ #endif

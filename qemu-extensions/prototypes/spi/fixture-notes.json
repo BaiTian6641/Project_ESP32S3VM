@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-07",
+  "status": "Source implementation only; build and native qualification must be delegated after parent READY",
+  "verification_performed": [],
+  "scope": "SPI2/3 ordinary ESP-IDF master APIs on actual GPIO matrix and finite v3 graph; no SPI0/1 changes, no Qt or aggregate profile changes",
+  "idf": {
+    "root": "build-idf-6.1",
+    "version": "v6.1",
+    "commit": "fff9895c82d744c7237be8847347bdd1b07c6643",
+    "headers_read": [
+      "components/esp_driver_spi/include/driver/spi_master.h",
+      "components/esp_driver_spi/include/driver/spi_common.h",
+      "components/esp_driver_spi/src/gpspi/spi_master.c",
+      "components/esp_driver_spi/src/gpspi/spi_common.c",
+      "components/esp_hal_dma/include/hal/dma_types.h",
+      "components/soc/esp32s3/register/soc/spi_reg.h",
+      "components/soc/esp32s3/register/soc/gdma_reg.h",
+      "components/soc/esp32s3/register/soc/system_reg.h"
+    ]
+  },
+  "files": [
+    "tests/firmware/spi_native/CMakeLists.txt",
+    "tests/firmware/spi_native/sdkconfig.defaults",
+    "tests/firmware/spi_native/sdkconfig.loopback.defaults",
+    "tests/firmware/spi_native/sdkconfig.wrong_cs.defaults",
+    "tests/firmware/spi_native/sdkconfig.disconnected_miso.defaults",
+    "tests/firmware/spi_native/sdkconfig.negative_spi3.defaults",
+    "tests/firmware/spi_native/sdkconfig.owner_error.defaults",
+    "tests/firmware/spi_native/main/CMakeLists.txt",
+    "tests/firmware/spi_native/main/Kconfig.projbuild",
+    "tests/firmware/spi_native/main/spi_native.c",
+    "qemu-extensions/prototypes/spi/run-native-fixture.py",
+    "qemu-extensions/prototypes/spi/fixture-notes.json"
+  ],
+  "apis": [
+    "spi_bus_initialize(SPI2_HOST/SPI3_HOST, SPICOMMON_BUSFLAG_MASTER|SPICOMMON_BUSFLAG_GPIO_PINS, SPI_DMA_DISABLED/SPI_DMA_CH_AUTO)",
+    "spi_bus_add_device",
+    "spi_device_polling_transmit",
+    "spi_device_queue_trans",
+    "spi_device_get_trans_result",
+    "spi_device_acquire_bus/spi_device_release_bus",
+    "spi_bus_dma_memory_alloc",
+    "spi_bus_remove_device/spi_bus_free",
+    "pre_cb/post_cb observing actual DMA registers and ordinary driver descriptors"
+  ],
+  "pins": {
+    "SPI2": {
+      "sclk": 12,
+      "mosi": 11,
+      "miso": 13,
+      "cs0": 10,
+      "cs1": 9,
+      "wrong_cs": 14
+    },
+    "SPI3": {
+      "sclk": 36,
+      "mosi": 35,
+      "miso": 37,
+      "cs0": 34,
+      "cs1": 33,
+      "wrong_cs": 38
+    },
+    "routing": "GPIO matrix forced, even SPI2's otherwise-native pads",
+    "module": "Explicit bare-esp32s3-simulation-fixture, reserved_gpios=[], reservations_known=false; not qualification of an Octal-PSRAM module reserving GPIO35..37"
+  },
+  "graph": {
+    "version": 3,
+    "runtime": {
+      "electrical": {
+        "driver_profile": "s3-explicit-finite-v1",
+        "mode": "dc"
+      }
+    },
+    "application": "Public QMP qom-set /machine/soc/electrical project-json while paused before boot; QMP snapshot-json is observed before boot and at outcome",
+    "nor_type": "spi-nor-1m",
+    "nor_parameters": {},
+    "nor_terminals": {
+      "mosi": "digital/input",
+      "miso": "digital/output",
+      "sclk": "digital/input",
+      "cs": "digital/input, active-low",
+      "vdd": "power/input",
+      "gnd": "ground/input"
+    },
+    "nor_components": [
+      "NOR2_0",
+      "NOR2_1",
+      "NOR3_0",
+      "NOR3_1"
+    ],
+    "fixed_model_contract": {
+      "capacity_bytes": 1048576,
+      "jedec_id": "ef4014",
+      "page_bytes": 256,
+      "sector_bytes": 4096,
+      "program_busy_us": 700,
+      "sector_erase_busy_us": 45000,
+      "valid_supply_v": [
+        2.7,
+        3.6
+      ],
+      "active_miso_resistance_ohm": 40,
+      "idle_miso": "high-Z, never fabricated input"
+    },
+    "supply": "Explicit 3.3V voltage-source and common reference ground; each model vdd/gnd joins these physical nets",
+    "cs_pullups": "Explicit 10000-ohm resistor per NOR CS to supplied VDD",
+    "miso_pullup": "None; half-duplex NOR command/address phases do not sample MISO",
+    "connected": "Per controller both NORs share only MOSI/MISO/SCLK, each has its own CS net",
+    "loopback": "No devices: real shared MOSI/MISO net per controller (GPIO11+13, GPIO35+37)",
+    "wrong_cs": "Only target controller NOR0 CS moves to unrelated GPIO14 or GPIO38, held inactive by its real 10k pull-up; firmware CS0 remains separate",
+    "disconnected_miso": "Both target controller NOR MISO outputs move to their own device net; master GPIO MISO remains alone",
+    "owner_error": "Same real loopback wire graph; controller SPI3 reads actual owner=0 DMA descriptor with CHECK_OWNER enabled"
+  },
+  "cases": {
+    "connected": [
+      "Polling PIO on both controllers; two CS and NOR modes0/3 JEDEC IDs",
+      "Status idle; page-program without WREN must leave erased storage",
+      "WREN/WEL, immediate program WIP and virtual-time bounded readiness polling",
+      "Exact 48-byte programmed readback and separate-CS WEL/storage isolation",
+      "Programming 0xff cannot undo 1-to-0 stored bits",
+      "Sector erase WIP, readiness and exact erased readback",
+      "Queued GDMA page writes and actual NOR read8201, then other-CS erased read8201",
+      "Actual driver descriptor chain RX total8201, final capacity20/length17/owner0/suc_eof1; prior descriptors owner0/noEOF",
+      "Actual SPI DONE raw, GDMA raw EOF and EOF descriptor pointer, callback exactly-once and virtual timestamps"
+    ],
+    "loopback": [
+      "Full-duplex external graph wire on SPI2 and SPI3",
+      "PIO modes0,1,2,3 with MSB/MSB, LSB/LSB, TXLSB/RXMSB and TXMSB/RXLSB; mixed-order expected bit-reversal prevents paired ignored flags from passing",
+      "13-bit non-byte payloads with 5-bit command, 11-bit address and 3 dummy clocks; actual RX and residual-bit comparisons",
+      "Two queued full-duplex 8201-byte DMA transfers with distinct exact patterns, FIFO order and descriptor/IRQ evidence",
+      "Ordinary queued full-duplex TX8/RX4 prefix: actual first4 slot0-pattern bytes, entire allocated RX suffix remains0xa5, exactly-one RX descriptor length4/capacity4/owner0/EOF1 and actual rawEOF/pointer while all8 TX bytes remain clocked",
+      "Controlled active-transfer soft reset, local gate, SYSTEM gate and SYSTEM reset; no late DONE after 60ms and exact ordinary-driver recovery",
+      "After ordinary DMA teardown, direct SPI3 real-loopback RX GDMA: full4byte d0 with preloaded empty d1 unchanged, partial3byte d0, zero-data noEOF, pre-first-byte reset noEOF",
+      "No duplicate EOF after clearing IRQ and observing another 100us"
+    ],
+    "negative": [
+      "wrong_cs and disconnected_miso run separately for target SPI2 and SPI3",
+      "owner_error separate SPI3 firmware profile; never included as a positive transaction",
+      "Require guest ARM, exact SPI diagnostic, QMP paused, read-only qtest CMD.USR still1 and DONE0",
+      "Missing-MISO negative additionally requires actual target pad digital_valid=false and floating/indeterminate snapshot",
+      "Owner error additionally requires SPI RX_FULL raw, GDMA IN_DSCR_ERR, noGDMA EOF, unchanged owner0 d0/empty d1 and untouched RX bytes"
+    ]
+  },
+  "observations": {
+    "uart": "Actual RX bytes in full including8201-byte payloads, recomputable FNV1a32, virtual timestamps, busy polls, register/descriptor words and named PASS/FAIL checks",
+    "host": "QMP transcript, electrical snapshots, native guest-error log, read-only qtest register/memory evidence, launch command, input/log SHA256 hashes and result.json",
+    "watchdog": "180s default, allowed1..600s host monotonic watchdog; no clock_step, no guest timeout injection, no retries/provider substitution",
+    "outcomes": [
+      "PASS",
+      "NEGATIVE_STRICT_PAUSE",
+      "PREREQUISITE",
+      "FAIL"
+    ],
+    "negative_status": "Expected strict pause is tracked separately, not claimed as ordinary transaction completion",
+    "unqualified": "Host watchdog expiration, early GPIO pause, missing provider/model, initialization-only UART, wrong/missing payload or fabricated completion never count as qualification"
+  },
+  "unsupported_gates": [
+    "advanced DIO/QIO/OCT/DDR/3-wire/segment modes",
+    "slave operation",
+    "PSRAM DMA"
+  ],
+  "prerequisites": [
+    "Parent READY SPI-owned checkout must contain controller, shared GDMA RX finish implementation and ordinary interrupt route",
+    "NativeNet native electrical SPI registry/binding must accept exact spi-nor-1m parameters{} and six approved terminals, finite powered MISO branch and real graph pad sampling",
+    "Frozen runtime prefix is read-only and must never be used as a substituted native SPI qualification binary",
+    "Only a separately delegated verifier may execute builds/tests; no verification has been run by fixture implementation worker"
+  ],
+  "commands": {
+    "environment": "ROOT=/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM; bash \"$ROOT/tools/prepare-idf-wsl.sh\" idf-6.1; source \"$HOME/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/activate.sh\"; F=\"$ESP32S3_IDF_BUILD_ROOT/spi_native/e8af03f8c4a4e8a06c3a0d287c11c31e804d67650ad5090fa513ee1b0ebcd478/source\"; test -f \"$F/main/spi_native.c\"",
+    "qemu_build_after_parent_ready": "ninja -C /home/polar/.cache/esp32s3vm/qemu-spi-40edccac4156/build-spi qemu-system-xtensa",
+    "firmware_build_matrix_after_parent_ready": "for MODE in connected loopback wrong_cs disconnected_miso owner_error; do python3 \"$ROOT/qemu-extensions/prototypes/spi/build-native-fixture.py\" --mode \"$MODE\" || exit; done",
+    "firmware_build_spi3_negatives_after_parent_ready": "for MODE in wrong_cs disconnected_miso; do python3 \"$ROOT/qemu-extensions/prototypes/spi/build-native-fixture.py\" --mode \"$MODE\" --negative-host 3 || exit; done",
+    "run_matrix_after_parent_ready": "for MODE in connected loopback wrong_cs disconnected_miso owner_error; do B=\"$ESP32S3_IDF_BUILD_ROOT/spi_native/e8af03f8c4a4e8a06c3a0d287c11c31e804d67650ad5090fa513ee1b0ebcd478/$MODE\"; python3 \"$ROOT/qemu-extensions/prototypes/spi/run-native-fixture.py\" --mode \"$MODE\" --flash \"$B/spi-native.merged.bin\" --sdkconfig \"$B/sdkconfig\" --watchdog-seconds 180; done",
+    "run_spi3_negatives_after_parent_ready": "for MODE in wrong_cs disconnected_miso; do B=\"$ESP32S3_IDF_BUILD_ROOT/spi_native/e8af03f8c4a4e8a06c3a0d287c11c31e804d67650ad5090fa513ee1b0ebcd478/$MODE-spi3\"; python3 \"$ROOT/qemu-extensions/prototypes/spi/run-native-fixture.py\" --mode \"$MODE\" --flash \"$B/spi-native.merged.bin\" --sdkconfig \"$B/sdkconfig\" --watchdog-seconds 180; done",
+    "runner_default_binary": "/home/polar/.cache/esp32s3vm/qemu-spi-40edccac4156/build-spi/qemu-system-xtensa",
+    "runner_default_evidence": "build-runtime-state/spi-native-2026-10-07",
+    "record_build_pin_after_real_build_merge": "python3 \"$ROOT/qemu-extensions/prototypes/spi/run-native-fixture.py\" --mode \"$MODE\" --flash \"$B/spi-native.merged.bin\" --sdkconfig \"$B/sdkconfig\" --record-build-pin --idf \"$IDF_PATH\""
+  },
+  "final_source_changes": [
+    "Real CPU-XTAL while SPI PLL80 powered transfer uses normal polling_start/end and actual registers/RX/timestamps",
+    "Cancellation observes BUSY/DONE/recovery without reading released unpulled CS through GPIO_IN",
+    "NOR busy polling is quiet until observations are captured; first WIP byte, poll count and modeled duration floors validated",
+    "WREN-gated and1->0 readbacks print actual bytes independently checked by host",
+    "Actual phase register fields and elapsed lower bound checked, not merely requested configuration",
+    "Firmware runtime requires pinned IDF6.1 source/image/sdkconfig build-pin.json"
+  ],
+  "verification": "Seven final frozen variants genuinely compiled/merged/pinned oncanonical native SDK/source/tools/output, all exits0; source freezee8af03... preserved. Actual SPI graph bytes/IRQ/time qualification still waits compiled provider/binding READY; compile and official-entry proofs not SPI PASS.",
+  "native_sdk_contract": {
+    "prepare": "bash tools/prepare-idf-wsl.sh idf-6.1",
+    "activate": "source ~/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/activate.sh",
+    "idf_path": "$ESP32S3_IDF_BUILD_ROOT/../source (activation exports canonical IDF_PATH)",
+    "build_root": "$ESP32S3_IDF_BUILD_ROOT/spi_native/<frozen-sourceidentity>/<profile>",
+    "source_snapshot": "Native ext4 byte-identical snapshot of firmware-source-freeze.json; no vendor headers or outputs on DrvFS",
+    "owner": "NativeSdkBuildWorker",
+    "source_identity": "e8af03f8c4a4e8a06c3a0d287c11c31e804d67650ad5090fa513ee1b0ebcd478",
+    "snapshot_builder": "qemu-extensions/prototypes/spi/build-native-fixture.py (immutable authored files, full native activation/tools/source and explicit ninja -j4)"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "component_id": "D",
+  "sequence": 0,
+  "width": 64,
+  "height": 48,
+  "lane": "i80",
+  "pattern": {"source": "lcd-fixture", "frame": 0},
+  "metadata": {"pixels": 3072, "errors": 0, "valid": true, "visible": true}
+}

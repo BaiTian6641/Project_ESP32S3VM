@@ -1,0 +1,115 @@
+--- a/hw/misc/meson.build
++++ b/hw/misc/meson.build
+@@ -166,6 +166,7 @@
+   'esp32c3_jtag.c',
+   'esp32s3_rtc_cntl.c',
+   'esp32s3_rng.c',
++  'esp32s3_gpspi.c',
+   'esp32s3_pms.c',
+   'esp32s3_rtc_io.c',
+   'esp32s3_regi2c.c',
+--- a/hw/ssi/meson.build
++++ b/hw/ssi/meson.build
+@@ -13,6 +13,7 @@
+ system_ss.add(when: 'CONFIG_XTENSA_ESP32', if_true: files('esp32_spi.c'))
+ system_ss.add(when: 'CONFIG_RISCV_ESP32C3', if_true: files('esp32c3_spi.c'))
+ system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files('esp32s3_spi.c'))
++system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files('esp32s3_spi_service.c'))
+ system_ss.add(when: 'CONFIG_IBEX', if_true: files('ibex_spi_host.c'))
+ system_ss.add(when: 'CONFIG_BCM2835_SPI', if_true: files('bcm2835_spi.c'))
+ system_ss.add(when: 'CONFIG_PNV_SPI', if_true: files('pnv_spi.c'))
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -46,6 +46,7 @@
+ #include "elf.h"
+ 
+ #include "hw/ssi/esp32s3_spi.h"
++#include "hw/misc/esp32s3_gpspi.h"
+ #include "hw/misc/esp32s3_cache.h"
+ #include "hw/char/esp32s3_uart.h"
+ #include "hw/misc/esp32s3_rng.h"
+@@ -145,6 +146,7 @@
+ 
+     MemoryRegion cpu_specific_mem[ESP32S3_CPU_COUNT];
+     ESP32S3SpiState spi1;
++    ESP32S3GpSpiState gpspi[2];
+     ESP32S3CacheState cache;
+     ESP32S3EfuseState efuse;
+     ESP32S3ClockState clock;
+@@ -236,6 +238,8 @@
+         device_cold_reset(DEVICE(&s->systimer));
+         device_cold_reset(DEVICE(&s->gdma));
+         device_cold_reset(DEVICE(&s->spi1));
++        device_cold_reset(DEVICE(&s->gpspi[0]));
++        device_cold_reset(DEVICE(&s->gpspi[1]));
+         device_cold_reset(DEVICE(&s->sdmmc));
+         device_cold_reset(DEVICE(&s->twai));
+         device_cold_reset(DEVICE(&s->aes));
+@@ -343,6 +347,8 @@
+     case ESP32S3_RST_UART1:    dev = DEVICE(&s->uart[1]); break;
+     case ESP32S3_RST_UART2:    dev = DEVICE(&s->uart[2]); break;
+     case ESP32S3_RST_SPI1:     dev = DEVICE(&s->spi1); break;
++    case ESP32S3_RST_SPI2:     dev = DEVICE(&s->gpspi[0]); break;
++    case ESP32S3_RST_SPI3:     dev = DEVICE(&s->gpspi[1]); break;
+     case ESP32S3_RST_TWAI:     dev = DEVICE(&s->twai); break;
+     case ESP32S3_RST_AES:      dev = DEVICE(&s->aes); break;
+     case ESP32S3_RST_SHA:      dev = DEVICE(&s->sha); break;
+@@ -817,6 +823,8 @@
+ 
+     object_initialize_child(OBJECT(ss), "regi2c", &ss->regi2c, TYPE_ESP32S3_REGI2C);
+     object_initialize_child(OBJECT(ss), "gdma", &ss->gdma, TYPE_ESP32S3_GDMA);
++    object_initialize_child(OBJECT(ss), "spi2", &ss->gpspi[0], TYPE_ESP32S3_GPSPI);
++    object_initialize_child(OBJECT(ss), "spi3", &ss->gpspi[1], TYPE_ESP32S3_GPSPI);
+     object_initialize_child(OBJECT(ss), "sha", &ss->sha, TYPE_ESP32S3_SHA);
+     object_initialize_child(OBJECT(ss), "aes", &ss->aes, TYPE_ESP32S3_AES);
+     object_initialize_child(OBJECT(ss), "rsa", &ss->rsa, TYPE_ESP32S3_RSA);
+@@ -1087,6 +1095,29 @@
+                                         qdev_get_gpio_in(intmatrix_dev, ETS_DMA_OUT_CH0_INTR_SOURCE + i));
+         }
+    }
++
++    /* GP-SPI is additive: the existing SPI0/1 flash controller is unchanged. */
++    for (unsigned i = 0; i < 2; i++) {
++        DeviceState *dev = DEVICE(&ss->gpspi[i]);
++        qdev_prop_set_uint32(dev, "controller", i);
++        ss->gpspi[i].gdma = ESP_GDMA(&ss->gdma);
++        object_property_set_link(OBJECT(dev), "soc-reset", OBJECT(ss), &error_abort);
++        qdev_connect_clock_in(dev, "xtal-clk",
++                              qdev_get_clock_out(DEVICE(&ss->clock), "xtal-clk"));
++        qdev_connect_clock_in(dev, "pll-f80m-clk",
++                              qdev_get_clock_out(DEVICE(&ss->clock), "pll-f80m-clk"));
++        qdev_connect_gpio_out_named(DEVICE(&ss->clock), ESP32S3_CLK_GATES_GPIO,
++                                    i ? ESP32S3_GATE_SPI3 : ESP32S3_GATE_SPI2,
++                                    qdev_get_gpio_in_named(dev, "clk-gate", 0));
++        qdev_connect_gpio_out_named(DEVICE(&ss->clock), ESP32S3_CLK_RST_LEVEL_GPIO,
++                                    i ? ESP32S3_RST_SPI3 : ESP32S3_RST_SPI2,
++                                    qdev_get_gpio_in_named(dev, "reset", 0));
++        sysbus_realize(SYS_BUS_DEVICE(dev), &error_fatal);
++        memory_region_add_subregion_overlap(sys_mem, 0x60024000 + i * 0x1000,
++                                             sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 0), 0);
++        sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0,
++                           qdev_get_gpio_in(intmatrix_dev, 21 + i));
++    }
+ 
+     /* SHA realization */
+     {
+--- a/tests/unit/meson.build
++++ b/tests/unit/meson.build
+@@ -48,6 +48,7 @@
+   'test-qapi-util': [],
+   'test-interval-tree': [],
+   'test-fifo': [],
++  'test-esp32s3-spi-service': ['../../hw/ssi/esp32s3_spi_service.c'],
+ }
+ 
+ if have_system or have_tools
+--- a/tests/qtest/meson.build
++++ b/tests/qtest/meson.build
+@@ -345,6 +345,7 @@
+ 
+ # ESP32-S3 clock tree / reset domain tests (coreclk lane)
+ qtests_xtensa = [ 'esp32s3-gpio-test', 'esp32s3-intmatrix-test', 'esp32s3-gdma-test', 'esp32s3-coreclk-test' ]
++qtests_xtensa += ['esp32s3-spi-test']
+ 
+ qtests = {
+   'bios-tables-test': [io, 'boot-sector.c', 'acpi-utils.c', 'tpm-emu.c'],

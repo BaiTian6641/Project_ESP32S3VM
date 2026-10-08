@@ -1,0 +1,1140 @@
+{
+  "schema_version": 1,
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "prefix_fingerprint": "dbe2a8a5ad4e07a607e76ab751e77ac85fe3bf30974359bd25a69354499f9b32",
+  "status": "source-ready",
+  "blockers": [],
+  "preparation_order": [
+    {
+      "kind": "patch",
+      "source": "prototypes/coreclk/0010-hw-xtensa-esp32s3_clk-common-clock-ports-for-SPI2-3.patch",
+      "sha256": "e8b1487b941f7f80c3920da9d56723bcb39b34fa0dedb2dd98c4b80deb88bf4d",
+      "targets": [
+        "hw/misc/esp32s3_rtc_cntl.c",
+        "hw/xtensa/esp32s3.c",
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/misc/esp32s3_rtc_cntl.h",
+        "include/hw/xtensa/esp32s3_clk.h",
+        "tests/qtest/esp32s3-coreclk-test.c"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/coreclk/0011-hw-xtensa-esp32s3_clk-UHCI0-clock-gate-and-reset-lines.patch",
+      "sha256": "c1ebe584a6dbe178743da9874bbcb25880afac10242c16f8f1bb043362b47606",
+      "targets": [
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/xtensa/esp32s3_clk.h"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/coreclk/0012-hw-xtensa-esp32s3_clk-publish-the-0010-0011-gate-levels.patch",
+      "sha256": "6b1e8f79f0e4194213c67d309c5a88930bcb13b396fb118232945e3697434f66",
+      "targets": [
+        "hw/xtensa/esp32s3_clk.c"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/coreclk/0013-hw-xtensa-esp32s3-BBPLL-power-validity-decoupled-from.patch",
+      "sha256": "2203d4cca82a1ff4a62400517ff2fe1ff6d98e0e53417f16a5f5c7a65c5a8081",
+      "targets": [
+        "hw/misc/esp32s3_rtc_cntl.c",
+        "hw/xtensa/esp32s3.c",
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/misc/esp32s3_rtc_cntl.h",
+        "include/hw/xtensa/esp32s3_clk.h",
+        "tests/qtest/esp32s3-coreclk-test.c"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/coreclk/0014-hw-xtensa-esp32s3_clk-LEDC-PCNT-MCPWM-LCD_CAM-clock-ports.patch",
+      "sha256": "0e7a5c62e8a62e2425073ea5474bfea1068b970da2b007b6c84f10be295c67f3",
+      "targets": [
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/xtensa/esp32s3_clk.h"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/gpio/integration-native-foundations.patch",
+      "sha256": "e1a45cdb2e8e388fea1e0775a29b7639f236ff226e39dd3ad08f0df9a2a030bf",
+      "targets": [
+        "hw/gpio/esp32_gpio.c",
+        "hw/gpio/esp32s3_gpio.c",
+        "hw/gpio/esp32s3_iomux.c",
+        "hw/gpio/meson.build",
+        "hw/misc/esp32s3_rtc_io.c",
+        "hw/misc/meson.build",
+        "hw/xtensa/esp32s3.c",
+        "include/hw/gpio/esp32_gpio.h",
+        "include/hw/gpio/esp32s3_gpio.h",
+        "include/hw/gpio/esp32s3_iomux.h",
+        "include/hw/misc/esp32s3_rtc_io.h",
+        "tests/qtest/esp32s3-gpio-test.c",
+        "tests/qtest/meson.build"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/radio-bringup/0005-regi2c-config-accessor-and-slave-range.patch",
+      "sha256": "d1d4966b5185ffcec53a15db5a19375e6ca0b9b34a6c9edd4c142075bf444719",
+      "targets": [
+        "hw/misc/esp32s3_regi2c.c",
+        "include/hw/misc/esp32s3_regi2c.h",
+        "include/hw/misc/esp32s3_regi2c_defs.h"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/adc/integration-native-foundations-adc.patch",
+      "sha256": "21dbb41996ec5450aa2bcd43d1cf9801f15d3103ac1f3ffc915df5e0bb09eefd",
+      "targets": [
+        "hw/adc/meson.build",
+        "hw/misc/esp32s3_regi2c.c",
+        "hw/misc/meson.build",
+        "hw/xtensa/esp32s3.c",
+        "include/hw/misc/esp32s3_regi2c.h",
+        "qapi/qom.json",
+        "tests/qtest/meson.build"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/electrical-runtime/0001-native-v3-electrical-boundary.patch",
+      "sha256": "7acb418f96e3410f12f3e20f8a4d84bc7de028769043aef849c09e4f81c6b504",
+      "targets": [
+        "hw/adc/meson.build",
+        "hw/xtensa/esp32s3.c",
+        "tests/qtest/meson.build"
+      ]
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_adc_provider.h",
+      "sha256": "63530e845df5830b6ec61f165f68fbf174c57373d9947969eb57399ee3530fd0",
+      "destination": "include/hw/misc/esp32s3_adc_provider.h",
+      "copied_sha256": "63530e845df5830b6ec61f165f68fbf174c57373d9947969eb57399ee3530fd0"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_sens.h",
+      "sha256": "e32e19e2c3aa854f39ff05e272aceae98d47ea14aec26f08f8fd52ca97e70c10",
+      "destination": "include/hw/misc/esp32s3_sens.h",
+      "copied_sha256": "e32e19e2c3aa854f39ff05e272aceae98d47ea14aec26f08f8fd52ca97e70c10"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_sens.c",
+      "sha256": "56ad19a7b0ef36d8b0bd8f43a593a2cca819b160546c0ebbc753cf9760b7251c",
+      "destination": "hw/misc/esp32s3_sens.c",
+      "copied_sha256": "56ad19a7b0ef36d8b0bd8f43a593a2cca819b160546c0ebbc753cf9760b7251c"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_apb_saradc.h",
+      "sha256": "28d3fd635d21a0943a0d0f117f0a89842ff72bb3ddf9dd26fd1758ce0bb82713",
+      "destination": "include/hw/misc/esp32s3_apb_saradc.h",
+      "copied_sha256": "28d3fd635d21a0943a0d0f117f0a89842ff72bb3ddf9dd26fd1758ce0bb82713"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_apb_saradc.c",
+      "sha256": "be0c55b24b4ff213ed6941e42def288be9d7e17b3ccb9383cdaa484e6ae24248",
+      "destination": "hw/misc/esp32s3_apb_saradc.c",
+      "copied_sha256": "be0c55b24b4ff213ed6941e42def288be9d7e17b3ccb9383cdaa484e6ae24248"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_adc_net_provider.c",
+      "sha256": "41e78fa5b94ec9f58e7f0de60575c727f906d853584e5e4d2e3b0c2bc799241b",
+      "destination": "hw/adc/esp32s3_adc_net_provider.c",
+      "copied_sha256": "41e78fa5b94ec9f58e7f0de60575c727f906d853584e5e4d2e3b0c2bc799241b"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3-adc-test.c",
+      "sha256": "693acac556f0040459e733962cb8c6e8579cb39c9ca9513de75ba07a847c1977",
+      "destination": "tests/qtest/esp32s3-adc-test.c",
+      "copied_sha256": "693acac556f0040459e733962cb8c6e8579cb39c9ca9513de75ba07a847c1977"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_project.c",
+      "sha256": "b290c386860a3722fdc681e3a2bde4c6bab2574def0c508f960c9cd0088b2563",
+      "destination": "hw/adc/esp32s3_project.c",
+      "copied_sha256": "b290c386860a3722fdc681e3a2bde4c6bab2574def0c508f960c9cd0088b2563"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_project.h",
+      "sha256": "e2bb939783a9d86050089b6622a35f43376cc94e2e9097915ba46cb76fac4b88",
+      "destination": "hw/adc/esp32s3_project.h",
+      "copied_sha256": "e2bb939783a9d86050089b6622a35f43376cc94e2e9097915ba46cb76fac4b88"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical.c",
+      "sha256": "03209b9420b7fa3d43fef652ae6a9733ceb5697ba1f13274f800ec39d47be972",
+      "destination": "hw/adc/esp32s3_electrical.c",
+      "copied_sha256": "03209b9420b7fa3d43fef652ae6a9733ceb5697ba1f13274f800ec39d47be972"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical.h",
+      "sha256": "a1b7b958587c323604fccab52c7ea78983aa8a8f6b4a51afaa0cc161934cd5fc",
+      "destination": "include/hw/misc/esp32s3_electrical.h",
+      "copied_sha256": "a1b7b958587c323604fccab52c7ea78983aa8a8f6b4a51afaa0cc161934cd5fc"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3-electrical-test.c",
+      "sha256": "280dcf9abd4b5b624a41f801aa54d5b8b46b0ccae92e019c1ce1a80af7b90587",
+      "destination": "tests/qtest/esp32s3-electrical-test.c",
+      "copied_sha256": "280dcf9abd4b5b624a41f801aa54d5b8b46b0ccae92e019c1ce1a80af7b90587"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-dc.c",
+      "sha256": "63ee6c60cea2e77a7c33b31a8af4db8a4ecc2b76079453322cf335e5c49e1e69",
+      "destination": "hw/adc/net-dc.c",
+      "copied_sha256": "63ee6c60cea2e77a7c33b31a8af4db8a4ecc2b76079453322cf335e5c49e1e69"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-dc.h",
+      "sha256": "578bc7c05ae6ee53b9819624674fbc31cd5d40ab0ddf223fdcf2eb9de8d738eb",
+      "destination": "hw/adc/net-dc.h",
+      "copied_sha256": "578bc7c05ae6ee53b9819624674fbc31cd5d40ab0ddf223fdcf2eb9de8d738eb"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-adapter.c",
+      "sha256": "66eb8bd9e7f79f9fabf92a275ee4e2eea4bd73408f276674abf1840b7b652afa",
+      "destination": "hw/adc/net-adapter.c",
+      "copied_sha256": "66eb8bd9e7f79f9fabf92a275ee4e2eea4bd73408f276674abf1840b7b652afa"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-adapter.h",
+      "sha256": "34f242959690719d9b55c60a64ba763a80d166a41016d2b26203dba00b7d017f",
+      "destination": "hw/adc/net-adapter.h",
+      "copied_sha256": "34f242959690719d9b55c60a64ba763a80d166a41016d2b26203dba00b7d017f"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-rc.c",
+      "sha256": "f5cd58f53086ea875d5f59da9b52523012b75774f151fe556708a17d421cb09b",
+      "destination": "hw/adc/net-rc.c",
+      "copied_sha256": "f5cd58f53086ea875d5f59da9b52523012b75774f151fe556708a17d421cb09b"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-rc.h",
+      "sha256": "457b579295cb981bf6d4307a0a7b7a92f84f6e79d3c23f7f620d9cfe6ed383fb",
+      "destination": "hw/adc/net-rc.h",
+      "copied_sha256": "457b579295cb981bf6d4307a0a7b7a92f84f6e79d3c23f7f620d9cfe6ed383fb"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_models.c",
+      "sha256": "cf5e0546565b0f0830e65ee112bc13537f6e9d53222c1eb948abf42efc0fb643",
+      "destination": "hw/adc/esp32s3_electrical_models.c",
+      "copied_sha256": "cf5e0546565b0f0830e65ee112bc13537f6e9d53222c1eb948abf42efc0fb643"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_observers.c",
+      "sha256": "7f767943ca32aff419904979089cd718ee56ccb2919e832dad55c0ef3600d0b5",
+      "destination": "hw/adc/esp32s3_electrical_observers.c",
+      "copied_sha256": "7f767943ca32aff419904979089cd718ee56ccb2919e832dad55c0ef3600d0b5"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_observers.h",
+      "sha256": "fcdeecf87e9ff5d67b64d3f47b8b91cf47142b4bb79ae4cd209171ad7424cdb6",
+      "destination": "hw/adc/esp32s3_electrical_observers.h",
+      "copied_sha256": "fcdeecf87e9ff5d67b64d3f47b8b91cf47142b4bb79ae4cd209171ad7424cdb6"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_internal.h",
+      "sha256": "40b7e621d62031d6ed1d3c447ee839ad9afdbcb8a4f939f90773d0221ab0794b",
+      "destination": "hw/adc/esp32s3_electrical_internal.h",
+      "copied_sha256": "40b7e621d62031d6ed1d3c447ee839ad9afdbcb8a4f939f90773d0221ab0794b"
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/spi/0001-gdma-peripheral-rx-packet-end.patch",
+      "sha256": "d0a472c53f444304e29dbd4c979d60840e73a42bfbc935277041deec6b8ad422",
+      "targets": [
+        "hw/dma/esp_gdma.c",
+        "include/hw/dma/esp_gdma.h"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/gdma/0004-hw-dma-esp_gdma-served-RX-bytes-survive-post-store-a.patch",
+      "sha256": "7640a6e06bf9c7d9919cbd4837c25dab3e85f0dfb03da74eb77ee3718dead251",
+      "targets": [
+        "hw/dma/esp_gdma.c",
+        "tests/qtest/esp32s3-gdma-test.c"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/uart/0001-gdma-uhci-demand-and-packet-status.patch",
+      "sha256": "2626ab0cad1955d02bc20cb9a190bc782a388eea0fac452b3524f15b4ab7b9fa",
+      "targets": [
+        "hw/dma/esp_gdma.c",
+        "include/hw/dma/esp_gdma.h"
+      ],
+      "historical_normalized_text_sha256": "3a8169e167b35ca48daa813161be7727911a986b35df165a770e79c2ead733d4",
+      "apply_options": [
+        "--ignore-space-change"
+      ],
+      "patch_context": "ignore-space-change"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s.c",
+      "sha256": "58fc534759b8b73b9a065d293778bdd433922b4a486960d9107ee0af1dfb8abc",
+      "destination": "hw/misc/esp32s3_i2s.c",
+      "copied_sha256": "58fc534759b8b73b9a065d293778bdd433922b4a486960d9107ee0af1dfb8abc"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s.h",
+      "sha256": "d26dbc9758a4b1f56720ebccb4e32d2332d5fee7939490dbc44be86fbd2f4f08",
+      "destination": "include/hw/misc/esp32s3_i2s.h",
+      "copied_sha256": "d26dbc9758a4b1f56720ebccb4e32d2332d5fee7939490dbc44be86fbd2f4f08"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s_pdm.c",
+      "sha256": "709961b9901cf651b14f5c1fd123ab0daca973e614029f5054d329fee7d0b2be",
+      "destination": "hw/misc/esp32s3_i2s_pdm.c",
+      "copied_sha256": "709961b9901cf651b14f5c1fd123ab0daca973e614029f5054d329fee7d0b2be"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s_pdm.h",
+      "sha256": "03b2c1a2458ea92678c57443af24ffe3088eb18b6cab45fc2fe61c1de11dc27c",
+      "destination": "hw/misc/esp32s3_i2s_pdm.h",
+      "copied_sha256": "03b2c1a2458ea92678c57443af24ffe3088eb18b6cab45fc2fe61c1de11dc27c"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s_peer.c",
+      "sha256": "612bd19b9a647e71001eba8e06ec59f7d29cd2cce62a26d2e28b3b173b160cd6",
+      "destination": "hw/misc/esp32s3_i2s_peer.c",
+      "copied_sha256": "612bd19b9a647e71001eba8e06ec59f7d29cd2cce62a26d2e28b3b173b160cd6"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s_peer.h",
+      "sha256": "3b8120e41a1f70da5475829445d6f1ea7c1e327b5e16fe6b30bf2507e2821bd4",
+      "destination": "include/hw/misc/esp32s3_i2s_peer.h",
+      "copied_sha256": "3b8120e41a1f70da5475829445d6f1ea7c1e327b5e16fe6b30bf2507e2821bd4"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s_peer_config.c",
+      "sha256": "b79175051ed5e73c90be63e0927c0985ced6959f7ae5696fe606730ec6d1e4b7",
+      "destination": "hw/misc/esp32s3_i2s_peer_config.c",
+      "copied_sha256": "b79175051ed5e73c90be63e0927c0985ced6959f7ae5696fe606730ec6d1e4b7"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s_peer_service.c",
+      "sha256": "3fecfe7b83accb4c246c20ae131de92cb32e5fffffeef4bcd5d02aba657864a9",
+      "destination": "hw/misc/esp32s3_i2s_peer_service.c",
+      "copied_sha256": "3fecfe7b83accb4c246c20ae131de92cb32e5fffffeef4bcd5d02aba657864a9"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s_peer_service.h",
+      "sha256": "f50af3c7e411e451fad54753c67872847647a9c6e45b0fdf8d9463a5eb5c502c",
+      "destination": "include/hw/misc/esp32s3_i2s_peer_service.h",
+      "copied_sha256": "f50af3c7e411e451fad54753c67872847647a9c6e45b0fdf8d9463a5eb5c502c"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3-i2s-test.c",
+      "sha256": "eb50ce80a98025bb032fabc83bd06f717f972526cd11dccb2213b8694bf83daf",
+      "destination": "tests/qtest/esp32s3-i2s-test.c",
+      "copied_sha256": "eb50ce80a98025bb032fabc83bd06f717f972526cd11dccb2213b8694bf83daf"
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/i2s/0001-native-i2s-machine-integration.patch",
+      "sha256": "97ac24ded4bc30b44ab18644e9f8c6f710109295a1de593518338afc542e090d",
+      "targets": [
+        "hw/misc/meson.build",
+        "hw/xtensa/esp32s3.c"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/i2s/0002-native-i2s-qtest-integration.patch",
+      "sha256": "b571b386cb11b7796f3fd12b030d2a3f67b9df9bc34ef26ecfa01236768e9133",
+      "targets": [
+        "tests/qtest/meson.build"
+      ]
+    }
+  ],
+  "dependency_copy_inputs": [
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_adc_provider.h",
+      "sha256": "63530e845df5830b6ec61f165f68fbf174c57373d9947969eb57399ee3530fd0",
+      "destination": "include/hw/misc/esp32s3_adc_provider.h",
+      "copied_sha256": "63530e845df5830b6ec61f165f68fbf174c57373d9947969eb57399ee3530fd0"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_sens.h",
+      "sha256": "e32e19e2c3aa854f39ff05e272aceae98d47ea14aec26f08f8fd52ca97e70c10",
+      "destination": "include/hw/misc/esp32s3_sens.h",
+      "copied_sha256": "e32e19e2c3aa854f39ff05e272aceae98d47ea14aec26f08f8fd52ca97e70c10"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_sens.c",
+      "sha256": "56ad19a7b0ef36d8b0bd8f43a593a2cca819b160546c0ebbc753cf9760b7251c",
+      "destination": "hw/misc/esp32s3_sens.c",
+      "copied_sha256": "56ad19a7b0ef36d8b0bd8f43a593a2cca819b160546c0ebbc753cf9760b7251c"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_apb_saradc.h",
+      "sha256": "28d3fd635d21a0943a0d0f117f0a89842ff72bb3ddf9dd26fd1758ce0bb82713",
+      "destination": "include/hw/misc/esp32s3_apb_saradc.h",
+      "copied_sha256": "28d3fd635d21a0943a0d0f117f0a89842ff72bb3ddf9dd26fd1758ce0bb82713"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_apb_saradc.c",
+      "sha256": "be0c55b24b4ff213ed6941e42def288be9d7e17b3ccb9383cdaa484e6ae24248",
+      "destination": "hw/misc/esp32s3_apb_saradc.c",
+      "copied_sha256": "be0c55b24b4ff213ed6941e42def288be9d7e17b3ccb9383cdaa484e6ae24248"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_adc_net_provider.c",
+      "sha256": "41e78fa5b94ec9f58e7f0de60575c727f906d853584e5e4d2e3b0c2bc799241b",
+      "destination": "hw/adc/esp32s3_adc_net_provider.c",
+      "copied_sha256": "41e78fa5b94ec9f58e7f0de60575c727f906d853584e5e4d2e3b0c2bc799241b"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3-adc-test.c",
+      "sha256": "693acac556f0040459e733962cb8c6e8579cb39c9ca9513de75ba07a847c1977",
+      "destination": "tests/qtest/esp32s3-adc-test.c",
+      "copied_sha256": "693acac556f0040459e733962cb8c6e8579cb39c9ca9513de75ba07a847c1977"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_project.c",
+      "sha256": "b290c386860a3722fdc681e3a2bde4c6bab2574def0c508f960c9cd0088b2563",
+      "destination": "hw/adc/esp32s3_project.c",
+      "copied_sha256": "b290c386860a3722fdc681e3a2bde4c6bab2574def0c508f960c9cd0088b2563"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_project.h",
+      "sha256": "e2bb939783a9d86050089b6622a35f43376cc94e2e9097915ba46cb76fac4b88",
+      "destination": "hw/adc/esp32s3_project.h",
+      "copied_sha256": "e2bb939783a9d86050089b6622a35f43376cc94e2e9097915ba46cb76fac4b88"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical.c",
+      "sha256": "03209b9420b7fa3d43fef652ae6a9733ceb5697ba1f13274f800ec39d47be972",
+      "destination": "hw/adc/esp32s3_electrical.c",
+      "copied_sha256": "03209b9420b7fa3d43fef652ae6a9733ceb5697ba1f13274f800ec39d47be972"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical.h",
+      "sha256": "a1b7b958587c323604fccab52c7ea78983aa8a8f6b4a51afaa0cc161934cd5fc",
+      "destination": "include/hw/misc/esp32s3_electrical.h",
+      "copied_sha256": "a1b7b958587c323604fccab52c7ea78983aa8a8f6b4a51afaa0cc161934cd5fc"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3-electrical-test.c",
+      "sha256": "280dcf9abd4b5b624a41f801aa54d5b8b46b0ccae92e019c1ce1a80af7b90587",
+      "destination": "tests/qtest/esp32s3-electrical-test.c",
+      "copied_sha256": "280dcf9abd4b5b624a41f801aa54d5b8b46b0ccae92e019c1ce1a80af7b90587"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-dc.c",
+      "sha256": "63ee6c60cea2e77a7c33b31a8af4db8a4ecc2b76079453322cf335e5c49e1e69",
+      "destination": "hw/adc/net-dc.c",
+      "copied_sha256": "63ee6c60cea2e77a7c33b31a8af4db8a4ecc2b76079453322cf335e5c49e1e69"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-dc.h",
+      "sha256": "578bc7c05ae6ee53b9819624674fbc31cd5d40ab0ddf223fdcf2eb9de8d738eb",
+      "destination": "hw/adc/net-dc.h",
+      "copied_sha256": "578bc7c05ae6ee53b9819624674fbc31cd5d40ab0ddf223fdcf2eb9de8d738eb"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-adapter.c",
+      "sha256": "66eb8bd9e7f79f9fabf92a275ee4e2eea4bd73408f276674abf1840b7b652afa",
+      "destination": "hw/adc/net-adapter.c",
+      "copied_sha256": "66eb8bd9e7f79f9fabf92a275ee4e2eea4bd73408f276674abf1840b7b652afa"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-adapter.h",
+      "sha256": "34f242959690719d9b55c60a64ba763a80d166a41016d2b26203dba00b7d017f",
+      "destination": "hw/adc/net-adapter.h",
+      "copied_sha256": "34f242959690719d9b55c60a64ba763a80d166a41016d2b26203dba00b7d017f"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-rc.c",
+      "sha256": "f5cd58f53086ea875d5f59da9b52523012b75774f151fe556708a17d421cb09b",
+      "destination": "hw/adc/net-rc.c",
+      "copied_sha256": "f5cd58f53086ea875d5f59da9b52523012b75774f151fe556708a17d421cb09b"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-rc.h",
+      "sha256": "457b579295cb981bf6d4307a0a7b7a92f84f6e79d3c23f7f620d9cfe6ed383fb",
+      "destination": "hw/adc/net-rc.h",
+      "copied_sha256": "457b579295cb981bf6d4307a0a7b7a92f84f6e79d3c23f7f620d9cfe6ed383fb"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_models.c",
+      "sha256": "cf5e0546565b0f0830e65ee112bc13537f6e9d53222c1eb948abf42efc0fb643",
+      "destination": "hw/adc/esp32s3_electrical_models.c",
+      "copied_sha256": "cf5e0546565b0f0830e65ee112bc13537f6e9d53222c1eb948abf42efc0fb643"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_observers.c",
+      "sha256": "7f767943ca32aff419904979089cd718ee56ccb2919e832dad55c0ef3600d0b5",
+      "destination": "hw/adc/esp32s3_electrical_observers.c",
+      "copied_sha256": "7f767943ca32aff419904979089cd718ee56ccb2919e832dad55c0ef3600d0b5"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_observers.h",
+      "sha256": "fcdeecf87e9ff5d67b64d3f47b8b91cf47142b4bb79ae4cd209171ad7424cdb6",
+      "destination": "hw/adc/esp32s3_electrical_observers.h",
+      "copied_sha256": "fcdeecf87e9ff5d67b64d3f47b8b91cf47142b4bb79ae4cd209171ad7424cdb6"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_internal.h",
+      "sha256": "40b7e621d62031d6ed1d3c447ee839ad9afdbcb8a4f939f90773d0221ab0794b",
+      "destination": "hw/adc/esp32s3_electrical_internal.h",
+      "copied_sha256": "40b7e621d62031d6ed1d3c447ee839ad9afdbcb8a4f939f90773d0221ab0794b"
+    }
+  ],
+  "i2s_operations": [
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s.c",
+      "sha256": "58fc534759b8b73b9a065d293778bdd433922b4a486960d9107ee0af1dfb8abc",
+      "destination": "hw/misc/esp32s3_i2s.c",
+      "copied_sha256": "58fc534759b8b73b9a065d293778bdd433922b4a486960d9107ee0af1dfb8abc"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s.h",
+      "sha256": "d26dbc9758a4b1f56720ebccb4e32d2332d5fee7939490dbc44be86fbd2f4f08",
+      "destination": "include/hw/misc/esp32s3_i2s.h",
+      "copied_sha256": "d26dbc9758a4b1f56720ebccb4e32d2332d5fee7939490dbc44be86fbd2f4f08"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s_pdm.c",
+      "sha256": "709961b9901cf651b14f5c1fd123ab0daca973e614029f5054d329fee7d0b2be",
+      "destination": "hw/misc/esp32s3_i2s_pdm.c",
+      "copied_sha256": "709961b9901cf651b14f5c1fd123ab0daca973e614029f5054d329fee7d0b2be"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s_pdm.h",
+      "sha256": "03b2c1a2458ea92678c57443af24ffe3088eb18b6cab45fc2fe61c1de11dc27c",
+      "destination": "hw/misc/esp32s3_i2s_pdm.h",
+      "copied_sha256": "03b2c1a2458ea92678c57443af24ffe3088eb18b6cab45fc2fe61c1de11dc27c"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s_peer.c",
+      "sha256": "612bd19b9a647e71001eba8e06ec59f7d29cd2cce62a26d2e28b3b173b160cd6",
+      "destination": "hw/misc/esp32s3_i2s_peer.c",
+      "copied_sha256": "612bd19b9a647e71001eba8e06ec59f7d29cd2cce62a26d2e28b3b173b160cd6"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s_peer.h",
+      "sha256": "3b8120e41a1f70da5475829445d6f1ea7c1e327b5e16fe6b30bf2507e2821bd4",
+      "destination": "include/hw/misc/esp32s3_i2s_peer.h",
+      "copied_sha256": "3b8120e41a1f70da5475829445d6f1ea7c1e327b5e16fe6b30bf2507e2821bd4"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s_peer_config.c",
+      "sha256": "b79175051ed5e73c90be63e0927c0985ced6959f7ae5696fe606730ec6d1e4b7",
+      "destination": "hw/misc/esp32s3_i2s_peer_config.c",
+      "copied_sha256": "b79175051ed5e73c90be63e0927c0985ced6959f7ae5696fe606730ec6d1e4b7"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s_peer_service.c",
+      "sha256": "3fecfe7b83accb4c246c20ae131de92cb32e5fffffeef4bcd5d02aba657864a9",
+      "destination": "hw/misc/esp32s3_i2s_peer_service.c",
+      "copied_sha256": "3fecfe7b83accb4c246c20ae131de92cb32e5fffffeef4bcd5d02aba657864a9"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3_i2s_peer_service.h",
+      "sha256": "f50af3c7e411e451fad54753c67872847647a9c6e45b0fdf8d9463a5eb5c502c",
+      "destination": "include/hw/misc/esp32s3_i2s_peer_service.h",
+      "copied_sha256": "f50af3c7e411e451fad54753c67872847647a9c6e45b0fdf8d9463a5eb5c502c"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/i2s/copies/esp32s3-i2s-test.c",
+      "sha256": "eb50ce80a98025bb032fabc83bd06f717f972526cd11dccb2213b8694bf83daf",
+      "destination": "tests/qtest/esp32s3-i2s-test.c",
+      "copied_sha256": "eb50ce80a98025bb032fabc83bd06f717f972526cd11dccb2213b8694bf83daf"
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/i2s/0001-native-i2s-machine-integration.patch",
+      "sha256": "97ac24ded4bc30b44ab18644e9f8c6f710109295a1de593518338afc542e090d",
+      "targets": [
+        "hw/misc/meson.build",
+        "hw/xtensa/esp32s3.c"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/i2s/0002-native-i2s-qtest-integration.patch",
+      "sha256": "b571b386cb11b7796f3fd12b030d2a3f67b9df9bc34ef26ecfa01236768e9133",
+      "targets": [
+        "tests/qtest/meson.build"
+      ]
+    }
+  ],
+  "required_order": [
+    "Frozen26 pinned prefix (superseded clock0007 omitted)",
+    "CoreClock0010..0014",
+    "GPIO canonical e1 foundations",
+    "Radio0005 canonical accessor",
+    "ADC canonical U3 foundations patch (old integration/0005 retired)",
+    "NativeElectrical typed pre-SENS-realize boundary patch",
+    "Install seven ADC copies and canonical complete electrical copies/DC+RC kernels once",
+    "SPI GDMA d0a -> GDMA0004 7640 -> RAW UART2626",
+    "Final frozen I2S transition-aware copies -> machine integration -> qtest integration"
+  ],
+  "qualification": "I2S_HISTORICAL_RUNTIME_DELTA source-only. Entire archived accepted eAD pack unchanged; reviewed FA57 controller C/H and frozen eb50 host qtest only. Changed controller compile/newcore link/hash required; not current parent foundation qualification.",
+  "clock_prefix_operations": [
+    {
+      "kind": "patch",
+      "source": "prototypes/coreclk/0010-hw-xtensa-esp32s3_clk-common-clock-ports-for-SPI2-3.patch",
+      "sha256": "e8b1487b941f7f80c3920da9d56723bcb39b34fa0dedb2dd98c4b80deb88bf4d",
+      "targets": [
+        "hw/misc/esp32s3_rtc_cntl.c",
+        "hw/xtensa/esp32s3.c",
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/misc/esp32s3_rtc_cntl.h",
+        "include/hw/xtensa/esp32s3_clk.h",
+        "tests/qtest/esp32s3-coreclk-test.c"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/coreclk/0011-hw-xtensa-esp32s3_clk-UHCI0-clock-gate-and-reset-lines.patch",
+      "sha256": "c1ebe584a6dbe178743da9874bbcb25880afac10242c16f8f1bb043362b47606",
+      "targets": [
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/xtensa/esp32s3_clk.h"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/coreclk/0012-hw-xtensa-esp32s3_clk-publish-the-0010-0011-gate-levels.patch",
+      "sha256": "6b1e8f79f0e4194213c67d309c5a88930bcb13b396fb118232945e3697434f66",
+      "targets": [
+        "hw/xtensa/esp32s3_clk.c"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/coreclk/0013-hw-xtensa-esp32s3-BBPLL-power-validity-decoupled-from.patch",
+      "sha256": "2203d4cca82a1ff4a62400517ff2fe1ff6d98e0e53417f16a5f5c7a65c5a8081",
+      "targets": [
+        "hw/misc/esp32s3_rtc_cntl.c",
+        "hw/xtensa/esp32s3.c",
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/misc/esp32s3_rtc_cntl.h",
+        "include/hw/xtensa/esp32s3_clk.h",
+        "tests/qtest/esp32s3-coreclk-test.c"
+      ]
+    }
+  ],
+  "source_replay_evidence": "build-runtime-state/i2s-native-2026-10-07/qemu-i2s-40edccac4156-dbe2a8a5ad4e07a6-clock2203/prepared-source.json",
+  "preserved_prefix_inputs": "/home/polar/.cache/esp32s3vm/qemu-i2s-40edccac4156-dbe2a8a5ad4e07a6-prefix/.esp32s3vm-i2s-inputs",
+  "gpio_source_freeze": {
+    "patch_sha256": "e1a45cdb2e8e388fea1e0775a29b7639f236ff226e39dd3ad08f0df9a2a030bf",
+    "source_commit": "767c647cf337af6a6e7abe2e8251b981ca4316b1",
+    "qualification": "Current canonical source-map publication; old90d receipt superseded."
+  },
+  "uart_source_freeze": {
+    "authority": "Main FINAL via UartUhci",
+    "runtime_identity": "2626ab0cad1955d02bc20cb9a190bc782a388eea0fac452b3524f15b4ab7b9fa",
+    "preparation": "Main-approved explicit git apply --ignore-space-change for canonical RAW2626 only. Raw snapshot/input identity preserved; exact numstat target scope enforced. No normalization, automatic fallback, or alternate runtime identity."
+  },
+  "i2s_source_freeze": {
+    "owner": "I2sNativeWorker",
+    "status": "Final controllerFA57 review ACK and author rawPeerMASTER/retention qtest66 freeze; native verification pending",
+    "controller_revision": ".cFA57/.h2A0C actual first-falling duplicate-pop fix final static-review ACK; reviewed MCLK-key preserved",
+    "qtest_status": "66 cases owner-refrozen actual PeerMASTER raw duplex and8300-word same16384 retention-wrap proof; other64 scopes unchanged",
+    "qtest_cases": 66,
+    "qtest_sha256": "eb50ce80a98025bb032fabc83bd06f717f972526cd11dccb2213b8694bf83daf",
+    "instruction": "Refresh all copies again immediately before full source preparation to detect intervening changes.",
+    "peer_revision": "peer9808/header5AFA/service79E0/header3B27 final static-review ACK"
+  },
+  "foundation_operations": [
+    {
+      "kind": "patch",
+      "source": "prototypes/coreclk/0010-hw-xtensa-esp32s3_clk-common-clock-ports-for-SPI2-3.patch",
+      "sha256": "e8b1487b941f7f80c3920da9d56723bcb39b34fa0dedb2dd98c4b80deb88bf4d",
+      "targets": [
+        "hw/misc/esp32s3_rtc_cntl.c",
+        "hw/xtensa/esp32s3.c",
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/misc/esp32s3_rtc_cntl.h",
+        "include/hw/xtensa/esp32s3_clk.h",
+        "tests/qtest/esp32s3-coreclk-test.c"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/coreclk/0011-hw-xtensa-esp32s3_clk-UHCI0-clock-gate-and-reset-lines.patch",
+      "sha256": "c1ebe584a6dbe178743da9874bbcb25880afac10242c16f8f1bb043362b47606",
+      "targets": [
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/xtensa/esp32s3_clk.h"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/coreclk/0012-hw-xtensa-esp32s3_clk-publish-the-0010-0011-gate-levels.patch",
+      "sha256": "6b1e8f79f0e4194213c67d309c5a88930bcb13b396fb118232945e3697434f66",
+      "targets": [
+        "hw/xtensa/esp32s3_clk.c"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/coreclk/0013-hw-xtensa-esp32s3-BBPLL-power-validity-decoupled-from.patch",
+      "sha256": "2203d4cca82a1ff4a62400517ff2fe1ff6d98e0e53417f16a5f5c7a65c5a8081",
+      "targets": [
+        "hw/misc/esp32s3_rtc_cntl.c",
+        "hw/xtensa/esp32s3.c",
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/misc/esp32s3_rtc_cntl.h",
+        "include/hw/xtensa/esp32s3_clk.h",
+        "tests/qtest/esp32s3-coreclk-test.c"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/coreclk/0014-hw-xtensa-esp32s3_clk-LEDC-PCNT-MCPWM-LCD_CAM-clock-ports.patch",
+      "sha256": "0e7a5c62e8a62e2425073ea5474bfea1068b970da2b007b6c84f10be295c67f3",
+      "targets": [
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/xtensa/esp32s3_clk.h"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/gpio/integration-native-foundations.patch",
+      "sha256": "e1a45cdb2e8e388fea1e0775a29b7639f236ff226e39dd3ad08f0df9a2a030bf",
+      "targets": [
+        "hw/gpio/esp32_gpio.c",
+        "hw/gpio/esp32s3_gpio.c",
+        "hw/gpio/esp32s3_iomux.c",
+        "hw/gpio/meson.build",
+        "hw/misc/esp32s3_rtc_io.c",
+        "hw/misc/meson.build",
+        "hw/xtensa/esp32s3.c",
+        "include/hw/gpio/esp32_gpio.h",
+        "include/hw/gpio/esp32s3_gpio.h",
+        "include/hw/gpio/esp32s3_iomux.h",
+        "include/hw/misc/esp32s3_rtc_io.h",
+        "tests/qtest/esp32s3-gpio-test.c",
+        "tests/qtest/meson.build"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/radio-bringup/0005-regi2c-config-accessor-and-slave-range.patch",
+      "sha256": "d1d4966b5185ffcec53a15db5a19375e6ca0b9b34a6c9edd4c142075bf444719",
+      "targets": [
+        "hw/misc/esp32s3_regi2c.c",
+        "include/hw/misc/esp32s3_regi2c.h",
+        "include/hw/misc/esp32s3_regi2c_defs.h"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/adc/integration-native-foundations-adc.patch",
+      "sha256": "21dbb41996ec5450aa2bcd43d1cf9801f15d3103ac1f3ffc915df5e0bb09eefd",
+      "targets": [
+        "hw/adc/meson.build",
+        "hw/misc/esp32s3_regi2c.c",
+        "hw/misc/meson.build",
+        "hw/xtensa/esp32s3.c",
+        "include/hw/misc/esp32s3_regi2c.h",
+        "qapi/qom.json",
+        "tests/qtest/meson.build"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/electrical-runtime/0001-native-v3-electrical-boundary.patch",
+      "sha256": "7acb418f96e3410f12f3e20f8a4d84bc7de028769043aef849c09e4f81c6b504",
+      "targets": [
+        "hw/adc/meson.build",
+        "hw/xtensa/esp32s3.c",
+        "tests/qtest/meson.build"
+      ]
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_adc_provider.h",
+      "sha256": "63530e845df5830b6ec61f165f68fbf174c57373d9947969eb57399ee3530fd0",
+      "destination": "include/hw/misc/esp32s3_adc_provider.h",
+      "copied_sha256": "63530e845df5830b6ec61f165f68fbf174c57373d9947969eb57399ee3530fd0"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_sens.h",
+      "sha256": "e32e19e2c3aa854f39ff05e272aceae98d47ea14aec26f08f8fd52ca97e70c10",
+      "destination": "include/hw/misc/esp32s3_sens.h",
+      "copied_sha256": "e32e19e2c3aa854f39ff05e272aceae98d47ea14aec26f08f8fd52ca97e70c10"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_sens.c",
+      "sha256": "56ad19a7b0ef36d8b0bd8f43a593a2cca819b160546c0ebbc753cf9760b7251c",
+      "destination": "hw/misc/esp32s3_sens.c",
+      "copied_sha256": "56ad19a7b0ef36d8b0bd8f43a593a2cca819b160546c0ebbc753cf9760b7251c"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_apb_saradc.h",
+      "sha256": "28d3fd635d21a0943a0d0f117f0a89842ff72bb3ddf9dd26fd1758ce0bb82713",
+      "destination": "include/hw/misc/esp32s3_apb_saradc.h",
+      "copied_sha256": "28d3fd635d21a0943a0d0f117f0a89842ff72bb3ddf9dd26fd1758ce0bb82713"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_apb_saradc.c",
+      "sha256": "be0c55b24b4ff213ed6941e42def288be9d7e17b3ccb9383cdaa484e6ae24248",
+      "destination": "hw/misc/esp32s3_apb_saradc.c",
+      "copied_sha256": "be0c55b24b4ff213ed6941e42def288be9d7e17b3ccb9383cdaa484e6ae24248"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3_adc_net_provider.c",
+      "sha256": "41e78fa5b94ec9f58e7f0de60575c727f906d853584e5e4d2e3b0c2bc799241b",
+      "destination": "hw/adc/esp32s3_adc_net_provider.c",
+      "copied_sha256": "41e78fa5b94ec9f58e7f0de60575c727f906d853584e5e4d2e3b0c2bc799241b"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/adc/copies/esp32s3-adc-test.c",
+      "sha256": "693acac556f0040459e733962cb8c6e8579cb39c9ca9513de75ba07a847c1977",
+      "destination": "tests/qtest/esp32s3-adc-test.c",
+      "copied_sha256": "693acac556f0040459e733962cb8c6e8579cb39c9ca9513de75ba07a847c1977"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_project.c",
+      "sha256": "b290c386860a3722fdc681e3a2bde4c6bab2574def0c508f960c9cd0088b2563",
+      "destination": "hw/adc/esp32s3_project.c",
+      "copied_sha256": "b290c386860a3722fdc681e3a2bde4c6bab2574def0c508f960c9cd0088b2563"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_project.h",
+      "sha256": "e2bb939783a9d86050089b6622a35f43376cc94e2e9097915ba46cb76fac4b88",
+      "destination": "hw/adc/esp32s3_project.h",
+      "copied_sha256": "e2bb939783a9d86050089b6622a35f43376cc94e2e9097915ba46cb76fac4b88"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical.c",
+      "sha256": "03209b9420b7fa3d43fef652ae6a9733ceb5697ba1f13274f800ec39d47be972",
+      "destination": "hw/adc/esp32s3_electrical.c",
+      "copied_sha256": "03209b9420b7fa3d43fef652ae6a9733ceb5697ba1f13274f800ec39d47be972"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical.h",
+      "sha256": "a1b7b958587c323604fccab52c7ea78983aa8a8f6b4a51afaa0cc161934cd5fc",
+      "destination": "include/hw/misc/esp32s3_electrical.h",
+      "copied_sha256": "a1b7b958587c323604fccab52c7ea78983aa8a8f6b4a51afaa0cc161934cd5fc"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3-electrical-test.c",
+      "sha256": "280dcf9abd4b5b624a41f801aa54d5b8b46b0ccae92e019c1ce1a80af7b90587",
+      "destination": "tests/qtest/esp32s3-electrical-test.c",
+      "copied_sha256": "280dcf9abd4b5b624a41f801aa54d5b8b46b0ccae92e019c1ce1a80af7b90587"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-dc.c",
+      "sha256": "63ee6c60cea2e77a7c33b31a8af4db8a4ecc2b76079453322cf335e5c49e1e69",
+      "destination": "hw/adc/net-dc.c",
+      "copied_sha256": "63ee6c60cea2e77a7c33b31a8af4db8a4ecc2b76079453322cf335e5c49e1e69"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-dc.h",
+      "sha256": "578bc7c05ae6ee53b9819624674fbc31cd5d40ab0ddf223fdcf2eb9de8d738eb",
+      "destination": "hw/adc/net-dc.h",
+      "copied_sha256": "578bc7c05ae6ee53b9819624674fbc31cd5d40ab0ddf223fdcf2eb9de8d738eb"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-adapter.c",
+      "sha256": "66eb8bd9e7f79f9fabf92a275ee4e2eea4bd73408f276674abf1840b7b652afa",
+      "destination": "hw/adc/net-adapter.c",
+      "copied_sha256": "66eb8bd9e7f79f9fabf92a275ee4e2eea4bd73408f276674abf1840b7b652afa"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-adapter.h",
+      "sha256": "34f242959690719d9b55c60a64ba763a80d166a41016d2b26203dba00b7d017f",
+      "destination": "hw/adc/net-adapter.h",
+      "copied_sha256": "34f242959690719d9b55c60a64ba763a80d166a41016d2b26203dba00b7d017f"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-rc.c",
+      "sha256": "f5cd58f53086ea875d5f59da9b52523012b75774f151fe556708a17d421cb09b",
+      "destination": "hw/adc/net-rc.c",
+      "copied_sha256": "f5cd58f53086ea875d5f59da9b52523012b75774f151fe556708a17d421cb09b"
+    },
+    {
+      "kind": "copy",
+      "source": "electrical/net-rc.h",
+      "sha256": "457b579295cb981bf6d4307a0a7b7a92f84f6e79d3c23f7f620d9cfe6ed383fb",
+      "destination": "hw/adc/net-rc.h",
+      "copied_sha256": "457b579295cb981bf6d4307a0a7b7a92f84f6e79d3c23f7f620d9cfe6ed383fb"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_models.c",
+      "sha256": "cf5e0546565b0f0830e65ee112bc13537f6e9d53222c1eb948abf42efc0fb643",
+      "destination": "hw/adc/esp32s3_electrical_models.c",
+      "copied_sha256": "cf5e0546565b0f0830e65ee112bc13537f6e9d53222c1eb948abf42efc0fb643"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_observers.c",
+      "sha256": "7f767943ca32aff419904979089cd718ee56ccb2919e832dad55c0ef3600d0b5",
+      "destination": "hw/adc/esp32s3_electrical_observers.c",
+      "copied_sha256": "7f767943ca32aff419904979089cd718ee56ccb2919e832dad55c0ef3600d0b5"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_observers.h",
+      "sha256": "fcdeecf87e9ff5d67b64d3f47b8b91cf47142b4bb79ae4cd209171ad7424cdb6",
+      "destination": "hw/adc/esp32s3_electrical_observers.h",
+      "copied_sha256": "fcdeecf87e9ff5d67b64d3f47b8b91cf47142b4bb79ae4cd209171ad7424cdb6"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_internal.h",
+      "sha256": "40b7e621d62031d6ed1d3c447ee839ad9afdbcb8a4f939f90773d0221ab0794b",
+      "destination": "hw/adc/esp32s3_electrical_internal.h",
+      "copied_sha256": "40b7e621d62031d6ed1d3c447ee839ad9afdbcb8a4f939f90773d0221ab0794b"
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/spi/0001-gdma-peripheral-rx-packet-end.patch",
+      "sha256": "d0a472c53f444304e29dbd4c979d60840e73a42bfbc935277041deec6b8ad422",
+      "targets": [
+        "hw/dma/esp_gdma.c",
+        "include/hw/dma/esp_gdma.h"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/gdma/0004-hw-dma-esp_gdma-served-RX-bytes-survive-post-store-a.patch",
+      "sha256": "7640a6e06bf9c7d9919cbd4837c25dab3e85f0dfb03da74eb77ee3718dead251",
+      "targets": [
+        "hw/dma/esp_gdma.c",
+        "tests/qtest/esp32s3-gdma-test.c"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/uart/0001-gdma-uhci-demand-and-packet-status.patch",
+      "sha256": "2626ab0cad1955d02bc20cb9a190bc782a388eea0fac452b3524f15b4ab7b9fa",
+      "targets": [
+        "hw/dma/esp_gdma.c",
+        "include/hw/dma/esp_gdma.h"
+      ],
+      "historical_normalized_text_sha256": "3a8169e167b35ca48daa813161be7727911a986b35df165a770e79c2ead733d4",
+      "apply_options": [
+        "--ignore-space-change"
+      ],
+      "patch_context": "ignore-space-change"
+    }
+  ],
+  "foundations_status": "source-ready",
+  "foundation_blockers": [],
+  "adc_source_freeze": {
+    "owner": "AdcFoundationFinish",
+    "patch_sha256": "21dbb41996ec5450aa2bcd43d1cf9801f15d3103ac1f3ffc915df5e0bb09eefd",
+    "copies": 7,
+    "status": "Source-only freeze confirmed; new source_generation typed callback required in eAD; no native proof claim"
+  },
+  "qtest_cases": 66,
+  "source_freeze_receipts": [
+    {
+      "path": "qemu-extensions\\prototypes\\electrical-runtime\\source-freeze.json",
+      "sha256": "2a1fcdf0846d4a877bc34cd63c7fba8e040c4b0f887f99452e6bd4d5cdab6700",
+      "status": "SOURCE_COPY_FREEZE_NOT_BINARY_QUALIFIED"
+    },
+    {
+      "path": "build-runtime-state\\adc-independent-final-20261007\\ADC-01-final-foundation-receipt.json",
+      "sha256": "577aafc88924fb9627deec89738497b07a270ef89c7132d85c558a9390fbf5b5",
+      "status": "SOURCE_READY"
+    }
+  ],
+  "preserved_sourceprep_failures": [
+    "build-runtime-state/i2s-native-2026-10-07/transition-final-first-attempt.log"
+  ],
+  "preserved_native_failures": [
+    {
+      "checkout": "/home/polar/.cache/esp32s3vm/qemu-i2s-40edccac4156-dbe2a8a5ad4e07a6-transition-ready",
+      "qtest_sha256": "b11fdf4dca13b8d90dcd123f25c78cf7e98d47ee7db119df55d119858b46aab5",
+      "ground_truth": "Native verifier build failed literal quote escape line1192; adjacent1194 fixed by owner; no local rerun",
+      "evidence": "build-runtime-state/i2s-native-2026-10-07/native-transition-ready-build/"
+    },
+    {
+      "checkout": "/home/polar/.cache/esp32s3vm/qemu-i2s-40edccac4156-dbe2a8a5ad4e07a6-transition-bbce",
+      "qtest_sha256": "bbce43a7cf83409929fa74b19229d4c2a7dae9904cf4294ae04eda8df9c03b98",
+      "ground_truth": "Reported native61fail/5pass pausedfixture baseline preserved; sourceTimer6837 host-only correction"
+    },
+    {
+      "checkout": "/home/polar/.cache/esp32s3vm/qemu-i2s-40edccac4156-dbe2a8a5ad4e07a6-historical-6837",
+      "qtest_sha256": "68377fe0f7ebc0f9ef1d604d758d170c727c5a359ed1ac493ae863a9f63c9899",
+      "ground_truth": "Reported actual Apply-while-running native fixture failure; canonical paused Apply transaction correction only; no local rerun"
+    },
+    {
+      "checkout": "/home/polar/.cache/esp32s3vm/qemu-i2s-40edccac4156-dbe2a8a5ad4e07a6-historical-b08d",
+      "qtest_sha256": "b08d336295b74148d6295e7137f5c55b525ff7644e97cde4e3377bafc8669387",
+      "ground_truth": "Author reports first26 physical PASS then case27 unnamed IRQ fixture protocol failure; two observer calls corrected, no local rerun"
+    },
+    {
+      "checkout": "/home/polar/.cache/esp32s3vm/qemu-i2s-40edccac4156-dbe2a8a5ad4e07a6-historical-ce897",
+      "qtest_sha256": "ce8970a14e66b4846606af2f83150dea234fbcd591903a71937cb8e319b31b9f",
+      "ground_truth": "Actual unused-source PASS and22 metadata Unsupportedkind fixture failures retained; canonical one-line kind=device correction only"
+    }
+  ],
+  "archived_overlay_sources": [
+    "prototypes/coreclk/0010-hw-xtensa-esp32s3_clk-common-clock-ports-for-SPI2-3.patch",
+    "prototypes/coreclk/0011-hw-xtensa-esp32s3_clk-UHCI0-clock-gate-and-reset-lines.patch",
+    "prototypes/coreclk/0012-hw-xtensa-esp32s3_clk-publish-the-0010-0011-gate-levels.patch",
+    "prototypes/coreclk/0013-hw-xtensa-esp32s3-BBPLL-power-validity-decoupled-from.patch",
+    "prototypes/coreclk/0014-hw-xtensa-esp32s3_clk-LEDC-PCNT-MCPWM-LCD_CAM-clock-ports.patch",
+    "prototypes/gpio/integration-native-foundations.patch",
+    "prototypes/radio-bringup/0005-regi2c-config-accessor-and-slave-range.patch",
+    "prototypes/adc/integration-native-foundations-adc.patch",
+    "prototypes/electrical-runtime/0001-native-v3-electrical-boundary.patch",
+    "prototypes/adc/copies/esp32s3_adc_provider.h",
+    "prototypes/adc/copies/esp32s3_sens.h",
+    "prototypes/adc/copies/esp32s3_sens.c",
+    "prototypes/adc/copies/esp32s3_apb_saradc.h",
+    "prototypes/adc/copies/esp32s3_apb_saradc.c",
+    "prototypes/adc/copies/esp32s3_adc_net_provider.c",
+    "prototypes/adc/copies/esp32s3-adc-test.c",
+    "prototypes/electrical-runtime/copies/esp32s3_project.c",
+    "prototypes/electrical-runtime/copies/esp32s3_project.h",
+    "prototypes/electrical-runtime/copies/esp32s3_electrical.c",
+    "prototypes/electrical-runtime/copies/esp32s3_electrical.h",
+    "prototypes/electrical-runtime/copies/esp32s3-electrical-test.c",
+    "electrical/net-dc.c",
+    "electrical/net-dc.h",
+    "electrical/net-adapter.c",
+    "electrical/net-adapter.h",
+    "electrical/net-rc.c",
+    "electrical/net-rc.h",
+    "prototypes/electrical-runtime/copies/esp32s3_electrical_models.c",
+    "prototypes/electrical-runtime/copies/esp32s3_electrical_observers.c",
+    "prototypes/electrical-runtime/copies/esp32s3_electrical_observers.h",
+    "prototypes/electrical-runtime/copies/esp32s3_electrical_internal.h",
+    "prototypes/spi/0001-gdma-peripheral-rx-packet-end.patch",
+    "prototypes/gdma/0004-hw-dma-esp_gdma-served-RX-bytes-survive-post-store-a.patch",
+    "prototypes/uart/0001-gdma-uhci-demand-and-packet-status.patch",
+    "prototypes/i2s/copies/esp32s3_i2s_pdm.c",
+    "prototypes/i2s/copies/esp32s3_i2s_pdm.h",
+    "prototypes/i2s/copies/esp32s3_i2s_peer.c",
+    "prototypes/i2s/copies/esp32s3_i2s_peer.h",
+    "prototypes/i2s/copies/esp32s3_i2s_peer_config.c",
+    "prototypes/i2s/copies/esp32s3_i2s_peer_service.c",
+    "prototypes/i2s/copies/esp32s3_i2s_peer_service.h",
+    "prototypes/i2s/0001-native-i2s-machine-integration.patch",
+    "prototypes/i2s/0002-native-i2s-qtest-integration.patch"
+  ],
+  "archive_receipt_sha256": "bdb167b35031a618377d126f02343d6b279d85743545812addd34a18fef59707",
+  "historical_archive_checkout": "/home/polar/.cache/esp32s3vm/qemu-i2s-40edccac4156-dbe2a8a5ad4e07a6-transition-bbce",
+  "historical_archive_map_sha256": "7fa790a788ad86579b14a77e656505c89f5c110d83bab2a2d9f386bf3f81fe13",
+  "historical_binary_source_equality": {
+    "actual_build_receipt": "build-runtime-state\\i2s-native-2026-10-07\\native-transition-bbce-build\\result.json",
+    "actual_build_receipt_sha256": "1ea12f54906419422f8fe21112c7e503c5c7d656fa63839179cab2dd017ac177",
+    "accepted_archive_receipt_sha256": "bdb167b35031a618377d126f02343d6b279d85743545812addd34a18fef59707",
+    "source_target_count": 95,
+    "source_before_all_targets_equal": true,
+    "binary_sha256": "19e9ca676b5a94c5c9bb6e525a065c9b946f9f61d477c322b4876ed6daf65d96",
+    "authority": "Main approval via I2sNativeWorker for ENTIRE accepted pack only; sole new source delta host qtest6837; no old-test/live-body mixture"
+  },
+  "historical_allowed_changed_targets": [
+    "hw/misc/esp32s3_i2s.c",
+    "include/hw/misc/esp32s3_i2s.h",
+    "tests/qtest/esp32s3-i2s-test.c"
+  ],
+  "verification_scope": "I2S_HISTORICAL_RUNTIME_DELTA",
+  "runtime_delta_authority": "Parent final static-review ACK .cFA57/.h2A0C first-falling duplicate-pop repair plus previously reviewed MCLK effective-clock key. Entire accepted eAD pack unchanged; actual changed controller compile and new core link/hash REQUIRED.",
+  "current_foundation_ordinary_gate": {
+    "status": "HOLD_RENEWED_NATIVE_NET_FREEZE",
+    "required": "Main conditionally authorizes separate OWN source-only overlay derivation once NativeNet renewed complete freeze exactly matches prepared a45abaa corrected40 ordering/hashes including GPIO722b9e31 after pad corrections/tests. Stop on identity mismatch or superseding Main HOLD; no redundant confirmation, no stale FC61/c6fc inheritance.",
+    "reset_transaction_patch": "prototypes/coreclk/0016-system-capture-reset-entry-cause-gate-S3-reset.patch",
+    "reset_transaction_sha256": "f1a3c4986080edb56fe679b451427157015761ca1f68b5142eaea9f878521898",
+    "reset_transaction_order": "Exact a45abaa owner ordering: GPIO whole722 after120/ee5 and before ADC/eAD; reset-entry transaction0016 after e66.",
+    "reset_metadata_distinction": "Parent evidence_boundary reference to separate SYSTEM storage0016 being absent is historical storage work, not this reset-entry transaction. Immutable parent metadata is not rewritten.",
+    "prepared_parent_checkout": "/home/polar/.cache/esp32s3vm/qemu-runtime-40edccac4156-a45abaa18d905226",
+    "prepared_parent_fingerprint": "a45abaa18d9052260a795726700411581bbf743a5159c3c1d9ba5e2282f6bdb0",
+    "prepared_parent_record": "build-runtime-state/runtime-a45abaa18d905226-source.json",
+    "prepared_parent_record_sha256": "fe8a1d314b35bb7304e84d4e88dc46ae6fedf0aa0ebad245b210433ed27915c4",
+    "prepared_parent_patch_count": 40,
+    "prepared_parent_copy_count": 29,
+    "prepared_parent_actual_target_count": 94,
+    "qualification": "Parent source preparation only, not I2S binary/runtime/native graph qualification.",
+    "preserved_own_source": "qemu-i2s-40edccac4156-dbe2a8a5ad4e07a6-runtime-58fc-eb50",
+    "publication_owner": "CombinedVerify"
+  }
+}

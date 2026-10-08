@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "component": "UART-03 UHCI0 and shared FIFO audit",
+  "license": "GPL-2.0-or-later",
+  "changelog": ["2026-10-07: Added UART-03 UHCI0 native controller, real-UART FIFO callback binding, fourteen UHCI plus three shared continuous-segment native vectors, exact configured-system-object Meson test target, UART-only additive GDMA demand/packet-metadata/error-EOF/segment-EOF APIs, and primary-source shared RAM audit. Physical EOF handoff now snapshots exact FIFO boundaries, excludes only UART-qualified queued break NULL delimiters and persists multiple boundaries without hot allocation. No builds/tests executed by this worker."],
+  "copies": [
+    {"source": "copies/esp32s3_uhci.c", "destination": "hw/char/esp32s3_uhci.c"},
+    {"source": "copies/esp32s3_uhci.h", "destination": "include/hw/char/esp32s3_uhci.h"},
+    {"source": "copies/test-esp32s3-uhci.c", "destination": "tests/unit/test-esp32s3-uhci.c"}
+  ],
+  "native_test": {
+    "integration_patch": "integration-unit.patch",
+    "target": "test-esp32s3-uhci",
+    "platform": "Linux xtensa-softmmu with CONFIG_XTENSA_ESP32S3",
+    "link": "Same configured emulator lib.extract_all_objects(recursive:true), arch_deps+[sdl], target c_args/include directories, link_args and symbol dependencies. Excludes system/main.c; no stubs.",
+    "initialization": "qemu_init(-machine none -accel qtest -display none -nodefaults -S), followed by real isolated UHCI/GDMA instances and RAM/address space.",
+    "build_command": "ninja -C <configured-build> test-esp32s3-uhci",
+    "run_command": "<configured-build>/test-esp32s3-uhci --tap -k",
+    "meson_test_name": "esp32s3-uhci-native",
+    "vector_count": 17,
+    "executed": false
+  },
+  "physical_rx_event_contract": {
+    "uart_callback": "void callback(void *opaque, unsigned index, bool is_break, bool delimiter_queued, unsigned queued_bytes)",
+    "uhci_api": "esp32s3_uhci_rx_event(s,index,event,delimiter_queued,queued_bytes)",
+    "source": "Parent UART samples the physical all-low frame detector once after the final stop sample and after optional FIFO insertion; delimiter_queued is true only for an actually inserted NULL frame. Idle callbacks sample the physical FIFO count; independent console input never emits these events.",
+    "processing": "Store absolute raw-byte boundary snapshots in a fixed513-entry ring (largest target RX FIFO512 bytes plus empty boundary). Coalesce duplicate boundaries. Process only bytes before the boundary, discard one actual queued NULL only when the real UART explicitly qualifies it, then close EOF. Later bytes remain in the real FIFO for the next packet; multiple pre-BH events remain distinct.",
+    "zero_payload": "Ordinary zero-valued payload is preserved. Masked/overflowed break frames carry delimiter_queued=false; no NULL is fabricated or blindly removed.",
+    "semantic_reference": "TRM v1.8 register26.34 p967 UART_RX_BRK_EOF_EN ends payload receive when a NULL frame is received; UART_ERR_WR_MASK's pinned uart_reg.h description defines whether errored UART frames actually enter FIFO.",
+    "qualification": "The explicit all-low/actually-queued metadata and delimiter exclusion are the adopted machine/fixture contract. The inspected TRM describes the NULL-triggered EOF but does not explicitly enumerate whether the terminating NULL appears in GDMA payload; silicon boundary qualification remains required before claiming that undocumented detail hardware-verified.",
+    "native_vectors": ["queued break NULL excluded while later packet preserved", "masked break preserves ordinary zero payload and later zero byte", "forty distinct idle events before service plus duplicate event coalescing"]
+  },
+  "machine": {
+    "type": "esp32s3.uhci",
+    "instances": 1,
+    "address": "0x60014000",
+    "mapped_size": "0x1000",
+    "irq": "ETS_UHCI0_INTR_SOURCE",
+    "gdma_peripheral": 2,
+    "links": {"gdma": "real ESP32S3 GDMA instance", "soc-reset": "real ESP32S3 SoC reset-domain provider"},
+    "inputs": {"clk-gate": "SYSTEM UHCI0 peripheral clock enable", "reset": "SYSTEM UHCI0 peripheral reset assertion"},
+    "uart_binding": "uhci-binding.inc: s3_uhci_bind_uart(uhci, uart, index) for indices 0,1,2 after device realization",
+    "clock_en_note": "CONF0.CLK_EN forces the register clock; it is not a transfer enable. SYSTEM clk-gate gates operation.",
+    "build": "Add esp32s3_uhci.c beside esp32s3_uart.c in hw/char/meson.build's ESP32S3 UART sources. Apply integration-unit.patch to root meson.build for the complete native test link target."
+  },
+  "prerequisites": {
+    "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+    "frozen_prefix": "build-runtime-state/runtime-dbe2a8a5ad4e07a6-source.json",
+    "frozen_prefix_composition": "Authoritative frozen26 dbe2, in manifest order: hostbus5 patches + SIMD PIE3 patches + coreclk0001..0006 + GDMA0001..0003 + INTC0001..0003 + radio0001..0004 + coreclk0008/0009, plus the manifest's three hostbus copies. Superseded coreclk0007 BBPLL bridge is EXCLUDED. The referenced manifest, not standalone owner checkout shorthand, defines exact filenames and bytes.",
+    "common_additive_coreclock": "Apply Main's approved common additive coreclock0010/0011 according to the common preparation ledger after frozen26; these are not part of or replacements for the frozen prefix.",
+    "prefix_correction": "Earlier terminal shorthand incorrectly described runtime prefix as coreclk0001..0007 based on the GDMA owner's standalone review checkout. That checkout is supporting provider evidence, not the authoritative dbe2 runtime prefix. No runtime prefix/provider bytes or identities changed.",
+    "rx_finish_overlay": "../spi/0001-gdma-peripheral-rx-packet-end.patch frozen identity supplied by parent: d0a472c5; preserve bytes",
+    "gdma_pump_fix": "../gdma/0004-hw-dma-esp_gdma-served-RX-bytes-survive-post-store-a.patch, SHA256 7640a6e06bf9c7d9919cbd4837c25dab3e85f0dfb03da74eb77ee3718dead251; owner reference HEAD0b375eb; apply after frozen SPI overlay, before UART additive patch",
+    "uart_additive_patch": "0001-gdma-uhci-demand-and-packet-status.patch",
+    "uart_additive_sha256": "2626ab0cad1955d02bc20cb9a190bc782a388eea0fac452b3524f15b4ab7b9fa",
+    "uart_additive_historical_normalized_text_sha256": "3a8169e167b35ca48daa813161be7727911a986b35df165a770e79c2ead733d4",
+    "uart_additive_newline_identity": "Main approved the canonical RAW CRLF artifact SHA2626ab0c. Preserve existing bytes in canonical and prepared patch artifacts; accept only the full raw SHA in uart_additive_sha256. Historical LF-normalized text SHA3a8169e1 explains the corrected prior handoff but is NOT an alternative accepted runtime-input identity. I2S measured exact normalized-content equivalence and GDMA owner confirmed zero semantic delta; no source-order/API/code change. Use existing common preparation's raw-byte-preserving patch handling, never normalize or rewrite this or earlier SPI artifacts.",
+    "uart_additive_review": "GDMA owner approved segment logic and reviewed/integrated the same UART provider semantics; Main's final authority pins canonical RAW2626ab0c exclusively. Owner-reported canonical18/18 and boot3/3 are regression evidence, not a substitute for actual same-source UART/I2S/RMT/SPI native-consumer qualification. This worker ran no builds/tests.",
+    "uart_additive_sources": "gdma-additive/esp_gdma.[ch], fixed provider source base equivalent to GDMA owner HEAD0b375eb (last owner amendment adds tests only)",
+    "uart_additive_gdma": ["esp_gdma_set_peripheral_notify", "esp_gdma_read_channel_ex with EspGdmaTxInfo.served/eof_reached/list_done", "esp_gdma_finish_rx_channel_err", "esp_gdma_write_channel_ex with actual served count", "esp_gdma_finish_rx_segment: nonterminal exact partial/full-boundary EOF, direct DW2 continuation, preserves prefetch, no extra IN_DONE, no origin rearm"]
+  },
+  "implemented_modes": ["raw byte transport", "separator framing", "all four programmed escape pairs", "length threshold RX EOF", "real UART idle RX EOF", "real UART break RX EOF", "single selected UART only", "full-duplex using independently selected GDMA IN/OUT channels", "persistent backpressure state", "bounded 256-step bottom-half quanta", "APP_CTRL software IRQ, enable masking and W1C clearing", "descriptor completion and owner checks supplied by real GDMA", "malformed escape RX error EOF"],
+  "specification_blockers": [
+    "TRM and pinned headers do not define formatting header byte layout, header sequence/ack/checksum state and target CRC initial value/byte order; HEAD_EN/CRC modes suspend with LOG_UNIMP instead of fabricated bytes.",
+    "Quick-send NUM mode packet mapping/length is unspecified by inspected primary target sources; quick-send enabled modes suspend with LOG_UNIMP.",
+    "Hung-conf timeout tick unit and shift interpretation are unspecified; hung IRQ timing is not implemented and cannot be claimed complete.",
+    "Shared FIFO SIZE=0 encoding is unspecified despite TRM saying UART0 TX supports eight blocks and register field being three bits; do not infer zero means eight or disabled without silicon/primary documentation."
+  ],
+  "shared_fifo_audit": {
+    "physical_bytes": 1024,
+    "block_bytes": 128,
+    "tx_bases": [0,128,256],
+    "rx_bases": [512,640,768],
+    "max_tx_blocks": [8,7,6],
+    "max_rx_blocks": [4,3,2],
+    "conclusion": "All six FIFOs alias one physical RAM. Fixed start addresses do not move on expansion. UART0 TX_SIZE=2 occupies UART1 default TX block and UART1 transmitting cannot be used (explicit TRM example). Six privately allocated expanding FIFOs would be incorrect.",
+    "provider": "Parent-owned ESP32S3UARTMemory QOM object bytes[1024], fifo-memory links on all three UARTs, independent per-FIFO cursors over shared backing windows; overlap behavior beyond TRM unusable warning is not specified."
+  },
+  "evidence": [
+    "https://documentation.espressif.com/esp32-s3_technical_reference_manual_en.pdf v1.8 sections26.4.2 p927,26.4.11 p936,26.4.13 pp937-938,26.7.2 pp967-982",
+    "build-idf-6.1/components/esp_hal_uart/esp32s3/include/hal/uhci_ll.h",
+    "build-idf-6.1/components/soc/esp32s3/register/soc/uhci_reg.h",
+    "build-idf-6.1/components/soc/esp32s3/register/soc/uhci_struct.h",
+    "build-idf-6.1/components/soc/esp32s3/register/soc/uart_reg.h",
+    "build-idf-6.1/components/soc/esp32s3/register/soc/reg_base.h"
+  ],
+  "verification": {"executed": false, "reason": "Delegated assignment prohibits mid-flight builds/tests.", "required": ["native controller vectors", "canonical GDMA vectors after additive overlay", "parent real UART firmware/electrical fixture including two UART controllers and independent console", "full acceptance cannot pass until specification blockers resolved or explicit scope approval"]}
+}

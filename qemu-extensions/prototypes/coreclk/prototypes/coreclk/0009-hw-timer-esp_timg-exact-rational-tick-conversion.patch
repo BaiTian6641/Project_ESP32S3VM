@@ -1,0 +1,320 @@
+From 9f89cdc756a95bb48f9197b4da56c5533013f724 Mon Sep 17 00:00:00 2001
+From: ESP32S3VM coreclk <coreclk@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 13:48:05 +0800
+Subject: [PATCH] hw/timer/esp_timg: exact rational tick conversion for slow
+ time bases
+
+Follow-up to the divider-field encoding fix. The rate seen by the
+virtual counters was truncated to integer Hz before conversion
+(esp_timg_timer_freq returned clk / divider), so the maximum divider
+time base (APB 80 MHz / 65536 = 1220.703125 Hz) counted 12200 ticks in
+10 s of virtual time instead of 12207, and alarm deadlines drifted by
+the same 0.06%.
+
+The counters now keep the rate as an exact reduced fraction
+(rate_num / rate_den per ns, gcd-reduced source and 1 s) plus a sub-tick
+numerator carry: every update adds elapsed_ns * rate_num to the carry,
+extracts whole ticks and keeps the remainder, and alarm
+scheduling/resume convert ticks back with the inverse exact split.
+Overflow bounds: elapsed_ns * rate_num fits 64 bits for any single
+update under ~19 minutes at the fastest modeled rate (alarm distances
+are bounded the same way); gated groups (rate_num = 0) stay frozen.
+
+Boundary regression extended: 10 s at APB/65536 counts exactly 12207
+ticks (was 12200), and an alarm 12207 ticks away meets its derived
+9.9999744 s deadline (asserted not fired at 9.999 s, fired by 10.059 s).
+---
+ hw/timer/esp_timg.c                | 122 ++++++++++++++++++++++-------
+ include/hw/timer/esp_timg.h        |  10 ++-
+ tests/qtest/esp32s3-coreclk-test.c |  21 +++--
+ 3 files changed, 115 insertions(+), 38 deletions(-)
+
+diff --git a/hw/timer/esp_timg.c b/hw/timer/esp_timg.c
+index b50bd21..27c1202 100644
+--- a/hw/timer/esp_timg.c
++++ b/hw/timer/esp_timg.c
+@@ -79,20 +79,22 @@ static inline uint64_t esp_timg_xtal_freq(ESPTimgState *s, bool clk_on)
+  *   field 0        -> divide by 65536 (max divider encoding)
+  *   field 1        -> divide by 2 (reset value; TRM: "the actual divisor is 2")
+  *   field 2..65535 -> divide by the field value */
+-static uint64_t esp_timg_timer_freq(ESPTimgState *s, const ESPT0State *t)
++static void esp_timg_timer_rate(ESPTimgState *s, const ESPT0State *t,
++                                uint64_t *src_hz, uint32_t *prescale)
+ {
+     const uint32_t divider = FIELD_EX32(t->config, TIMG_T0CONFIG, DIVIDER);
+     const uint64_t clk = FIELD_EX32(t->config, TIMG_T0CONFIG, USE_XTAL) ?
+                          esp_timg_xtal_freq(s, s->timers_clk_on) :
+                          esp_timg_apb_freq(s, s->timers_clk_on);
+ 
++    *src_hz = clk;
+     if (divider == 0) {
+-        return clk / 65536;
+-    }
+-    if (divider == 1) {
+-        return clk / 2;
++        *prescale = 65536;
++    } else if (divider == 1) {
++        *prescale = 2;
++    } else {
++        *prescale = divider;
+     }
+-    return clk / divider;
+ }
+ 
+ 
+@@ -103,8 +105,17 @@ static int64_t esp_virtual_counter_update(ESPVirtualCounter *counter)
+ {
+     const int64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+     const int64_t elapsed_ns = now - counter->base;
+-    const int64_t ticks = muldiv64(elapsed_ns, counter->frequency,
+-                                   NANOSECONDS_PER_SECOND);
++    int64_t ticks = 0;
++
++    if (counter->rate_num) {
++        /* Exact rational accumulate: the sub-tick remainder stays in
++         * tick_num (always < rate_den), so slow time bases such as
++         * APB / 65536 = 1220.703125 Hz never lose ticks. */
++        const uint64_t acc = counter->tick_num +
++                             (uint64_t)elapsed_ns * counter->rate_num;
++        ticks = acc / counter->rate_den;
++        counter->tick_num = acc % counter->rate_den;
++    }
+     counter->value += ticks;
+     counter->base = now;
+     return counter->value;
+@@ -121,14 +132,19 @@ static void esp_virtual_counter_alarm_in_ticks(ESPVirtualCounter *counter, int64
+     /* A gated group (SYSTEM_PERIP_CLK_EN0) has a zero rate: the alarm can
+      * never be reached; disarm and keep the counter frozen instead of
+      * dividing by zero. The alarm is rescheduled when the gate reopens. */
+-    if (counter->frequency == 0) {
++    if (counter->rate_num == 0) {
+         counter->base = now;
+         counter->value = 0;
+         timer_del(&counter->timer);
+         return;
+     }
+-    int64_t delay_ns = muldiv64(ticks, NANOSECONDS_PER_SECOND,
+-                                counter->frequency);
++    /* delay_ns = ticks * rate_den / rate_num, exact: integer part plus the
++     * bounded remainder (rem < rate_num, rem * rate_den fits 64 bits for
++     * every modeled rate). */
++    const uint64_t whole = ticks / counter->rate_num;
++    const uint64_t rem = ticks % counter->rate_num;
++    const uint64_t delay_ns = whole * counter->rate_den +
++                              rem * counter->rate_den / counter->rate_num;
+     const int64_t now2 = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+     counter->base = now2;
+     counter->value = 0;
+@@ -154,16 +170,60 @@ static void esp_virtual_counter_resume_in_ticks(ESPVirtualCounter *counter, int6
+ {
+     const int64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+     counter->base = now;
+-    timer_mod_ns(&counter->timer,
+-                 now + muldiv64(ticks, NANOSECONDS_PER_SECOND, counter->frequency));
++    {
++        const uint64_t whole = ticks / counter->rate_num;
++        const uint64_t rem = ticks % counter->rate_num;
++        timer_mod_ns(&counter->timer,
++                     now + whole * counter->rate_den +
++                     rem * counter->rate_den / counter->rate_num);
++    }
+ }
+ 
++static void esp_virtual_counter_set_rate(ESPVirtualCounter *counter,
++                                         uint64_t source_hz, uint32_t prescale);
++
+ static void esp_virtual_counter_reset(ESPVirtualCounter* counter)
+ {
+     timer_del(&counter->timer);
+     counter->base = 0;
+     counter->value = 0;
+-    counter->frequency = ESP_APB_CLK; // Hz
++    counter->tick_num = 0;
++    esp_virtual_counter_set_rate(counter, ESP_APB_CLK, 1);
++}
++
++/* Rational rate setter: reduces source_hz / (prescale * 1s) by their gcd so
++ * the tick period stays exact without truncating slow time bases (APB/65536
++ * = 1220.703125 Hz). source_hz 0 = gated counter. */
++static void esp_virtual_counter_set_rate(ESPVirtualCounter *counter,
++                                         uint64_t source_hz, uint32_t prescale)
++{
++    uint64_t g = source_hz, a = 1000000000u;
++    uint64_t num, den;
++
++    if (g == 0) {
++        counter->rate_num = 0;
++        counter->rate_den = 1;
++        counter->tick_num = 0;
++        return;
++    }
++    while (a) {
++        uint64_t t = g % a;
++        g = a;
++        a = t;
++    }
++    num = source_hz / g;
++    den = (uint64_t)prescale * (1000000000u / g);
++    if (counter->rate_num == num && counter->rate_den == den) {
++        /* Same rate: keep the sub-tick carry. set_rate runs on every
++         * T0CONFIG write and clock/gate refresh, and dropping the carry on
++         * a no-op would make slow time bases under-count. */
++        return;
++    }
++    /* A genuine rate change restarts the sub-tick carry; callers advance
++     * the counter at the old rate before switching. */
++    counter->rate_num = num;
++    counter->rate_den = den;
++    counter->tick_num = 0;
+ }
+ 
+ 
+@@ -304,8 +364,9 @@ static void esp_wdt_update_prescaler(ESPTimgState* s, uint32_t value)
+         wdt->prescaler = FIELD_EX32(value, TIMG_WDTCONFIG1, CLK_PRESCALE);
+     }
+ 
+-    /* Recalculate the frequency out of the new prescaler and current clock */
+-    wdt->counter.frequency = esp_wdt_ext_clk_frequency(s) / wdt->prescaler;
++    /* Recalculate the rate out of the new prescaler and current clock */
++    esp_virtual_counter_set_rate(&wdt->counter, esp_wdt_ext_clk_frequency(s),
++                                 wdt->prescaler);
+ 
+     /* In theory we should reschedule the timer if it is currently running.
+      * In practice, let's say that this behavior is invalid  and do not reschedule it. */
+@@ -516,11 +577,13 @@ static void esp_t0_config_update(ESPTimgState *s, ESPT0State* t0, uint32_t value
+         esp_t0_update_counter(t0);
+     }
+ 
+-    /* Calculate the new frequency. The source selection (USE_XTAL) and the
++    /* Calculate the new rate. The source selection (USE_XTAL) and the
+      * clock rates come from the live clock tree (TRM v1.8 ch.12 §12.2). */
+-    const uint64_t new_freq = esp_timg_timer_freq(s, t0);
+-    if (new_freq != t0->counter.frequency) {
+-        t0->counter.frequency = new_freq;
++    {
++        uint64_t src;
++        uint32_t pre;
++        esp_timg_timer_rate(s, t0, &src, &pre);
++        esp_virtual_counter_set_rate(&t0->counter, src, pre);
+     }
+ 
+     if (value & R_TIMG_T0CONFIG_DIVCNT_RST_MASK) {
+@@ -855,17 +918,20 @@ static void esp_timg_refresh_clocks(ESPTimgState *s)
+     for (int i = 0; i < 2; ++i) {
+         ESPT0State *t = timers[i];
+         const bool enabled = FIELD_EX32(t->config, TIMG_T0CONFIG, EN);
+-        const uint64_t new_freq = esp_timg_timer_freq(s, t);
+-
+         if (enabled) {
+             /* Advance the counter at the old rate before changing it */
+             esp_t0_update_counter(t);
+         }
+-        t->counter.frequency = new_freq;
++        {
++            uint64_t src;
++            uint32_t pre;
++            esp_timg_timer_rate(s, t, &src, &pre);
++            esp_virtual_counter_set_rate(&t->counter, src, pre);
++        }
+         if (!enabled) {
+             continue;
+         }
+-        if (!new_freq || !FIELD_EX32(t->config, TIMG_T0CONFIG, ALARM_EN)) {
++        if (!t->counter.rate_num || !FIELD_EX32(t->config, TIMG_T0CONFIG, ALARM_EN)) {
+             timer_del(&t->counter.timer);
+         } else {
+             esp_t0_alarm_update(t);
+@@ -876,18 +942,18 @@ static void esp_timg_refresh_clocks(ESPTimgState *s)
+     {
+         ESPWdtState *wdt = &s->wdt;
+         const bool enabled = esp_wdt_enabled(wdt);
+-        const uint64_t new_freq =
+-            esp_wdt_ext_clk_frequency(s) / wdt->prescaler;
+ 
+         if (enabled) {
+             /* Accumulate the ticks elapsed at the old rate */
+             esp_virtual_counter_update(&wdt->counter);
+         }
+-        wdt->counter.frequency = new_freq;
++        esp_virtual_counter_set_rate(&wdt->counter,
++                                     esp_wdt_ext_clk_frequency(s),
++                                     wdt->prescaler);
+         if (!enabled) {
+             return;
+         }
+-        if (!new_freq) {
++        if (!wdt->counter.rate_num) {
+             timer_del(&wdt->counter.timer);
+         } else {
+             /* Resume the current stage from the already-counted ticks */
+diff --git a/include/hw/timer/esp_timg.h b/include/hw/timer/esp_timg.h
+index 3f51ef7..74e75af 100644
+--- a/include/hw/timer/esp_timg.h
++++ b/include/hw/timer/esp_timg.h
+@@ -102,8 +102,14 @@ typedef struct ESPVirtualCounter {
+     uint64_t value;
+     /* Time when the value was last updated */
+     uint64_t base;
+-    /* Frequency, in Hz, of the timer */
+-    uint64_t frequency;
++    /* Exact rational rate: rate_ticks_ns = rate_num / rate_den (a tick
++     * advances the counter every rate_den / rate_num ns), plus the
++     * sub-tick numerator carry so slow time bases (e.g. APB / 65536 =
++     * 1220.703125 Hz) stay exact. rate_num == 0 means the counter makes
++     * no progress (clock-gated). */
++    uint64_t rate_num;
++    uint64_t rate_den;
++    uint64_t tick_num;
+ } ESPVirtualCounter;
+ 
+ 
+diff --git a/tests/qtest/esp32s3-coreclk-test.c b/tests/qtest/esp32s3-coreclk-test.c
+index 77fede2..751ace1 100644
+--- a/tests/qtest/esp32s3-coreclk-test.c
++++ b/tests/qtest/esp32s3-coreclk-test.c
+@@ -220,12 +220,14 @@ static void test_timg_divider_boundary_values(void)
+      * must never divide by zero. */
+     qtest_writel(qts, R_SYSCLK_CONF, SYSCLK_PLL_80);   /* APB 80 MHz */
+ 
+-    /* Field 0 -> /65536: 80 MHz / 65536 = 1220 Hz (+ truncation) */
++    /* Field 0 -> /65536: 80 MHz / 65536 = 1220.703125 Hz. The rate is kept
++     * rational (source_hz + prescale, no integer-Hz truncation): a 10 s
++     * step counts exactly 12207 ticks, not the truncated 12200. */
+     enable_timg_counter(TIMG0_BASE, 0);
+     {
+         uint32_t c0 = timg_counter(TIMG0_BASE);
+-        qtest_clock_step(qts, 1000000000ull);          /* 1 s */
+-        g_assert_cmpuint(timg_counter(TIMG0_BASE) - c0, ==, 1220);
++        qtest_clock_step(qts, 10000000000ull);         /* 10 s */
++        g_assert_cmpuint(timg_counter(TIMG0_BASE) - c0, ==, 12207);
+     }
+ 
+     /* Field 1 (reset value; TRM §12.2.1: "the actual divisor is 2") ->
+@@ -246,16 +248,19 @@ static void test_timg_divider_boundary_values(void)
+         g_assert_cmphex(timg_counter(TIMG0_BASE) - c0, ==, 40000);
+     }
+ 
+-    /* Alarm still fires with the maximum divider: alarm 1221 ticks ahead
+-     * (~1 s), INT_RAW bit 0 set after 1.01 s of virtual time. */
+-    enable_timg_counter(TIMG0_BASE, 0);
++    /* Alarm through the maximum divider meets the derived rational
++     * deadline: counter at 12207 ticks, alarm 12207 ticks ahead ->
++     * deadline = 12207 * 65536 / 80e6 s = 9.9999744 s; fires within the
++     * 10.05 s step and not before it. */
+     qtest_writel(qts, R_T0LOADLO(TIMG0_BASE), 0);
+     qtest_writel(qts, R_T0LOAD(TIMG0_BASE), 1);
+-    qtest_writel(qts, TIMG0_BASE + 0x10, 1221);        /* T0ALARMLO */
++    qtest_writel(qts, TIMG0_BASE + 0x10, 12207);       /* T0ALARMLO */
+     qtest_writel(qts, TIMG0_BASE + 0x14, 0);           /* T0ALARMHI */
+     qtest_writel(qts, R_T0CONFIG(TIMG0_BASE),
+                  T0CFG_EN | T0CFG_INCREASE | (1u << 10) | T0CFG_DIV(0));
+-    qtest_clock_step(qts, 1010000000ull);              /* 1.01 s */
++    qtest_clock_step(qts, 9999000000ull);              /* 9.999 s: not yet */
++    g_assert_cmpuint(qtest_readl(qts, TIMG0_BASE + 0x74) & 1u, ==, 0);
++    qtest_clock_step(qts, 60000000ull);                /* +60 ms: fires */
+     g_assert_cmpuint(qtest_readl(qts, TIMG0_BASE + 0x74) & 1u, ==, 1);
+ 
+     /* Restore */
+-- 
+2.43.0
+

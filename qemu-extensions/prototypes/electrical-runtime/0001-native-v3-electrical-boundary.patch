@@ -1,0 +1,46 @@
+diff --git a/hw/adc/meson.build b/hw/adc/meson.build
+--- a/hw/adc/meson.build
++++ b/hw/adc/meson.build
+@@ -10,3 +10,12 @@
+ # net-dc.c is compiled once by the electrical integration.
+ system_ss.add(when: 'CONFIG_XTENSA_ESP32S3',
+               if_true: files('esp32s3_adc_net_provider.c'))
++system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files(
++  'net-dc.c',
++  'net-adapter.c',
++  'net-rc.c',
++  'esp32s3_project.c',
++  'esp32s3_electrical.c',
++  'esp32s3_electrical_models.c',
++  'esp32s3_electrical_observers.c',
++))
+diff --git a/hw/xtensa/esp32s3.c b/hw/xtensa/esp32s3.c
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -68,6 +68,7 @@
+ #include "hw/gpio/esp32s3_gpio.h"
+ #include "hw/gpio/esp32s3_iomux.h"
+ #include "hw/misc/esp32s3_rtc_io.h"
++#include "hw/misc/esp32s3_electrical.h"
+ #include "hw/misc/esp32s3_xts_aes.h"
+ #include "hw/misc/esp32s3_pms.h"
+ #include "hw/net/can/esp32s3_twai.h"
+@@ -1214,4 +1215,9 @@
+         object_property_set_link(OBJECT(&ss->sens), "regi2c",
+                                  OBJECT(&ss->regi2c), &error_abort);
++        /* Native v3 circuit provider is a typed link installed BEFORE
++         * SENS realization. GPIO and RTC-IO already exist at this point. */
++        esp32s3_electrical_create(OBJECT(ss), &ss->gpio, &ss->rtc_io,
++                                &ss->sens);
++
+         sysbus_realize(SYS_BUS_DEVICE(&ss->sens), &error_fatal);
+         memory_region_add_subregion_overlap(sys_mem, DR_REG_SENS_BASE,
+diff --git a/tests/qtest/meson.build b/tests/qtest/meson.build
+--- a/tests/qtest/meson.build
++++ b/tests/qtest/meson.build
+@@ -352,3 +352,5 @@
++qtests_xtensa += [ 'esp32s3-electrical-test' ]
++
+ qtests = {
+   'bios-tables-test': [io, 'boot-sector.c', 'acpi-utils.c', 'tpm-emu.c'],
+   'cdrom-test': files('boot-sector.c'),

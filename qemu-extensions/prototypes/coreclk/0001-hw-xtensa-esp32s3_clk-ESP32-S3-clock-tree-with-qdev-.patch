@@ -1,0 +1,474 @@
+From ae883357890498091eaf62acbfadf8099a84cf6d Mon Sep 17 00:00:00 2001
+From: ESP32S3VM coreclk <coreclk@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 11:51:42 +0800
+Subject: [PATCH 1/7] hw/xtensa/esp32s3_clk: ESP32-S3 clock tree with qdev
+ Clock outputs
+
+Derive CPU/APB/XTAL from SYSTEM_SYSCLK_CONF and SYSTEM_CPU_PER_CONF per
+TRM v1.8 ch.7 (Tables 7.2-1..7.2-4, Register 17.20) and propagate them on
+new qdev Clock outputs cpu-clk/apb-clk/xtal-clk/rtc-slow-clk/rtc-fast-clk.
+RTC_SLOW follows RC_SLOW 136 kHz / XTAL32K 32768 / RC_FAST_DIV, RTC_FAST
+follows XTAL/2 or RC_FAST 17.5 MHz (IDF6.1 clk_tree_defs.h).
+
+SYSTEM_SYSCLK_CONF and SYSTEM_CPU_PER_CONF become R/W (documented fields
+only; CLK_XTAL_FREQ is read-only) and recompute the tree on write. The
+reset default now follows TRM Register 17.20: SOC_CLK_SEL=0 (XTAL) with
+PRE_DIV_CNT=1, i.e. CPU/APB start at XTAL/2 = 20 MHz and the ROM
+reconfigures the PLL during boot.
+
+SYSTEM_PERIP_CLK_EN0/1 and SYSTEM_PERIP_RST_EN0/1 are stored R/W with the
+IDF6.1 field-default reset values (EN0=0x6181A06F, EN1=0x600). Clock-gate
+aggregations (TIMG timers = TIMERS[0] AND TIMERGROUP[13]/[15], MWDT = WDG
+[3] AND group) are driven on named gate outputs; SYSTEM_PERIP_RST rising
+edges emit per-device reset strobes consumed by the SoC.
+---
+ hw/xtensa/esp32s3_clk.c              | 253 ++++++++++++++++++++++++++-
+ include/hw/xtensa/esp32s3_clk.h      |  90 ++++++++++
+ include/hw/xtensa/esp32s3_clk_defs.h |   1 +
+ 3 files changed, 340 insertions(+), 4 deletions(-)
+
+diff --git a/hw/xtensa/esp32s3_clk.c b/hw/xtensa/esp32s3_clk.c
+index d6df309..7525bcd 100644
+--- a/hw/xtensa/esp32s3_clk.c
++++ b/hw/xtensa/esp32s3_clk.c
+@@ -19,10 +19,146 @@
+ #include "hw/qdev-properties.h"
+ #include "hw/xtensa/esp32s3_clk.h"
+ #include "hw/xtensa/esp32s3_clk_defs.h"
++#include "hw/xtensa/esp32s3_reset_domain.h"
++#include "hw/qdev-clock.h"
+ 
+ #define CLOCK_DEBUG      0
+ #define CLOCK_WARNING    0
+ 
++/*
++ * ESP32-S3 clock tree math (source of truth: the SYSTEM register state stored
++ * in this device).
++ *
++ * CPU_CLK (TRM v1.8 ch.7 Table 7.2-1/7.2-2), selected by SYSTEM_SYSCLK_CONF
++ * SOC_CLK_SEL:
++ *   0 XTAL:   CPU_CLK = XTAL_CLK / (SYSTEM_PRE_DIV_CNT + 1)
++ *   1 PLL:    PLL 480 MHz: PLL/6, /3, /2 for CPUPERIOD_SEL 0/1/2
++ *             PLL 320 MHz: PLL/4, /2 for CPUPERIOD_SEL 0/1
++ *   2 RC_FAST: CPU_CLK = RC_FAST_CLK / (SYSTEM_PRE_DIV_CNT + 1)
++ * APB_CLK (TRM v1.8 ch.7 Table 7.2-4): 80 MHz when CPU_CLK uses PLL_CLK,
++ * otherwise APB_CLK = CPU_CLK.
++ * XTAL_CLK frequency is stored read-only in SYSTEM_SYSCLK_CONF CLK_XTAL_FREQ
++ * (TRM v1.8 Register 17.20; the model resets the field to 40 which is the
++ * value the IDF expects on this board,
++ * esp_system/port/soc/esp32s3/clk.c "assert(rtc_clk_xtal_freq_get() == 40M)").
++ */
++
++void esp32s3_clk_recompute_system(ESP32S3ClockState *s)
++{
++    const uint32_t xtal_hz =
++        FIELD_EX32(s->sysclk, SYSTEM_SYSCLK_CONF, CLK_XTAL_FREQ) * 1000000;
++    const uint32_t soc_clk_sel = FIELD_EX32(s->sysclk, SYSTEM_SYSCLK_CONF, SOC_CLK_SEL);
++    const uint32_t pre_div = FIELD_EX32(s->sysclk, SYSTEM_SYSCLK_CONF, PRE_DIV_CNT);
++    const uint32_t pll_freq_sel = FIELD_EX32(s->cpuperconf, SYSTEM_CPU_PER_CONF, PLL_FREQ_SEL);
++    const uint32_t cpuperiod_sel = FIELD_EX32(s->cpuperconf, SYSTEM_CPU_PER_CONF, CPUPERIOD_SEL);
++    uint32_t cpu_hz;
++
++    clock_update_hz(s->out_xtal, xtal_hz);
++
++    switch (soc_clk_sel) {
++    case ESP32S3_CLK_SEL_PLL: {
++        static const uint32_t pll_div[2][3] = {
++            [ESP32S3_FREQ_SEL_PLL_480] = { 6, 3, 2 }, /* 80 / 160 / 240 MHz */
++            [ESP32S3_FREQ_SEL_PLL_320] = { 4, 2, 2 }, /* 80 / 160 MHz; [2] undefined on the 320 MHz PLL */
++        };
++        const uint32_t pll_hz = (pll_freq_sel == ESP32S3_FREQ_SEL_PLL_320) ?
++                                320000000 : 480000000;
++        const uint32_t sel = (cpuperiod_sel > ESP32S3_PERIOD_SEL_160 + 1) ?
++                             ESP32S3_PERIOD_SEL_160 + 1 : cpuperiod_sel;
++        cpu_hz = pll_hz / pll_div[pll_freq_sel][sel];
++        break;
++    }
++    case ESP32S3_CLK_SEL_RCFAST:
++        cpu_hz = ESP32S3_CLK_RC_FAST_HZ / (pre_div + 1);
++        break;
++    case ESP32S3_CLK_SEL_XTAL:
++    default:
++        cpu_hz = xtal_hz / (pre_div + 1);
++        break;
++    }
++
++    clock_update_hz(s->out_cpu, cpu_hz);
++    /* APB_CLK: 80 MHz from PLL_CLK, otherwise equal to CPU_CLK */
++    clock_update_hz(s->out_apb,
++                    soc_clk_sel == ESP32S3_CLK_SEL_PLL ? 80000000 : cpu_hz);
++}
++
++void esp32s3_clk_set_rtc_clocks(ESP32S3ClockState *s, uint32_t rtc_slow_hz,
++                                uint32_t rtc_fast_hz)
++{
++    clock_update_hz(s->out_rtc_slow, rtc_slow_hz);
++    clock_update_hz(s->out_rtc_fast, rtc_fast_hz);
++}
++
++/* Recompute the aggregated gate lines from SYSTEM_PERIP_CLK_EN0 (see the gate
++ * equations on Esp32s3PeriphClkGate). */
++static void esp32s3_clock_update_gates(ESP32S3ClockState *s)
++{
++    const bool timers = s->perip_clk_en0 & R_SYSTEM_PERIP_CLK_EN0_TIMERS_CLK_EN_MASK;
++    const bool wdg = s->perip_clk_en0 & R_SYSTEM_PERIP_CLK_EN0_WDG_CLK_EN_MASK;
++    const bool tg0 = s->perip_clk_en0 & R_SYSTEM_PERIP_CLK_EN0_TIMERGROUP_CLK_EN_MASK;
++    const bool tg1 = s->perip_clk_en0 & R_SYSTEM_PERIP_CLK_EN0_TIMERGROUP1_CLK_EN_MASK;
++
++    
++    qemu_set_irq(s->gate_irqs[ESP32S3_GATE_TIMG0_TIMERS], timers && tg0);
++    qemu_set_irq(s->gate_irqs[ESP32S3_GATE_TIMG0_WDT], wdg && tg0);
++    qemu_set_irq(s->gate_irqs[ESP32S3_GATE_TIMG1_TIMERS], timers && tg1);
++    qemu_set_irq(s->gate_irqs[ESP32S3_GATE_TIMG1_WDT], wdg && tg1);
++}
++
++/* Pulse the reset strobes matching a 0 -> 1 transition of the modeled
++ * SYSTEM_PERIP_RST_EN0/1 bits. The SoC turns a strobe into a cold reset of the
++ * corresponding modeled device. */
++static void esp32s3_clock_strobe_rst(ESP32S3ClockState *s, uint32_t risen0,
++                                     uint32_t risen1)
++{
++    
++    if (risen0 & (R_SYSTEM_PERIP_RST_EN0_TIMERGROUP_RST_MASK |
++                  R_SYSTEM_PERIP_RST_EN0_TIMERS_RST_MASK)) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_TIMG0]);
++    }
++    if (risen0 & (R_SYSTEM_PERIP_RST_EN0_TIMERGROUP1_RST_MASK |
++                  R_SYSTEM_PERIP_RST_EN0_TIMERS_RST_MASK)) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_TIMG1]);
++    }
++    if (risen0 & R_SYSTEM_PERIP_RST_EN0_SYSTIMER_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_SYSTIMER]);
++    }
++    if (risen0 & R_SYSTEM_PERIP_RST_EN0_SPI01_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_SPI1]);
++    }
++    if (risen0 & R_SYSTEM_PERIP_RST_EN0_UART_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_UART0]);
++    }
++    if (risen0 & R_SYSTEM_PERIP_RST_EN0_UART1_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_UART1]);
++    }
++    if (risen0 & R_SYSTEM_PERIP_RST_EN0_CAN_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_TWAI]);
++    }
++    if (risen1 & R_SYSTEM_PERIP_RST_EN1_DMA_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_GDMA]);
++    }
++    if (risen1 & R_SYSTEM_PERIP_RST_EN1_UART2_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_UART2]);
++    }
++    if (risen1 & R_SYSTEM_PERIP_RST_EN1_CRYPTO_AES_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_AES]);
++    }
++    if (risen1 & R_SYSTEM_PERIP_RST_EN1_CRYPTO_SHA_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_SHA]);
++    }
++    if (risen1 & R_SYSTEM_PERIP_RST_EN1_CRYPTO_RSA_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_RSA]);
++    }
++    if (risen1 & R_SYSTEM_PERIP_RST_EN1_CRYPTO_DS_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_DS]);
++    }
++    if (risen1 & R_SYSTEM_PERIP_RST_EN1_CRYPTO_HMAC_RST_MASK) {
++        qemu_irq_pulse(s->rst_irqs[ESP32S3_RST_HMAC]);
++    }
++}
++
+ static uint32_t esp32s3_read_cpu_intr(ESP32S3ClockState *s, uint32_t index)
+ {
+     return (s->levels >> index) & 1;
+@@ -61,6 +197,18 @@ static uint64_t esp32s3_clock_read(void *opaque, hwaddr addr, unsigned int size)
+         case A_SYSTEM_SYSCLK_CONF:
+             r = s->sysclk;
+             break;
++        case A_SYSTEM_PERIP_CLK_EN0:
++            r = s->perip_clk_en0;
++            break;
++        case A_SYSTEM_PERIP_CLK_EN1:
++            r = s->perip_clk_en1;
++            break;
++        case A_SYSTEM_PERIP_RST_EN0:
++            r = s->perip_rst_en0;
++            break;
++        case A_SYSTEM_PERIP_RST_EN1:
++            r = s->perip_rst_en1;
++            break;
+         case A_SYSTEM_CPU_INTR_FROM_CPU_0:
+         case A_SYSTEM_CPU_INTR_FROM_CPU_1:
+         case A_SYSTEM_CPU_INTR_FROM_CPU_2:
+@@ -88,6 +236,41 @@ static void esp32s3_clock_write(void *opaque, hwaddr addr, uint64_t value,
+         case A_SYSTEM_CORE_1_CONTROL_1_REG:
+                 s->app_cpu_addr = (uint32_t)value;
+             break;
++        case A_SYSTEM_SYSCLK_CONF:
++            /* R/W fields only (TRM v1.8 Register 17.20): CLK_DIV_EN, SOC_CLK_SEL
++             * and PRE_DIV_CNT store; CLK_XTAL_FREQ is read-only. */
++            s->sysclk = (s->sysclk & R_SYSTEM_SYSCLK_CONF_CLK_XTAL_FREQ_MASK) |
++                        (value & (R_SYSTEM_SYSCLK_CONF_CLK_DIV_EN_MASK |
++                                  R_SYSTEM_SYSCLK_CONF_SOC_CLK_SEL_MASK |
++                                  R_SYSTEM_SYSCLK_CONF_PRE_DIV_CNT_MASK));
++            esp32s3_clk_recompute_system(s);
++            break;
++        case A_SYSTEM_CPU_PER_CONF:
++            /* CPUPERIOD_SEL [1:0], PLL_FREQ_SEL [2], CPU_WAIT_MODE_FORCE_ON [3],
++             * CPU_WAITI_DELAY_NUM [7:4]; remaining bits reserved. */
++            s->cpuperconf = (uint32_t)value & 0xff;
++            esp32s3_clk_recompute_system(s);
++            break;
++        case A_SYSTEM_PERIP_CLK_EN0:
++            s->perip_clk_en0 = (uint32_t)value;
++            esp32s3_clock_update_gates(s);
++            break;
++        case A_SYSTEM_PERIP_CLK_EN1:
++            s->perip_clk_en1 = (uint32_t)value;
++            esp32s3_clock_update_gates(s);
++            break;
++        case A_SYSTEM_PERIP_RST_EN0: {
++            const uint32_t former = s->perip_rst_en0;
++            s->perip_rst_en0 = (uint32_t)value;
++            esp32s3_clock_strobe_rst(s, (uint32_t)value & ~former, 0);
++            break;
++        }
++        case A_SYSTEM_PERIP_RST_EN1: {
++            const uint32_t former = s->perip_rst_en1;
++            s->perip_rst_en1 = (uint32_t)value;
++            esp32s3_clock_strobe_rst(s, 0, (uint32_t)value & ~former);
++            break;
++        }
+         case A_SYSTEM_CPU_INTR_FROM_CPU_0:
+         case A_SYSTEM_CPU_INTR_FROM_CPU_1:
+         case A_SYSTEM_CPU_INTR_FROM_CPU_2:
+@@ -114,11 +297,20 @@ static const MemoryRegionOps esp32s3_clock_ops = {
+ static void esp32s3_clock_reset_hold(Object *obj, ResetType type)
+ {
+     ESP32S3ClockState *s = ESP32S3_CLOCK(obj);
+-    /* On board reset, set the proper clocks and dividers */
++
++    /* PERIPH reset domain: CPU-only resets keep the SYSTEM registers */
++    if (s->soc_reset && !esp32s3_reset_covers_periph(s->soc_reset)) {
++        return;
++    }
++
++    /* On board reset, set the proper clocks and dividers.
++     * TRM v1.8 Register 17.20 reset: SOC_CLK_SEL = 0 (XTAL_CLK) with
++     * PRE_DIV_CNT = 1, i.e. the CPU/APB start at XTAL/2 = 20 MHz; the ROM
++     * reconfigures the PLL during boot. CLK_XTAL_FREQ keeps the model's
++     * stored 40 MHz (IDF reads the field as the board crystal frequency). */
+     s->sysclk = ( 1 << R_SYSTEM_SYSCLK_CONF_PRE_DIV_CNT_SHIFT) |
+-                (ESP32S3_CLK_SEL_PLL << R_SYSTEM_SYSCLK_CONF_SOC_CLK_SEL_SHIFT) |
+-                (40 << R_SYSTEM_SYSCLK_CONF_CLK_XTAL_FREQ_SHIFT) |
+-                ( 1 << R_SYSTEM_SYSCLK_CONF_CLK_DIV_EN_SHIFT);
++                (ESP32S3_CLK_SEL_XTAL << R_SYSTEM_SYSCLK_CONF_SOC_CLK_SEL_SHIFT) |
++                (40 << R_SYSTEM_SYSCLK_CONF_CLK_XTAL_FREQ_SHIFT);
+ 
+     /* Divider for PLL clock and APB  frequency */
+     s->cpuperconf = (ESP32S3_PERIOD_SEL_80 << R_SYSTEM_CPU_PER_CONF_CPUPERIOD_SEL_SHIFT) |
+@@ -129,6 +321,37 @@ static void esp32s3_clock_reset_hold(Object *obj, ResetType type)
+     for (int i = 0 ; i < ESP32S3_SYSTEM_CPU_INTR_COUNT; i++) {
+         qemu_irq_lower(s->irqs[i]);
+     }
++
++    /* SYSTEM_PERIP_CLK_EN0/1: reset values follow the IDF6.1 register field
++     * defaults (soc/system_reg.h, "default: 1'b1" on every defined clock
++     * enable). SYSTEM_PERIP_RST_EN0/1 reset with every bit cleared
++     * (TRM v1.8 Registers 17.4 to 17.7). */
++    s->perip_clk_en0 = R_SYSTEM_PERIP_CLK_EN0_TIMERS_CLK_EN_MASK |
++                       R_SYSTEM_PERIP_CLK_EN0_WDG_CLK_EN_MASK |
++                       R_SYSTEM_PERIP_CLK_EN0_SPI01_CLK_EN_MASK |
++                       R_SYSTEM_PERIP_CLK_EN0_UART_CLK_EN_MASK |
++                       R_SYSTEM_PERIP_CLK_EN0_UART1_CLK_EN_MASK |
++                       R_SYSTEM_PERIP_CLK_EN0_SPI2_CLK_EN_MASK |
++                       R_SYSTEM_PERIP_CLK_EN0_TIMERGROUP_CLK_EN_MASK |
++                       R_SYSTEM_PERIP_CLK_EN0_TIMERGROUP1_CLK_EN_MASK |
++                       R_SYSTEM_PERIP_CLK_EN0_SPI3_CLK_EN_MASK |
++                       R_SYSTEM_PERIP_CLK_EN0_USB_DEVICE_CLK_EN_MASK |
++                       R_SYSTEM_PERIP_CLK_EN0_UART_MEM_CLK_EN_MASK |
++                       R_SYSTEM_PERIP_CLK_EN0_SYSTIMER_CLK_EN_MASK |
++                       R_SYSTEM_PERIP_CLK_EN0_ADC2_ARB_CLK_EN_MASK;
++    s->perip_clk_en1 = R_SYSTEM_PERIP_CLK_EN1_UART2_CLK_EN_MASK |
++                       R_SYSTEM_PERIP_CLK_EN1_USB_DEVICE_CLK_EN_MASK;
++    s->perip_rst_en0 = 0;
++    s->perip_rst_en1 = 0;
++    esp32s3_clock_update_gates(s);
++
++    /* Propagate the reset clock tree. The RTC_SLOW/RTC_FAST outputs get the
++     * ESP32-S3 power-on defaults (RTC_CNTL ANA_CLK_RTC_SEL = RC_SLOW 136 kHz,
++     * FAST_CLK_RTC_SEL = XTAL/2); the SoC refreshes them from the actual
++     * RTC_CNTL state once the clock wiring is in place. */
++    esp32s3_clk_recompute_system(s);
++    esp32s3_clk_set_rtc_clocks(s, 136000,
++        FIELD_EX32(s->sysclk, SYSTEM_SYSCLK_CONF, CLK_XTAL_FREQ) * 1000000 / 2);
+ }
+ 
+ static void esp32s3_clock_realize(DeviceState *dev, Error **errp)
+@@ -146,6 +369,19 @@ static void esp32s3_clock_init(Object *obj)
+                           TYPE_ESP32S3_CLOCK, A_SYSTEM_COMB_PVT_ERR_HVT_SITE3 + sizeof(uint32_t));
+     sysbus_init_mmio(sbd, &s->iomem);
+ 
++    /* Clock tree outputs (consumers are wired by the SoC) */
++    s->out_cpu = qdev_init_clock_out(DEVICE(obj), "cpu-clk");
++    s->out_apb = qdev_init_clock_out(DEVICE(obj), "apb-clk");
++    s->out_xtal = qdev_init_clock_out(DEVICE(obj), "xtal-clk");
++    s->out_rtc_slow = qdev_init_clock_out(DEVICE(obj), "rtc-slow-clk");
++    s->out_rtc_fast = qdev_init_clock_out(DEVICE(obj), "rtc-fast-clk");
++
++    /* Aggregated peripheral clock gate levels and reset strobes */
++    qdev_init_gpio_out_named(DEVICE(obj), s->gate_irqs, ESP32S3_CLK_GATES_GPIO,
++                             ESP32S3_GATE_COUNT);
++    qdev_init_gpio_out_named(DEVICE(obj), s->rst_irqs, ESP32S3_CLK_RST_GPIO,
++                             ESP32S3_RST_COUNT);
++
+     /* Initialize the output IRQ lines used to manually trigger interrupts */
+     for (uint64_t i = 0; i < ESP32S3_SYSTEM_CPU_INTR_COUNT; i++) {
+         sysbus_init_irq(sbd, &s->irqs[i]);
+@@ -161,6 +397,15 @@ static void esp32s3_clock_class_init(ObjectClass *klass, void *data)
+     rc->phases.hold = esp32s3_clock_reset_hold;
+     dc->realize = esp32s3_clock_realize;
+ 
++    {
++        static Property esp32s3_clock_properties[] = {
++            DEFINE_PROP_LINK("soc-reset", ESP32S3ClockState, soc_reset,
++                             TYPE_DEVICE, DeviceState *),
++            DEFINE_PROP_END_OF_LIST(),
++        };
++        device_class_set_props(dc, esp32s3_clock_properties);
++    }
++
+     esp32s3_clock->get_ext_dev_enc_dec_ctrl = esp32s3_clock_get_ext_dev_enc_dec_ctrl;
+ }
+ 
+diff --git a/include/hw/xtensa/esp32s3_clk.h b/include/hw/xtensa/esp32s3_clk.h
+index 2e87526..588b9af 100644
+--- a/include/hw/xtensa/esp32s3_clk.h
++++ b/include/hw/xtensa/esp32s3_clk.h
+@@ -9,6 +9,7 @@
+  */
+ #pragma once
+ 
++#include "hw/clock.h"
+ #include "hw/hw.h"
+ #include "hw/sysbus.h"
+ #include "hw/registerfields.h"
+@@ -21,6 +22,57 @@
+ 
+ #define ESP32S3_SYSTEM_CPU_INTR_COUNT   4
+ 
++/**
++ * Nominal RC_FAST_CLK frequency (TRM v1.8 ch.7 §7.2.2 "RC_FAST_CLK (17.5 MHz by
++ * default)"; IDF6.1 soc/esp32s3/clk_tree_defs.h SOC_CLK_RC_FAST_FREQ_APPROX).
++ */
++#define ESP32S3_CLK_RC_FAST_HZ      17500000UL
++
++/**
++ * Names of the GPIO bundles exported by the clock device.
++ */
++#define ESP32S3_CLK_GATES_GPIO      "periph-clk-gate"
++#define ESP32S3_CLK_RST_GPIO        "periph-rst-req"
++
++/**
++ * Aggregated gate lines driven from SYSTEM_PERIP_CLK_EN0/1 and consumed by the
++ * modeled timers. Level 1 = clocks enabled. The gate equations follow the
++ * register semantics of TRM v1.8 ch.17 (Register 17.4/17.5) with the field
++ * defaults of IDF6.1 soc/system_reg.h (all defined bits default to 1):
++ *  - TIMGn timers:  TIMERS [0] AND TIMERGROUP [13] / TIMERGROUP1 [15]
++ *  - TIMGn MWDT:    WDG [3]     AND TIMERGROUP [13] / TIMERGROUP1 [15]
++ */
++enum Esp32s3PeriphClkGate {
++    ESP32S3_GATE_TIMG0_TIMERS,
++    ESP32S3_GATE_TIMG0_WDT,
++    ESP32S3_GATE_TIMG1_TIMERS,
++    ESP32S3_GATE_TIMG1_WDT,
++    ESP32S3_GATE_COUNT
++};
++
++/**
++ * Reset strobe lines raised when software writes a 0 -> 1 transition into the
++ * matching SYSTEM_PERIP_RST_EN0/1 bit (IDF driver pattern: SET_RST, act,
++ * CLEAR_RST). The strobe cold-resets the corresponding modeled device.
++ */
++enum Esp32s3PeriphRstReq {
++    ESP32S3_RST_TIMG0,      /* TIMERGROUP_RST [13] | TIMERS_RST [0]   */
++    ESP32S3_RST_TIMG1,      /* TIMERGROUP1_RST [15] | TIMERS_RST [0]  */
++    ESP32S3_RST_SYSTIMER,   /* SYSTIMER_RST [29]                      */
++    ESP32S3_RST_GDMA,       /* DMA_RST (EN1 [6])                      */
++    ESP32S3_RST_UART0,      /* UART_RST [2]                           */
++    ESP32S3_RST_UART1,      /* UART1_RST [5]                          */
++    ESP32S3_RST_UART2,      /* UART2_RST (EN1 [9])                    */
++    ESP32S3_RST_SPI1,       /* SPI01_RST [1]                          */
++    ESP32S3_RST_TWAI,       /* CAN_RST [19]                           */
++    ESP32S3_RST_AES,        /* CRYPTO_AES_RST (EN1 [1])               */
++    ESP32S3_RST_SHA,        /* CRYPTO_SHA_RST (EN1 [2])               */
++    ESP32S3_RST_RSA,        /* CRYPTO_RSA_RST (EN1 [3])               */
++    ESP32S3_RST_DS,         /* CRYPTO_DS_RST (EN1 [4])                */
++    ESP32S3_RST_HMAC,       /* CRYPTO_HMAC_RST (EN1 [5])              */
++    ESP32S3_RST_COUNT
++};
++
+ /**
+  * Value for SYSTEM_SOC_CLK_SEL
+  */
+@@ -49,6 +101,29 @@ typedef struct ESP32S3ClockState {
+     uint32_t cpuperconf;
+     uint32_t sysclk;
+ 
++    /* qdev Clock outputs of the ESP32-S3 clock tree (TRM v1.8 ch.7 fig. 7.2-1).
++     * All frequencies are recomputed and propagated by
++     * esp32s3_clk_recompute_system()/esp32s3_clk_set_rtc_clocks(). */
++    Clock *out_cpu;         /* CPU_CLK, feeds both cores ("clk-in")           */
++    Clock *out_apb;         /* APB_CLK (TIMG time-base source)                */
++    Clock *out_xtal;        /* XTAL_CLK (SYSTIMER CNT_CLK and RTC_FAST input) */
++    Clock *out_rtc_slow;    /* RTC_SLOW_CLK                                   */
++    Clock *out_rtc_fast;    /* RTC_FAST_CLK                                   */
++
++    /* SYSTEM_PERIP_CLK_EN0/1 and SYSTEM_PERIP_RST_EN0/1 (TRM v1.8 ch.17,
++     * Registers 17.4 to 17.7). Reset values per the IDF6.1 field defaults. */
++    uint32_t perip_clk_en0;
++    uint32_t perip_clk_en1;
++    uint32_t perip_rst_en0;
++    uint32_t perip_rst_en1;
++
++    /* Aggregated gate levels (1 = enabled) and reset strobes */
++    qemu_irq gate_irqs[ESP32S3_GATE_COUNT];
++    qemu_irq rst_irqs[ESP32S3_RST_COUNT];
++
++    /* ESP32-S3 SoC, used to gate the hold phase by reset domain */
++    DeviceState *soc_reset;
++
+ 
+     /* IRQs for crosscore interrupts */
+     qemu_irq irqs[ESP32S3_SYSTEM_CPU_INTR_COUNT];
+@@ -67,3 +142,18 @@ typedef struct ESP32S3ClockClass {
+     uint32_t (*get_ext_dev_enc_dec_ctrl)(ESP32S3ClockState *s);
+ } ESP32S3ClockClass;
+ 
++/**
++ * Recompute the XTAL/CPU/APB frequencies from the SYSTEM register state
++ * (SYSTEM_SYSCLK_CONF, SYSTEM_CPU_PER_CONF; TRM v1.8 ch.7 Tables 7.2-1 to
++ * 7.2-4) and propagate them on the "cpu-clk"/"apb-clk"/"xtal-clk" outputs.
++ */
++void esp32s3_clk_recompute_system(ESP32S3ClockState *s);
++
++/**
++ * Propagate the RTC_SLOW_CLK / RTC_FAST_CLK frequencies (derived by RTC_CNTL
++ * from RTC_CNTL_CLK_CONF, TRM v1.8 ch.7 §7.2.4.4 / ch.10) on the
++ * "rtc-slow-clk"/"rtc-fast-clk" outputs.
++ */
++void esp32s3_clk_set_rtc_clocks(ESP32S3ClockState *s, uint32_t rtc_slow_hz,
++                                uint32_t rtc_fast_hz);
++
+diff --git a/include/hw/xtensa/esp32s3_clk_defs.h b/include/hw/xtensa/esp32s3_clk_defs.h
+index 6c57b35..c15b8e9 100644
+--- a/include/hw/xtensa/esp32s3_clk_defs.h
++++ b/include/hw/xtensa/esp32s3_clk_defs.h
+@@ -59,6 +59,7 @@ REG32(SYSTEM_PERIP_CLK_EN0, 0x018)
+     FIELD(SYSTEM_PERIP_CLK_EN0, TIMERS_CLK_EN, 0, 1)
+ 
+ REG32(SYSTEM_PERIP_CLK_EN1, 0x01C)
++    FIELD(SYSTEM_PERIP_CLK_EN1, USB_DEVICE_CLK_EN, 10, 1)
+     FIELD(SYSTEM_PERIP_CLK_EN1, TSENS_CLK_EN, 10, 1)
+     FIELD(SYSTEM_PERIP_CLK_EN1, UART2_CLK_EN, 9, 1)
+     FIELD(SYSTEM_PERIP_CLK_EN1, LCD_CAM_CLK_EN, 8, 1)
+-- 
+2.43.0
+

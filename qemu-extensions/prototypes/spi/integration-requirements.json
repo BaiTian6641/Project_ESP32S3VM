@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "official_flash_path": "SPI0/1 remain untouched; additive SPI2/3 MMIO only",
+  "prefix_record": "build-runtime-state/runtime-dbe2a8a5ad4e07a6-source.json",
+  "own_checkout": "/home/polar/.cache/esp32s3vm/qemu-spi-40edccac4156",
+  "own_build": "build-spi",
+  "source_authority": "esp32s3_electrical_set_matrix_drive is the sole desired peripheral signal authority; GPIO remains raw routing/OEN/IE and resolved-input authority. No GPIO output source store, input injection, controller-only endpoint binding or second solver is permitted.",
+  "ready_dependencies": [
+    {
+      "source": "prototypes/gpio/integration-v3.patch",
+      "owner": "GpioWorker",
+      "note": "Canonical frozen GPIO/IO_MUX/RTC raw-drive/strict interfaces; matrix sourcing remains electrical-owner integration"
+    },
+    {
+      "source": "prototypes/coreclk/0010-hw-xtensa-esp32s3_clk-common-clock-ports-for-SPI2-3.patch",
+      "sha256": "e8b1487b941f7f80c3920da9d56723bcb39b34fa0dedb2dd98c4b80deb88bf4d",
+      "owner": "CoreClockWorker",
+      "consumer": "pll-f80m-clk/xtal-clk, SPI2/3 gate indices, reset strobe and held-level bundles"
+    },
+    {
+      "source": "prototypes/spi/0001-gdma-peripheral-rx-packet-end.patch",
+      "sha256": "d0a472c53f444304e29dbd4c979d60840e73a42bfbc935277041deec6b8ad422",
+      "owner": "SpiNativeWorker",
+      "review": "GdmaWorker accepted; canonical16/16 is regression evidence, not new end-hook entry-point qualification"
+    },
+    {
+      "source": "prototypes/coreclk/0011-hw-xtensa-esp32s3_clk-UHCI0-clock-gate-and-reset-lines.patch",
+      "sha256": "c1ebe584a6dbe178743da9874bbcb25880afac10242c16f8f1bb043362b47606",
+      "owner": "CoreClockWorker",
+      "consumer": "Canonical common gate extension/correction"
+    },
+    {
+      "source": "prototypes/coreclk/0012-hw-xtensa-esp32s3_clk-publish-the-0010-0011-gate-levels.patch",
+      "sha256": "6b1e8f79f0e4194213c67d309c5a88930bcb13b396fb118232945e3697434f66",
+      "owner": "CoreClockWorker",
+      "consumer": "Canonical common gate extension/correction"
+    },
+    {
+      "source": "prototypes/coreclk/0013-hw-xtensa-esp32s3-BBPLL-power-validity-decoupled-from.patch",
+      "sha256": "2203d4cca82a1ff4a62400517ff2fe1ff6d98e0e53417f16a5f5c7a65c5a8081",
+      "owner": "CoreClockWorker",
+      "consumer": "True independent BBPLL power/CPU mux"
+    }
+  ],
+  "required_provider_integrations": [
+    {
+      "owner": "NativeNetWorker",
+      "authoritative_header": "prototypes/electrical-runtime/copies/esp32s3_electrical.h",
+      "requirement": "Actual spi-nor-1m model registry with required lowercase mosi/miso/sclk/cs/vdd/gnd, parameters{}, exact fixed controller-contract.json power/load/capacity/timing profile; unknown devices remain unsupported"
+    },
+    {
+      "owner": "NativeNetWorker",
+      "requirement": "Authoritative published SPI endpoint enumeration, route resolver, power query, actual component-terminal samples and finite native MISO drive. TX-only endpoint reachability must not depend on a configured master MISO input. Unknown rails are UNKNOWN, not a fabricated power-off"
+    },
+    {
+      "owner": "NativeNetWorker",
+      "requirement": "Bounded multicast electrical_subscribe post-SOLVED/PUBLISHED frames; reentrant native MISO drives settle in the next bounded delta. Add/remove_model_notify replaces obsolete single listener so SPI and I2C cannot overwrite each other"
+    },
+    {
+      "owner": "NativeNetWorker",
+      "requirement": "Exactly one graph/electrical solver/source projection; before returning controller sample, all source/route/threshold/native-device consequences must be settled"
+    },
+    {
+      "owner": "AdcWorker",
+      "requirement": "Canonical ADC/SENS single-owner integration required by the actual electrical child. No second SENS or lane-local mock graph/provider"
+    },
+    {
+      "owner": "NativeNetWorker",
+      "requirement": "Authoritative begin_update/end_update atomic abort release, observer implementations and native finite NOR MISO projection must actually compile/settle before binding install; published header alone is not READY."
+    }
+  ],
+  "verification_contract": "Only real own-checkout binaries and normal IDF6.1 fixture images qualify bytes/events/virtual timestamps. Disconnected/owner cases require a specific SPI sampling/error diagnostic plus paused state and MMIO evidence, never an earlier unrelated GPIO pause. Host watchdog never advances guest time or becomes a guest timeout.",
+  "no_fake_pending_dependency": true
+}

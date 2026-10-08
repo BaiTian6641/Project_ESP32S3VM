@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "lane": "native-spi2-spi3",
+  "recorded_date": "2026-10-07",
+  "status": "source-ready-unverified",
+  "verification_policy": "Do not build, run, lint or format until the parent has integrated all controller/clock/GDMA/native-graph dependencies and delegated READY verification.",
+  "checkout": "/home/polar/.cache/esp32s3vm/qemu-spi-40edccac4156",
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "frozen_prefix_fingerprint": "dbe2a8a5ad4e07a607e76ab751e77ac85fe3bf30974359bd25a69354499f9b32",
+  "copy": {
+    "source": "qemu-extensions/prototypes/spi/copies/esp32s3-spi-test.c",
+    "destination": "tests/qtest/esp32s3-spi-test.c"
+  },
+  "meson": {
+    "file": "tests/qtest/meson.build",
+    "instruction": "Append the following line after the existing qtests_xtensa definition, before the foreach target_dirs loop. Do not replace or remove existing clock/GDMA/I2C/GPIO/electrical Qtests.",
+    "addition": "qtests_xtensa += ['esp32s3-spi-test']",
+    "extra_sources_or_libraries": [],
+    "target": "tests/qtest/esp32s3-spi-test",
+    "test_name": "qtest-xtensa/esp32s3-spi-test"
+  },
+  "commands_after_READY": {
+    "working_directory": "The parent's configured SPI QEMU build directory; the direct runtime command must run from that directory so -L pc-bios resolves the native machine ROMs.",
+    "build": "ninja -C \"$SPI_BUILD\" qemu-system-xtensa tests/qtest/esp32s3-spi-test",
+    "runtime": "env QTEST_QEMU_BINARY=./qemu-system-xtensa tests/qtest/esp32s3-spi-test --tap -k",
+    "meson_alternative": "meson test -C \"$SPI_BUILD\" --print-errorlogs qtest-xtensa/esp32s3-spi-test",
+    "evidence_directory": "build-runtime-state/spi-native-2026-10-07",
+    "checks_exercised_by_author": []
+  },
+  "qtest_virtual_time": {
+    "setup": "setup retains -S for deterministic register initialization, then run_for_pause issues QMP CONT and consumes RESUME. Under the qtest accelerator vCPUs are dummy threads, not firmware. This enables QEMU_CLOCK_VIRTUAL before timing requests.",
+    "idempotent_resume": "run_for_pause queries query-status and resumes only when not running, so strict-pause cases cannot wait for a nonexistent second RESUME event.",
+    "traversal": "Normal libqtest qtest_clock_step requests are restored. qemu_clock_advance_virtual_time repeatedly warps by min(remaining distance, next deadline), runs timers and recomputes deadlines; enabled-clock large requests already traverse every timer deadline. A separate 5 ns helper is unnecessary and has been removed.",
+    "clock_step_next": "clock_step-next requests the next timer deadline without a caller target cap and could overshoot an observation boundary. Explicit clock_step NS requests retain exact-distance observation bounds and final separate 1 ns checks.",
+    "protocol_sources_reviewed": [
+      "build-qemu-official-base/tests/qtest/libqtest.c:1002-1011",
+      "build-qemu-official-base/system/qtest.c:712-726",
+      "build-qemu-official-base/util/qemu-timer.c:674-702"
+    ],
+    "corrected_failure_interpretation": "Parent timer review identified disabled QEMU_CLOCK_VIRTUAL in -S/prelaunch positive timing cases: clock_step does not advance it. The previous inference of first-edge execution at 799 ns from a raw 750 ns request was incorrect; it is not genuine overdue-callback evidence. Enabling VM runstate, not subdividing clock requests, addresses this test setup prerequisite.",
+    "acceptance_preservation": "All original 23 cases and their MMIO, IRQ, data, descriptor ownership, duration bounds and assertions remain. Main-approved additive deadline-traversal/cancellation coverage adds one case per controller for 25 total. No mocked inputs, provider-dependent branches, backdated timestamps or source-text tests are introduced.",
+    "additive_deadline_traversal_case": "deadline-traversal-reset-gate-cancel (SPI2 and SPI3): step 49 ns then raw 750 ns; BUSY/no DONE/IRQ at 799 and DONE/IRQ after final 1 ns at 800. Restart and traverse to 799 before SLAVE softreset or local CLK_GATE cancellation; subsequent 100000 ns and restored-gate 1000 ns observations require no stale DONE/IRQ or resurrection.",
+    "qualification_boundary": "Qtest deadline traversal is not a genuinely overdue guest callback and does not prove host-load/late-callback or fast-edge electrical equivalence. Current controller MAX(nextAbsolute, now + 1) guest overdue policy and NET04 icount/deadline-horizon electrical qualification remain separately UNQUALIFIED. No controller workaround is introduced by these tests.",
+    "immutable_failure_evidence": "build-runtime-state/spi-native-2026-10-07/final-clock-20261007T172630 remains immutable afterCore13 actual23 evidence: 4 PASS, 17 timing assertion failures, 2 unknown-RX timeouts; binary fingerprint prefix 6b3c2f9b. Preserve the results while correcting the earlier coarse-overdue inference, without retroactive qualification."
+  },
+  "machine_contract": {
+    "machine": "esp32s3",
+    "irq_intercept_paths": [
+      "/machine/soc/spi2",
+      "/machine/soc/spi3"
+    ],
+    "mmio_bases": [
+      "0x60024000",
+      "0x60025000"
+    ],
+    "system_enable_register": "0x600c0018",
+    "system_reset_register": "0x600c0020",
+    "system_spi2_bit": 6,
+    "system_spi3_bit": 16,
+    "gdma_enable_register": "0x600c001c",
+    "gdma_enable_bit": 6,
+    "clock_gate_offset": "0xe8",
+    "clock_gate_xtal_value": 3,
+    "clock_gate_pll80_value": 7,
+    "xtal_hz": 40000000,
+    "pll80_hz": 80000000,
+    "pio_period_ns": 100,
+    "clock_divider_register_value": "(3U << 12) | (1U << 6)",
+    "cs_timing_encoding": "USER1 CS_SETUP_TIME stores cycles minus one; CS_HOLD_TIME stores raw cycles. HOLD enabled with CS_HOLD_TIME=0 appends no extra cycle and DONE occurs at the final data edge.",
+    "strict_pause_observation": "Under libqtest's qtest accelerator, CONT starts dummy vCPU threads, not firmware. Overflow/unknown-RX tests require a real QMP RESUME then STOP and query-status=paused, with persistent USR, no DONE and unchanged PIO storage. An initial -S state alone is not accepted as proof of strict pause.",
+    "no_project_loaded": true,
+    "no_synthetic_gpio_or_spi_provider": true
+  },
+  "coverage": {
+    "registered_cases": 25,
+    "each_controller": [
+      "BUSY immediately after USR and before first edge; hardware DONE/IRQ only at the last trailing edge; TX completes without a receiver and makes no ACK assertion",
+      "INT_ENA masks, masked ST, physical intercepted IRQ, CLR/RAW W1C, software SET masking and SET/CLR readback",
+      "CMD.UPDATE self-clears without starting or clearing DONE; UPDATE while BUSY and repeated USR do not restart; active CLOCK/DLEN snapshot survives next-transaction writes",
+      "Exact setup plus data plus raw hold-cycle duration; enabled HOLD with raw zero adds no cycle; KEEP_CS permits hardware DONE and subsequent transaction without claiming electrical CS behavior; command/address/dummy phase durations",
+      "XTAL and PLL80 source setup, divided and equal-source clocks, all four CPOL/CPHA modes",
+      "PLL_F80M remains independently powered across CPU XTAL/RC_FAST mux changes; actual RTC BBPLL_FORCE_PD cancels and restoration permits a subsequent transfer",
+      "Enabled-clock 49-to-799 ns deadline traversal retains BUSY/no DONE at 799 and completes at 800; reset or gate after restarted traversal cancels future edges without stale DONE",
+      "Mid-transfer SLAVE softreset, local CLK_GATE, SYSTEM gate and SYSTEM peripheral reset abort; no stale DONE and no resurrection after ungate; subsequent transfer succeeds",
+      "Rejected byte/halfword/unaligned accesses do not expose or alter registers; aligned MMIO through the full 0x1000 aperture stays bounded; actual 64-byte and high-half 32-byte PIO boundaries complete",
+      "65-byte TX, high-half 33-byte TX and 65-byte RX strictly pause before accessing beyond PIO capacity; all 16 PIO words and adjacent state remain unchanged",
+      "Unknown MISO strictly pauses at the first sampling edge, never completes and never manufactures RX bytes"
+    ],
+    "cross_controller": "Simultaneous independently timed SPI2/SPI3 transfers; softreset and SYSTEM gating of one do not cancel or complete the other",
+    "gdma": {
+      "registered_cases": 2,
+      "clock_phases": [
+        0,
+        1
+      ],
+      "spi2_total_bytes": 4105,
+      "descriptor_lengths": [
+        2048,
+        2048,
+        9
+      ],
+      "descriptor_base": "0x3fc90000",
+      "source_base": "0x3fc91000",
+      "gdma_base": "0x6003f000",
+      "spi2_channel": 0,
+      "spi2_peripheral_selection": 0,
+      "independent_armed_spi3_channel": 1,
+      "spi3_peripheral_selection": 1,
+      "observable_assertions": [
+        "Descriptor ownership is retained until its exact final-byte fetch, proving incremental byte-cursor progress rather than whole-descriptor completion on the first byte handshake",
+        "DSCR/BF0/BF1 trail advances across descriptor boundaries",
+        "AUTO_WRBACK clears only ownership and preserves size, length, buffer and next-address fields",
+        "OUT EOF/TOTAL_EOF and EOF descriptor address arrive at the last byte fetch, before SPI's final trailing edge",
+        "Outlink parks at the end without descriptor error; SPI remains BUSY until the final edge",
+        "An armed SPI3 descriptor remains owned and its channel receives no interrupt or park while SPI2 consumes its own chain"
+      ],
+      "not_claimed": "Without a graph observer this proves real descriptor consumption/cursor/EOF/writeback and hardware duration, not the electrically observed transmitted byte order. RX DMA behavior, PSRAM/cache/EDMA and electrical payload validation belong to their native fixture owners."
+    }
+  },
+  "scope_exclusions": [
+    "SPI0/SPI1 changes",
+    "Aggregate runtime profiles",
+    "Injected graph providers, mock devices or source-text tests",
+    "Electrical CS/setup/hold waveform proof or slave acknowledgement",
+    "Native NOR service/graph behavioral qualification owned by parent fixtures"
+  ],
+  "changelog": "Adds permanent machine-MMIO SPI2/SPI3 Qtests and additive meson/runtime handoff; enables virtual timers through QMP CONT after deterministic -S setup and makes resume idempotent. Original 23 cases and assertions remain; two Main-approved deadline-traversal/cancellation cases bring the total to 25. The unnecessary 5 ns helper and false overdue-jump inference are removed. No verification has been run by this author; immutable actual23 failure evidence and separate unresolved NET04 qualification remain.",
+  "registered_cases": 25,
+  "new_independent_clock_case": "SPI2/SPI3 PLL_F80M remains clocked while CPU switches XTAL/RC_FAST; actual RTC BBPLL_FORCE_PD cancels/restores; unexercised until canonical0013 ownerrestack."
+}

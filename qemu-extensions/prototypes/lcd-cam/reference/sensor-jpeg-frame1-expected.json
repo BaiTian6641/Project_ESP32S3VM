@@ -1,0 +1,14 @@
+{
+  "component_id": "D", "frame": 1,
+  "width": 160, "height": 120, "format": "JPEG",
+  "pattern": {
+    "source": "color-bars", "scene": [400, 296],
+    "crop": [0, 0, 400, 296], "mirror": false, "flip": false
+  },
+  "jpeg_max_error": 12, "jpeg_mean_error": 3,
+  "metadata": {
+    "format": "jpeg", "width": 160, "height": 120,
+    "source": "color-bars", "timing_profile": "ov2640-functional-dvp-v1",
+    "image_mode": 18, "mirror": false, "flip": false
+  }
+}

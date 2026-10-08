@@ -1,0 +1,375 @@
+diff --git a/hw/adc/meson.build b/hw/adc/meson.build
+index 7f7acc1..83001bb 100644
+--- a/hw/adc/meson.build
++++ b/hw/adc/meson.build
+@@ -2,3 +2,7 @@ system_ss.add(when: 'CONFIG_STM32F2XX_ADC', if_true: files('stm32f2xx_adc.c'))
+ system_ss.add(when: 'CONFIG_ASPEED_SOC', if_true: files('aspeed_adc.c'))
+ system_ss.add(when: 'CONFIG_NPCM7XX', if_true: files('npcm7xx_adc.c'))
+ system_ss.add(when: 'CONFIG_ZYNQ', if_true: files('zynq-xadc.c'))
++
++# net-dc.c is compiled once by the electrical integration.
++system_ss.add(when: 'CONFIG_XTENSA_ESP32S3',
++              if_true: files('esp32s3_adc_net_provider.c'))
+diff --git a/hw/misc/esp32s3_regi2c.c b/hw/misc/esp32s3_regi2c.c
+index e5daeda..0377a2e 100644
+--- a/hw/misc/esp32s3_regi2c.c
++++ b/hw/misc/esp32s3_regi2c.c
+@@ -556,65 +556,6 @@ static const MemoryRegionOps esp32s3_regi2c_ops = {
+     },
+ };
+ 
+-/* Minimal SENS SAR2 RTC-force surface (0x60008830/0x60008834).
+- *
+- * Only these two SENS offsets are evidenced in the calibration path
+- * (rom_pwdet_sar2_init; sens_reg.h SENS_SAR_MEAS2_CTRL2_REG /
+- * SENS_SAR_MEAS2_MUX_REG). They gate the modeled SAR2 conversion (force
+- * enable set, RTC force clear). INTEGRATION NOTE: the final machine must
+- * have exactly ONE SENS owner; when the full SENS controller
+- * (0x60008800-0x600089FF) lands, these two words and the TCTRL region
+- * below move under it and this device consumes the agreed GPIO inputs
+- * ("sar2-armed", "tsens-dump-out") instead -- contract agreed with the
+- * ADC lane. */
+-static uint64_t esp32s3_sens_sar2_read(void *opaque, hwaddr addr,
+-                                       unsigned int size)
+-{
+-    ESP32S3RegI2CState *s = ESP32S3_REGI2C(opaque);
+-
+-    switch (addr) {
+-    case 0x0:
+-        return s->sens_ctrl2;
+-    case 0x4:
+-        return s->sens_mux;
+-    default:
+-        qemu_log_mask(LOG_GUEST_ERROR,
+-                      "esp32s3.sens_sar2: out-of-range read 0x%02x\n",
+-                      (unsigned)addr);
+-        return 0;
+-    }
+-}
+-
+-static void esp32s3_sens_sar2_write(void *opaque, hwaddr addr, uint64_t value,
+-                                    unsigned int size)
+-{
+-    ESP32S3RegI2CState *s = ESP32S3_REGI2C(opaque);
+-
+-    switch (addr) {
+-    case 0x0:
+-        s->sens_ctrl2 = (uint32_t)value;
+-        return;
+-    case 0x4:
+-        s->sens_mux = (uint32_t)value;
+-        return;
+-    default:
+-        qemu_log_mask(LOG_GUEST_ERROR,
+-                      "esp32s3.sens_sar2: out-of-range write 0x%02x\n",
+-                      (unsigned)addr);
+-        return;
+-    }
+-}
+-
+-static const MemoryRegionOps esp32s3_sens_sar2_ops = {
+-    .read = esp32s3_sens_sar2_read,
+-    .write = esp32s3_sens_sar2_write,
+-    .endianness = DEVICE_LITTLE_ENDIAN,
+-    .valid = {
+-        .min_access_size = 4,
+-        .max_access_size = 4,
+-    },
+-};
+-
+ /* SENS_SAR_TCTRL (0x60008850): temperature sensor control/data.
+  *
+  * Evidenced by the fixture's temperature_sensor_ll_get_raw_value and the
+@@ -660,44 +601,6 @@ static void esp32s3_sens_tctrl_write(ESP32S3RegI2CState *s, uint32_t value)
+     }
+ }
+ 
+-static uint64_t esp32s3_sens_tctrl_read(void *opaque, hwaddr addr,
+-                                        unsigned int size)
+-{
+-    ESP32S3RegI2CState *s = ESP32S3_REGI2C(opaque);
+-
+-    if (addr != 0) {
+-        qemu_log_mask(LOG_GUEST_ERROR,
+-                      "esp32s3.sens_tctrl: out-of-range read 0x%02x\n",
+-                      (unsigned)addr);
+-        return 0;
+-    }
+-    return s->sens_tctrl;
+-}
+-
+-static void esp32s3_sens_tctrl_mmio_write(void *opaque, hwaddr addr,
+-                                          uint64_t value, unsigned int size)
+-{
+-    ESP32S3RegI2CState *s = ESP32S3_REGI2C(opaque);
+-
+-    if (addr != 0) {
+-        qemu_log_mask(LOG_GUEST_ERROR,
+-                      "esp32s3.sens_tctrl: out-of-range write 0x%02x\n",
+-                      (unsigned)addr);
+-        return;
+-    }
+-    esp32s3_sens_tctrl_write(s, (uint32_t)value);
+-}
+-
+-static const MemoryRegionOps esp32s3_sens_tctrl_ops = {
+-    .read = esp32s3_sens_tctrl_read,
+-    .write = esp32s3_sens_tctrl_mmio_write,
+-    .endianness = DEVICE_LITTLE_ENDIAN,
+-    .valid = {
+-        .min_access_size = 4,
+-        .max_access_size = 4,
+-    },
+-};
+-
+ static void esp32s3_regi2c_reset_hold(Object *obj, ResetType type)
+ {
+     ESP32S3RegI2CState *s = ESP32S3_REGI2C(obj);
+@@ -730,6 +633,30 @@ static void esp32s3_regi2c_reset_hold(Object *obj, ResetType type)
+     timer_del(s->bbpll_timer);
+ }
+ 
++/* ADC-SENS integration: named QOM GPIO inputs driven by esp32s3.sens
++ * (single SENS owner).  "sar2-armed" carries the derived arming level
++ * (SENS_SAR_MEAS2_CTRL2.EN_PAD_FORCE && !SAR_MEAS2_MUX.SAR2_RTC_FORCE);
++ * "tsens-dump-out" carries the SENS_SAR_TCTRL dump-out edge. */
++static void esp32s3_regi2c_sar2_armed_in(void *opaque, int n, int level)
++{
++    ESP32S3RegI2CState *s = ESP32S3_REGI2C(opaque);
++
++    if (level) {
++        s->sens_ctrl2 |= SENS_SAR_MEAS2_CTRL2_EN_PAD_FORCE;
++        s->sens_mux &= ~SENS_SAR_MEAS2_MUX_RTC_FORCE;
++    } else {
++        s->sens_ctrl2 &= ~SENS_SAR_MEAS2_CTRL2_EN_PAD_FORCE;
++    }
++}
++
++static void esp32s3_regi2c_tsens_dump_in(void *opaque, int n, int level)
++{
++    ESP32S3RegI2CState *s = ESP32S3_REGI2C(opaque);
++
++    esp32s3_sens_tctrl_write(s, level ? (s->sens_tctrl | SENS_TSENS_DUMP_OUT)
++                                      : (s->sens_tctrl & ~SENS_TSENS_DUMP_OUT));
++}
++
+ static void esp32s3_regi2c_realize(DeviceState *dev, Error **errp)
+ {
+     ESP32S3RegI2CState *s = ESP32S3_REGI2C(dev);
+@@ -739,13 +666,11 @@ static void esp32s3_regi2c_realize(DeviceState *dev, Error **errp)
+                           "esp32s3.regi2c", ESP32S3_REGI2C_REG_SIZE);
+     sysbus_init_mmio(sbd, &s->iomem);
+ 
+-    memory_region_init_io(&s->sens_iomem, OBJECT(s), &esp32s3_sens_sar2_ops, s,
+-                          "esp32s3.sens_sar2", 0x8);
+-    sysbus_init_mmio(sbd, &s->sens_iomem);
+-
+-    memory_region_init_io(&s->tctrl_iomem, OBJECT(s), &esp32s3_sens_tctrl_ops,
+-                          s, "esp32s3.sens_tctrl", 0x4);
+-    sysbus_init_mmio(sbd, &s->tctrl_iomem);
++    /* SENS owns its complete register window; consume its named signals. */
++    qdev_init_gpio_in_named(DEVICE(sbd), esp32s3_regi2c_sar2_armed_in,
++                            "sar2-armed", 1);
++    qdev_init_gpio_in_named(DEVICE(sbd), esp32s3_regi2c_tsens_dump_in,
++                            "tsens-dump-out", 1);
+ }
+ 
+ static void esp32s3_regi2c_init(Object *obj)
+diff --git a/hw/misc/meson.build b/hw/misc/meson.build
+index 0638f7d..27a257d 100644
+--- a/hw/misc/meson.build
++++ b/hw/misc/meson.build
+@@ -170,7 +170,9 @@ system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files(
+   'esp32s3_rtc_io.c',
+   'esp32s3_regi2c.c',
+   'esp_hmac.c',
+-  'esp32s3_hmac.c'
++  'esp32s3_hmac.c',
++  'esp32s3_sens.c',
++  'esp32s3_apb_saradc.c'
+ ))
+ 
+ if gcrypt.found()
+diff --git a/hw/xtensa/esp32s3.c b/hw/xtensa/esp32s3.c
+index e139fb6..1918da7 100644
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -29,6 +29,8 @@
+ #include "target/xtensa/cpu.h"
+ 
+ #include "hw/misc/esp32s3_rtc_cntl.h"
++#include "hw/misc/esp32s3_sens.h"
++#include "hw/misc/esp32s3_apb_saradc.h"
+ #include "hw/xtensa/esp32s3_intc.h"
+ 
+ #include "hw/sd/dwc_sdmmc.h"
+@@ -139,6 +141,8 @@ typedef struct Esp32s3SocState {
+     Esp32S3TWAIState twai;
+ 
+     Esp32s3RtcCntlState rtc_cntl;
++    ESP32S3SensState sens;
++    ESP32S3ApbSaradcState apb_saradc;
+ 
+     BusState rtc_bus;
+     BusState periph_bus;
+@@ -839,6 +843,9 @@ static void esp32s3_machine_init(MachineState *machine)
+     object_initialize_child(OBJECT(ss), "timg1", &ss->timg[1], TYPE_ESP32S3_TIMG);
+     object_initialize_child(OBJECT(ss), "systimer", &ss->systimer, TYPE_ESP32S3_SYSTIMER);
+     object_initialize_child(OBJECT(ss), "rgb", &ss->rgb, TYPE_ESP_RGB);
++    object_initialize_child(OBJECT(ss), "sens", &ss->sens, TYPE_ESP32S3_SENS);
++    object_initialize_child(OBJECT(ss), "apb_saradc", &ss->apb_saradc,
++                            TYPE_ESP32S3_APB_SARADC);
+ 
+     /* ---------------------------------------------------------------------
+      * Clock tree and reset-domain wiring, second stage (coreclk lane).
+@@ -943,17 +950,8 @@ static void esp32s3_machine_init(MachineState *machine)
+     {
+         sysbus_realize(SYS_BUS_DEVICE(&ss->regi2c), &error_fatal);
+         MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->regi2c), 0);
+-        /* Undocumented REGI2C window at 0x6000E000 (no public S3 base name;
+-         * owner identified from ROM/blob access traces). Priority 1: this
+-         * device OWNS the window and must outrank any superseded temporary
+-         * bridge mapped over the same base later in init (coreclk 0007). */
++        /* Radio owns REGI2C; SENS owns the complete sensor register window. */
+         memory_region_add_subregion_overlap(sys_mem, 0x6000E000, mr, 1);
+-        mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->regi2c), 1);
+-        /* SENS SAR2 force pair (SENS_SAR_MEAS2_CTRL2_REG / _MUX_REG) */
+-        memory_region_add_subregion_overlap(sys_mem, 0x60008830, mr, 0);
+-        mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->regi2c), 2);
+-        /* SENS SAR TCTRL at 0x60008850 (temperature sensor control/data) */
+-        memory_region_add_subregion_overlap(sys_mem, 0x60008850, mr, 0);
+     }
+     /* Timer Groups realization */
+     /* TIMG clock wiring (coreclk lane): time-base source is APB or XTAL per
+@@ -1178,6 +1176,37 @@ static void esp32s3_machine_init(MachineState *machine)
+         memory_region_add_subregion_overlap(sys_mem, esp32s3_memmap[ESP32S3_MEMREGION_FRAMEBUF].base, &ss->rgb.vram, 0);
+     }
+ 
++    /* ADC-01: typed links and clocks precede realization. */
++    {
++        DeviceState *clk_dev = DEVICE(&ss->clock);
++
++        qdev_connect_clock_in(DEVICE(&ss->sens), "apb-clk",
++                              qdev_get_clock_out(clk_dev, "apb-clk"));
++        qdev_connect_clock_in(DEVICE(&ss->sens), "rtc-fast-clk",
++                              qdev_get_clock_out(clk_dev, "rtc-fast-clk"));
++        qdev_connect_clock_in(DEVICE(&ss->apb_saradc), "apb-clk",
++                              qdev_get_clock_out(clk_dev, "apb-clk"));
++        qdev_connect_clock_in(DEVICE(&ss->apb_saradc), "rtc-fast-clk",
++                              qdev_get_clock_out(clk_dev, "rtc-fast-clk"));
++        sysbus_realize(SYS_BUS_DEVICE(&ss->apb_saradc), &error_fatal);
++        memory_region_add_subregion_overlap(sys_mem, DR_REG_APB_SARADC_BASE,
++                sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->apb_saradc), 0), 0);
++        sysbus_connect_irq(SYS_BUS_DEVICE(&ss->apb_saradc), 0,
++                           qdev_get_gpio_in(intmatrix_dev,
++                                           ETS_APB_ADC_INTR_SOURCE));
++        object_property_set_link(OBJECT(&ss->sens), "apb-saradc",
++                                 OBJECT(&ss->apb_saradc), &error_abort);
++        object_property_set_link(OBJECT(&ss->sens), "regi2c",
++                                 OBJECT(&ss->regi2c), &error_abort);
++        sysbus_realize(SYS_BUS_DEVICE(&ss->sens), &error_fatal);
++        memory_region_add_subregion_overlap(sys_mem, DR_REG_SENS_BASE,
++                sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->sens), 0), 0);
++        qdev_connect_gpio_out_named(DEVICE(&ss->sens), "sar2-armed", 0,
++                qdev_get_gpio_in_named(DEVICE(&ss->regi2c), "sar2-armed", 0));
++        qdev_connect_gpio_out_named(DEVICE(&ss->sens), "tsens-dump-out", 0,
++                qdev_get_gpio_in_named(DEVICE(&ss->regi2c), "tsens-dump-out", 0));
++    }
++
+     esp32s3_soc_add_unimp_device(sys_mem, "esp32s3.rmt", DR_REG_RMT_BASE, 0x1000);
+ 
+     esp32s3_machine_init_sd(ss);
+diff --git a/include/hw/misc/esp32s3_regi2c.h b/include/hw/misc/esp32s3_regi2c.h
+index b021120..be1f4f3 100644
+--- a/include/hw/misc/esp32s3_regi2c.h
++++ b/include/hw/misc/esp32s3_regi2c.h
+@@ -80,13 +80,6 @@ struct ESP32S3RegI2CState {
+     SysBusDevice parent_obj;
+     /* 0x6000E000 .. 0x6000E0FF (undocumented REGI2C / I2C_MST block) */
+     MemoryRegion iomem;
+-    /* 0x60008830 .. 0x60008837 (SENS_SAR_MEAS2_CTRL2 / _MUX force pair).
+-     * INTEGRATION: moves under the single SENS owner once the full SENS
+-     * controller lands; this device then consumes the agreed GPIO inputs
+-     * (contract with the ADC lane). */
+-    MemoryRegion sens_iomem;
+-    /* 0x60008850 .. 0x60008853 (SENS_SAR_TCTRL, temperature sensor) */
+-    MemoryRegion tctrl_iomem;
+ 
+     Esp32s3RegI2CEngine eng[2];
+     QEMUTimer *sar2_timer;
+diff --git a/qapi/qom.json b/qapi/qom.json
+index 02f4b66..d148ee8 100644
+--- a/qapi/qom.json
++++ b/qapi/qom.json
+@@ -844,6 +844,43 @@
+   'data': { 'pci-dev': 'str',
+             'node': 'uint32' } }
+ 
++##
++# @AdcDcProviderProperties:
++#
++# Properties for ADC test sample providers solving an explicit DC circuit.
++#
++# @unit: ADC unit (0 = ADC1, 1 = ADC2)
++#
++# @channel: ADC channel (0..9)
++#
++# @rail-mv: Source voltage in millivolts
++#
++# @rail-mv-2: Source voltage after the scheduled step
++#
++# @source-switch-ns: Absolute virtual time of the source step
++#
++# @r-top-ohm: Divider top resistance
++#
++# @r-bot-ohm: Divider bottom resistance
++#
++# @float-net: Disconnect the tap
++#
++# @powered: Board power state
++#
++# @digital-owned: Pad is digitally driven
++#
++# @next: Provider for channels this object does not model
++#
++# Since: 10.0
++##
++{ 'struct': 'AdcDcProviderProperties',
++  'data': { '*unit': 'uint8', '*channel': 'uint8',
++            '*rail-mv': 'uint32', '*rail-mv-2': 'uint32',
++            '*source-switch-ns': 'uint64',
++            '*r-top-ohm': 'uint32', '*r-bot-ohm': 'uint32',
++            '*float-net': 'bool', '*powered': 'bool',
++            '*digital-owned': 'bool', '*next': 'str' } }
++
+ ##
+ # @AcpiGenericPortProperties:
+ #
+@@ -1100,6 +1137,7 @@
+   'data': [
+     'acpi-generic-initiator',
+     'acpi-generic-port',
++    'adc-dc-provider',
+     'authz-list',
+     'authz-listfile',
+     'authz-pam',
+@@ -1177,6 +1215,7 @@
+   'data': {
+       'acpi-generic-initiator':     'AcpiGenericInitiatorProperties',
+       'acpi-generic-port':          'AcpiGenericPortProperties',
++      'adc-dc-provider':            'AdcDcProviderProperties',
+       'authz-list':                 'AuthZListProperties',
+       'authz-listfile':             'AuthZListFileProperties',
+       'authz-pam':                  'AuthZPAMProperties',
+diff --git a/tests/qtest/meson.build b/tests/qtest/meson.build
+index 502cb98..797c0b9 100644
+--- a/tests/qtest/meson.build
++++ b/tests/qtest/meson.build
+@@ -345,6 +345,7 @@ endif
+ 
+ # ESP32-S3 clock tree / reset domain tests (coreclk lane)
+ qtests_xtensa = [ 'esp32s3-intmatrix-test', 'esp32s3-gdma-test', 'esp32s3-coreclk-test', 'esp32s3-gpio-test' ]
++qtests_xtensa += ['esp32s3-adc-test']
+ 
+ qtests = {
+   'bios-tables-test': [io, 'boot-sector.c', 'acpi-utils.c', 'tpm-emu.c'],

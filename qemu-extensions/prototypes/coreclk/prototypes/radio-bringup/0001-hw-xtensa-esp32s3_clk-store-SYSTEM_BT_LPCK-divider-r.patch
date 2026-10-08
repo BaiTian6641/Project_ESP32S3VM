@@ -1,0 +1,115 @@
+From 2a7a5fa579f9692d345a7e644dc309bae9310711 Mon Sep 17 00:00:00 2001
+From: ESP32S3VM radio-bringup <radio-bringup@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 09:17:30 +0800
+Subject: [PATCH 1/4] hw/xtensa/esp32s3_clk: store SYSTEM_BT_LPCK divider
+ registers
+
+Add the two Bluetooth low-power clock divider registers as stored R/W
+registers in the SYSTEM (clock) model:
+
+  0x600C0028 SYSTEM_BT_LPCK_DIV_INT_REG  DIV_NUM [11:0]
+  0x600C002C SYSTEM_BT_LPCK_DIV_FRAC_REG LPCLK selects [28:24],
+                                         DIV_A [23:12], DIV_B [11:0]
+
+Writes are masked to the IDF-documented fields (system_reg.h:629-679);
+reserved bits read as zero. Reset defaults per the header comments:
+DIV_NUM 255, LPCLK_SEL_8M 1, DIV_A 1, DIV_B 1.
+
+The BLE controller blob verifies its LPCLK configuration by writing then
+reading back these fields (btdm_lpclk_select_src checks DIV_A [23:12],
+btdm_lpclk_set_div writes DIV_NUM), so the previous default-0 reads made
+btdm_low_power_mode_init assert at
+components/bt/controller/esp32c3/bt.c:1757
+(select_src_ret && set_div_ret) before the controller finished init.
+These are real SYSTEM registers, not blob special cases.
+
+Register storage is unmigrated, matching every other register in this
+device.
+---
+ hw/xtensa/esp32s3_clk.c         | 35 +++++++++++++++++++++++++++++++++
+ include/hw/xtensa/esp32s3_clk.h |  8 +++++++-
+ 2 files changed, 42 insertions(+), 1 deletion(-)
+
+diff --git a/hw/xtensa/esp32s3_clk.c b/hw/xtensa/esp32s3_clk.c
+index 7525bcd..117ecd2 100644
+--- a/hw/xtensa/esp32s3_clk.c
++++ b/hw/xtensa/esp32s3_clk.c
+@@ -218,6 +218,12 @@ static uint64_t esp32s3_clock_read(void *opaque, hwaddr addr, unsigned int size)
+         case A_SYSTEM_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL:
+             r = s->sys_ext_dev_enc_dec_ctrl;
+             break;
++        case A_SYSTEM_BT_LPCK_DIV_INT:
++            r = s->bt_lpck_div_int;
++            break;
++        case A_SYSTEM_BT_LPCK_DIV_FRAC:
++            r = s->bt_lpck_div_frac;
++            break;
+         default:
+ #if CLOCK_WARNING
+             warn_report("[CLOCK] Unsupported read from %08lx\n", addr);
+@@ -280,6 +286,25 @@ static void esp32s3_clock_write(void *opaque, hwaddr addr, uint64_t value,
+         case A_SYSTEM_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL:
+             s->sys_ext_dev_enc_dec_ctrl = value;
+             break;
++        case A_SYSTEM_BT_LPCK_DIV_INT:
++            /* R/W; only SYSTEM_BT_LPCK_DIV_NUM [11:0] is documented. */
++            s->bt_lpck_div_int = value & R_SYSTEM_BT_LPCK_DIV_INT_BT_LPCK_DIV_NUM_MASK;
++            break;
++        case A_SYSTEM_BT_LPCK_DIV_FRAC: {
++            /* R/W; documented fields only: LPCLK source selects [28:24],
++             * BT_LPCK_DIV_A [23:12], BT_LPCK_DIV_B [11:0]. The BLE controller
++             * blob writes then reads back DIV_A to verify its LPCLK source
++             * selection, so every documented bit must store. */
++            const uint32_t frac_mask = R_SYSTEM_BT_LPCK_DIV_FRAC_LPCLK_RTC_EN_MASK |
++                                       R_SYSTEM_BT_LPCK_DIV_FRAC_LPCLK_SEL_XTAL32K_MASK |
++                                       R_SYSTEM_BT_LPCK_DIV_FRAC_LPCLK_SEL_XTAL_MASK |
++                                       R_SYSTEM_BT_LPCK_DIV_FRAC_LPCLK_SEL_8M_MASK |
++                                       R_SYSTEM_BT_LPCK_DIV_FRAC_LPCLK_SEL_RTC_SLOW_MASK |
++                                       R_SYSTEM_BT_LPCK_DIV_FRAC_BT_LPCK_DIV_A_MASK |
++                                       R_SYSTEM_BT_LPCK_DIV_FRAC_BT_LPCK_DIV_B_MASK;
++            s->bt_lpck_div_frac = value & frac_mask;
++            break;
++        }
+         default:
+ #if CLOCK_WARNING
+             warn_report("[CLOCK] Unsupported write to %08lx (%08lx)\n", addr, value);
+@@ -316,6 +341,16 @@ static void esp32s3_clock_reset_hold(Object *obj, ResetType type)
+     s->cpuperconf = (ESP32S3_PERIOD_SEL_80 << R_SYSTEM_CPU_PER_CONF_CPUPERIOD_SEL_SHIFT) |
+                     (ESP32S3_FREQ_SEL_PLL_480 << R_SYSTEM_CPU_PER_CONF_PLL_FREQ_SEL_SHIFT);
+ 
++    /* Bluetooth LPCLK dividers; reset defaults per IDF system_reg.h:
++     * BT_LPCK_DIV_NUM 12'd255, LPCLK_SEL_8M 1, BT_LPCK_DIV_A 12'd1,
++     * BT_LPCK_DIV_B 12'd1, remaining LPCLK selects 0. */
++    s->bt_lpck_div_int = FIELD_DP32(0, SYSTEM_BT_LPCK_DIV_INT, BT_LPCK_DIV_NUM, 255);
++    s->bt_lpck_div_frac = FIELD_DP32(0, SYSTEM_BT_LPCK_DIV_FRAC, LPCLK_SEL_8M, 1);
++    s->bt_lpck_div_frac = FIELD_DP32(s->bt_lpck_div_frac, SYSTEM_BT_LPCK_DIV_FRAC,
++                                     BT_LPCK_DIV_A, 1);
++    s->bt_lpck_div_frac = FIELD_DP32(s->bt_lpck_div_frac, SYSTEM_BT_LPCK_DIV_FRAC,
++                                     BT_LPCK_DIV_B, 1);
++
+     /* Initialize the IRQs */
+     s->levels = 0;
+     for (int i = 0 ; i < ESP32S3_SYSTEM_CPU_INTR_COUNT; i++) {
+diff --git a/include/hw/xtensa/esp32s3_clk.h b/include/hw/xtensa/esp32s3_clk.h
+index 588b9af..ed31199 100644
+--- a/include/hw/xtensa/esp32s3_clk.h
++++ b/include/hw/xtensa/esp32s3_clk.h
+@@ -132,8 +132,14 @@ typedef struct ESP32S3ClockState {
+     uint32_t levels;
+     
+     uint32_t app_cpu_addr;
+-    
++
+     uint32_t sys_ext_dev_enc_dec_ctrl;
++
++    /* Bluetooth low-power clock dividers (SYSTEM_BT_LPCK_DIV_INT/FRAC_REG).
++     * Plain R/W storage: the controller blob verifies both writes by readback
++     * (btdm_lpclk_select_src / btdm_lpclk_set_div). */
++    uint32_t bt_lpck_div_int;
++    uint32_t bt_lpck_div_frac;
+ } ESP32S3ClockState;
+ 
+ typedef struct ESP32S3ClockClass {
+-- 
+2.43.0
+

@@ -1,0 +1,848 @@
+From f2f15826fb81810571c1d4fba819e6a18721ef5f Mon Sep 17 00:00:00 2001
+From: ESP32S3VM intc <intc@esp32s3vm.invalid>
+Date: Wed, 7 Oct 2026 11:33:57 +0800
+Subject: [PATCH 1/3] hw/xtensa/esp32s3_intc: model source OR/remap/disable
+ semantics
+
+Rework the ESP32-S3 interrupt matrix from a direct per-source map to the
+TRM chapter 9 (Interrupt Matrix) semantics:
+
+- track the asserted level of every peripheral interrupt source
+  independently; each CPU external interrupt output is the logical OR of
+  the asserted sources whose MAP register selects it, so several sources
+  routed to one CPU interrupt cannot clear one another and the line only
+  deasserts once every mapped asserted source is gone;
+- re-derive all CPU routes on every input edge and MAP write, covering
+  remapping of an asserted source on both register files;
+- MAP values naming a CPU internal interrupt (6, 7, 11, 15, 16, 29 per
+  TRM Table 9.3-2) route nowhere, matching the documented way to detach
+  a source (TRM 9.3.3.3; IDF INT_MUX_DISABLED_INTNO == 6); writes stay
+  masked to the 5-bit MAP field;
+- model INTR_STATUS_0..3 (RO, offsets 0x18C-0x198 per CPU file) as the
+  per-file source status snapshot for the documented sources only (word
+  3 carries the last 3 sources, TRM Table 9.3-1); inputs beyond
+  ETS_MAX_INTR_SOURCE have reserved MAP slots (RAZ/WI) and drive no
+  status bit and no CPU interrupt, so asserted stray inputs can neither
+  corrupt the snapshot nor spuriously route to external interrupt 0;
+- CLOCK_GATE (0x19C, reset 1) freezes the gated CPU file (writes
+  ignored, outputs and status held) and the DATE version register
+  (0x7FC, reset 0x02012300);
+- reset MAP registers to the documented 0x10 default, reserved slots to
+  zero (RAZ/WI), and clear inputs/status on reset;
+- expose the real matrix-to-CPU interrupt lines as the named GPIO output
+  "cpu-int-out" so their levels remain observable (qtest intercept)
+  while staying wired to the CPUs; machine wiring unchanged.
+
+Register layout (512 MAP slots per CPU file, CPU0 +0x000 / CPU1 +0x800
+of 0x600C2000) is preserved.
+---
+ hw/xtensa/esp32s3_intc.c             | 268 ++++++++++++++++---
+ include/hw/xtensa/esp32s3_intc.h     |  44 ++-
+ tests/qtest/esp32s3-intmatrix-test.c | 386 +++++++++++++++++++++++++++
+ tests/qtest/meson.build              |   3 +
+ 4 files changed, 659 insertions(+), 42 deletions(-)
+ create mode 100644 tests/qtest/esp32s3-intmatrix-test.c
+
+diff --git a/hw/xtensa/esp32s3_intc.c b/hw/xtensa/esp32s3_intc.c
+index ddf0f9a..1976086 100644
+--- a/hw/xtensa/esp32s3_intc.c
++++ b/hw/xtensa/esp32s3_intc.c
+@@ -20,60 +20,206 @@
+ #include "hw/xtensa/esp32s3_intc.h"
+ #include "hw/xtensa/esp32s3_reset_domain.h"
+ 
+-#define INTMATRIX_UNINT_VALUE   6
+-
+ #define INTC_DEBUG      0
+-#define INTC_WARNING    0
++
++/* Documented reset value of the MAP registers (IDF interrupt_core*_reg.h
++ * field defaults); 0x10 is an internal CPU interrupt, i.e. unrouted. */
++#define INTMATRIX_MAP_RESET   0x10
++
++/*
++ * Semantics derived from the ESP32-S3 TRM chapter "Interrupt Matrix
++ * (INTERRUPT)" (§9.3.2, §9.3.3) and the IDF S3 register headers
++ * (components/soc/esp32s3/register/soc/interrupt_core{0,1}_reg.h):
++ *
++ *  - Each CPU owns a register file of one 5-bit MAP register per peripheral
++ *    interrupt source (CPU0 at +0x000, CPU1 at +0x800).  The MAP value is the
++ *    CPU interrupt number the source is routed to.
++ *  - Multiple sources may be routed to the same CPU interrupt; the CPU
++ *    interrupt output reflects the logical OR of the asserted sources routed
++ *    to it (TRM §9.3.3.2).  A shared line only deasserts once every mapped
++ *    source has deasserted.
++ *  - Values naming a CPU *internal* interrupt (6, 7, 11, 15, 16, 29 — timer,
++ *    software and profiling interrupts, TRM Table 9.3-2) route nowhere: the
++ *    matrix only drives the 26 external CPU interrupts.  IDF uses value 6
++ *    (INT_MUX_DISABLED_INTNO) to detach a source (TRM §9.3.3.3).
++ *  - The reset value of every MAP register is 0x10 per the IDF register
++ *    header defaults; 0x10 is likewise an internal interrupt, so nothing is
++ *    routed until software programs the matrix.
++ *  - INTR_STATUS_0..3 (RO) report the current asserted level of each source,
++ *    CLOCK_GATE controls the matrix functional clock (reset: enabled), and
++ *    DATE is the version register (reset: 0x02012300).
++ *
++ * Model: the raw input level of every source is tracked independently of the
++ * map.  Each CPU's external interrupt outputs are recomputed as the OR of
++ * asserted inputs whose MAP entry selects that output, on every input edge
++ * and every map write.  A clock-gated CPU file freezes: writes are ignored,
++ * INTR_STATUS and the outputs hold their values until the clock is
++ * re-enabled, at which point the current input levels propagate.
++ */
+ 
+ #define IRQ_MAP(cpu, input) s->irq_map[cpu][input]
+ 
+-static void esp32s3_intmatrix_irq_handler(void *opaque, int n, int level)
++static unsigned esp32s3_intmatrix_out_line(Esp32s3IntMatrixState *s, int cpu,
++                                           int int_index)
++{
++    return s->out_base[cpu] + int_index;
++}
++
++/* Recompute every CPU output line from the current map and input levels.
++ * Clock-gated CPU files are skipped and keep their previous state. */
++static void esp32s3_intmatrix_update(Esp32s3IntMatrixState *s)
+ {
+-    Esp32s3IntMatrixState *s = ESP32S3_INTMATRIX(opaque);
+     for (int i = 0; i < ESP32S3_CPU_COUNT; ++i) {
+-        if (s->outputs[i] == NULL) {
++        if (s->cpu[i] == NULL || s->out_lines == NULL) {
+             continue;
+         }
+-        int out_index = IRQ_MAP(i, n);
+-        for (int int_index = 0; int_index < s->cpu[i]->env.config->nextint; ++int_index) {
+-            if (s->cpu[i]->env.config->extint[int_index] == out_index) {
+-                qemu_set_irq(s->outputs[i][int_index], level);
+-                break;
++        if (!(s->clock_gate[i] & ESP32S3_INTMATRIX_CLK_EN)) {
++            continue;
++        }
++        uint32_t status[ESP32S3_INTMATRIX_STATUS_WORDS] = { 0 };
++        /* INTR_STATUS_0..3 cover the documented sources only (TRM Table
++         * 9.3-1: word 3 carries the last 3 sources); inputs beyond
++         * ETS_MAX_INTR_SOURCE have no status bit and no routing. */
++        for (int src = 0; src < ETS_MAX_INTR_SOURCE; ++src) {
++            if (s->input_level[src]) {
++                status[src / 32] |= 1u << (src % 32);
++            }
++        }
++        memcpy(s->intr_status[i], status, sizeof(status));
++
++        const XtensaConfig *conf = s->cpu[i]->env.config;
++        for (int int_index = 0; int_index < conf->nextint; ++int_index) {
++            unsigned intno = conf->extint[int_index];
++            bool level = false;
++            /* Sources beyond the documented count have reserved MAP slots
++             * (reads-as-zero) and drive no CPU interrupt: 0 is a valid
++             * external interrupt number, so they must never take part in
++             * the OR. */
++            for (int src = 0; src < ETS_MAX_INTR_SOURCE; ++src) {
++                if (s->input_level[src] && IRQ_MAP(i, src) == intno) {
++                    level = true;
++                    break;
++                }
++            }
++            if (s->out_level[i][int_index] != level) {
++                s->out_level[i][int_index] = level;
++                qemu_set_irq(s->out_lines[esp32s3_intmatrix_out_line(s, i, int_index)],
++                             level);
+             }
+         }
+     }
+ }
+ 
+-static inline uint8_t* get_map_entry(Esp32s3IntMatrixState* s, hwaddr addr)
++static void esp32s3_intmatrix_irq_handler(void *opaque, int n, int level)
++{
++    Esp32s3IntMatrixState *s = ESP32S3_INTMATRIX(opaque);
++
++    g_assert(n >= 0 && n < ESP32S3_INT_MATRIX_INPUTS);
++    s->input_level[n] = (level != 0);
++    esp32s3_intmatrix_update(s);
++}
++
++static bool esp32s3_intmatrix_decode(Esp32s3IntMatrixState *s, hwaddr addr,
++                                     int *cpu, hwaddr *off)
+ {
+-    int source_index = addr / sizeof(uint32_t);
+-    if (source_index > ESP32S3_INT_MATRIX_INPUTS * ESP32S3_CPU_COUNT) {
++    *cpu = addr / ESP32S3_INTMATRIX_CPU_FILE_SIZE;
++    *off = addr % ESP32S3_INTMATRIX_CPU_FILE_SIZE;
++    if (*cpu >= ESP32S3_CPU_COUNT) {
+ #if INTC_DEBUG
+-        info_report("%s: source_index %d out of range", __func__, source_index);
+-#endif // INTC_DEBUG
+-        return NULL;
++        info_report("%s: address 0x%04" HWADDR_PRIx " out of range", __func__, addr);
++#endif
++        return false;
+     }
+-    int cpu_index = source_index / ESP32S3_INT_MATRIX_INPUTS;
+-    source_index = source_index % ESP32S3_INT_MATRIX_INPUTS;
+-    return &IRQ_MAP(cpu_index, source_index);
++    return true;
+ }
+ 
+-static uint64_t esp32s3_intmatrix_read(void* opaque, hwaddr addr, unsigned int size)
++static uint64_t esp32s3_intmatrix_read(void *opaque, hwaddr addr, unsigned int size)
+ {
+     Esp32s3IntMatrixState *s = ESP32S3_INTMATRIX(opaque);
+-    uint8_t* map_entry = get_map_entry(s, addr);
+-    return (map_entry != NULL) ? *map_entry : 0;
++    int cpu;
++    hwaddr off;
++
++    if (!esp32s3_intmatrix_decode(s, addr, &cpu, &off)) {
++        return 0;
++    }
++    if (off < ESP32S3_INTMATRIX_STATUS_OFFSET) {
++        if (off % sizeof(uint32_t) != 0) {
++            return 0;
++        }
++        unsigned src = off / sizeof(uint32_t);
++        if (src < ETS_MAX_INTR_SOURCE) {
++            return IRQ_MAP(cpu, src);
++        }
++        return 0; /* reserved MAP slots read as zero */
++    }
++    if (off < ESP32S3_INTMATRIX_STATUS_OFFSET +
++              ESP32S3_INTMATRIX_STATUS_WORDS * sizeof(uint32_t)) {
++        return s->intr_status[cpu][(off - ESP32S3_INTMATRIX_STATUS_OFFSET) /
++                                   sizeof(uint32_t)];
++    }
++    switch (off) {
++    case ESP32S3_INTMATRIX_CLOCK_GATE_OFFSET:
++        return s->clock_gate[cpu];
++    case ESP32S3_INTMATRIX_DATE_OFFSET:
++        return s->date[cpu];
++    default:
++        return 0;
++    }
+ }
+ 
+-static void esp32s3_intmatrix_write(void* opaque, hwaddr addr, uint64_t value, unsigned int size)
++static void esp32s3_intmatrix_write(void *opaque, hwaddr addr, uint64_t value,
++                                    unsigned int size)
+ {
+ #if INTC_DEBUG
+     info_report("\x1b[31m[INTC] esp32s3_intmatrix_write  addr = %ld, value=%ld\x1b[0m", addr, value);
+-#endif // INTC_DEBUG
++#endif
+     Esp32s3IntMatrixState *s = ESP32S3_INTMATRIX(opaque);
+-    uint8_t* map_entry = get_map_entry(s, addr);
+-    if (map_entry != NULL) {
+-        *map_entry = value & 0x1f;
++    int cpu;
++    hwaddr off;
++
++    if (!esp32s3_intmatrix_decode(s, addr, &cpu, &off)) {
++        return;
++    }
++    if (off < ESP32S3_INTMATRIX_STATUS_OFFSET) {
++        if (off % sizeof(uint32_t) != 0) {
++            return;
++        }
++        unsigned src = off / sizeof(uint32_t);
++        if (src >= ETS_MAX_INTR_SOURCE) {
++            return; /* reserved MAP slots ignore writes */
++        }
++        if (!(s->clock_gate[cpu] & ESP32S3_INTMATRIX_CLK_EN)) {
++            return; /* functional clock gated: register file ignores writes */
++        }
++        uint8_t map = value & ESP32S3_INTMATRIX_MAP_MASK;
++        if (IRQ_MAP(cpu, src) != map) {
++            IRQ_MAP(cpu, src) = map;
++            /* Re-derive the affected routes on both CPU files. */
++            esp32s3_intmatrix_update(s);
++        }
++        return;
++    }
++    if (off >= ESP32S3_INTMATRIX_STATUS_OFFSET &&
++        off < ESP32S3_INTMATRIX_STATUS_OFFSET +
++              ESP32S3_INTMATRIX_STATUS_WORDS * sizeof(uint32_t)) {
++        return; /* INTR_STATUS is read-only */
++    }
++    switch (off) {
++    case ESP32S3_INTMATRIX_CLOCK_GATE_OFFSET:
++    {
++        uint32_t old = s->clock_gate[cpu];
++        s->clock_gate[cpu] = value & ESP32S3_INTMATRIX_CLK_EN;
++        if ((s->clock_gate[cpu] & ESP32S3_INTMATRIX_CLK_EN) &&
++            !(old & ESP32S3_INTMATRIX_CLK_EN)) {
++            esp32s3_intmatrix_update(s);
++        }
++        break;
++    }
++    case ESP32S3_INTMATRIX_DATE_OFFSET:
++        s->date[cpu] = value & ESP32S3_INTMATRIX_DATE_MASK;
++        break;
++    default:
++        break;
+     }
+ }
+ 
+@@ -83,34 +229,80 @@ static const MemoryRegionOps esp_intmatrix_ops = {
+     .endianness = DEVICE_LITTLE_ENDIAN,
+ };
+ 
++static void esp32s3_intmatrix_lower_all(Esp32s3IntMatrixState *s)
++{
++    if (s->out_lines == NULL) {
++        return;
++    }
++    for (int i = 0; i < ESP32S3_CPU_COUNT; ++i) {
++        if (s->cpu[i] == NULL) {
++            continue;
++        }
++        for (int int_index = 0; int_index < s->cpu[i]->env.config->nextint;
++             ++int_index) {
++            if (s->out_level[i][int_index]) {
++                s->out_level[i][int_index] = false;
++                qemu_set_irq(s->out_lines[esp32s3_intmatrix_out_line(s, i, int_index)],
++                             0);
++            }
++        }
++    }
++}
++
+ static void esp32s3_intmatrix_reset_hold(Object *obj, ResetType type)
+ {
+     Esp32s3IntMatrixState *s = ESP32S3_INTMATRIX(obj);
+ 
+-    /* PERIPH reset domain: CPU-only resets keep the routing map and the
+-     * asserted lines (a routed source must survive a CPU reset) */
++    /* PERIPH reset domain (coreclk lane): CPU-only resets keep the routing
++     * map and the asserted lines (a routed source must survive a CPU
++     * reset). */
+     if (s->soc_reset && !esp32s3_reset_covers_periph(s->soc_reset)) {
+         return;
+     }
+ 
+-    memset(s->irq_map, INTMATRIX_UNINT_VALUE, sizeof(s->irq_map));
++    esp32s3_intmatrix_lower_all(s);
++
+     for (int i = 0; i < ESP32S3_CPU_COUNT; ++i) {
+-        if (s->outputs[i] == NULL) {
+-            continue;
+-        }
+-        for (int int_index = 0; int_index < s->cpu[i]->env.config->nextint; ++int_index) {
+-            qemu_irq_lower(s->outputs[i][int_index]);
++        memset(s->irq_map[i], 0, sizeof(s->irq_map[i]));
++        for (int src = 0; src < ETS_MAX_INTR_SOURCE; ++src) {
++            IRQ_MAP(i, src) = INTMATRIX_MAP_RESET;
+         }
++        memset(s->intr_status[i], 0, sizeof(s->intr_status[i]));
++        s->clock_gate[i] = ESP32S3_INTMATRIX_CLK_EN;
++        s->date[i] = ESP32S3_INTMATRIX_DATE_VALUE;
+     }
++    memset(s->input_level, 0, sizeof(s->input_level));
++
++    esp32s3_intmatrix_update(s);
+ }
+ 
+ static void esp32s3_intmatrix_realize(DeviceState *dev, Error **errp)
+ {
+     Esp32s3IntMatrixState *s = ESP32S3_INTMATRIX(dev);
++    int total = 0;
++
++    for (int i = 0; i < ESP32S3_CPU_COUNT; ++i) {
++        if (s->cpu[i] == NULL) {
++            error_setg(errp, "cpu%d link property must be set", i);
++            return;
++        }
++        s->out_base[i] = total;
++        total += s->cpu[i]->env.config->nextint;
++    }
+ 
++    /* Expose the real CPU interrupt lines as named GPIO outputs so their
++     * levels stay observable (e.g. through qtest irq interception) while
++     * remaining wired to the CPUs. */
++    s->out_lines = g_new0(qemu_irq, total);
++    qdev_init_gpio_out_named(dev, s->out_lines, ESP32S3_INTMATRIX_OUTPUT_NAME,
++                             total);
+     for (int i = 0; i < ESP32S3_CPU_COUNT; ++i) {
+-        if (s->cpu[i]) {
+-            s->outputs[i] = xtensa_get_extints(&s->cpu[i]->env);
++        qemu_irq *extints = xtensa_get_extints(&s->cpu[i]->env);
++        for (int int_index = 0; int_index < s->cpu[i]->env.config->nextint;
++             ++int_index) {
++            qdev_connect_gpio_out_named(dev, ESP32S3_INTMATRIX_OUTPUT_NAME,
++                                        esp32s3_intmatrix_out_line(s, i, int_index),
++                                        extints[int_index]);
+         }
+     }
+     esp32s3_intmatrix_reset_hold(OBJECT(dev), RESET_TYPE_COLD);
+diff --git a/include/hw/xtensa/esp32s3_intc.h b/include/hw/xtensa/esp32s3_intc.h
+index 739e4b8..e49084a 100644
+--- a/include/hw/xtensa/esp32s3_intc.h
++++ b/include/hw/xtensa/esp32s3_intc.h
+@@ -129,19 +129,55 @@ typedef enum {
+ 
+ #define ESP32S3_INT_MATRIX_INPUTS (0x800/4)
+ 
++/*
++ * One CPU interrupt-matrix register file (CPU0 at +0x000, CPU1 at +0x800 of
++ * the 0x1000-byte block at DR_REG_INTERRUPT_BASE), per the ESP32-S3 TRM
++ * chapter "Interrupt Matrix (INTERRUPT)" and the IDF S3 register headers
++ * (soc/interrupt_core0_reg.h, soc/interrupt_core1_reg.h).
++ */
++#define ESP32S3_INTMATRIX_CPU_FILE_SIZE   0x800
++#define ESP32S3_INTMATRIX_MAP_OFFSET(src) ((src) * 4)
++#define ESP32S3_INTMATRIX_STATUS_OFFSET   0x18C /* INTR_STATUS_0..3, RO */
++#define ESP32S3_INTMATRIX_CLOCK_GATE_OFFSET 0x19C
++#define ESP32S3_INTMATRIX_DATE_OFFSET     0x7FC
++#define ESP32S3_INTMATRIX_STATUS_WORDS    4
++
++#define ESP32S3_INTMATRIX_MAP_MASK        0x1F  /* field MAP [4:0] */
++#define ESP32S3_INTMATRIX_DATE_MASK       0x0FFFFFFF /* INTERRUPT_DATE [27:0] */
++#define ESP32S3_INTMATRIX_CLK_EN          0x1u  /* CLOCK_GATE.CLK_EN, reset 1 */
++#define ESP32S3_INTMATRIX_DATE_VALUE      0x02012300u /* reset value */
++/* TRM 9.3.3.3: CPU internal interrupts cannot be driven by the matrix */
++#define ESP32S3_INTMATRIX_UNINT_VALUE     6
++
+ #define TYPE_ESP32S3_INTMATRIX "misc.esp32s3.intmatrix"
+ #define ESP32S3_INTMATRIX(obj) OBJECT_CHECK(Esp32s3IntMatrixState, (obj), TYPE_ESP32S3_INTMATRIX)
+ 
+-#define ESP32S3_CPU_INT_COUNT   1
+-#define ESP_CPU_IRQ_LINES_NAME "espressif-cpu-irq-lines"
+-#define ESP32S3_INT_MATRIX_OUTPUT_NAME "misc.esp32s3.intmatrix.out_irqs"
++/*
++ * Named GPIO output carrying the CPU interrupt lines so that the real
++ * matrix-to-CPU wiring stays observable (qtest irq_intercept_out).  Line
++ * numbering: index = ESP32S3_INTMATRIX_OUT_LINE(cpu, int_index) where
++ * int_index enumerates env.config->extint[] of the linked CPUs.
++ */
++#define ESP32S3_INTMATRIX_OUTPUT_NAME "cpu-int-out"
+ 
+ typedef struct Esp32s3IntMatrixState {
+     SysBusDevice parent_obj;
+ 
+     MemoryRegion iomem;
+-    qemu_irq *outputs[ESP32S3_CPU_COUNT];
++    /* Per-CPU named output lines ("cpu-int-out"), connected to the CPU
++     * external interrupt pins in realize.  out_base[i] is the index of CPU i's
++     * first line; total line count is summed env.config->nextint. */
++    qemu_irq *out_lines;
++    unsigned out_base[ESP32S3_CPU_COUNT];
++    bool out_level[ESP32S3_CPU_COUNT][MAX_NINTERRUPT];
++    /* Raw input line levels, one bit per peripheral interrupt source. */
++    bool input_level[ESP32S3_INT_MATRIX_INPUTS];
++    /* INTR_STATUS snapshots per CPU file (frozen while clock gated). */
++    uint32_t intr_status[ESP32S3_CPU_COUNT][ESP32S3_INTMATRIX_STATUS_WORDS];
++    /* Source-to-CPU-interrupt map register files, 5 bits per entry. */
+     uint8_t irq_map[ESP32S3_CPU_COUNT][ESP32S3_INT_MATRIX_INPUTS];
++    uint32_t clock_gate[ESP32S3_CPU_COUNT];
++    uint32_t date[ESP32S3_CPU_COUNT];
+ 
+     /* properties */
+     XtensaCPU *cpu[ESP32S3_CPU_COUNT];
+diff --git a/tests/qtest/esp32s3-intmatrix-test.c b/tests/qtest/esp32s3-intmatrix-test.c
+new file mode 100644
+index 0000000..63e52f6
+--- /dev/null
++++ b/tests/qtest/esp32s3-intmatrix-test.c
+@@ -0,0 +1,386 @@
++/*
++ * QTest for the ESP32-S3 interrupt matrix (misc.esp32s3.intmatrix)
++ *
++ * Exercises the source-OR / remap / disabled-routing / clock-gate semantics
++ * of the matrix against the real machine wiring:
++ *
++ *  - two peripheral sources routed to the same CPU interrupt produce a
++ *    wired-OR line that only clears when both sources deassert;
++ *  - remapping an asserted source re-derives both old and new routes;
++ *  - map values naming a CPU internal interrupt (6, 7, 11, 15, 16, 29) route
++ *    nowhere; MAP writes are masked to 5 bits;
++ *  - both CPU register files (CPU0 at +0x000, CPU1 at +0x800 of
++ *    0x600C2000) route the same physical source independently;
++ *  - machine reset restores the documented register defaults;
++ *  - CLOCK_GATE freezes a CPU file until re-enabled.
++ *
++ * Peripheral source input lines are driven with qtest set_irq_in on the
++ * matrix's unnamed GPIO inputs; CPU interrupt output lines are observed by
++ * intercepting the matrix's "cpu-int-out" GPIO outputs (the lines wired to
++ * the CPUs).  All register offsets follow the ESP32-S3 TRM chapter
++ * "Interrupt Matrix (INTERRUPT)".
++ *
++ * Copyright (c) 2026 ESP32S3VM project
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 or
++ * (at your option) any later version.
++ */
++
++#include "qemu/osdep.h"
++#include "libqtest-single.h"
++
++/* Interrupt matrix base address (ESP32-S3 TRM Table 4.3-3, DR_REG_INTERRUPT_BASE) */
++#define INTMATRIX_BASE      0x600C2000u
++
++/* One CPU register file: CPU0 at +0x0000, CPU1 at +0x0800 */
++#define CPU_FILE(cpu)       (INTMATRIX_BASE + (cpu) * 0x800u)
++/* MAP register of source `src` in CPU `cpu`'s file (TRM 9.4/9.5) */
++#define MAP_REG(cpu, src)   (CPU_FILE(cpu) + (src) * 4u)
++/* INTR_STATUS_0..3, read-only source status snapshot (offset 0x18C) */
++#define STATUS_REG(cpu, n)  (CPU_FILE(cpu) + 0x18Cu + (n) * 4u)
++/* CLOCK_GATE, bit0 CLK_EN, reset 1 (offset 0x19C) */
++#define CLOCK_GATE_REG(cpu) (CPU_FILE(cpu) + 0x19Cu)
++/* DATE version register, reset 0x02012300 (offset 0x7FC) */
++#define DATE_REG(cpu)       (CPU_FILE(cpu) + 0x7FCu)
++
++#define CLK_EN              0x1u
++#define DATE_RESET          0x02012300u
++#define MAP_RESET           0x10u
++#define MAP_MASK            0x1Fu
++
++/* Peripheral interrupt source numbers (ESP32-S3 TRM Table 9.3-1) */
++#define SRC_UART0           27
++#define SRC_SDIO_HOST       30
++#define SRC_TWAI            37
++
++/* CPU internal interrupts that the matrix cannot drive (TRM Table 9.3-2) */
++static const unsigned cpu_internal_ints[] = { 6, 7, 11, 15, 16, 29 };
++
++/* CPU external interrupt numbers in external-line order
++ * (XCHAL_EXTINT0..25_NUM, target/xtensa/core-esp32s3/core-isa.h). */
++static const unsigned extint_num[] = {
++    0, 1, 2, 3, 4, 5, 8, 9, 10, 12, 13, 14,
++    17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 30, 31,
++};
++#define NUM_EXTINT (sizeof(extint_num) / sizeof(extint_num[0]))
++
++static const char *const INTMATRIX_PATH = "/machine/soc/intmatrix";
++
++/* Global qtest output line index for (cpu, CPU interrupt number) */
++static int out_line(unsigned cpu, unsigned cpu_int)
++{
++    int i;
++
++    for (i = 0; i < (int)NUM_EXTINT; ++i) {
++        if (extint_num[i] == cpu_int) {
++            return (int)cpu * (int)NUM_EXTINT + i;
++        }
++    }
++    g_assert_not_reached();
++}
++
++static bool out_level(unsigned cpu, unsigned cpu_int)
++{
++    return qtest_get_irq(global_qtest, out_line(cpu, cpu_int));
++}
++
++static void map_source(unsigned cpu, unsigned src, unsigned cpu_int)
++{
++    qtest_writel(global_qtest, MAP_REG(cpu, src), cpu_int);
++}
++
++static void drive_source(unsigned src, int level)
++{
++    qtest_set_irq_in(global_qtest, INTMATRIX_PATH, "unnamed-gpio-in",
++                     (int)src, level);
++}
++
++static bool source_status(unsigned cpu, unsigned src)
++{
++    return (qtest_readl(global_qtest, STATUS_REG(cpu, src / 32u)) >>
++            (src % 32u)) & 1u;
++}
++
++/* Assert that no matrix output line is raised */
++static void g_assert_all_lines_low(void)
++{
++    for (unsigned line = 0; line < 2 * NUM_EXTINT; ++line) {
++        g_assert_cmpint(qtest_get_irq(global_qtest, (int)line), ==, 0);
++    }
++}
++
++static void esp32s3_intmatrix_setup(void)
++{
++    qtest_start("-M esp32s3");
++    /* Observe the matrix output lines that are wired to the two CPUs */
++    qtest_irq_intercept_out_named(global_qtest, INTMATRIX_PATH,
++                                  "cpu-int-out");
++}
++
++static void esp32s3_intmatrix_teardown(void)
++{
++    qtest_end();
++}
++
++static void test_reset_defaults(void)
++{
++    esp32s3_intmatrix_setup();
++
++    g_assert_cmpuint(qtest_readl(global_qtest, DATE_REG(0)), ==, DATE_RESET);
++    g_assert_cmpuint(qtest_readl(global_qtest, DATE_REG(1)), ==, DATE_RESET);
++    g_assert_cmpuint(qtest_readl(global_qtest, CLOCK_GATE_REG(0)), ==, CLK_EN);
++    g_assert_cmpuint(qtest_readl(global_qtest, CLOCK_GATE_REG(1)), ==, CLK_EN);
++    /* Documented MAP reset value 0x10 in both files */
++    g_assert_cmpuint(qtest_readl(global_qtest, MAP_REG(0, SRC_UART0)), ==,
++                     MAP_RESET);
++    g_assert_cmpuint(qtest_readl(global_qtest, MAP_REG(1, SRC_UART0)), ==,
++                     MAP_RESET);
++    g_assert_cmpuint(qtest_readl(global_qtest, MAP_REG(0, SRC_TWAI)), ==,
++                     MAP_RESET);
++    /* Reserved MAP slots read as zero */
++    g_assert_cmpuint(qtest_readl(global_qtest, MAP_REG(0, 150)), ==, 0);
++    g_assert_cmpuint(qtest_readl(global_qtest, MAP_REG(1, 510)), ==, 0);
++    /* No source asserted, no line raised */
++    for (unsigned n = 0; n < 4; ++n) {
++        g_assert_cmpuint(qtest_readl(global_qtest, STATUS_REG(0, n)), ==, 0);
++        g_assert_cmpuint(qtest_readl(global_qtest, STATUS_REG(1, n)), ==, 0);
++    }
++    g_assert_all_lines_low();
++
++    esp32s3_intmatrix_teardown();
++}
++
++static void test_single_source_route(void)
++{
++    esp32s3_intmatrix_setup();
++
++    /* Route UART0 to CPU0 interrupt 4 only */
++    map_source(0, SRC_UART0, 4);
++    drive_source(SRC_UART0, 1);
++    g_assert_true(out_level(0, 4));
++    g_assert_false(out_level(1, 4));
++    /* Source status is visible per CPU file (same physical input) */
++    g_assert_true(source_status(0, SRC_UART0));
++    g_assert_true(source_status(1, SRC_UART0));
++
++    drive_source(SRC_UART0, 0);
++    g_assert_false(out_level(0, 4));
++    for (unsigned n = 0; n < 4; ++n) {
++        g_assert_cmpuint(qtest_readl(global_qtest, STATUS_REG(0, n)), ==, 0);
++    }
++
++    esp32s3_intmatrix_teardown();
++}
++
++static void test_shared_sources_or(void)
++{
++    esp32s3_intmatrix_setup();
++
++    /* Two sources routed to CPU0 interrupt 4 */
++    map_source(0, SRC_UART0, 4);
++    map_source(0, SRC_SDIO_HOST, 4);
++
++    drive_source(SRC_UART0, 1);
++    g_assert_true(out_level(0, 4));
++    /* Second shared source: line stays high, it is a wired-OR */
++    drive_source(SRC_SDIO_HOST, 1);
++    g_assert_true(out_level(0, 4));
++
++    /* Clearing one of two shared sources keeps the line asserted */
++    drive_source(SRC_UART0, 0);
++    g_assert_true(out_level(0, 4));
++    g_assert_true(source_status(0, SRC_SDIO_HOST));
++    g_assert_false(source_status(0, SRC_UART0));
++
++    /* The line only clears when no mapped asserted source remains */
++    drive_source(SRC_SDIO_HOST, 0);
++    g_assert_false(out_level(0, 4));
++    g_assert_all_lines_low();
++
++    esp32s3_intmatrix_teardown();
++}
++
++static void test_remap_asserted_source(void)
++{
++    esp32s3_intmatrix_setup();
++
++    map_source(0, SRC_UART0, 4);
++    drive_source(SRC_UART0, 1);
++    g_assert_true(out_level(0, 4));
++
++    /* Remap the asserted source to interrupt 9: old route clears, new rises */
++    map_source(0, SRC_UART0, 9);
++    g_assert_false(out_level(0, 4));
++    g_assert_true(out_level(0, 9));
++
++    /* Remap to disabled code 6: line drops, source level stays pending */
++    map_source(0, SRC_UART0, 6);
++    g_assert_false(out_level(0, 9));
++    g_assert_true(source_status(0, SRC_UART0));
++    g_assert_all_lines_low();
++
++    /* Remap back while still asserted: route re-derives */
++    map_source(0, SRC_UART0, 4);
++    g_assert_true(out_level(0, 4));
++
++    drive_source(SRC_UART0, 0);
++    g_assert_false(out_level(0, 4));
++
++    esp32s3_intmatrix_teardown();
++}
++
++static void test_disabled_and_masked_map_writes(void)
++{
++    esp32s3_intmatrix_setup();
++
++    /* Every CPU internal interrupt number routes nowhere */
++    for (size_t i = 0; i < sizeof(cpu_internal_ints) / sizeof(cpu_internal_ints[0]);
++         ++i) {
++        unsigned intno = cpu_internal_ints[i];
++
++        map_source(0, SRC_TWAI, intno);
++        g_assert_cmphex(qtest_readl(global_qtest, MAP_REG(0, SRC_TWAI)), ==,
++                        intno);
++        drive_source(SRC_TWAI, 1);
++        g_assert_true(source_status(0, SRC_TWAI));
++        g_assert_all_lines_low();
++        drive_source(SRC_TWAI, 0);
++    }
++
++    /* MAP writes are masked to the 5-bit MAP field; 0x1f is external int 31 */
++    qtest_writel(global_qtest, MAP_REG(0, SRC_TWAI), 0xFFFFFFFFu);
++    g_assert_cmphex(qtest_readl(global_qtest, MAP_REG(0, SRC_TWAI)), ==,
++                    MAP_MASK);
++    drive_source(SRC_TWAI, 1);
++    g_assert_true(out_level(0, 31));
++    drive_source(SRC_TWAI, 0);
++    g_assert_false(out_level(0, 31));
++
++    esp32s3_intmatrix_teardown();
++}
++
++static void test_dual_cpu_files(void)
++{
++    esp32s3_intmatrix_setup();
++
++    /* Same source routed by both register files to different interrupts */
++    map_source(0, SRC_UART0, 4);
++    map_source(1, SRC_UART0, 21);
++
++    drive_source(SRC_UART0, 1);
++    g_assert_true(out_level(0, 4));
++    g_assert_true(out_level(1, 21));
++
++    drive_source(SRC_UART0, 0);
++    g_assert_false(out_level(0, 4));
++    g_assert_false(out_level(1, 21));
++
++    /* CPU1-only routing: CPU0 file keeps the disabled code */
++    map_source(0, SRC_UART0, 6);
++    map_source(1, SRC_UART0, 4);
++    drive_source(SRC_UART0, 1);
++    g_assert_false(out_level(0, 4));
++    g_assert_true(out_level(1, 4));
++
++    /* Shared line on CPU1 from a second source routed by its file only */
++    map_source(1, SRC_SDIO_HOST, 4);
++    drive_source(SRC_SDIO_HOST, 1);
++    drive_source(SRC_UART0, 0);
++    g_assert_true(out_level(1, 4));
++    drive_source(SRC_SDIO_HOST, 0);
++    g_assert_false(out_level(1, 4));
++    g_assert_all_lines_low();
++
++    esp32s3_intmatrix_teardown();
++}
++
++static void test_machine_reset(void)
++{
++    esp32s3_intmatrix_setup();
++
++    map_source(0, SRC_UART0, 4);
++    map_source(1, SRC_UART0, 9);
++    drive_source(SRC_UART0, 1);
++    g_assert_true(out_level(0, 4));
++    g_assert_true(out_level(1, 9));
++
++    qtest_qmp_assert_success(global_qtest, "{'execute': 'system_reset'}");
++
++    /* Defaults restored, lines lowered, status cleared */
++    g_assert_cmpuint(qtest_readl(global_qtest, MAP_REG(0, SRC_UART0)), ==,
++                     MAP_RESET);
++    g_assert_cmpuint(qtest_readl(global_qtest, MAP_REG(1, SRC_UART0)), ==,
++                     MAP_RESET);
++    g_assert_cmpuint(qtest_readl(global_qtest, DATE_REG(0)), ==, DATE_RESET);
++    g_assert_cmpuint(qtest_readl(global_qtest, CLOCK_GATE_REG(0)), ==, CLK_EN);
++    for (unsigned n = 0; n < 4; ++n) {
++        g_assert_cmpuint(qtest_readl(global_qtest, STATUS_REG(0, n)), ==, 0);
++        g_assert_cmpuint(qtest_readl(global_qtest, STATUS_REG(1, n)), ==, 0);
++    }
++    g_assert_all_lines_low();
++
++    /* Matrix still functional after reset */
++    map_source(0, SRC_UART0, 4);
++    drive_source(SRC_UART0, 1);
++    g_assert_true(out_level(0, 4));
++    drive_source(SRC_UART0, 0);
++
++    esp32s3_intmatrix_teardown();
++}
++
++static void test_clock_gate_freeze(void)
++{
++    esp32s3_intmatrix_setup();
++
++    map_source(0, SRC_UART0, 4);
++    drive_source(SRC_UART0, 1);
++    g_assert_true(out_level(0, 4));
++
++    /* Gate CPU0's matrix file */
++    qtest_writel(global_qtest, CLOCK_GATE_REG(0), 0);
++    g_assert_cmpuint(qtest_readl(global_qtest, CLOCK_GATE_REG(0)), ==, 0);
++
++    /* Writes to the gated file are ignored */
++    qtest_writel(global_qtest, MAP_REG(0, SRC_SDIO_HOST), 4);
++    g_assert_cmpuint(qtest_readl(global_qtest, MAP_REG(0, SRC_SDIO_HOST)), ==,
++                     MAP_RESET);
++
++    /* Output and INTR_STATUS freeze while gated; the enabled CPU1 file
++     * keeps tracking the live input level */
++    drive_source(SRC_UART0, 0);
++    g_assert_true(out_level(0, 4));
++    g_assert_true(source_status(0, SRC_UART0));
++    g_assert_false(source_status(1, SRC_UART0));
++
++    /* Re-enabling the clock latches the current input levels */
++    qtest_writel(global_qtest, CLOCK_GATE_REG(0), CLK_EN);
++    g_assert_false(out_level(0, 4));
++    g_assert_false(source_status(0, SRC_UART0));
++
++    esp32s3_intmatrix_teardown();
++}
++
++int main(int argc, char **argv)
++{
++    int ret;
++
++    g_test_init(&argc, &argv, NULL);
++    qtest_add_func("esp32s3-intmatrix/reset-defaults", test_reset_defaults);
++    qtest_add_func("esp32s3-intmatrix/single-source-route",
++                   test_single_source_route);
++    qtest_add_func("esp32s3-intmatrix/shared-sources-or",
++                   test_shared_sources_or);
++    qtest_add_func("esp32s3-intmatrix/remap-asserted-source",
++                   test_remap_asserted_source);
++    qtest_add_func("esp32s3-intmatrix/disabled-and-masked-map-writes",
++                   test_disabled_and_masked_map_writes);
++    qtest_add_func("esp32s3-intmatrix/dual-cpu-files", test_dual_cpu_files);
++    qtest_add_func("esp32s3-intmatrix/machine-reset", test_machine_reset);
++    qtest_add_func("esp32s3-intmatrix/clock-gate-freeze",
++                   test_clock_gate_freeze);
++
++    ret = g_test_run();
++
++    return ret;
++}
+diff --git a/tests/qtest/meson.build b/tests/qtest/meson.build
+index 737c5f2..70d82af 100644
+--- a/tests/qtest/meson.build
++++ b/tests/qtest/meson.build
+@@ -198,6 +198,9 @@ qtests_sparc64 = \
+   qtests_filter + \
+   ['prom-env-test', 'boot-serial-test']
+ 
++qtests_xtensa = \
++  (config_all_devices.has_key('CONFIG_XTENSA_ESP32S3') ? ['esp32s3-intmatrix-test'] : [])
++
+ qtests_npcm7xx = \
+   ['npcm7xx_adc-test',
+    'npcm7xx_gpio-test',
+-- 
+2.43.0
+

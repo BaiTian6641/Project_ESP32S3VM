@@ -1,0 +1,68 @@
+--- a/tests/qtest/esp32s3-gpio-test.c
++++ b/tests/qtest/esp32s3-gpio-test.c
+@@ -372,6 +372,56 @@
+     drive_input(33, 0);
+ }
+ 
++/*
++ * Strict-unknown policy regressions (with -accel qtest the guest does
++ * not execute, so consumption is driven by the test's own MMIO reads):
++ *
++ * 1. enabled REAL floating pad (FUN_IE=1, no driver, no pull): the bank
++ *    read is a consumption event — the strict policy pauses the VM (no
++ *    fabricated bit).
++ * 2. enabled HOLE pad (unpopulated 22-25): the read returns the
++ *    documented hardware 0 and the VM STAYS RUNNING — a physically
++ *    absent pad is not floating indeterminate.  Pre-correction lineage
++ *    FAILS this case (paused).
++ */
++static bool wait_status(QTestState *q, const char *want)
++{
++    for (int i = 0; i < 30; i++) {
++        QDict *status = qtest_qmp(q, "{'execute': 'query-status'}");
++        QDict *ret = qdict_get_qdict(status, "return");
++        bool match = ret && g_strcmp0(qdict_get_str(ret, "status"), want) == 0;
++        qobject_unref(status);
++        if (match) {
++            return true;
++        }
++        g_usleep(100000);
++    }
++    return false;
++}
++
++static void test_strict_unknown_floating_pause(void)
++{
++    QTestState *strict = qtest_initf("-machine esp32s3 -L pc-bios "
++        "-global driver=esp32s3.gpio,property=strict-unknown,value=true");
++
++    qtest_writel(strict, IO_MUX_PAD(4), IOMUX_GPIO_IN_EN);
++    g_assert_cmphex(qtest_readl(strict, GPIO(A_GPIO_IN)), ==, 0);
++    g_assert_cmpint(wait_status(strict, "paused"), ==, 1);
++    qtest_quit(strict);
++}
++
++static void test_strict_unknown_hole_pad(void)
++{
++    QTestState *strict = qtest_initf("-machine esp32s3 -L pc-bios "
++        "-global driver=esp32s3.gpio,property=strict-unknown,value=true");
++
++    qtest_writel(strict, IO_MUX_PAD(22), IOMUX_GPIO_IN_EN);
++    g_assert_cmphex(qtest_readl(strict, GPIO(A_GPIO_IN)), ==, 0);
++    g_assert_cmpint(wait_status(strict, "running"), ==, 1);
++    qtest_writel(strict, IO_MUX_PAD(22), 0);
++    qtest_quit(strict);
++}
++
+ #ifdef GPIO_TEST_HAS_MATRIX_DELIVERY
+ /*
+  * End-to-end GPIO -> interrupt matrix -> CPU line proof on the current
+@@ -549,6 +599,8 @@
+     qtest_add_func("esp32s3-gpio/iomux-disconnect", test_iomux_disconnect);
+     qtest_add_func("esp32s3-gpio/negative", test_negative);
+     qtest_add_func("esp32s3-gpio/rtc-io", test_rtc_io);
++    qtest_add_func("esp32s3-gpio/strict-unknown-floating-pause", test_strict_unknown_floating_pause);
++    qtest_add_func("esp32s3-gpio/strict-unknown-hole-pad", test_strict_unknown_hole_pad);
+ #ifdef GPIO_TEST_HAS_MATRIX_DELIVERY
+     qtest_add_func("esp32s3-gpio/matrix-irq-delivery", test_gpio_matrix_irq_delivery);
+ #endif

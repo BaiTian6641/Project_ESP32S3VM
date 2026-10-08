@@ -1,0 +1,290 @@
+{
+  "schema_version": 3,
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "status": "prototype-unqualified",
+  "maturity": "Final0015 same-image lifecycle/physical counter/IRQ acceptance independently passed: counter25, boot3/control/reset, SIMD84 and original90 fast/slow/GDB. SourceFrozen remains build-ready, not full119-package or hardware-timing qualification; no inherited historical pass.",
+  "license": "GPL-2.0-or-later",
+  "lane": "coreclk (H-CORE-01: clock/reset ports and domain propagation)",
+  "source_checkout": "/home/polar/.cache/esp32s3vm/qemu-cpu-lifecycle-gate",
+  "branch": "cpu-lifecycle/0015-physical-clock-gate",
+  "build_dir": "build-lifecycle",
+  "configure": "--target-list=xtensa-softmmu --enable-gcrypt --enable-slirp --disable-docs --disable-werror --disable-user --disable-tools --disable-guest-agent --disable-gtk --disable-sdl --disable-vnc --disable-opengl --disable-capstone (final evidence binary additionally -fno-pie/-no-pie)",
+  "historical_apply_note_not_0015_evidence": "Earlier lane reports: git am --keep-cr required for CRLF; 7/7 applied to pristine40edccac.0015 uses independently byte-verified applied26+clock14 source and has its own native source/delta receipt.",
+  "patches": [
+    {
+      "name": "0001-hw-xtensa-esp32s3_clk-ESP32-S3-clock-tree-with-qdev-.patch",
+      "core_paths": [
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/xtensa/esp32s3_clk.h",
+        "include/hw/xtensa/esp32s3_clk_defs.h"
+      ],
+      "behavior": "SYSTEM clock device becomes the register-level source of truth: five qdev Clock outputs (cpu-clk/apb-clk/xtal-clk/rtc-slow-clk/rtc-fast-clk) recomputed from SYSCLK_CONF/CPU_PER_CONF per TRM v1.8 ch.7 Tables 7.2-1..7.2-4; SYSCLK_CONF/CPU_PER_CONF R/W (documented fields, CLK_XTAL_FREQ RO); reset default TRM Register 17.20 (SOC_CLK_SEL=0 XTAL, PRE_DIV_CNT=1 -> CPU/APB 20 MHz; ROM reconfigures the PLL); PERIP_CLK_EN0/1 stored R/W with IDF6.1 field defaults (EN0=0x6181A06F, EN1=0x600), gate aggregations on named outputs; PERIP_RST_EN0/1 rising edges emit per-device reset strobes",
+      "sha256": "see qemu-extensions/prototypes/coreclk/ evidence section of the README"
+    },
+    {
+      "name": "0002-hw-misc-esp32s3_rtc_cntl-S3-RTC-clock-tables-and-XTA.patch",
+      "core_paths": [
+        "hw/misc/esp32s3_rtc_cntl.c",
+        "include/hw/misc/esp32s3_rtc_cntl.h"
+      ],
+      "behavior": "RTC_SLOW 136 kHz/32768/RC_FAST_DIV and RTC_FAST XTAL/2|RC_FAST 17.5 MHz per TRM ch.7 7.2.4.4 + ch.10 + IDF6.1 (replaces the old C3-style 150 kHz / xtal/4|8 MHz tables); xtal-clk input refreshes derived rates without pulsing clk_update (no reset-callback recursion); RTC-domain-gated hold (RTC_TIME base survives CPU-only resets); FAST_CLK_RTC_SEL reset default 0 honored"
+    },
+    {
+      "name": "0003-hw-timer-live-clock-inputs-for-TIMG-and-SYSTIMER.patch",
+      "core_paths": [
+        "hw/timer/esp_timg.c",
+        "include/hw/timer/esp_timg.h",
+        "hw/timer/esp_systimer.c",
+        "include/hw/timer/esp_systimer.h",
+        "include/hw/xtensa/esp32s3_reset_domain.h"
+      ],
+      "behavior": "TIMG time-base counters consume apb-clk/xtal-clk (USE_XTAL source select, TRM ch.12) plus PERIP_CLK_EN0 gate levels (timers=TIMERS&group, MWDT=WDG&group); counter advanced at the old rate before applying a new rate (tick state survives changes); gated groups freeze and resume with the remaining ticks; zero-rate guards replace a latent divide-by-zero; XTAL32K calibration constant 32000->32768. SYSTIMER consumes xtal-clk, CNT_CLK=2/5*XTAL=16 MHz, invariant to CPU/APB dividers (TRM ch.11); muldiv64 tick conversion; SYSTIMER_CLK_EN deliberately NOT a counter gate (APB register-access gate only). Both carry the soc-reset domain link"
+    },
+    {
+      "name": "0004-hw-gate-digital-peripheral-holds-by-the-ESP32-S3-res.patch",
+      "core_paths": [
+        "hw/dma/esp_gdma.c",
+        "include/hw/dma/esp_gdma.h",
+        "hw/xtensa/esp32s3_intc.c",
+        "include/hw/xtensa/esp32s3_intc.h",
+        "hw/char/esp32_uart.c",
+        "include/hw/char/esp32_uart.h",
+        "hw/ssi/esp32s3_spi.c",
+        "include/hw/ssi/esp32s3_spi.h",
+        "hw/net/can/esp32s3_twai.c",
+        "hw/net/can/esp32s3_twai.h",
+        "hw/misc/esp_aes.c",
+        "include/hw/misc/esp_aes.h",
+        "hw/misc/esp_sha.c",
+        "include/hw/misc/esp_sha.h",
+        "hw/misc/esp_rsa.c",
+        "include/hw/misc/esp_rsa.h",
+        "hw/misc/esp_hmac.c",
+        "include/hw/misc/esp_hmac.h",
+        "hw/misc/esp_ds.c",
+        "include/hw/misc/esp_ds.h"
+      ],
+      "behavior": "GDMA/intmatrix/UART/SPI1/TWAI/AES/SHA/RSA/HMAC/DS holds skip their clearing when the pending reset is CPU-only (soc-reset link, esp32s3_reset_covers_periph); fixes the pre-existing blanket-reset leak that wiped guest-visible PERIPH state on every reset request; machines without the link keep prior behavior"
+    },
+    {
+      "name": "0005-hw-xtensa-esp32s3-propagate-the-clock-tree-and-reset.patch",
+      "core_paths": [
+        "hw/xtensa/esp32s3.c",
+        "include/hw/xtensa/esp32s3_reset_domain.h"
+      ],
+      "behavior": "esp32s3_clk_update propagates the full tree (no reset-callback recursion); pre-realize wiring: cpu cores <- cpu-clk, TIMG0/1 apb/xtal + gate lines, SYSTIMER xtal, RTC_CNTL xtal, soc-reset links; esp32s3_soc_reset PERIPH domain cold-resets SYSTEM/intmatrix/UARTx3/TIMGx2/SYSTIMER/GDMA/SPI1/SDMMC/TWAI/AES/SHA/RSA/HMAC/DS/XTS/RNG/GPIO/PMS, RTC domain cold-resets RTC_CNTL (eFuse/USB-JTAG/RGB excluded, commented); pending reset domain latched until the next request or a PERIP_RST strobe"
+    },
+    {
+      "name": "0006-tests-qtest-ESP32-S3-clock-tree-and-reset-domain-tes.patch",
+      "core_paths": [
+        "tests/qtest/esp32s3-coreclk-test.c",
+        "tests/qtest/meson.build"
+      ],
+      "behavior": "9-case qtest suite (see README): reset clock state + XTAL via TIMG calibration, divider/source register semantics, APB switch altering TIMG progress, TIMG XTAL source + prescaler, SYSTIMER CNT_CLK invariance, PERIP_CLK_EN0 gate halt/resume, SW system reset clearing PERIPH while RTC survives, SW PROCPU/APPCPU resets preserving PERIPH, PERIP_RST strobes"
+    },
+    {
+      "name": "0007-hw-xtensa-esp32s3-TEMPORARY-I2C_MST-BBPLL-cal-done-b.patch",
+      "core_paths": [
+        "hw/xtensa/esp32s3.c"
+      ],
+      "behavior": "SUPERSEDED-BY-REGI2C: read-only 4 KiB window at 0x6000E000 answering I2C_MST 0x6000E040 bit24 (I2C_BBPLL_CAL_DONE)=1. Evidence: with the real clock semantics an ordinary IDF 6.1 boot reaches rtc_clk_bbpll_configure (recalib_bbpll) and polls that bit exactly once per boot (warn-probe: 1 hit/run); without the window the boot spins there forever. DROP at integration when the REGI2C lane model owns 0x6000E000 - the two collide on the same window"
+    },
+    {
+      "name": "0008-hw-timer-esp_timg-hardware-divider-field-encoding-and-exact.patch",
+      "core_paths": [
+        "hw/timer/esp_timg.c",
+        "tests/qtest/esp32s3-coreclk-test.c"
+      ],
+      "behavior": "TIMG_Tx_DIVIDER hardware encoding per TRM v1.8 Register 12.1 + ch.12 + IDF6.1 esp_hal_timg esp32s3 timer_ll_set_clock_prescale: field 0 = divide by 65536 (was frozen zero-frequency), field 1 (reset value) = divide by 2 per TRM ch.12 12.2.1 the actual divisor is 2 (write path can never wedge or divide by zero), 2..65535 unchanged; counter/alarm conversions exact via muldiv64 (sub-MHz time bases and alarm delays); additive qtest timg-divider-boundary (fields 0/1/2 + alarm through max divider)",
+      "sha256_note": "0008 patch sha256 efb0abff632616d3944e86cdcc86a8cfa5b555f61edd6425a649c6cd69632869 (amended after subagent review caught the field-1 divisor)",
+      "sha256": "efb0abff632616d3944e86cdcc86a8cfa5b555f61edd6425a649c6cd69632869"
+    },
+    {
+      "name": "0009-hw-timer-esp_timg-exact-rational-tick-conversion.patch",
+      "core_paths": [
+        "hw/timer/esp_timg.c",
+        "include/hw/timer/esp_timg.h",
+        "tests/qtest/esp32s3-coreclk-test.c"
+      ],
+      "behavior": "Exact rational tick conversion: ESPVirtualCounter keeps gcd-reduced rate_num/rate_den per ns (prescale folded: field 0 -> 65536, field 1 -> 2 per TRM 12.2.1) plus a sub-tick carry, so APB/65536 = 1220.703125 Hz counts 12207 ticks in 10 s (integer-Hz truncation gave 12200); alarm deadlines use the inverse exact split (12207-tick deadline 9.9999744 s asserted not-yet/fired); gated groups rate_num=0 stay frozen",
+      "sha256": "07a207555a82e7f8ac8e0ced5c7a9ec9c19e451fc1fe599889d52e5f83fd9031"
+    },
+    {
+      "name": "0010-hw-xtensa-esp32s3_clk-common-clock-ports-for-SPI2-3.patch",
+      "core_paths": [
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/xtensa/esp32s3_clk.h",
+        "hw/misc/esp32s3_rtc_cntl.c",
+        "include/hw/misc/esp32s3_rtc_cntl.h",
+        "hw/xtensa/esp32s3.c",
+        "tests/qtest/esp32s3-coreclk-test.c"
+      ],
+      "behavior": "Centralized common clock ports for the peripheral overlay lanes: new Clock outputs pll-f80m-clk (80 MHz under PLL, PLL480/6 or PLL320/4), pll-f160m-clk (constant 160 MHz under PLL), pll-f240m-clk (240 MHz, 480 MHz PLL only, else 0), rc-fast-clk (standalone RC_FAST oscillator 17.5 MHz, validity from RTC_CNTL CK8M_FORCE_PD/PU [25/26] \u2014 independent of the RTC_FAST mux); PERIP_CLK_EN gate levels + PERIP_RST strobe AND new periph-rst-level bundle extended to SPI2[6]/SPI3[16]/I2C_EXT0[7]/I2C_EXT1[18]/RMT[9]/I2S0[4]/I2S1[21]/UART[2]/UART1[5]/UART2(EN1[9])"
+    },
+    {
+      "name": "0011-hw-xtensa-esp32s3_clk-UHCI0-clock-gate-and-reset-lines.patch",
+      "core_paths": [
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/xtensa/esp32s3_clk.h"
+      ],
+      "behavior": "UHCI0 port: gate level ESP32S3_GATE_UHCI0 (EN0[8]) + reset strobe/level ESP32S3_RST_UHCI0 (RST_EN0[8])"
+    },
+    {
+      "name": "0012-hw-xtensa-esp32s3_clk-publish-the-0010-0011-gate-levels.patch",
+      "core_paths": [
+        "hw/xtensa/esp32s3_clk.c"
+      ],
+      "behavior": "Publishes the 0010/0011 gate levels: esp32s3_clock_update_gates now drives SPI2[6]/SPI3[16]/I2C0[7]/I2C1[18]/RMT[9]/I2S0[4]/I2S1[21]/UART0[2]/UART1[5]/UART2(EN1[9])/UHCI0[8] gate lines (0010/0011 declared the enums+bundle but still drove only the four TIMG aggregations); also fixes two wrong I2C_EXT mask names in the rst-level mapping (EXT0/EXT1 per the defs header)"
+    },
+    {
+      "name": "0013-hw-xtensa-esp32s3-BBPLL-power-validity-decoupled-from.patch",
+      "core_paths": [
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/xtensa/esp32s3_clk.h",
+        "hw/misc/esp32s3_rtc_cntl.c",
+        "include/hw/misc/esp32s3_rtc_cntl.h",
+        "hw/xtensa/esp32s3.c",
+        "tests/qtest/esp32s3-coreclk-test.c"
+      ],
+      "behavior": "BBPLL power validity decoupled from the CPU mux: RTC_CNTL stores OPTIONS0 BBPLL_FORCE_PD [10]/FORCE_PU [11] (reset 0 = powered); the SoC propagates esp32s3_clk_set_pll_valid on every clock update; pll-f80m/f160m/f240m follow BBPLL power (CPU mux switches PLL->XTAL->RC_FAST->PLL keep them nominal; only FORCE_PD gates to 0 Hz); qtest regression added",
+      "sha256_note": "FINAL 0013 sha256 2203d4cca82a1ff4a62400517ff2fe1ff6d98e0e53417f16a5f5c7a65c5a8081 (amended: radio-stack-safe pll_valid anchor; restored cpuperconf FREQ_SEL_480 continuation; RC_FAST mux 0x800; esp32s3_soc_reset re-derives clock outputs from preserved RTC_CNTL power state per FinalBbpllAmendReview)"
+    },
+    {
+      "name": "0014-hw-xtensa-esp32s3_clk-LEDC-PCNT-MCPWM-LCD_CAM-clock-ports.patch",
+      "core_paths": [
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/xtensa/esp32s3_clk.h"
+      ],
+      "behavior": "Pulse/LCD_CAM common clock ports: gate levels ESP32S3_GATE_LEDC/PCNT/MCPWM0/MCPWM1 (EN0[11]/[10]/[17]/[20]) + ESP32S3_GATE_LCD_CAM (EN1[8]); reset strobes and periph-rst-level lines for the same bits; consumers take the existing pll-f160m/pll-f240m/xtal-clk outputs"
+    },
+    {
+      "name": "0015-hw-xtensa-esp32s3-CPU1-reset-gate-runstall-lifecycle.patch",
+      "core_paths": [
+        "hw/xtensa/esp32s3.c",
+        "hw/xtensa/esp32s3_clk.c",
+        "include/hw/xtensa/esp32s3_clk.h",
+        "include/hw/xtensa/esp32s3_clk_defs.h",
+        "target/xtensa/cpu.h",
+        "target/xtensa/cpu.c",
+        "target/xtensa/op_helper.c",
+        "target/xtensa/helper.c",
+        "target/xtensa/gdbstub.c",
+        "hw/xtensa/pic_cpu.c",
+        "tests/qtest/esp32s3-coreclk-test.c",
+        "tests/qtest/esp32s3-cpu1-lifecycle.py"
+      ],
+      "behavior": "TRM17.1 CTRL0 mask7/reset4 + MESSAGE reset0; cold-held CPU1/pin replay; async RESETING rising-edge CPU1-only reset; actual-ROM release and staleHALT cancellation only on combined unstall. Distinct physical cpu1-clk follows CLKgate while CPU0 stays nominal; actual nonzero CCOUNT epoch/CCOMPARE intent freezes at clock0 and resumes remaining cycles, clockenabled RUNSTALL counts/timers continue, IRQ cannot wake unclocked CPU. PerCPU mutex preserves PRE/UPDATE clock atomicity, actual HMP/GDB counts/raw inputperiod, no counterzero/frequencyalias/ROMD/pagewiden/PCspecialcase/deadlineincrease.",
+      "sha256": "e66fb5ae5d994994ce6c49ce3e0f2fad68647a08ee33fb5f88007aa686758932",
+      "apply_after": "Unchanged frozen combined26 applied source plus clock0010..0014; core0007 excluded",
+      "source_commit": "601dad6627fa15d93c384dc4d3f4734008ac4e9b",
+      "qualification": "Final6069 source/image independently qualified for assigned lifecycle/counter/IRQ/boot3/SIMD84/original90 criteria; sourceFrozen and boot speed do not imply hardware-timing/full119 qualification",
+      "initial_counter_regression": "Initial3e8a/0a642 phase passed PC/stall checks but real SDK fixture proved counter charging gated time and premature compare IRQ; original immutable evidence is preserved, not inherited by the new physical gate image."
+    }
+  ],
+  "new_files": [
+    "include/hw/xtensa/esp32s3_reset_domain.h",
+    "tests/qtest/esp32s3-coreclk-test.c",
+    "tests/qtest/esp32s3-cpu1-lifecycle.py"
+  ],
+  "copies_in_prototype_dir": {
+    "include/hw/xtensa/esp32s3_reset_domain.h": "copies/include/hw/xtensa/esp32s3_reset_domain.h",
+    "tests/qtest/esp32s3-coreclk-test.c": "copies/tests/qtest/esp32s3-coreclk-test.c",
+    "tests/qtest/esp32s3-cpu1-lifecycle.py": "copies/tests/qtest/esp32s3-cpu1-lifecycle.py"
+  },
+  "historical_binary_sha256_prefix_unverified": "d0a3b0c3c399723a6500",
+  "binary_sha256": "6069303f2d076041c51b4a3fe29a044d2cb28068f898aea1caf02f9ee3c8fde4",
+  "binary_path": "/home/polar/.cache/esp32s3vm/cpu-lifecycle-gate-artifacts/fe47d5051ae5fb70/image/qemu-system-xtensa",
+  "elf_build_id": "871b4aac575a29263457125ce59dc56cfceae199",
+  "native_build_receipt": "/home/polar/.cache/esp32s3vm/cpu-lifecycle-gate-artifacts/fe47d5051ae5fb70/IMAGE_READY.json",
+  "native_build_boundary": "New four-job native physical-gate image compiled; 10373 archived source files matched. Same-image native and independent runtime qualification are separately recorded.",
+  "native_qualification_receipt": "/home/polar/.cache/esp32s3vm/cpu-lifecycle-gate-artifacts/fe47d5051ae5fb70/NATIVE_QUALIFICATION.json",
+  "producer_quiet_receipt": "/home/polar/.cache/esp32s3vm/cpu-lifecycle-gate-artifacts/fe47d5051ae5fb70/PRODUCER_QUIET.json",
+  "package_verification": "build-runtime-state/cpu1-lifecycle-diagnostic/physical-package-verification.json",
+  "independent_acceptance_receipt": "build-runtime-state/cpu1-physical-gate-independent-runtime/20261007T134541Z/NEW_IMAGE_ACCEPTANCE_DONE.json",
+  "independent_acceptance_receipt_sha256": "3587b6a61214d24c86a118e024316a13eac786d6413d88ac531402c4b5c3fae6",
+  "independent_verification": "Own immutable6069 copy: real SDK25/25 counter/IRQ; CTRL0reset4/stored6/6/6/2; first actualCPU1ROM40000400 afterrelease beforeMESSAGE; zeroearlyBOOT_ADDRpolls vsold96664642; actualthreebootprofiles/control/reset; same-imageSIMD84/84; original90fast/slow/GDB exact/+1ms/all11packets each PASS. Originalcorpusunchanged; no3e8a success inherited.",
+  "diagnostic_cleanup": "Temporary queued clock-change/clock_changing scaffolds removed from permanent core; independent observer.so cleaned. Read-only actual lifecycle/counter input-period test interfaces remain functional, not fake counters or no-op diagnostics.",
+  "qualification_boundary": "Simulator lifecycle/counter semantics qualified for these criteria; real hardware timing and downstreamfullgraph/packages remain separately qualified.",
+  "native_verification": {
+    "counter_clock_gate": "25/25 real canonical-SDK criteria passed on6069: nonzeroCCOUNT324491847 identical across3gated samples; actualCPU1inputperiod0/CPU0positiveunchanged26843545600; CPU0+144017830ticks/888587us/372140loops; compare372479907/resume324556630/ISR372561241 respectsremainingcycles",
+    "irq_and_runstall": "Enabled actualFROM_CPU3bit2 stayed pending without CPU1execution while gated, then ISR1/guestACK0; clockenabled RUNSTALL continued counter/timer without pipelineprogress",
+    "reset_scope": "ActualCONTROL0RESETING count0->1 CPU1ROMreset; CPU0/peripheral registers/RTC C001CAFE/shared handshake preserved; repeatedasserted writes no additionalreset",
+    "qtests": "New same-image coreclk14/14 (original13 preserved) +GPIO12/12 passed",
+    "native_lifecycle": "New same-image cold/direct/edges originalROM ordering and staleHALT cancellation passed",
+    "gpio_sdk": "New same-image unchanged postACK GPIOfirmware/feeder: loopback1/0, actualISR, W1TCclear and postISRtask progression passed; original420/8limits unchanged",
+    "independent_review": "FinalEvidenceReview inspected rawQMP/guestcounter/IRQ/before-after inputSHAs/source correspondence; noP2finding. Independent whole-runtime acceptance is separately recorded, never inheritedfrom3e8a."
+  },
+  "initial_binary_sha256": "3e8a4aaa0fecbd006a025be860a62da69d879a9b9bd6856166bbd407b0e26266",
+  "initial_binary_path": "/home/polar/.cache/esp32s3vm/cpu-lifecycle-artifacts/0a642e4a093882f8/image/qemu-system-xtensa",
+  "initial_elf_build_id": "352661ea80b7f5da951bd225fea0fc3ba6cbc302",
+  "initial_native_build_receipt": "/home/polar/.cache/esp32s3vm/cpu-lifecycle-artifacts/0a642e4a093882f8/IMAGE_READY.json",
+  "initial_native_build_boundary": "Four-job native build/source correspondence verified; this image is before the physical counter gate correction, not final0015 qualification.",
+  "initial_native_qualification_receipt": "/home/polar/.cache/esp32s3vm/cpu-lifecycle-artifacts/0a642e4a093882f8/NATIVE_QUALIFICATION.json",
+  "initial_package_verification": "build-runtime-state/cpu1-lifecycle-diagnostic/final-package-verification.json",
+  "initial_independent_runtime": "build-runtime-state/cpu1-lifecycle-independent-runtime/20261007T120929Z/exercised-final-phase-proof.json (boot3/SIMD84/original90 PASS; physical counter gate NOTqualified)",
+  "before_delta_identity": {
+    "path": "/home/polar/.cache/esp32s3vm/cpu-lifecycle-artifacts/39688096c070b0ab/before-exact/restore-stale-HALT.delta.patch",
+    "raw_sha256": "cac1ba3055a71b5206b8faeb2f9436c1020ec232f435fc59931d6af9ecece40d",
+    "lf_normalized_sha256": "cbdb14f7886eddf9fe869fdaef92cd76f5d89b2539b761bec3b6461fd21a3730",
+    "note": "Preserved original before-variant receipt reports the LF-normalized delta digest; this actual delta file is CRLF. Original receipt/archive are unchanged."
+  },
+  "initial_native_verification": {
+    "coreclk": "13/13 qtests passed with direct CPU-index HMP assertions",
+    "gpio": "12/12 qtests passed on the same immutable image",
+    "real_rom": "Cold hold/no CPU1 execution; first-execution 4->2->3->2 HALT cancellation; independent cold7->2 ROM release before MESSAGE; gate/RUNSTALL/RTC freeze and CPU1-only reset count0->1/repeated-level idempotency/CPU0 preserved",
+    "gpio_sdk_isr": "Same image/fresh postACK4MB flash: output loopback1/0 bothOK, ISRcount1, taskticks10/20 afterwards, STATUS_W1TC0/0; original feeder420s READY/8s ISR deadlines unchanged",
+    "restored_bug": "Isolated pending-HALT bug variant1886c4b7 reproduced CPU1 halted at original ROM vector with zero CPU1 execution blocks; not the lost former completeWIP executable",
+    "preserved_failure": "First fixture attempt selected CPU0 through a transient HMP monitor; logs retained/disqualified, helpers corrected without weakening assertions"
+  },
+  "historical_verification_not_inherited_by_0015": {
+    "qtest": "QTEST_QEMU_BINARY=./qemu-system-xtensa ./tests/qtest/esp32s3-coreclk-test -> 10/10 ok (incl. timg-divider-boundary)",
+    "boot_smoke": "3 passed / 0 failed (final binary 2cec4663a5f16a12144aa91e12b16015c909999ccd70c7935634449d4be3213d)",
+    "boot_smoke_firmware_sha256": "bbb445d0fbba1ee8bd4ad3094ae501ff1dcfd92c3d4aa4179c410bb328b1973a",
+    "pristine_apply": "git am --keep-cr 0001..0009 onto pristine 40edccac: 9/9 applied; am tree compiles clean with default -Werror (0 errors, exit 0); prefix 0001..0007 independently verified 7/7"
+  },
+  "historical_evidence": "build-runtime-state/coreclk-2026-10-07/",
+  "initial_lifecycle_source": {
+    "candidate_commit": "0a642e4a093882f8b3c06b5c340d90801082b8b0",
+    "source_archive": "/home/polar/.cache/esp32s3vm/cpu-lifecycle-artifacts/0a642e4a093882f8/source.tar.gz",
+    "source_archive_sha256": "22abfc69daed1c3ed9fdfb5fd158857ebb446286b732736b7ff08e717ff706b9",
+    "full_delta": "/home/polar/.cache/esp32s3vm/cpu-lifecycle-artifacts/0a642e4a093882f8/source-from-official.delta.patch",
+    "full_delta_sha256": "a8d68f95d6e562c88d4be1b1e443a613c5ae6b0b388a0f07ba6e116846685ea2",
+    "fixture_refresh": "Only the C/Python test helpers changed from39688096: CPU1 is selected within each HMP register command. QEMU model sources and immutable3e8a executable are unchanged; old transient-monitor CPU samples are disqualified, and the corrected qtest has a separate executable receipt.",
+    "baseline_provenance": "52 applied-source files copied from readonly dbe2a8a5ad4e07a6 cache only after comparing each recorded applied_files hash; not a claim about the mutable raw26 recipe",
+    "verification_overlay": "Unchanged GPIO e1a45cdb2e8e388fea1e0775a29b7639f236ff226e39dd3ad08f0df9a2a030bf plus nine authoritative postintegration copies; not included in0015 patch",
+    "readonly_properties": [
+      "diag-cpu1-held",
+      "diag-cpu1-runstall-raw",
+      "diag-rtc-cpu1-stall",
+      "diag-cpu1-stalled",
+      "diag-cpu1-reset-count",
+      "diag-cpu1-halt-pending",
+      "diag-cpu1-halted"
+    ],
+    "separate_storage_0016": "Unused/unqualified history; not renamed or folded into0013"
+  },
+  "lifecycle_source": {
+    "candidate_commit": "fe47d5051ae5fb704febc581a5252489ef7b4a68",
+    "source_archive": "/home/polar/.cache/esp32s3vm/cpu-lifecycle-gate-artifacts/fe47d5051ae5fb70/source.tar.gz",
+    "source_archive_sha256": "05ebd222d96c7d69e0257e40a13fa36f2f3fb89a0018c38fe11d68557446166d",
+    "full_delta": "/home/polar/.cache/esp32s3vm/cpu-lifecycle-gate-artifacts/fe47d5051ae5fb70/source-from-official.delta.patch",
+    "full_delta_sha256": "1955cbbc843dfd6d1dd35d1d752eb9b5848fe35add84ad337ef2972fc3d607bb",
+    "physical_gate_delta_sha256": "3a74f861cd74468e2fccec3dddbf98c96db36f1c6f234552c1c1d344dfd611ec",
+    "primary_semantics": "build-runtime-state/cpu1-lifecycle-diagnostic/primary-physical-clock-gate.json (TRMv1.8 §17.3.6 + Register17.1)",
+    "native_cpu_readonly_property": "clk-in-period:uint64 is actual inputClock period in2^-32ns units, not a cached nominal frequency alias",
+    "before_fixture": "/home/polar/.cache/esp32s3vm/cpu-lifecycle-counter-artifacts/before-a4a7049e3d38d90b/FIXTURE_READY_BEFORE_RESULT.json",
+    "before_observed_failure": "Guest seeded nonzero0x13572468, actual resumed counter charged150047934 gated ticks and CCOMPARE1 asserted while gated; CPU0 real time/counter/instructions advanced, actualFROM_CPU3 IRQ could not execute until release then was acknowledged",
+    "native_after_qualification": "New immutable6069 same-image counter25/lifecycle/core14/GPIO12/realIRQ SDK proof passed; independent boot3/SIMD84/original90 proof is separately recorded and not inheritedfrom3e8a",
+    "separate_storage_0016": "Unused/unqualified retained history; not renamed or folded into0013"
+  },
+  "copies_semantics": "The coreclk test copies are authoritative post0015 bytes for the combined26+clock14 prefix. Apply patches before copies; the standalone Python real-ROM harness is invoked by its native verification runner, not a Meson qtest executable.",
+  "unknowns": [
+    "WDT gate line implemented but not behaviorally qtested; TIMGCLK.CLK_EN register bit not consumed",
+    "SYSTIMER SYSTIMER_CLK_EN (EN0[29]) stored but not a counter gate (TRM ch.11: APB register-access gate); APB access stalling unmodeled",
+    "GDMA EN1[6] gate not consumed for progress (instantaneous-transfer model, H-CORE-03 scope); DMA_RST strobe cold-resets the device",
+    "PERIP_RST level-held semantics approximated as rising-edge strobe (one cold reset per 0->1)",
+    "TIMG hardware-divider encoding and exact rational accounting are supplied by0008/0009; earlier zero-divider defect superseded",
+    "libqtest QMP channel returns sign-truncated int32 for qom-get qtest-clock-period values >2^31 (plain -qmp channel returns the correct value); CPU-core clock evidence therefore taken via raw QMP probe",
+    "recalib_bbpll poll (0x6000E040 bit24) reached exactly once per ordinary boot smoke on this binary; the REGI2C lane must satisfy it in the combined tree"
+  ]
+}

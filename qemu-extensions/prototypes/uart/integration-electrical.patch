@@ -1,0 +1,14 @@
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -1492,2 +1492,11 @@
+                                 &ss->sens);
++    {
++        Object *uart_electrical = object_resolve_path_component(OBJECT(ss), "electrical");
++        g_assert(uart_electrical);
++        for (unsigned i = 0; i < ESP32S3_UART_COUNT; ++i) {
++            if (!esp32s3_uart_bind(&ss->uart[i], &ss->gpio, DEVICE(uart_electrical))) {
++                error_setg(&error_fatal, "Unable to subscribe UART%u to native electrical graph", i);
++            }
++        }
++    }
+ 

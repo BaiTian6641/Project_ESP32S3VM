@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "controller": "ESP32-S3 PCNT",
+  "acceptance_id": "SOC02",
+  "license": "GPL-2.0-or-later",
+  "delivery": "native separate GPL QEMU executable; parent owns machine/build integration",
+  "verification_status": "implemented-unverified; no build, test, formatter or linter run by PCNT worker",
+  "qom": {
+    "type": "esp32s3-pcnt",
+    "state": "ESP32S3PcntState",
+    "header_destination": "include/hw/misc/esp32s3_pcnt.h",
+    "source_destination": "hw/misc/esp32s3_pcnt.c",
+    "machine_child": "pcnt",
+    "mmio_base": "0x60017000",
+    "mmio_size": "0x1000",
+    "access": "aligned 32-bit little-endian; reserved holes return zero; count/status/RAW/ST read-only; CLR write-only",
+    "links": {"gpio": "ESP32S3GPIOState required", "electrical": "DeviceState required", "soc-reset": "DeviceState optional reset-domain owner"},
+    "clock_inputs": ["apb-clk, connected before realize, no local guessed frequency"],
+    "gpio_inputs": ["clock-enable", "reset-held"],
+    "gate": "ESP32S3_GATE_PCNT, SYSTEM_PERIP_CLK_EN0[10]; initial device gate false until owner publishes level",
+    "reset": "ESP32S3_RST_PCNT, SYSTEM_PERIP_RST_EN0[10]; asserted reset-held resets register/filter state and ignores writes",
+    "irq": "one sysbus IRQ; parent connects ETS_PCNT_INTR_SOURCE"
+  },
+  "features": {
+    "units_channels": "4 units, 2 channels each, target signals 33..48: pulse0,pulse1,control0,control1 per unit",
+    "inputs": "electrical subscriber solved frames; GPIO matrix_sample applies routing/constants/inversion; public get_drive_snapshot.ie and net_valid reject disabled/unresolved inputs; UNKNOWN consumption triggers existing GPIO strict gate, never counts persisted sample",
+    "baseline": "first resolved input sample establishes level without synthetic edge; inactive/reset/paused/gated channels do not consume inputs; unknown/disabled/bypassed input cancels candidates and needs new baseline",
+    "actions": "positive/negative 1 increment, 2 decrement, 0/3 disabled; control 0 keep, 1 invert, 2/3 hold; both channels sum into one signed16 adder per accepted frame",
+    "glitch_filter": "all four pulse/control inputs per unit; enabled threshold 0..1023 APB cycles; shorter transitions discarded; controls committed before pulses at identical completion time",
+    "filter_resources": "16 fixed candidate records, one bounded QEMUTimer, no per-edge allocation/copy, no zero-time timer loops",
+    "clock_phase": "Q32 APB-cycle age and remainder retained across nonzero APB rate updates; previous period advances pending work before new period; gate/unknown invalidates input baseline rather than replaying edges",
+    "counter": "signed16 modular arithmetic; directional high/low-limit equality clears count regardless of IRQ comparator enables; no count injection API or output drive authority",
+    "comparators": "two signed16 thresholds and high/low limits applied after counter clear, including register changes while reset bit held; software readback remains written configuration",
+    "watchpoints": "threshold1,threshold0,low-limit,high-limit,zero status bits2..6; individual CONF0 enables; per-unit RAW bits0..3, ENA masking, W1C; zero-mode bits0..1 retained independently",
+    "stop_reset": "CTRL pause freezes adder, unit reset holds count zero; whole reset CTRL=0x55, CONF0=0x3c10, DATE=0x19072601, remaining registers zero; CPU-only domain resets preserve PCNT when soc-reset linked",
+    "register_clock": "CTRL.CLK_EN bit16 stored/readable, not a counting gate; externally owned SYSTEM clock-enable is the operational gate"
+  },
+  "source_ambiguities": [
+    {"field": "CTRL.CLK_EN", "evidence": "TRM1.8 p1449 and target generated headers describe register accessibility; reset is zero. Pinned IDF6.1 PCNT LL/driver never sets this bit yet programs all registers after SYSTEM gate enable.", "model_policy": "Do not block IDF register access based on CTRL.CLK_EN; retain the bit and use centralized SYSTEM gate. This policy is not claimed silicon-verified."},
+    {"field": "event latch collisions", "model_policy": "Enabled event bits accumulate until unit W1C; zero mode remains independently available. Silicon collision/metrology behavior is not qualified."}
+  ],
+  "tests": {
+    "source": "qemu-extensions/prototypes/pulse/copies/esp32s3-pcnt-test.c",
+    "destination": "tests/qtest/esp32s3-pcnt-test.c",
+    "cases": ["units-channels-actions", "watchpoints-limits-irq", "filters-stop-reset-gate", "route-validity"],
+    "stimulus": "ProjectDocument v3 finite 3.3V powered MCU, GPIO4 wired to GPIO5 and GPIO6 wired to GPIO7. GPIO pad edges traverse solver then selected PCNT inputs. QMP snapshot-json confirms actual resolved voltage/validity on connected pulse/control nets.",
+    "covered_in_source": ["four units/two channels", "positive/negative increment/decrement", "control invert/hold", "input inversion", "thresholds/limits/zero/W1C/IRQ masking", "pulse and control glitches", "pause/clear/system-gate/held-reset", "RO count register", "disabled IE/bypass/disconnected net negatives"],
+    "integration_fixture": "Parent fixture worker owns tests/firmware/pulse_native; LEDC GPIO4-to-PCNT GPIO5 timing/control exercise is external to this worker's qtest and requires integrated verification.",
+    "not_exercised": ["qtest execution", "IDF firmware execution", "signed16 32767/-32768 wrap sweep", "APB mid-filter-rate-change oracle", "independent physical silicon timing"]
+  },
+  "verification_instructions": [
+    "Apply parent pulse integration after GPIO/electrical/coreclk0014 prerequisites in its own writable runtime cache; never mutate official/frozen trees.",
+    "Add esp32s3-pcnt-test to Xtensa qtest meson list; build native target once after all peer files land.",
+    "Run QTEST_QEMU_BINARY=<integrated qemu-system-xtensa> <build>/tests/qtest/esp32s3-pcnt-test with the native pc-bios directory; retain all four case results and binary hash.",
+    "Build/run the fixture-worker IDF6.1 pulse_native image on that exact native executable and v3 LEDC4-to-PCNT5 graph; require real LEDC edges, controls, negative/disconnect/stop/reset/gate results.",
+    "Do not mark SOC02 qualified until the integrated qtest and firmware evidence are recorded; independently review register-clock ambiguity and same-time event-latch policy."
+  ],
+  "primary_trm": {"url": "https://documentation.espressif.com/esp32-s3_technical_reference_manual_en.pdf", "version": "1.8", "pages": "1440-1452", "sha256": "4484bf8a69035ec42a731c58c64ada6fbd1f1618c5559409f134d9ea083f444f", "consulted": "functional/filter/action/adder/IRQ and register descriptions; PDF extracted in memory, no added source cache"},
+  "dependencies": [
+    {"path": "build-idf-6.1/components/soc/esp32s3/register/soc/pcnt_reg.h", "sha256": "3ed2d80d3204e16855b13766694c6eef020c2e74c34209b2080bc9f080e0ecab"},
+    {"path": "build-idf-6.1/components/soc/esp32s3/register/soc/pcnt_struct.h", "sha256": "624bb9c8eb527e9e7d074e1b955cbea56ea9f476838d4ea12d970b998ed4d9d0"},
+    {"path": "build-idf-6.1/components/esp_hal_pcnt/esp32s3/include/hal/pcnt_ll.h", "sha256": "a6ff59200ff8da0500718c999049ae6284225eb90bc2521db46057e27ee3ee9d"},
+    {"path": "build-idf-6.1/components/esp_hal_pcnt/esp32s3/pcnt_periph.c", "sha256": "19d10e34b2546808b92670b0fdfb0139b14c0c1cb39a257b1d6d0360810fb101"},
+    {"path": "build-idf-6.1/components/esp_driver_pcnt/src/pulse_cnt.c", "sha256": "855562eb0c98a28d25cc4eac3685cb936230022a8e5ffefcb8d4fd41d3970ab4"},
+    {"path": "build-idf-6.1/components/soc/esp32s3/include/soc/gpio_sig_map.h", "sha256": "f4fe38cc217a2bdcd2c0ec192fa887df1cbbe3506da1c677656506dc3997d758"},
+    {"path": "build-idf-6.1/components/soc/esp32s3/include/soc/interrupts.h", "sha256": "ff3368997c620685080642e19c6f0385b190715b639c0c3dd4a5b0fd6ca50744"},
+    {"path": "build-idf-6.1/components/soc/esp32s3/register/soc/reg_base.h", "sha256": "c6df84d3d98549b89c36811ebf3c664316823c8901ead27bb98b5350774aec46"},
+    {"path": "build-idf-6.1/components/soc/esp32s3/register/soc/system_reg.h", "sha256": "61d7ab616c6339bfe2e3a704e24ea28ff6305641f064ddf6ceec17cc4ad0c9fd"},
+    {"path": "qemu-extensions/prototypes/gpio/copies/esp32s3_gpio.h", "sha256": "b848cccf81a45f460efd6bfcb58d8224cad51443f12a3a7cb6a6dff7212e8c7d"},
+    {"path": "qemu-extensions/prototypes/gpio/copies/esp32s3_gpio.c", "sha256": "06e537bfc3a80ac825507f39c82c84ced2793709cc2eadedac5670813679d596"},
+    {"path": "qemu-extensions/prototypes/electrical-runtime/copies/esp32s3_electrical.h", "sha256": "fb0c24c2ced9a25d281969ad850f46bb817c3d688c8b97c6ece93ec356e59377"},
+    {"path": "qemu-extensions/prototypes/coreclk/copies/include/hw/xtensa/esp32s3_reset_domain.h", "sha256": "0274c81ea5b4f34d5b4daf29cc68d472fff59634dd9a5122e274c58c9893fd5a"},
+    {"path": "qemu-extensions/prototypes/coreclk/0014-hw-xtensa-esp32s3_clk-LEDC-PCNT-MCPWM-LCD_CAM-clock-ports.patch", "sha256": "0e7a5c62e8a62e2425073ea5474bfea1068b970da2b007b6c84f10be295c67f3"},
+    {"path": "build-qemu-official-base/include/hw/clock.h", "sha256": "c6ef381671b30b8b352fb916e0fe284e9860e1385a5965c3aa191aba33e759da"}
+  ],
+  "implementation": [
+    {"path": "qemu-extensions/prototypes/pulse/copies/esp32s3_pcnt.c", "sha256": "9908316acca7a02b58b2cd7d6d963d26b3782b92e0cc897c88c85ce97ba1900b"},
+    {"path": "qemu-extensions/prototypes/pulse/copies/esp32s3_pcnt.h", "sha256": "f1b50dce3844219087c8f99779b5fc564b50762e7fcd2bc7137c9505988e1396"},
+    {"path": "qemu-extensions/prototypes/pulse/copies/esp32s3-pcnt-test.c", "sha256": "e3279526078f9c7b6f4b832c0ab0e66f7cc0614d928d671201fde515aac01e97"}
+  ]
+}

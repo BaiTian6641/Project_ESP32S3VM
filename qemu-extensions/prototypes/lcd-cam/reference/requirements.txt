@@ -1,0 +1,3 @@
+# Required only when qualifying JPEG; raw formats use Python standard library.
+# Decoder is independent from the native sensor JPEG encoder.
+Pillow>=11.3.0,<13

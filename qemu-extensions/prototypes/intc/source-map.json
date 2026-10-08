@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "base_patch_series": {
+    "stack_dependency": [
+      "coreclk 0001..0007 (qemu-extensions/prototypes/coreclk/, git am --keep-cr)",
+      "gdma 0001..0003 (qemu-extensions/prototypes/gdma/, git am --keep-cr)"
+    ],
+    "combined_base_commit": "f82da17 (gdma qtest suite tip; pristine + coreclk + gdma)",
+    "verification": "intc series applies on the combined base with plain git am; resulting tree 6d0bed269425cbe676f8ff0d60df65e5473f5f41 == validated codex/intc tree; qtests_xtensa carries the single merged list [intmatrix, gdma, coreclk]"
+  },
+  "status": "prototype-unqualified",
+  "license": "GPL-2.0-or-later",
+  "lane": "intc (interrupt matrix OR/remap/disable semantics, H-CORE-02 / CORE-03)",
+  "source_checkout": "/home/polar/.cache/esp32s3vm/qemu-intc-40edccac4156",
+  "branch": "codex/intc",
+  "build_dir": "build-wsl",
+  "configure": "--target-list=xtensa-softmmu --prefix=/usr/local --disable-werror",
+  "patches": [
+    {
+      "name": "0001-hw-xtensa-esp32s3_intc-model-source-OR-remap-disable.patch",
+      "sha256": "91643098fe7e7ac70e895e48ee5b81c9b2e5ec9d7a228fd171dc2cd20cd7551e",
+      "core_paths": [
+        "include/hw/xtensa/esp32s3_intc.h",
+        "hw/xtensa/esp32s3_intc.c"
+      ],
+      "behavior": "Interrupt matrix per TRM ch.9 on top of the coreclk reset-domain hooks: per-source level tracking; CPU extint outputs = OR of asserted mapped sources; map writes re-derive routes on both CPUs; internal-int map values (6,7,11,15,16,29) route nowhere; writes masked to 0x1f; INTR_STATUS_0..3 RO (0x18C) bounded to the documented 99 sources (word 3 carries the last 3); CLOCK_GATE (0x19C, reset 1) freezing kept; DATE (0x7FC, reset 0x02012300); MAP reset 0x10 per IDF headers; reserved slots RAZ/WI and inert (no status bit, no routing \u2014 asserted stray inputs 99..511 corrupt nothing and match no extint); real CPU lines exposed as named GPIO 'cpu-int-out'. CPU-only resets keep map+lines via the coreclk soc-reset gating; PERIPH resets restore documented defaults."
+    },
+    {
+      "name": "0002-tests-qtest-esp32s3-intmatrix-test-drive-matrix-OR-r.patch",
+      "sha256": "4c38b024b1e99bd82a920ef7cd3838a867183512599fa5ca41a110e210b4f93e",
+      "core_paths": [
+        "tests/qtest/esp32s3-intmatrix-test.c",
+        "tests/qtest/meson.build"
+      ],
+      "behavior": "QTest on -M esp32s3 (qtest accel, no firmware): drives source GPIO inputs, intercepts cpu-int-out; 9 cases: reset defaults, single-source routing, shared-source wired-OR negative case, remap of asserted source, disabled map values + 0x1f masking, dual CPU files, status boundary (source 98 -> INTR_STATUS_3 bit 2; inputs 200/511 inert), machine reset, clock-gate freeze. Adds the conditional qtests_xtensa wiring for CONFIG_XTENSA_ESP32S3."
+    },
+    {
+      "name": "0003-tests-qtest-wire-intmatrix-test-and-align-coreclk-re.patch",
+      "sha256": "310ffec7791d9d4ee725373a8f4d72c5280ce299bb5a7d52b4287e98531d2c30",
+      "core_paths": [
+        "tests/qtest/meson.build",
+        "tests/qtest/esp32s3-coreclk-test.c"
+      ],
+      "behavior": "Stacked-integration fixes: (a) qtests_xtensa merged list runs all three ESP32-S3 suites (esp32s3-intmatrix-test, esp32s3-gdma-test, esp32s3-coreclk-test); (b) the coreclk test post-system-reset intmatrix expectation is aligned from the legacy 6 to the documented MAP reset value 0x10. No device change."
+    }
+  ],
+  "new_files": [
+    "tests/qtest/esp32s3-intmatrix-test.c"
+  ],
+  "firmware_fixture": {
+    "path": "tests/firmware/interrupt_matrix",
+    "idf_profile": "idf-6.1",
+    "idf_commit": "fff9895c82d744c7237be8847347bdd1b07c6643",
+    "image": "tests/firmware/interrupt_matrix/build-idf-6.1/interrupt-matrix.merged.bin",
+    "image_sha256": "5fbc7abc7f0f34ae02ada713ee28ef09461f9abc5d4895a812051bf0b5bbd29e",
+    "sources": "TIMG0 timer0 (50) + TIMG1 timer0 (53), esp_intr_alloc_intrstatus ESP_INTR_FLAG_SHARED, sequential pinned CPU0/CPU1 passes, basic + cross patterns, bounded reboot repeat (RTC_NOINIT), OVERALL PASS boots=2",
+    "from_cpu_deviation": "Requested FROM_CPU2/3 sources are the IDF 6.1 esp_ipc_isr channels (esp_ipc_isr_port.c routes FROM_CPU_2/3 to ETS_IPC_ISR_INUM at startup); routing fixture ISRs to them desynced the cross-core IPC protocol (Core 1 panic InstrFetchProhibited PC=0 in esp_ipc_isr_handler, captured in firmware-fixture-fromcpu-crash.log). TIMG0/1 T0 sources carry no other handler on the default config and make the cross pattern a true OR-persistence discriminator."
+  },
+  "native_peripheral_support": false,
+  "unknowns": [
+    "Reserved MAP slots 99-510: RAZ/WI and inert; real silicon readback undocumented",
+    "CLOCK_GATE gated-file behavior (write-drop + output/status freeze, latch on re-enable) is register-clock domain modeling \u2014 TRM/IDF evidence covers the register itself; no silicon reference for gated-domain interrupt timing (host-only lane)",
+    "World Controller NMI masking not modeled (no WCL); routing to NMI int 14 works",
+    "coreclk lane packaging note: their series was built against the pristine base, so this lane's patches carry the full intc rework resolved with their gating hooks"
+  ],
+  "evidence": "build-runtime-state/intc-2026-10-07/evidence.md"
+}

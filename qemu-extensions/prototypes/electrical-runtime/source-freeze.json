@@ -1,0 +1,79 @@
+{
+  "status":"SOURCE_COPY_FREEZE_NOT_BINARY_QUALIFIED",
+  "base_commit":"40edccac415693c5130f91c01d84176ae6008566",
+  "prefix_record":"build-runtime-state/runtime-486cb408a31afae2-source.json",
+  "adc_patch":"prototypes/adc/integration-native-foundations-adc.patch",
+  "adc_patch_sha256":"21dbb41996ec5450aa2bcd43d1cf9801f15d3103ac1f3ffc915df5e0bb09eefd",
+  "adc_copy_receipt":"build-runtime-state/adc-independent-final-20261007/ADC-01-canonical-prefix-foundation-receipt.json",
+  "approved_reset_increment":{
+    "source":"prototypes/coreclk/0016-system-capture-reset-entry-cause-gate-S3-reset.patch",
+    "sha256":"f1a3c4986080edb56fe679b451427157015761ca1f68b5142eaea9f878521898",
+    "after":"prototypes/coreclk/0015-hw-xtensa-esp32s3-CPU1-reset-gate-runstall-lifecycle.patch",
+    "after_sha256":"e66fb5ae5d994994ce6c49ce3e0f2fad68647a08ee33fb5f88007aa686758932",
+    "evidence_boundary":"Clock-owner A/B proof is not graph qualification; preserve frozen predecessor patches and E1."
+  },
+  "approved_gpio_increment":{
+    "source":"prototypes/gpio/gpio-c6fc-whole-feature.patch",
+    "sha256":"722b9e315b3e3e5959ac6a62591976721641daf4dcb570f38c5d14dfa74b558c",
+    "frozen_e1_sha256":"e1a45cdb2e8e388fea1e0775a29b7639f236ff226e39dd3ad08f0df9a2a030bf",
+    "after_existing_corrections":["prototypes/gpio/pad-input-semantics-correction.patch","prototypes/gpio/pad-input-semantics-correction-tests.patch"],
+    "targets":["hw/gpio/esp32s3_gpio.c","hw/misc/esp32s3_rtc_cntl.c","hw/misc/esp32s3_rtc_io.c","include/hw/gpio/esp32s3_gpio.h","include/hw/misc/esp32s3_rtc_cntl.h","include/hw/misc/esp32s3_rtc_io.h","tests/qtest/esp32s3-gpio-test.c","hw/xtensa/esp32s3.c"],
+    "composition_boundary":"Whole-feature transform against actual immutable c6fc files, after accepted pad corrections/tests; preserve XTAL/0013 fields and all other-lane board content. No regenerated E1 or superseded2595/442/11a8/2065 input. Apply approved reset0016 only once."
+  },
+  "previous_prepared_source":{
+    "fingerprint":"a45abaa18d9052260a795726700411581bbf743a5159c3c1d9ba5e2282f6bdb0",
+    "source":"/home/polar/.cache/esp32s3vm/qemu-runtime-40edccac4156-a45abaa18d905226",
+    "record":"build-runtime-state/runtime-a45abaa18d905226-source.json",
+    "record_sha256":"fe8a1d314b35bb7304e84d4e88dc46ae6fedf0aa0ebad245b210433ed27915c4",
+    "receipt":"build-runtime-state/native-foundations-final40-whole722-source-preparation/20261007T181801Z/final-source-publication.json",
+    "qualification":"SOURCE_READY only; no binary qualification inherited."
+  },
+  "approved_gpio_hold_correction":{
+    "source":"prototypes/gpio/gpio-hold-od-inversion-solver-correction.patch",
+    "sha256":"68fa8f43e1d1db1b16464f80908359e5284c2cd7389dab55a1f514fbce0ff3d4",
+    "after_gpio_sha256":"722b9e315b3e3e5959ac6a62591976721641daf4dcb570f38c5d14dfa74b558c",
+    "targets":["hw/gpio/esp32s3_gpio.c","tests/qtest/esp32s3-gpio-test.c"],
+    "contract":"Held OD high releases and low drives; latch effective post-inversion desired output; preserve solver-owned validity/level.",
+    "evidence":"/home/polar/.cache/esp32s3vm/curvedjay-gpio-hold-correction/verify-log.txt",
+    "qualification":"Delegated scratch A/B and GPIO19/19 proof is not renewed full-graph qualification; do not consume intermediate6cb5530f."
+  },
+  "adc_aperture_increment":{
+    "copy_inputs":{
+      "prototypes/adc/copies/esp32s3_sens.c":"b1ebbf3f30959e4cf8b9a6e4632499ceed82335975efa965eeeaea144c84e6b3",
+      "prototypes/adc/copies/esp32s3_adc_net_provider.c":"b956c348379378618b1f067041bb91b5841a4b14668f7a003028382c6d1150e6"
+    },
+    "documentation":{"source":"prototypes/adc/README.md","sha256":"589169e8f0434a6f6a5cb58f393da4c3999844aa0fd43fe2e32073f628d32bfc"},
+    "evidence":"build-runtime-state/electrical-runtime-2026-10-07/adc-diag-running-clock-01/root-cause-and-fix.json",
+    "contract":"SENS pins the caller acquisition timestamp once. ADC and voltage getters solve at that requested instant and echo it unchanged; genuine stale requests fail, no tolerance or later-clock restamp. Fixed-clock tests alone are not native running-clock proof.",
+    "qualification":"This increment postdates immutable a45/02462e8e; requires one new prepared source and complete same-new-image verification."
+  },
+  "numeric_patch_boundary":"Included coreclk/0016-system-capture-reset-entry-cause-gate-S3-reset.patch (f1a3) is the reset-transaction fix. The unrelated separately proposed SYSTEM storage patch numbered0016 is absent; numeric suffixes are not identities.",
+  "native_mode_boundary":"Awake SLP_SEL configuration is supported using the actual RTC GPIO sleep_active getter. Native RTC links must be present. Actual sleep and hold requests remain strictly unavailable in this electrical profile and are advertised as unsupported; no held resolved sample or invented zero is accepted as a source.",
+  "verification_contract":"Graph tests Apply while stopped, explicitly continue before conversion/RC timers, and stop before changed Apply. DONE/code/charge assertions are mandatory. Ordinary controllers use unique short Unix sockets and live UART files on a native temporary filesystem; durable evidence is archived only after producer exit. Preserve failed binaries and receipts; never infer graph or Qt qualification from build/kernel/boot-only success.",
+  "inputs":{
+    "0001-native-v3-electrical-boundary.patch":"7acb418f96e3410f12f3e20f8a4d84bc7de028769043aef849c09e4f81c6b504",
+    "copies/esp32s3_electrical.c":"7a4cfa8225ec49a8de9e34c73626b0c816e24fe306e55ef70ccb101c86e9c204",
+    "copies/esp32s3_electrical.h":"1138a4d75ef38cc77308a16b836515e9e456bb6e56ee084f22a16f3020712fa7",
+    "copies/esp32s3_electrical_internal.h":"40b7e621d62031d6ed1d3c447ee839ad9afdbcb8a4f939f90773d0221ab0794b",
+    "copies/esp32s3_electrical_models.c":"acffb32d172abe348bb6e6d7467d4b2667ab5b4990b517d0a1255e36bcc6cedc",
+    "copies/esp32s3_electrical_observers.c":"7f767943ca32aff419904979089cd718ee56ccb2919e832dad55c0ef3600d0b5",
+    "copies/esp32s3_electrical_observers.h":"fcdeecf87e9ff5d67b64d3f47b8b91cf47142b4bb79ae4cd209171ad7424cdb6",
+    "copies/esp32s3_project.c":"b290c386860a3722fdc681e3a2bde4c6bab2574def0c508f960c9cd0088b2563",
+    "copies/esp32s3_project.h":"e2bb939783a9d86050089b6622a35f43376cc94e2e9097915ba46cb76fac4b88",
+    "copies/esp32s3-electrical-test.c":"7b8ccfeb18d746989473497420a1bb2d96aead7e643e5b374f7a6a2cb3e7591a"
+  },
+  "kernel_inputs":{
+    "electrical/net-adapter.c":"00eea258dee763b4ae8ff064f32db1fcb5ee49cceacc60aa6261a3f533d7a8b1",
+    "electrical/net-adapter.h":"fb2a949b71e8e17edad562c0d49e0ef42f7d028026c4362923f80c48910a96e1",
+    "electrical/net-dc.c":"63ee6c60cea2e77a7c33b31a8af4db8a4ecc2b76079453322cf335e5c49e1e69",
+    "electrical/net-dc.h":"578bc7c05ae6ee53b9819624674fbc31cd5d40ab0ddf223fdcf2eb9de8d738eb",
+    "electrical/net-rc.c":"f5cd58f53086ea875d5f59da9b52523012b75774f151fe556708a17d421cb09b",
+    "electrical/net-rc.h":"457b579295cb981bf6d4307a0a7b7a92f84f6e79d3c23f7f620d9cfe6ed383fb"
+  },
+  "verification_inputs":{
+    "firmware/run-native-fixture.py":"d9109173db6554233edcbc65149ab9608c0d1e71f68fa33aebca515f3dca467b",
+    "firmware/run-native-adc.py":"961cf6297fcb8811848dc8d037f9706c276ea14545e3d6286cc8aed99c30c5e6"
+  },
+  "observation_contract":"All 45 populated physical MCU pads are solver-owned. Omitted/inactive unwired pads allocate private intrinsic nodes only for actual native drives/pulls against explicit MCU rails; geometry never wires them. Enabled floating receivers stay unknown; disabled receivers and holes retain documented zero. Project pad snapshots retain only declared terminal IDs. terminal_voltage is absolute physical validity independent of device power; terminal_sample stays powered-domain qualified. Tests cover active GPIO/charge CPU-only retention, system-reset charge retention and omitted GPIO2 native pull/IE positive and floating negative.",
+  "requirements":"Compose frozen E1, accepted pad corrections/tests, GPIO whole722 then hold correction68fa, reset0016/f1a3 after CPU15/e66, canonical seven ADC copies with aperture updates b1eb/b956, nine electrical copies with core7a4c and test7b8, and six kernels including adapter00ee once. Omit stale GPIO/RTC/test snapshots. Parent updates the actual profile; one fresh source preparation precedes replacement verification of the complete same-new-image native/numerical suites, ordinary GPIO+running-clock ADC and boot/control. Preserve immutable a45 and all failures; no BINARY_READY until ordinary ADC and the complete renewed suite pass."
+}

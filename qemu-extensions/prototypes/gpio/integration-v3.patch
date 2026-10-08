@@ -1,0 +1,3138 @@
+--- a/hw/gpio/esp32_gpio.c
++++ b/hw/gpio/esp32_gpio.c
+@@ -1,5 +1,10 @@
+ /*
+- * ESP32 GPIO emulation
++ * ESP32 GPIO emulation (common parent for the Espressif GPIO models)
++ *
++ * The default register file only implements the GPIO_STRAP register that is
++ * shared by every Espressif SoC.  SoC specific models (ESP32, ESP32-S3,
++ * ESP32-C3, ...) subclass this device and override the gpio_read/gpio_write
++ * class handlers.
+  *
+  * Copyright (c) 2019 Espressif Systems (Shanghai) Co. Ltd.
+  *
+@@ -19,12 +24,11 @@
+ #include "hw/qdev-properties.h"
+ #include "hw/gpio/esp32_gpio.h"
+ 
+-
+-
+-static uint64_t esp32_gpio_read(void *opaque, hwaddr addr, unsigned int size)
++static uint64_t esp32_gpio_read_default(void *opaque, hwaddr addr, unsigned int size)
+ {
+     Esp32GpioState *s = ESP32_GPIO(opaque);
+     uint64_t r = 0;
++
+     switch (addr) {
+     case A_GPIO_STRAP:
+         r = s->strap_mode;
+@@ -36,12 +40,26 @@
+     return r;
+ }
+ 
++static void esp32_gpio_write_default(void *opaque, hwaddr addr,
++                                     uint64_t value, unsigned int size)
++{
++}
++
++/* Virtual dispatch wrappers for MemoryRegionOps */
++static uint64_t esp32_gpio_read(void *opaque, hwaddr addr, unsigned int size)
++{
++    Esp32GpioClass *klass = ESP32_GPIO_GET_CLASS(opaque);
++    return klass->gpio_read(opaque, addr, size);
++}
++
+ static void esp32_gpio_write(void *opaque, hwaddr addr,
+-                       uint64_t value, unsigned int size)
++                             uint64_t value, unsigned int size)
+ {
++    Esp32GpioClass *klass = ESP32_GPIO_GET_CLASS(opaque);
++    klass->gpio_write(opaque, addr, value, size);
+ }
+ 
+-static const MemoryRegionOps uart_ops = {
++static const MemoryRegionOps gpio_ops = {
+     .read =  esp32_gpio_read,
+     .write = esp32_gpio_write,
+     .endianness = DEVICE_LITTLE_ENDIAN,
+@@ -63,7 +81,7 @@
+     /* Set the default value for the strap_mode property */
+     object_property_set_int(obj, "strap_mode", ESP32_STRAP_MODE_FLASH_BOOT, &error_fatal);
+ 
+-    memory_region_init_io(&s->iomem, obj, &uart_ops, s,
++    memory_region_init_io(&s->iomem, obj, &gpio_ops, s,
+                           TYPE_ESP32_GPIO, 0x1000);
+     sysbus_init_mmio(sbd, &s->iomem);
+     sysbus_init_irq(sbd, &s->irq);
+@@ -80,10 +98,15 @@
+ {
+     DeviceClass *dc = DEVICE_CLASS(klass);
+     ResettableClass *rc = RESETTABLE_CLASS(klass);
++    Esp32GpioClass *gc = ESP32_GPIO_CLASS(klass);
+ 
+     rc->phases.hold = esp32_gpio_reset_hold;
+     dc->realize = esp32_gpio_realize;
+     device_class_set_props(dc, esp32_gpio_properties);
++
++    /* Default virtual methods — children override */
++    gc->gpio_read = esp32_gpio_read_default;
++    gc->gpio_write = esp32_gpio_write_default;
+ }
+ 
+ static const TypeInfo esp32_gpio_info = {
+--- a/hw/gpio/esp32s3_gpio.c
++++ b/hw/gpio/esp32s3_gpio.c
+@@ -1,7 +1,34 @@
+ /*
+- * ESP32-S3 GPIO emulation
++ * ESP32-S3 GPIO emulation with GPIO matrix routing
++ *
++ * Implements the GPIO register model for ESP32-S3 per the TRM chapter 6
++ * (IO MUX and GPIO Matrix), re-derived from the TRM and the ESP-IDF 6.1 SoC
++ * headers:
++ *  - Output data (GPIO_OUT/OUT1) with W1TS/W1TC atomic set/clear
++ *  - Output enable (GPIO_ENABLE/ENABLE1) with W1TS/W1TC
++ *  - Input registers (GPIO_IN/IN1) sampling the resolved pad levels
++ *  - Per-pin configuration (GPIO_PINn: pad driver, interrupt type, INT_ENA)
++ *  - GPIO matrix: 256 input selectors (GPIO_FUNCn_IN_SEL_CFG) and 49 output
++ *    selectors (GPIO_FUNCm_OUT_SEL_CFG, signal 256 = simple GPIO output)
++ *  - Interrupt status (GPIO_STATUS/STATUS1 with W1TS/W1TC) with edge/level
++ *    detection per GPIO_PINn.INT_TYPE and per-CPU/NMI INT_ENA lanes routed
++ *    to the four GPIO interrupt matrix sources (16..19)
++ *
++ * Electrical model (digital, pre-analog-gate):
++ *  - Every pad has an external input line (named "gpio-in") and an output
++ *    line ("gpio-out") carrying the resolved pad node level.
++ *  - A pad drives its node when the IO_MUX function is GPIO (MCU_SEL = 0)
++ *    and the output enable is active; open-drain pads release on output 1.
++ *  - A released pad node reads the external driver level; with no external
++ *    driver, the IO_MUX pull-up/down registers resolve the level
++ *    (FUN_PU -> 1, FUN_PD -> 0, floating reads 0).
++ *  - GPIO_IN samples the node through the input buffer (FUN_IE).
++ *  - Drive strength (FUN_DRV) is stored but electrically inert until the
++ *    analog gate; contention with an external push-pull driver resolves to
++ *    the internal pad value.  Both boundaries are documented in the README.
+  *
+  * Copyright (c) 2023 Espressif Systems (Shanghai) Co. Ltd.
++ * Copyright (c) 2026 ESP32S3VM project
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License version 2 or
+@@ -9,8 +36,10 @@
+  */
+ 
+ #include "qemu/osdep.h"
++#include "qemu/main-loop.h"
++#include "sysemu/runstate.h"
+ #include "qemu/log.h"
+-#include "qemu/error-report.h"
++#include "qemu/module.h"
+ #include "qapi/error.h"
+ #include "hw/hw.h"
+ #include "hw/sysbus.h"
+@@ -19,17 +48,958 @@
+ #include "hw/qdev-properties.h"
+ #include "hw/gpio/esp32s3_gpio.h"
+ 
++#define GPIO_WARNING 0
++
++static void esp32s3_gpio_update_irq(ESP32S3GPIOState *s);
++static void esp32s3_gpio_notify_observer(ESP32S3GPIOState *s);
++static void esp32s3_gpio_unknown_use(ESP32S3GPIOState *s, int n);
++
++/* ---------- Register-file helpers ---------- */
++
++static inline uint32_t pin_field(ESP32S3GPIOState *s, int n, int shift, int width)
++{
++    return extract32(s->gpio_pin[n], shift, width);
++}
++
++static inline int pin_int_type(ESP32S3GPIOState *s, int n)
++{
++    return pin_field(s, n, R_GPIO_PINn_INT_TYPE_SHIFT, R_GPIO_PINn_INT_TYPE_LENGTH);
++}
++
++static inline int pin_int_ena(ESP32S3GPIOState *s, int n)
++{
++    return pin_field(s, n, R_GPIO_PINn_INT_ENA_SHIFT, R_GPIO_PINn_INT_ENA_LENGTH);
++}
++
++static inline int pin_open_drain(ESP32S3GPIOState *s, int n)
++{
++    return pin_field(s, n, R_GPIO_PINn_PAD_DRIVER_SHIFT, 1);
++}
++
++static inline int status_bit(ESP32S3GPIOState *s, int n)
++{
++    return n < 32 ? (s->gpio_status >> n) & 1 : (s->gpio_status1 >> (n - 32)) & 1;
++}
++
++static inline void set_status_bit(ESP32S3GPIOState *s, int n, int level)
++{
++    if (n < 32) {
++        s->gpio_status = deposit32(s->gpio_status, n, 1, level);
++    } else {
++        s->gpio_status1 = deposit32(s->gpio_status1, n - 32, 1, level);
++    }
++}
++
++static inline uint32_t in_bit(ESP32S3GPIOState *s, int n)
++{
++    return n < 32 ? (s->gpio_out >> n) & 1 : (s->gpio_out1 >> (n - 32)) & 1;
++}
++
++static inline uint32_t enable_bit(ESP32S3GPIOState *s, int n)
++{
++    return n < 32 ? (s->gpio_enable >> n) & 1 : (s->gpio_enable1 >> (n - 32)) & 1;
++}
++
++/* ---------- Pad resolution ---------- */
++
++/* True when the pad node follows the GPIO matrix / simple GPIO output */
++static bool esp32s3_gpio_matrix_active(ESP32S3GPIOState *s, int n)
++{
++    if (s->iomux == NULL) {
++        return true;
++    }
++    /* MCU_SEL == PIN_FUNC_GPIO (1 on the S3) routes the pad through the
++     * GPIO matrix; any other value selects a direct IO_MUX function, and
++     * none of those peripherals is modelled, so the pad driver stays
++     * released. */
++    return FIELD_EX32(esp32s3_iomux_get(s->iomux, n), IO_MUX_GPIOn, MCU_SEL)
++           == ESP32S3_IOMUX_MCU_SEL_GPIO;
++}
++
++static int esp32s3_gpio_input_enable(ESP32S3GPIOState *s, int n)
++{
++    if (s->iomux == NULL) {
++        return 1;
++    }
++    return FIELD_EX32(esp32s3_iomux_get(s->iomux, n), IO_MUX_GPIOn, FUN_IE);
++}
++
++/*
++ * Resolve the pad net: the own output driver wins; otherwise an external
++ * (solver or qdev) driver; otherwise the IO_MUX pulls; otherwise the net
++ * is unresolved (floating).  Floating is NOT valid low — it is reported
++ * through ESP32S3_GPIO_PAD_FLOATING and only the documented permissive
++ * sampling rule maps it to a 0 register bit.
++ */
++static void esp32s3_gpio_resolve_pad(ESP32S3GPIOState *s, int n)
++{
++    uint32_t out_sel_cfg = s->func_out_sel_cfg[n];
++    uint32_t out_sel = FIELD_EX32(out_sel_cfg, GPIO_FUNCn_OUT_SEL_CFG, FUNC_OUT_SEL);
++    uint32_t out_val, oe;
++    ESP32S3GpioNet *net = &s->net[n];
++
++    /* S3 FUNC_OEN_SEL: 1 = OE from GPIO_ENABLE, 0 = OE from the routed
++     * peripheral output signal (IDF gpio_ll output_enable ctrl_by_periph
++     * writes !ctrl).  On the simple-GPIO signal (256) the OE source is
++     * hardwired to GPIO_ENABLE, so OEN_SEL does not apply there. */
++    if (out_sel == GPIO_FUNC_OUT_SEL_NONE) {
++        /* Simple GPIO output driven from GPIO_OUT / GPIO_ENABLE */
++        out_val = in_bit(s, n);
++        oe = enable_bit(s, n);
++    } else if (out_sel <= GPIO_FUNC_OUT_SEL_INVALID_MAX) {
++        /* Peripheral matrix output signal: no model sources any signal
++         * yet, so the value is 0 and the signal OE (OEN_SEL = 0) releases
++         * the pad; OEN_SEL = 1 hands OE to GPIO_ENABLE. */
++        out_val = 0;
++        oe = FIELD_EX32(out_sel_cfg, GPIO_FUNCn_OUT_SEL_CFG, FUNC_OEN_SEL) ?
++             enable_bit(s, n) : 0;
++    } else {
++        /* Reserved selector values (257..511): pad not driven */
++        out_val = 0;
++        oe = 0;
++    }
++
++    if (FIELD_EX32(out_sel_cfg, GPIO_FUNCn_OUT_SEL_CFG, FUNC_OUT_INV_SEL)) {
++        out_val ^= 1;
++    }
++    if (FIELD_EX32(out_sel_cfg, GPIO_FUNCn_OUT_SEL_CFG, FUNC_OEN_INV_SEL)) {
++        oe ^= 1;
++    }
++
++    if (esp32s3_gpio_matrix_active(s, n) && oe &&
++        !(pin_open_drain(s, n) && out_val == 1)) {
++        bool attached = s->solver_owned || s->solver_attached[n];
++
++        if (attached && net->valid && net->diag == ESP32S3_GPIO_PAD_EXTERNAL) {
++            /* Attached solver level is authoritative over the internal
++             * output (finite driver contention can resolve the opposite
++             * level); CONTENTION reports raw-desired vs solved sample. */
++            net->diag = (net->level != out_val) ?
++                        ESP32S3_GPIO_PAD_CONTENTION : ESP32S3_GPIO_PAD_DRIVEN;
++            net->valid = true;
++            return;
++        }
++        net->diag = ESP32S3_GPIO_PAD_DRIVEN;
++        net->valid = true;
++        net->level = out_val;
++        return;
++    }
++
++    /* Released pad: an external driver beats the weak pulls (a pull is
++     * never an unconditional line level against a conflicting driver).
++     * While the solver owns the pad, its validity report owns the answer:
++     * an unresolved report stays UNKNOWN and never falls back to a pull
++     * or an implicit floating-0 as if it were a valid sample. */
++    if (net->valid && net->diag == ESP32S3_GPIO_PAD_EXTERNAL) {
++        return;
++    }
++    if (s->solver_owned || s->solver_attached[n]) {
++        net->valid = false;
++        net->level = 0;
++        net->diag = ESP32S3_GPIO_PAD_UNKNOWN;
++        return;
++    }
++    if (s->iomux != NULL) {
++        uint32_t pad = esp32s3_iomux_get(s->iomux, n);
++        if (FIELD_EX32(pad, IO_MUX_GPIOn, FUN_PU)) {
++            net->valid = true;
++            net->level = 1;
++            net->diag = ESP32S3_GPIO_PAD_PULLED_HIGH;
++            return;
++        }
++        if (FIELD_EX32(pad, IO_MUX_GPIOn, FUN_PD)) {
++            net->valid = true;
++            net->level = 0;
++            net->diag = ESP32S3_GPIO_PAD_PULLED_LOW;
++            return;
++        }
++    }
++    /* Floating: no driver, no pull — unresolved (0 V equivalent, not
++     * valid low) */
++    net->valid = false;
++    net->level = 0;
++    net->diag = ESP32S3_GPIO_PAD_FLOATING;
++}
++
++/* Emit the pad level on the observation line (digital view of the net) */
++static void esp32s3_gpio_emit_line(ESP32S3GPIOState *s, int n)
++{
++    int level = s->net[n].valid ? s->net[n].level : 0;
++
++    if (s->line_out[n] != level) {
++        s->line_out[n] = level;
++        qemu_set_irq(s->output_lines[n], level);
++    }
++}
++
++/* Sample the input buffer, run edge/level interrupt detection for one pad */
++static void esp32s3_gpio_update_pad(ESP32S3GPIOState *s, int n)
++{
++    int sample;
++    int prev = s->sample[n];
++    int type = pin_int_type(s, n);
++    int event = 0;
++
++    esp32s3_gpio_resolve_pad(s, n);
++    esp32s3_gpio_emit_line(s, n);
++
++    /* Input buffer: FUN_IE gates the sample.  An attached-solver pad
++     * samples the solver level while valid, and holds its last sample
++     * while the solver reports UNKNOWN (persisted rule — never a
++     * fabricated 0).  A detached floating net samples 0 under the
++     * documented permissive profile; esp32s3_gpio_pad_state() exposes
++     * the unresolved state either way. */
++    bool strict = s->strict_unknown || s->solver_owned || s->solver_attached[n];
++
++    if (!esp32s3_gpio_input_enable(s, n)) {
++        sample = 0;
++    } else if (s->net[n].valid) {
++        sample = s->net[n].level;
++    } else if (strict) {
++        esp32s3_gpio_unknown_use(s, n);
++        sample = s->sample[n];
++    } else {
++        sample = 0;
++    }
++
++    switch (type) {
++    case ESP32S3_GPIO_INT_RISING:
++        event = !prev && sample;
++        break;
++    case ESP32S3_GPIO_INT_FALLING:
++        event = prev && !sample;
++        break;
++    case ESP32S3_GPIO_INT_ANYEDGE:
++        event = prev != sample;
++        break;
++    case ESP32S3_GPIO_INT_LOW:
++        /* Level interrupt: re-asserted while the condition holds */
++        event = !sample;
++        break;
++    case ESP32S3_GPIO_INT_HIGH:
++        event = sample;
++        break;
++    default:
++        event = 0;
++        break;
++    }
++
++    if (event) {
++        set_status_bit(s, n, 1);
++    }
++    s->sample[n] = sample;
++}
++
++static void esp32s3_gpio_update_all(ESP32S3GPIOState *s)
++{
++    for (int n = 0; n < ESP32S3_GPIO_COUNT; n++) {
++        esp32s3_gpio_update_pad(s, n);
++    }
++    esp32s3_gpio_update_irq(s);
++}
++
++/* ---------- Interrupt lanes ---------- */
++
++static void esp32s3_gpio_update_irq(ESP32S3GPIOState *s)
++{
++    int lane[4] = { 0, 0, 0, 0 };
++
++    for (int n = 0; n < ESP32S3_GPIO_COUNT; n++) {
++        int ena = pin_int_ena(s, n);
++        int st = status_bit(s, n);
++
++        lane[0] |= (st && (ena & 1)); /* PROCPU level  (source 16) */
++        lane[1] |= (st && (ena & 4)); /* PROCPU NMI    (source 17) */
++        lane[2] |= (st && (ena & 2)); /* APPCPU level  (source 18) */
++        lane[3] |= (st && (ena & 8)); /* APPCPU NMI    (source 19) */
++    }
++
++    for (int n = 0; n < ESP32S3_GPIO_COUNT; n++) {
++        if ((s->strict_unknown || s->solver_owned || s->solver_attached[n])
++            && !s->net[n].valid && esp32s3_gpio_input_enable(s, n)
++            && pin_int_ena(s, n)) {
++            esp32s3_gpio_unknown_use(s, n);
++        }
++    }
++    qemu_set_irq(s->parent.irq, lane[0]);
++    qemu_set_irq(s->irq_nmi, lane[1]);
++    qemu_set_irq(s->irq_app, lane[2]);
++    qemu_set_irq(s->irq_app_nmi, lane[3]);
++}
++
++/* Masked status readback for one INT_ENA field bit (0..4) */
++static uint32_t esp32s3_gpio_masked_status(ESP32S3GPIOState *s, int bank1, int bit)
++{
++    uint32_t r = 0;
++
++    for (int n = 0; n < ESP32S3_GPIO_COUNT; n++) {
++        if (((n < 32) != !bank1)) {
++            continue;
++        }
++        if (status_bit(s, n) && (pin_int_ena(s, n) & (1u << bit))) {
++            r |= 1u << (bank1 ? n - 32 : n);
++        }
++    }
++    return r;
++}
++
++/* Level conditions currently true (GPIO_STATUS_NEXT) */
++static uint32_t esp32s3_gpio_status_next(ESP32S3GPIOState *s, int bank1)
++{
++    uint32_t r = 0;
++
++    for (int n = bank1 ? 32 : 0; n < (bank1 ? ESP32S3_GPIO_COUNT : 32); n++) {
++        int sample = s->sample[n];
++        int type = pin_int_type(s, n);
++
++        if (((type == ESP32S3_GPIO_INT_LOW) && !sample) ||
++            ((type == ESP32S3_GPIO_INT_HIGH) && sample)) {
++            r |= 1u << (n - 32 * bank1);
++        }
++    }
++    return r;
++}
++
++/* ---------- GPIO matrix input lookup ---------- */
++
++uint32_t esp32s3_gpio_matrix_input(ESP32S3GPIOState *s, uint32_t signal)
++{
++    uint32_t cfg;
++    uint32_t sel, val;
++
++    if (signal >= ESP32S3_GPIO_FUNC_IN_SEL_COUNT) {
++        return 0;
++    }
++    cfg = s->func_in_sel_cfg[signal];
++    if (!FIELD_EX32(cfg, GPIO_FUNCn_IN_SEL_CFG, SIG_IN_SEL)) {
++        /* Bypass: the signal is taken from a direct IO_MUX function; no
++         * direct IO_MUX input path is modelled, so it reads 0. */
++        return 0;
++    }
++    sel = FIELD_EX32(cfg, GPIO_FUNCn_IN_SEL_CFG, FUNC_IN_SEL);
++    if (sel == GPIO_FUNC_IN_HIGH) {
++        val = 1;
++    } else if (sel == GPIO_FUNC_IN_LOW) {
++        val = 0;
++    } else if (sel < ESP32S3_GPIO_COUNT) {
++        val = s->sample[sel];
++    } else {
++        esp32s3_gpio_unknown_use(s, (int)sel);
++        val = 0;
++    }
++    if (FIELD_EX32(cfg, GPIO_FUNCn_IN_SEL_CFG, FUNC_IN_INV_SEL)) {
++        val ^= 1;
++    }
++    return val;
++}
++
++bool esp32s3_gpio_matrix_sample(ESP32S3GPIOState *s, uint32_t signal,
++                                bool *level)
++{
++    uint32_t cfg, sel;
++
++    if (signal >= ESP32S3_GPIO_FUNC_IN_SEL_COUNT || level == NULL) {
++        return false;
++    }
++    cfg = s->func_in_sel_cfg[signal];
++    if (!FIELD_EX32(cfg, GPIO_FUNCn_IN_SEL_CFG, SIG_IN_SEL)) {
++        /* Bypass: direct IO_MUX route is not modelled — unresolved */
++        return false;
++    }
++    sel = FIELD_EX32(cfg, GPIO_FUNCn_IN_SEL_CFG, FUNC_IN_SEL);
++    if (sel == GPIO_FUNC_IN_HIGH) {
++        *level = true;
++    } else if (sel == GPIO_FUNC_IN_LOW) {
++        *level = false;
++    } else if (sel < ESP32S3_GPIO_COUNT) {
++        if ((s->strict_unknown || s->solver_owned || s->solver_attached[sel])
++            && !s->net[sel].valid && esp32s3_gpio_input_enable(s, (int)sel)) {
++            esp32s3_gpio_unknown_use(s, (int)sel);
++        }
++        *level = s->sample[sel] != 0;
++    } else {
++        return false;
++    }
++    if (FIELD_EX32(cfg, GPIO_FUNCn_IN_SEL_CFG, FUNC_IN_INV_SEL)) {
++        *level = !*level;
++    }
++    return true;
++}
++
++/* ---------- Register read ---------- */
++
++static uint64_t esp32s3_gpio_read(void *opaque, hwaddr addr, unsigned int size)
++{
++    ESP32S3GPIOState *s = ESP32S3_GPIO(opaque);
++    uint64_t r = 0;
++    hwaddr a = addr;
++    int n;
++
++    /* Per-pin config registers: 0x074 + n*4 for n=0..48 */
++    if (a >= GPIO_PINn_REG_OFFSET(0) && a < GPIO_PINn_REG_OFFSET(ESP32S3_GPIO_COUNT)) {
++        n = (a - GPIO_PINn_REG_OFFSET(0)) / 4;
++        return s->gpio_pin[n];
++    }
++
++    /* Input signal matrix: 0x154 + n*4 for n=0..255 */
++    if (a >= GPIO_FUNC_IN_SEL_CFG_OFFSET(0) &&
++        a < GPIO_FUNC_IN_SEL_CFG_OFFSET(ESP32S3_GPIO_FUNC_IN_SEL_COUNT)) {
++        n = (a - GPIO_FUNC_IN_SEL_CFG_OFFSET(0)) / 4;
++        return s->func_in_sel_cfg[n];
++    }
++
++    /* Output signal matrix: 0x554 + n*4 for n=0..48 */
++    if (a >= GPIO_FUNC_OUT_SEL_CFG_OFFSET(0) &&
++        a < GPIO_FUNC_OUT_SEL_CFG_OFFSET(ESP32S3_GPIO_COUNT)) {
++        n = (a - GPIO_FUNC_OUT_SEL_CFG_OFFSET(0)) / 4;
++        return s->func_out_sel_cfg[n];
++    }
++
++    switch (a) {
++    case A_GPIO_BT_SELECT:
++        r = s->bt_select;
++        break;
++    case A_GPIO_OUT:
++        r = s->gpio_out;
++        break;
++    case A_GPIO_OUT_W1TS:
++    case A_GPIO_OUT_W1TC:
++        r = 0; /* write-only */
++        break;
++    case A_GPIO_OUT1:
++        r = s->gpio_out1;
++        break;
++    case A_GPIO_OUT1_W1TS:
++    case A_GPIO_OUT1_W1TC:
++        r = 0;
++        break;
++
++    case A_GPIO_SDIO_SELECT:
++        r = s->sdio_select;
++        break;
++
++    case A_GPIO_ENABLE:
++        r = s->gpio_enable;
++        break;
++    case A_GPIO_ENABLE_W1TS:
++    case A_GPIO_ENABLE_W1TC:
++        r = 0;
++        break;
++    case A_GPIO_ENABLE1:
++        r = s->gpio_enable1;
++        break;
++    case A_GPIO_ENABLE1_W1TS:
++    case A_GPIO_ENABLE1_W1TC:
++        r = 0;
++        break;
++
++    case A_GPIO_STRAP:
++        r = s->parent.strap_mode;
++        break;
++
++    case A_GPIO_IN:
++    case A_GPIO_IN1:
++        /* Strict gate at actual guest consumption: an UNKNOWN sample on
++         * a solver-owned pad schedules the paused dependency and, from
++         * vCPU context, aborts this access so the guest retries instead
++         * of consuming a stale value as valid. */
++        for (n = (a == A_GPIO_IN) ? 0 : 32;
++             n < ((a == A_GPIO_IN) ? 32 : ESP32S3_GPIO_COUNT); n++) {
++            if ((s->strict_unknown || s->solver_owned || s->solver_attached[n])
++                && !s->net[n].valid && esp32s3_gpio_input_enable(s, n)) {
++                /* Synchronous hook: the native owner may abort/retry this
++                 * access from inside the handler; the default handler
++                 * schedules the main-context paused dependency instead. */
++                esp32s3_gpio_unknown_use(s, n);
++            }
++        }
++        r = 0;
++        for (n = 0; n < 32; n++) {
++            r |= (uint32_t)s->sample[n] << n;
++        }
++        if (a == A_GPIO_IN1) {
++            r = 0;
++            for (n = 32; n < ESP32S3_GPIO_COUNT; n++) {
++                r |= (uint32_t)s->sample[n] << (n - 32);
++            }
++        }
++        break;
++
++    case A_GPIO_STATUS:
++        r = s->gpio_status;
++        break;
++    case A_GPIO_STATUS_W1TS:
++    case A_GPIO_STATUS_W1TC:
++        r = 0;
++        break;
++    case A_GPIO_STATUS1:
++        r = s->gpio_status1;
++        break;
++    case A_GPIO_STATUS1_W1TS:
++    case A_GPIO_STATUS1_W1TC:
++        r = 0;
++        break;
++
++    /* Per-CPU interrupt status (read-only masked views: PROCPU level / NMI
++     * and SDIO lanes, low and high banks; the APPCPU/NMI lanes assert
++     * matrix sources 18/19 directly and have no status register) */
++    case A_GPIO_PCPU_INT:
++        r = esp32s3_gpio_masked_status(s, 0, 0);
++        break;
++    case A_GPIO_PCPU_NMI_INT:
++        r = esp32s3_gpio_masked_status(s, 0, 2);
++        break;
++    case A_GPIO_CPUSDIO_INT:
++        r = esp32s3_gpio_masked_status(s, 0, 4);
++        break;
++    case A_GPIO_PCPU_INT1:
++        r = esp32s3_gpio_masked_status(s, 1, 0);
++        break;
++    case A_GPIO_PCPU_NMI_INT1:
++        r = esp32s3_gpio_masked_status(s, 1, 2);
++        break;
++    case A_GPIO_CPUSDIO_INT1:
++        r = esp32s3_gpio_masked_status(s, 1, 4);
++        break;
++
++    case A_GPIO_STATUS_NEXT:
++        r = s->gpio_status | esp32s3_gpio_status_next(s, 0);
++        break;
++    case A_GPIO_STATUS_NEXT1:
++        r = s->gpio_status1 | esp32s3_gpio_status_next(s, 1);
++        break;
++
++    case A_GPIO_CLOCK_GATE:
++        r = s->clock_gate;
++        break;
++    case A_GPIO_DATE:
++        r = s->date_reg;
++        break;
++
++    default:
++        if (GPIO_WARNING) {
++            qemu_log_mask(LOG_GUEST_ERROR,
++                          "%s: bad read at offset 0x%04" HWADDR_PRIx "\n",
++                          __func__, a);
++        }
++        break;
++    }
++
++    return r;
++}
++
++/* ---------- Register write ---------- */
++
++static void esp32s3_gpio_write(void *opaque, hwaddr addr,
++                               uint64_t value, unsigned int size)
++{
++    ESP32S3GPIOState *s = ESP32S3_GPIO(opaque);
++    hwaddr a = addr;
++    int n;
++
++    /* Per-pin config registers */
++    if (a >= GPIO_PINn_REG_OFFSET(0) && a < GPIO_PINn_REG_OFFSET(ESP32S3_GPIO_COUNT)) {
++        n = (a - GPIO_PINn_REG_OFFSET(0)) / 4;
++        s->gpio_pin[n] = (uint32_t)value & ESP32S3_GPIO_PINn_WRITE_MASK;
++        esp32s3_gpio_notify_observer(s);
++        esp32s3_gpio_update_pad(s, n);
++        esp32s3_gpio_update_irq(s);
++        return;
++    }
++
++    /* Input signal matrix */
++    if (a >= GPIO_FUNC_IN_SEL_CFG_OFFSET(0) &&
++        a < GPIO_FUNC_IN_SEL_CFG_OFFSET(ESP32S3_GPIO_FUNC_IN_SEL_COUNT)) {
++        n = (a - GPIO_FUNC_IN_SEL_CFG_OFFSET(0)) / 4;
++        s->func_in_sel_cfg[n] = (uint32_t)value & GPIO_FUNC_IN_SEL_WRITE_MASK;
++        return;
++    }
++
++    /* Output signal matrix */
++    if (a >= GPIO_FUNC_OUT_SEL_CFG_OFFSET(0) &&
++        a < GPIO_FUNC_OUT_SEL_CFG_OFFSET(ESP32S3_GPIO_COUNT)) {
++        n = (a - GPIO_FUNC_OUT_SEL_CFG_OFFSET(0)) / 4;
++        s->func_out_sel_cfg[n] = (uint32_t)value & GPIO_FUNC_OUT_SEL_CFG_WRITE_MASK;
++        esp32s3_gpio_notify_observer(s);
++        esp32s3_gpio_update_pad(s, n);
++        esp32s3_gpio_update_irq(s);
++        return;
++    }
++
++    switch (a) {
++    case A_GPIO_BT_SELECT:
++        s->bt_select = (uint32_t)value & 0xFF;
++        break;
++    case A_GPIO_OUT:
++        s->gpio_out = (uint32_t)value;
++        break;
++    case A_GPIO_OUT_W1TS:
++        s->gpio_out |= (uint32_t)value;
++        break;
++    case A_GPIO_OUT_W1TC:
++        s->gpio_out &= ~(uint32_t)value;
++        break;
++    case A_GPIO_OUT1:
++        s->gpio_out1 = (uint32_t)value & ESP32S3_GPIO1_MASK;
++        break;
++    case A_GPIO_OUT1_W1TS:
++        s->gpio_out1 |= (uint32_t)value & ESP32S3_GPIO1_MASK;
++        break;
++    case A_GPIO_OUT1_W1TC:
++        s->gpio_out1 &= ~((uint32_t)value & ESP32S3_GPIO1_MASK);
++        break;
++
++    case A_GPIO_SDIO_SELECT:
++        s->sdio_select = (uint32_t)value & 0xFF;
++        break;
++
++    case A_GPIO_ENABLE:
++        s->gpio_enable = (uint32_t)value;
++        break;
++    case A_GPIO_ENABLE_W1TS:
++        s->gpio_enable |= (uint32_t)value;
++        break;
++    case A_GPIO_ENABLE_W1TC:
++        s->gpio_enable &= ~(uint32_t)value;
++        break;
++    case A_GPIO_ENABLE1:
++        s->gpio_enable1 = (uint32_t)value & ESP32S3_GPIO1_MASK;
++        break;
++    case A_GPIO_ENABLE1_W1TS:
++        s->gpio_enable1 |= (uint32_t)value & ESP32S3_GPIO1_MASK;
++        break;
++    case A_GPIO_ENABLE1_W1TC:
++        s->gpio_enable1 &= ~((uint32_t)value & ESP32S3_GPIO1_MASK);
++        break;
++
++    case A_GPIO_STATUS:
++        /* Direct write forces/clears status the same way the W1TS/W1TC
++         * registers do: 1s set, 0s are ignored. */
++        s->gpio_status |= (uint32_t)value;
++        break;
++    case A_GPIO_STATUS_W1TS:
++        s->gpio_status |= (uint32_t)value;
++        break;
++    case A_GPIO_STATUS_W1TC:
++        s->gpio_status &= ~(uint32_t)value;
++        break;
++    case A_GPIO_STATUS1:
++        s->gpio_status1 |= (uint32_t)value & ESP32S3_GPIO1_MASK;
++        break;
++    case A_GPIO_STATUS1_W1TS:
++        s->gpio_status1 |= (uint32_t)value & ESP32S3_GPIO1_MASK;
++        break;
++    case A_GPIO_STATUS1_W1TC:
++        s->gpio_status1 &= ~((uint32_t)value & ESP32S3_GPIO1_MASK);
++        break;
++
++    case A_GPIO_CLOCK_GATE:
++        s->clock_gate = (uint32_t)value & 0x1;
++        break;
++    case A_GPIO_DATE:
++        s->date_reg = (uint32_t)value;
++        break;
++
++    /* Read-only registers — writes ignored */
++    case A_GPIO_STRAP:
++    case A_GPIO_IN:
++    case A_GPIO_IN1:
++    case A_GPIO_STATUS_NEXT:
++    case A_GPIO_STATUS_NEXT1:
++    case A_GPIO_PCPU_INT:
++    case A_GPIO_PCPU_NMI_INT:
++    case A_GPIO_PCPU_INT1:
++    case A_GPIO_PCPU_NMI_INT1:
++    case A_GPIO_CPUSDIO_INT:
++    case A_GPIO_CPUSDIO_INT1:
++        break;
++
++    default:
++        if (GPIO_WARNING) {
++            qemu_log_mask(LOG_GUEST_ERROR,
++                          "%s: bad write at offset 0x%04" HWADDR_PRIx "\n",
++                          __func__, a);
++        }
++        break;
++    }
++
++    esp32s3_gpio_notify_observer(s);
++    esp32s3_gpio_update_all(s);
++}
++
++/* ---------- External input lines and solver API ---------- */
++
++/*
++ * Common net-drive path: qdev "gpio-in" lines call this with valid=true
++ * (a plain boolean digital driver); the DC solver can pass valid=false or
++ * attach a voltage via esp32s3_gpio_drive_net().
++ */
++static void esp32s3_gpio_net_drive(ESP32S3GPIOState *s, int n,
++                                   bool valid, bool level, double volts)
++{
++    ESP32S3GpioNet *net = &s->net[n];
++
++    net->volts = volts;
++    if (!valid) {
++        /* The external driver detached: let the resolver re-settle pulls */
++        net->valid = false;
++        net->level = 0;
++        net->diag = ESP32S3_GPIO_PAD_FLOATING;
++        return;
++    }
++    net->valid = true;
++    net->level = (level != 0);
++    net->diag = ESP32S3_GPIO_PAD_EXTERNAL;
++}
++
++void esp32s3_gpio_drive_net(ESP32S3GPIOState *s, unsigned pad,
++                            bool valid, bool level, double volts)
++{
++    if (pad >= ESP32S3_GPIO_COUNT) {
++        return;
++    }
++    s->solver_attached[pad] = true;
++    esp32s3_gpio_net_drive(s, (int)pad, valid, level, volts);
++    esp32s3_gpio_update_pad(s, (int)pad);
++    esp32s3_gpio_update_irq(s);
++    /* No observer wake here: the solver caused this update itself. */
++}
++
++void esp32s3_gpio_set_drive_observer(ESP32S3GPIOState *s,
++                                     ESP32S3GpioDriveObserver fn, void *opaque)
++{
++    s->drive_observer = fn;
++    s->observer_opaque = opaque;
++}
++
++bool esp32s3_gpio_solver_attached(ESP32S3GPIOState *s, unsigned pad)
++{
++    return pad < ESP32S3_GPIO_COUNT ? s->solver_attached[pad] : false;
++}
++
++void esp32s3_gpio_set_solver_owned(ESP32S3GPIOState *s, bool owned)
++{
++    s->solver_owned = owned;
++}
++
++void esp32s3_gpio_set_unknown_handler(ESP32S3GPIOState *s,
++                                      ESP32S3GpioUnknownFn fn, void *opaque)
++{
++    s->unknown_handler = fn;
++    s->unknown_opaque = opaque;
++}
++
++static void esp32s3_gpio_unknown_bh(void *opaque)
++{
++    /* Bounded diagnosable paused dependency, established from the main
++     * context: the VM stays paused until an external resume (no
++     * auto-resume); the pad policy/provenance is reported once. */
++    ESP32S3GPIOState *s = ESP32S3_GPIO(opaque);
++
++    if (!s->unknown_paused_reported) {
++        s->unknown_paused_reported = true;
++        warn_report("esp32s3.gpio: solver-owned pad(s) sampled UNKNOWN; "
++                    "VM paused (strict profile; resume explicitly after "
++                    "the net resolves)");
++    }
++    vm_stop(RUN_STATE_PAUSED);
++}
++
++/* A solver-owned pad reports UNKNOWN at a consumption point */
++static void esp32s3_gpio_unknown_use(ESP32S3GPIOState *s, int n)
++{
++    if (s->unknown_handler) {
++        s->unknown_handler(s->unknown_opaque, (unsigned)n);
++        return;
++    }
++    /* Default strict behavior: pause from the main context via BH */
++    if (!s->unknown_bh) {
++        s->unknown_bh = qemu_bh_new(esp32s3_gpio_unknown_bh, s);
++    }
++    qemu_bh_schedule(s->unknown_bh);
++}
++
++void esp32s3_gpio_consume_unknown(ESP32S3GPIOState *s, unsigned pad)
++{
++    if (pad >= ESP32S3_GPIO_COUNT) {
++        return;
++    }
++    if (s->solver_owned || s->solver_attached[pad]) {
++        esp32s3_gpio_unknown_use(s, (int)pad);
++    }
++}
++
++/* Wake the drive observer (guest register/mux/reset changes only) */
++static void esp32s3_gpio_notify_observer(ESP32S3GPIOState *s)
++{
++    if (s->drive_observer) {
++        s->drive_observer(s->observer_opaque);
++    }
++}
++
++ESP32S3GpioPadState esp32s3_gpio_pad_state(ESP32S3GPIOState *s, unsigned pad)
++{
++    return pad < ESP32S3_GPIO_COUNT ? s->net[pad].diag : ESP32S3_GPIO_PAD_FLOATING;
++}
++
++bool esp32s3_gpio_net_valid(ESP32S3GPIOState *s, unsigned pad)
++{
++    return pad < ESP32S3_GPIO_COUNT ? s->net[pad].valid : false;
++}
++
++double esp32s3_gpio_net_voltage(ESP32S3GPIOState *s, unsigned pad)
++{
++    return pad < ESP32S3_GPIO_COUNT ? s->net[pad].volts : 0.0;
++}
++
++void esp32s3_gpio_get_drive_snapshot(ESP32S3GPIOState *s, unsigned pad,
++                                     ESP32S3GpioDriveSnapshot *out)
++{
++    uint32_t mux, pin, out_cfg;
++
++    memset(out, 0, sizeof(*out));
++    if (pad >= ESP32S3_GPIO_COUNT) {
++        return;
++    }
++
++    mux = s->iomux ? esp32s3_iomux_get(s->iomux, (int)pad) : 0;
++    pin = s->gpio_pin[pad];
++    out_cfg = s->func_out_sel_cfg[pad];
++
++    out->mcu_sel = FIELD_EX32(mux, IO_MUX_GPIOn, MCU_SEL);
++    out->matrix_gpio = out->mcu_sel == ESP32S3_IOMUX_MCU_SEL_GPIO;
++    out->out_sel = FIELD_EX32(out_cfg, GPIO_FUNCn_OUT_SEL_CFG, FUNC_OUT_SEL);
++    out->out_inv = FIELD_EX32(out_cfg, GPIO_FUNCn_OUT_SEL_CFG, FUNC_OUT_INV_SEL);
++    /* Semantic truth: OE sourced from the routed peripheral signal only
++     * for a peripheral selection with FUNC_OEN_SEL == 0 (S3 polarity;
++     * simple GPIO 256 hardwires OE to GPIO_ENABLE) */
++    out->oen_from_signal =
++        out->out_sel != GPIO_FUNC_OUT_SEL_NONE &&
++        !FIELD_EX32(out_cfg, GPIO_FUNCn_OUT_SEL_CFG, FUNC_OEN_SEL);
++    out->oen_inv = FIELD_EX32(out_cfg, GPIO_FUNCn_OUT_SEL_CFG, FUNC_OEN_INV_SEL);
++    out->out_oe = enable_bit(s, (int)pad);
++    out->out_level = in_bit(s, (int)pad);
++    out->open_drain = pin_field(s, (int)pad,
++                                R_GPIO_PINn_PAD_DRIVER_SHIFT, 1);
++    out->drive_strength = FIELD_EX32(mux, IO_MUX_GPIOn, FUN_DRV);
++    out->ie = FIELD_EX32(mux, IO_MUX_GPIOn, FUN_IE);
++    out->pull_up = FIELD_EX32(mux, IO_MUX_GPIOn, FUN_PU);
++    out->pull_down = FIELD_EX32(mux, IO_MUX_GPIOn, FUN_PD);
++    out->slp_sel = FIELD_EX32(mux, IO_MUX_GPIOn, SLP_SEL);
++    /* hold / analog_owned stay false: documented boundaries */
++}
++
++static void esp32s3_gpio_input_line(void *opaque, int n, int level)
++{
++    ESP32S3GPIOState *s = ESP32S3_GPIO(opaque);
++
++    if (n < 0 || n >= ESP32S3_GPIO_COUNT) {
++        return;
++    }
++    /* qdev "gpio-in" lines are plain boolean drivers: the level holds on
++     * the net (no detach concept).  In solver-owned mode they are ignored
++     * entirely — only esp32s3_gpio_drive_net() may write the solved net
++     * (a floating native wire must not become a fabricated EXTERNAL bit). */
++    if (s->solver_owned) {
++        return;
++    }
++    esp32s3_gpio_net_drive(s, n, true, level != 0, 0.0);
++    esp32s3_gpio_update_pad(s, n);
++    esp32s3_gpio_update_irq(s);
++}
++
++/* IO_MUX pad registers changed: re-resolve every pad net and sample */
++static void esp32s3_gpio_iomux_change(void *opaque, int n, int level)
++{
++    ESP32S3GPIOState *s = ESP32S3_GPIO(opaque);
++
++    esp32s3_gpio_update_all(s);
++    esp32s3_gpio_notify_observer(s);
++}
++
++/* ---------- Reset / lifecycle ---------- */
++
++static void esp32s3_gpio_reset_hold(Object *obj, ResetType type)
++{
++    ESP32S3GPIOState *s = ESP32S3_GPIO(obj);
++
++    s->gpio_out = 0;
++    s->gpio_out1 = 0;
++    s->gpio_enable = 0;
++    s->gpio_enable1 = 0;
++    s->gpio_status = 0;
++    s->gpio_status1 = 0;
++    s->bt_select = 0;
++    s->sdio_select = 0;
++    s->clock_gate = 0;
++    s->date_reg = ESP32S3_GPIO_DATE_VERSION;
++
++    for (int i = 0; i < ESP32S3_GPIO_COUNT; i++) {
++        s->gpio_pin[i] = 0;
++        s->unknown_paused_reported = false;
++        memset(&s->net[i], 0, sizeof(s->net[i]));
++        s->net[i].diag = ESP32S3_GPIO_PAD_FLOATING;
++        s->solver_attached[i] = false;
++        s->line_out[i] = 0;
++        s->sample[i] = 0;
++        /* Input matrix default: all peripheral inputs tied to constant low */
++        s->func_in_sel_cfg[i] = GPIO_FUNC_IN_LOW;
++        /* Output matrix default: no peripheral signal routed (simple GPIO) */
++        s->func_out_sel_cfg[i] = GPIO_FUNC_OUT_SEL_NONE;
++        qemu_set_irq(s->output_lines[i], 0);
++    }
++    for (int i = ESP32S3_GPIO_COUNT; i < ESP32S3_GPIO_FUNC_IN_SEL_COUNT; i++) {
++        s->func_in_sel_cfg[i] = GPIO_FUNC_IN_LOW;
++    }
++    esp32s3_gpio_notify_observer(s);
++}
+ 
+ static void esp32s3_gpio_init(Object *obj)
+ {
++    ESP32S3GPIOState *s = ESP32S3_GPIO(obj);
++
+     /* Set the default value for the property */
+     object_property_set_int(obj, "strap_mode", ESP32S3_STRAP_MODE_FLASH_BOOT, &error_fatal);
++
++    qdev_init_gpio_in_named(DEVICE(obj), esp32s3_gpio_input_line,
++                            ESP32S3_GPIO_INPUT_LINES, ESP32S3_GPIO_COUNT);
++    qdev_init_gpio_in_named(DEVICE(obj), esp32s3_gpio_iomux_change,
++                            ESP32S3_GPIO_IOMUX_CHANGE, 1);
++    qdev_init_gpio_out_named(DEVICE(obj), s->output_lines,
++                             ESP32S3_GPIO_OUTPUT_LINES, ESP32S3_GPIO_COUNT);
++    qdev_init_gpio_out_named(DEVICE(obj), &s->irq_nmi,
++                             ESP32S3_GPIO_IRQ_NMI, 1);
++    qdev_init_gpio_out_named(DEVICE(obj), &s->irq_app,
++                             ESP32S3_GPIO_IRQ_APP, 1);
++    qdev_init_gpio_out_named(DEVICE(obj), &s->irq_app_nmi,
++                             ESP32S3_GPIO_IRQ_APP_NMI, 1);
++
++    object_property_add_link(OBJECT(obj), "iomux", TYPE_ESP32S3_IOMUX,
++                             (Object **)&s->iomux,
++                             object_property_allow_set_link,
++                             OBJ_PROP_LINK_STRONG);
+ }
+ 
+-/* If we need to override any function from the parent (reset, realize, ...), it shall be done
+- * in this class_init function */
+ static void esp32s3_gpio_class_init(ObjectClass *klass, void *data)
+ {
++    Esp32GpioClass *gc = ESP32_GPIO_CLASS(klass);
++    ResettableClass *rc = RESETTABLE_CLASS(klass);
++    DeviceClass *dc = DEVICE_CLASS(klass);
++
++    /* Override the parent virtual register file */
++    gc->gpio_read = esp32s3_gpio_read;
++    gc->gpio_write = esp32s3_gpio_write;
++
++    rc->phases.hold = esp32s3_gpio_reset_hold;
++    {
++        static Property esp32s3_gpio_props[] = {
++            DEFINE_PROP_BOOL("strict-unknown", ESP32S3GPIOState,
++                             strict_unknown, false),
++            DEFINE_PROP_END_OF_LIST(),
++        };
++        device_class_set_props(dc, esp32s3_gpio_props);
++    }
++    dc->desc = "ESP32-S3 GPIO with matrix";
+ }
+ 
+ static const TypeInfo esp32s3_gpio_info = {
+--- a/hw/gpio/meson.build
++++ b/hw/gpio/meson.build
+@@ -19,5 +19,5 @@
+ system_ss.add(when: 'CONFIG_SIFIVE_GPIO', if_true: files('sifive_gpio.c'))
+ system_ss.add(when: 'CONFIG_XTENSA_ESP32', if_true: files('esp32_gpio.c'))
+ system_ss.add(when: 'CONFIG_RISCV_ESP32C3', if_true: files('esp32_gpio.c', 'esp32c3_gpio.c'))
+-system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files('esp32_gpio.c', 'esp32s3_gpio.c'))
++system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files('esp32_gpio.c', 'esp32s3_gpio.c', 'esp32s3_iomux.c'))
+ system_ss.add(when: 'CONFIG_PCF8574', if_true: files('pcf8574.c'))
+--- a/include/hw/gpio/esp32_gpio.h
++++ b/include/hw/gpio/esp32_gpio.h
+@@ -24,4 +24,9 @@
+ 
+ typedef struct Esp32GpioClass {
+     SysBusDeviceClass parent_class;
++
++    /* SoC-specific register file; subclasses override, the default handles
++     * only the GPIO_STRAP register shared by every Espressif SoC. */
++    uint64_t (*gpio_read)(void *opaque, hwaddr addr, unsigned int size);
++    void (*gpio_write)(void *opaque, hwaddr addr, uint64_t value, unsigned int size);
+ } Esp32GpioClass;
+--- a/include/hw/gpio/esp32s3_gpio.h
++++ b/include/hw/gpio/esp32s3_gpio.h
+@@ -1,22 +1,394 @@
++/*
++ * ESP32-S3 GPIO emulation with GPIO matrix routing
++ *
++ * Register layout derived from the ESP32-S3 TRM chapter 6 (IO MUX and GPIO
++ * Matrix) register summary, cross-checked against the ESP-IDF 6.1 SoC headers
++ * (components/soc/esp32s3/register/soc/gpio_reg.h and gpio_struct.h):
++ *   - GPIO0..GPIO48 (49 pads; pads 22..25 do not exist on the S3 chip)
++ *   - Input signal matrix: 256 signals  (GPIO_FUNCn_IN_SEL_CFG @ 0x154)
++ *   - Output signal matrix: 49 entries  (GPIO_FUNCm_OUT_SEL_CFG @ 0x554)
++ *   - Four interrupt matrix sources: PROCPU level / PROCPU NMI /
++ *     APPCPU level / APPCPU NMI (ETS_GPIO_INTR_SOURCE 16..ETS_GPIO_NMI_SOURCE2 19)
++ *
++ * Copyright (c) 2023 Espressif Systems (Shanghai) Co. Ltd.
++ * Copyright (c) 2026 ESP32S3VM project
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 or
++ * (at your option) any later version.
++ */
++
+ #pragma once
+ 
+ #include "hw/sysbus.h"
+ #include "hw/hw.h"
+ #include "hw/registerfields.h"
+ #include "esp32_gpio.h"
++#include "hw/gpio/esp32s3_iomux.h"
+ 
+ #define TYPE_ESP32S3_GPIO "esp32s3.gpio"
+ #define ESP32S3_GPIO(obj)           OBJECT_CHECK(ESP32S3GPIOState, (obj), TYPE_ESP32S3_GPIO)
+ #define ESP32S3_GPIO_GET_CLASS(obj) OBJECT_GET_CLASS(ESP32S3GPIOClass, obj, TYPE_ESP32S3_GPIO)
+ #define ESP32S3_GPIO_CLASS(klass)   OBJECT_CLASS_CHECK(ESP32S3GPIOClass, klass, TYPE_ESP32S3_GPIO)
+ 
+-/* Bootstrap options for ESP32-S3 (4-bit) */
++/* Bootstrap options for ESP32-S3 (4-bit, strapping register is 16 bit wide) */
+ #define ESP32S3_STRAP_MODE_FLASH_BOOT 0x4   /* SPI Boot */
++#define ESP32S3_STRAP_MODE_UART_BOOT  0x0   /* ROM UART/USB download boot */
++
++/* ESP32-S3 has 49 GPIO registers (GPIO0 - GPIO48); pads 22..25 are holes */
++#define ESP32S3_GPIO_COUNT             49
++
++/* Number of input peripheral signals routed through the GPIO matrix */
++#define ESP32S3_GPIO_FUNC_IN_SEL_COUNT 256
++
++/* The "1" register banks (OUT1/ENABLE1/IN1/STATUS1/...) are 22 bits wide */
++#define ESP32S3_GPIO1_MASK  0x003FFFFF
++
++/* ---------- Register offsets relative to DR_REG_GPIO_BASE (0x60004000) ---------- */
++
++/* BT select (bluetooth pin muxing, stored only) */
++REG32(GPIO_BT_SELECT, 0x0000)
++
++/* Output data registers */
++REG32(GPIO_OUT, 0x0004)
++REG32(GPIO_OUT_W1TS, 0x0008)
++REG32(GPIO_OUT_W1TC, 0x000C)
++REG32(GPIO_OUT1, 0x0010)          /* bits [21:0], GPIO32-48 */
++REG32(GPIO_OUT1_W1TS, 0x0014)
++REG32(GPIO_OUT1_W1TC, 0x0018)
++
++/* SDIO select */
++REG32(GPIO_SDIO_SELECT, 0x001C)
++
++/* Output enable registers */
++REG32(GPIO_ENABLE, 0x0020)
++REG32(GPIO_ENABLE_W1TS, 0x0024)
++REG32(GPIO_ENABLE_W1TC, 0x0028)
++REG32(GPIO_ENABLE1, 0x002C)       /* bits [21:0], GPIO32-48 */
++REG32(GPIO_ENABLE1_W1TS, 0x0030)
++REG32(GPIO_ENABLE1_W1TC, 0x0034)
++
++/* GPIO_STRAP is at 0x0038 — defined in esp32_gpio.h */
++
++/* Input registers (read-only pad samples) */
++REG32(GPIO_IN, 0x003C)
++REG32(GPIO_IN1, 0x0040)           /* bits [21:0], GPIO32-48 */
++
++/* Interrupt status registers */
++REG32(GPIO_STATUS, 0x0044)
++REG32(GPIO_STATUS_W1TS, 0x0048)
++REG32(GPIO_STATUS_W1TC, 0x004C)
++REG32(GPIO_STATUS1, 0x0050)       /* bits [21:0], GPIO32-48 */
++REG32(GPIO_STATUS1_W1TS, 0x0054)
++REG32(GPIO_STATUS1_W1TC, 0x0058)
++
++/* Per-CPU interrupt status (read-only, STATUS masked by PINn.INT_ENA) */
++REG32(GPIO_PCPU_INT, 0x005C)      /* PROCPU level int (matrix source 16) */
++REG32(GPIO_PCPU_NMI_INT, 0x0060)  /* PROCPU NMI        (matrix source 17) */
++REG32(GPIO_CPUSDIO_INT, 0x0064)   /* SDIO int status   (INT_ENA bit 4) */
++REG32(GPIO_PCPU_INT1, 0x0068)     /* APPCPU level int  (matrix source 18) */
++REG32(GPIO_PCPU_NMI_INT1, 0x006C) /* APPCPU NMI        (matrix source 19) */
++REG32(GPIO_CPUSDIO_INT1, 0x0070)
++
++/* Per-pin configuration: GPIO_PINn_REG = 0x0074 + n*4, n=0..48 */
++#define GPIO_PINn_REG_OFFSET(n) (0x0074 + (n) * 4)
++
++/* GPIO_PINn field layout (same for all n) */
++    FIELD(GPIO_PINn, SYNC2_BYPASS, 0, 2)
++    FIELD(GPIO_PINn, PAD_DRIVER, 2, 1)     /* 0=push-pull, 1=open-drain */
++    FIELD(GPIO_PINn, SYNC1_BYPASS, 3, 2)
++    /* bits 5-6: reserved */
++    FIELD(GPIO_PINn, INT_TYPE, 7, 3)       /* 0=dis,1=rise,2=fall,3=any,4=low,5=high */
++    FIELD(GPIO_PINn, WAKEUP_ENABLE, 10, 1)
++    /* bits 11-12: CONFIG (stored) */
++    FIELD(GPIO_PINn, INT_ENA, 13, 5)       /* bit0 PROCPU int, 1 APPCPU int,
++                                              2 PROCPU NMI, 3 APPCPU NMI, 4 SDIO */
++
++/* Interrupt types (GPIO_PINn.INT_TYPE) */
++enum {
++    ESP32S3_GPIO_INT_DISABLED = 0,
++    ESP32S3_GPIO_INT_RISING   = 1,
++    ESP32S3_GPIO_INT_FALLING  = 2,
++    ESP32S3_GPIO_INT_ANYEDGE  = 3,
++    ESP32S3_GPIO_INT_LOW      = 4,
++    ESP32S3_GPIO_INT_HIGH     = 5,
++};
++
++/* GPIO_PINn.INT_ENA bit positions (register-relative) */
++#define ESP32S3_GPIO_INT_ENA_PROCPU      (1U << 13)
++#define ESP32S3_GPIO_INT_ENA_APPCPU      (1U << 14)
++#define ESP32S3_GPIO_INT_ENA_PROCPU_NMI  (1U << 15)
++#define ESP32S3_GPIO_INT_ENA_APPCPU_NMI  (1U << 16)
++#define ESP32S3_GPIO_INT_ENA_SDIO        (1U << 17)
++#define ESP32S3_GPIO_PINn_WRITE_MASK     0x0007FFFF  /* bits [18:0] */
++
++/* Status "next" registers (0x14C/0x150: level conditions currently true) */
++REG32(GPIO_STATUS_NEXT, 0x014C)
++REG32(GPIO_STATUS_NEXT1, 0x0150)
++
++/* Input signal matrix: GPIO_FUNCn_IN_SEL_CFG_REG = 0x154 + n*4, n=0..255 */
++#define GPIO_FUNC_IN_SEL_CFG_OFFSET(n) (0x0154 + (n) * 4)
++
++    FIELD(GPIO_FUNCn_IN_SEL_CFG, FUNC_IN_SEL, 0, 6)     /* GPIO 0-48 or constant */
++    FIELD(GPIO_FUNCn_IN_SEL_CFG, FUNC_IN_INV_SEL, 6, 1) /* invert routed input */
++    FIELD(GPIO_FUNCn_IN_SEL_CFG, SIG_IN_SEL, 7, 1)      /* 1=GPIO matrix, 0=IO_MUX direct */
++
++/* Special FUNC_IN_SEL values (constant inputs, TRM ch.6 Peripheral Input) */
++#define GPIO_FUNC_IN_HIGH   0x38   /* input signal tied to logic high */
++#define GPIO_FUNC_IN_LOW    0x3C   /* input signal tied to logic low  */
++#define GPIO_FUNC_IN_SEL_WRITE_MASK 0xFF
++
++/* Output signal matrix: GPIO_FUNCn_OUT_SEL_CFG_REG = 0x554 + n*4, n=0..48 */
++#define GPIO_FUNC_OUT_SEL_CFG_OFFSET(n) (0x0554 + (n) * 4)
++
++    FIELD(GPIO_FUNCn_OUT_SEL_CFG, FUNC_OUT_SEL, 0, 9)      /* output signal index */
++    FIELD(GPIO_FUNCn_OUT_SEL_CFG, FUNC_OUT_INV_SEL, 9, 1)  /* invert output */
++    FIELD(GPIO_FUNCn_OUT_SEL_CFG, FUNC_OEN_SEL, 10, 1)     /* 1=OE from signal, 0=GPIO_ENABLE */
++    FIELD(GPIO_FUNCn_OUT_SEL_CFG, FUNC_OEN_INV_SEL, 11, 1) /* invert OE */
++#define GPIO_FUNC_OUT_SEL_CFG_WRITE_MASK 0xFFF
++
++/* FUNC_OUT_SEL: 256 = simple GPIO output (GPIO_OUT/ENABLE drive the pad).
++ * Values 0..255 select a peripheral matrix output signal; none of them is
++ * currently sourced by a model, so the pad driver stays released. */
++#define GPIO_FUNC_OUT_SEL_NONE  0x100
++#define GPIO_FUNC_OUT_SEL_INVALID_MAX 0x1FF  /* 257..511: reserved, no drive */
+ 
+-typedef struct ESP32S3State {
++/* Clock gate */
++REG32(GPIO_CLOCK_GATE, 0x062C)
++    FIELD(GPIO_CLOCK_GATE, CLK_EN, 0, 1)
++
++/* Date/version */
++REG32(GPIO_DATE, 0x06FC)
++
++#define ESP32S3_GPIO_DATE_VERSION   0x2101191
++
++/* MMIO range implemented by the model */
++#define ESP32S3_GPIO_MMIO_SIZE      0x1000
++
++/*
++ * Electrical view of a pad net (digital, pre-analog-gate).
++ *
++ * "Floating is NOT valid low": an unresolved net is reported separately
++ * from the sampled register bit.  Guest registers always return ordinary
++ * bits (unresolved nets sample 0 under the documented permissive profile)
++ * while esp32s3_gpio_pad_state() exposes the resolution diagnostics the
++ * future analog solver will drive.
++ */
++typedef enum {
++    ESP32S3_GPIO_PAD_FLOATING = 0, /* no driver, no pull: unresolved      */
++    ESP32S3_GPIO_PAD_DRIVEN,       /* this pad's output driver            */
++    ESP32S3_GPIO_PAD_EXTERNAL,     /* external/solver net driver          */
++    ESP32S3_GPIO_PAD_PULLED_HIGH,  /* weak pull-up resolved the net       */
++    ESP32S3_GPIO_PAD_PULLED_LOW,   /* weak pull-down resolved the net     */
++    ESP32S3_GPIO_PAD_CONTENTION,   /* own driver vs valid external driver
++                                    * at a different level; the digital
++                                    * sampling policy reads the internal
++                                    * drive until the analog gate resolves */
++    ESP32S3_GPIO_PAD_UNKNOWN,      /* solver attached but reports the net
++                                    * unresolved: never falls back to a
++                                    * pull/internal bit as if it were a
++                                    * valid sample (strict consumers must
++                                    * pause before sampling/IRQ use)      */
++} ESP32S3GpioPadState;
++
++/*
++ * RAW effective drive configuration of one pad — everything the future
++ * net solver needs to build its own Thevenin view.  This is the register
++ * truth, deliberately separate from the resolved gpio-out line (feeding a
++ * resolved line back into a solver would create false feedback and cannot
++ * express contention).
++ */
++typedef struct ESP32S3GpioDriveSnapshot {
++    /* Ownership */
++    unsigned mcu_sel;       /* IO_MUX function; ESP32S3_IOMUX_MCU_SEL_GPIO (1)
++                             * = GPIO matrix path */
++    bool matrix_gpio;       /* mcu_sel == ESP32S3_IOMUX_MCU_SEL_GPIO */
++    /* Output driver */
++    bool out_oe;            /* GPIO_ENABLE bank bit (simple GPIO path) */
++    unsigned out_sel;       /* FUNC_OUT_SEL raw (256 = simple GPIO) */
++    bool out_inv;           /* FUNC_OUT_INV_SEL */
++    bool oen_from_signal;   /* true when OE comes from the routed
++                             * peripheral signal (FUNC_OEN_SEL == 0 on S3);
++                             * false when GPIO_ENABLE drives OE
++                             * (FUNC_OEN_SEL == 1, the IDF default) */
++    bool oen_inv;           /* FUNC_OEN_INV_SEL */
++    bool out_level;         /* raw source level (GPIO_OUT bank bit) */
++    bool open_drain;        /* GPIO_PINn.PAD_DRIVER */
++    unsigned drive_strength;/* IO_MUX FUN_DRV (stored, electrically inert) */
++    /* Input */
++    bool ie;                /* IO_MUX FUN_IE input-buffer enable */
++    /* Pulls */
++    bool pull_up;           /* IO_MUX FUN_PU */
++    bool pull_down;         /* IO_MUX FUN_PD */
++    /* Sleep / hold ownership (stored bits, not resolved in this model) */
++    bool slp_sel;           /* IO_MUX SLP_SEL */
++    bool hold;              /* always false: pad hold is a documented boundary */
++    bool analog_owned;      /* always false on digital pads; RTC/analog
++                             * ownership lives in esp32s3_rtc_io_* + SENS */
++} ESP32S3GpioDriveSnapshot;
++
++typedef struct ESP32S3GpioNet {
++    bool valid;    /* node level is resolved (never floating) */
++    bool level;    /* resolved digital level when valid       */
++    double volts;  /* last solver-provided voltage (inert)    */
++    ESP32S3GpioPadState diag;
++} ESP32S3GpioNet;
++
++/* Named qdev GPIO arrays */
++#define ESP32S3_GPIO_INPUT_LINES   "gpio-in"   /* external drivers, 49 lines */
++#define ESP32S3_GPIO_OUTPUT_LINES  "gpio-out"  /* resolved pad levels, 49 lines */
++#define ESP32S3_GPIO_IOMUX_CHANGE  "iomux-change" /* from iomux pad-change */
++#define ESP32S3_GPIO_IRQ_NMI       "nmi-int"   /* PROCPU NMI lane   (source 17) */
++#define ESP32S3_GPIO_IRQ_APP       "app-int"   /* APPCPU level lane (source 18) */
++#define ESP32S3_GPIO_IRQ_APP_NMI   "app-nmi"   /* APPCPU NMI lane   (source 19) */
++/* sysbus irq index 0 is the PROCPU level lane (matrix source 16) */
++
++/* Raw-truth change notifier type (see esp32s3_gpio_set_drive_observer) */
++typedef void (*ESP32S3GpioDriveObserver)(void *opaque);
++
++/* Unknown-consumption hook type (see esp32s3_gpio_set_unknown_handler) */
++typedef void (*ESP32S3GpioUnknownFn)(void *opaque, unsigned pad);
++
++typedef struct ESP32S3GPIOState {
+     Esp32GpioState parent;
++
++    /* Register file */
++    uint32_t bt_select;
++    uint32_t gpio_out;         /* GPIO_OUT    (GPIO0-31) */
++    uint32_t gpio_out1;        /* GPIO_OUT1   (GPIO32-48) */
++    uint32_t gpio_enable;      /* GPIO_ENABLE (GPIO0-31) */
++    uint32_t gpio_enable1;     /* GPIO_ENABLE1(GPIO32-48) */
++    uint32_t gpio_status;      /* GPIO_STATUS (GPIO0-31) */
++    uint32_t gpio_status1;     /* GPIO_STATUS1(GPIO32-48) */
++    uint32_t sdio_select;
++    uint32_t gpio_pin[ESP32S3_GPIO_COUNT];
++    uint32_t func_in_sel_cfg[ESP32S3_GPIO_FUNC_IN_SEL_COUNT];
++    uint32_t func_out_sel_cfg[ESP32S3_GPIO_COUNT];
++    uint32_t clock_gate;
++    uint32_t date_reg;
++
++    /* Electrical view of the pads */
++    ESP32S3IOMuxState *iomux;                   /* link: "iomux" */
++    ESP32S3GpioNet net[ESP32S3_GPIO_COUNT];     /* resolved pad nets */
++    bool solver_attached[ESP32S3_GPIO_COUNT];   /* external/solver driver */
++    bool solver_owned;                          /* solver authoritative on
++                                                 * every pad, even unattached */
++    bool strict_unknown;                        /* pause-before-consumption on
++                                                 * any floating/unknown input */
++    ESP32S3GpioUnknownFn unknown_handler;       /* strict pause hook */
++    void *unknown_opaque;
++    struct QemuBH *unknown_bh;                  /* main-context pause */
++    bool unknown_paused_reported;
++    ESP32S3GpioDriveObserver drive_observer;    /* raw-truth change wake */
++    void *observer_opaque;
++    uint8_t line_out[ESP32S3_GPIO_COUNT];       /* last level on gpio-out */
++    uint8_t sample[ESP32S3_GPIO_COUNT];         /* input-buffer samples */
++    bool irq_out[4];                            /* PROCPU/NMI/APP/APPNMI lanes */
++    qemu_irq output_lines[ESP32S3_GPIO_COUNT];
++    qemu_irq irq_nmi;
++    qemu_irq irq_app;
++    qemu_irq irq_app_nmi;
+ } ESP32S3GPIOState;
+ 
+ typedef struct ESP32S3GPIOClass {
+     Esp32GpioClass parent;
+ } ESP32S3GPIOClass;
++
++/*
++ * Effective level of GPIO matrix input signal @signal (0..255) following
++ * GPIO_FUNCn_IN_SEL_CFG (pad routing, inversion and the constant input
++ * values 0x38/0x3C).  Intended for peripheral models that consume matrix
++ * inputs (UART, RMT, ...); returns 0 for a bypassed (SIG_IN_SEL=0) signal.
++ */
++uint32_t esp32s3_gpio_matrix_input(ESP32S3GPIOState *s, uint32_t signal);
++
++/*
++ * Strict matrix sample (no silent fallback): returns true and writes
++ * *level when signal @signal is matrix-routed (SIG_IN_SEL=1; pad sample
++ * or 0x38/0x3C constants, inversion applied).  Returns false when the
++ * signal is bypassed (SIG_IN_SEL=0: direct IO_MUX route, unmodelled in
++ * this lane) or out of range — consumers must treat that as unresolved,
++ * never as a valid 0.
++ *
++ * Validity contract: for a routed pad the returned level is the
++ * FUN_IE-gated digital sample.  It carries no net-validity/UNKNOWN gate —
++ * callers consuming solver-resolved nets must check the pad net first
++ * (esp32s3_gpio_net_valid / pad_state or the electrical layer) before
++ * treating the level as authoritative; the strict pre-consumption pause
++ * path is the MMIO input read / IRQ evaluation, not this raw helper.
++ */
++bool esp32s3_gpio_matrix_sample(ESP32S3GPIOState *s, uint32_t signal, bool *level);
++
++/*
++ * Drive a pad net from an external device or the future DC solver:
++ * @valid=false marks the net unresolved (floating); @volts records the
++ * solver voltage (electrically inert until the analog gate).  This is the
++ * voltage/validity entry point; the boolean "gpio-in" qdev lines feed the
++ * same path with valid=true.
++ */
++void esp32s3_gpio_drive_net(ESP32S3GPIOState *s, unsigned pad,
++                            bool valid, bool level, double volts);
++
++/* Resolution diagnostics for pad @pad (floating/pulled/driven states). */
++ESP32S3GpioPadState esp32s3_gpio_pad_state(ESP32S3GPIOState *s, unsigned pad);
++
++/* True when pad @pad's net is resolved (not floating). */
++bool esp32s3_gpio_net_valid(ESP32S3GPIOState *s, unsigned pad);
++
++/*
++ * Public strict-consumption gate: run the pad's UNKNOWN policy (native
++ * unknown handler, else the default main-context paused dependency BH)
++ * exactly as MMIO input reads do.  Call before treating a directly
++ * sampled pad level (bypass IO_MUX route, external sampler) as valid.
++ */
++void esp32s3_gpio_consume_unknown(ESP32S3GPIOState *s, unsigned pad);
++
++/* Last solver-provided voltage for pad @pad (0 before the analog gate). */
++double esp32s3_gpio_net_voltage(ESP32S3GPIOState *s, unsigned pad);
++
++/*
++ * RAW effective drive configuration of pad @pad for the net solver
++ * (see ESP32S3GpioDriveSnapshot).  Register truth, independent of the
++ * resolved gpio-out line.
++ */
++void esp32s3_gpio_get_drive_snapshot(ESP32S3GPIOState *s, unsigned pad,
++                                     ESP32S3GpioDriveSnapshot *out);
++
++/*
++ * Raw-truth change notifier (net-solver wake): invoked after every guest
++ * register write to the GPIO/IO_MUX/RTC_IO register files and after device
++ * reset — never on solver drive updates (the solver caused those) and
++ * never on mere resolved-line changes.  The callback may query any
++ * snapshot/diagnostic.  Pass fn = NULL to unregister.
++ */
++void esp32s3_gpio_set_drive_observer(ESP32S3GPIOState *s,
++                                 ESP32S3GpioDriveObserver fn, void *opaque);
++
++/*
++ * Strict-sampling gate: true when an external solver/driver is attached
++ * to pad @pad's net.  While attached, the solver's valid level is the
++ * authoritative sample (even against the internal output driver; the
++ * CONTENTION diagnostic still reports raw-desired vs solved sample), an
++ * unresolved report holds ESP32S3_GPIO_PAD_UNKNOWN and the input keeps
++ * its last sample (persisted rule; no fabricated 0).  Strict consumers
++ * pause before input reads/IRQ evaluation on UNKNOWN.
++ */
++bool esp32s3_gpio_solver_attached(ESP32S3GPIOState *s, unsigned pad);
++
++/*
++ * Device-wide solver ownership: when true, every pad behaves as attached
++ * (solver valid level authoritative, unresolved = UNKNOWN); the internal
++ * drive/pull resolution never produces the sample.
++ */
++void esp32s3_gpio_set_solver_owned(ESP32S3GPIOState *s, bool owned);
++
++/*
++ * Unknown-consumption hook (strict gate, native owns the pause): invoked
++ * whenever a sample is consumed while the solver owns the pad and reports
++ * UNKNOWN — GPIO_IN reads, matrix input lookups and IRQ evaluation pass
++ * here before the persisted last sample is used.  The handler may stop
++ * the VM / abort the MMIO access so the guest never consumes a stale
++ * value as valid.  fn=NULL restores the default persisted rule.
++ */
++void esp32s3_gpio_set_unknown_handler(ESP32S3GPIOState *s,
++                                      ESP32S3GpioUnknownFn fn, void *opaque);
+--- a/hw/misc/meson.build
++++ b/hw/misc/meson.build
+@@ -167,6 +167,7 @@
+   'esp32s3_rtc_cntl.c',
+   'esp32s3_rng.c',
+   'esp32s3_pms.c',
++  'esp32s3_rtc_io.c',
+   'esp32s3_regi2c.c',
+   'esp_hmac.c',
+   'esp32s3_hmac.c'
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -64,6 +64,8 @@
+ #include "hw/timer/esp32s3_timg.h"
+ #include "hw/timer/esp32s3_systimer.h"
+ #include "hw/gpio/esp32s3_gpio.h"
++#include "hw/gpio/esp32s3_iomux.h"
++#include "hw/misc/esp32s3_rtc_io.h"
+ #include "hw/misc/esp32s3_xts_aes.h"
+ #include "hw/misc/esp32s3_pms.h"
+ #include "hw/net/can/esp32s3_twai.h"
+@@ -131,6 +133,8 @@
+     Esp32s3IntMatrixState intmatrix;
+     ESP32S3UARTState uart[ESP32S3_UART_COUNT];
+     ESP32S3GPIOState gpio;
++    ESP32S3IOMuxState iomux;
++    ESP32S3RtcIoState rtc_io;
+     Esp32s3RngState rng;
+     Esp32S3TWAIState twai;
+ 
+@@ -805,6 +809,8 @@
+     object_initialize_child(OBJECT(ss), "efuse", &ss->efuse, TYPE_ESP32S3_EFUSE);
+     object_initialize_child(OBJECT(ss), "jtag", &ss->jtag, TYPE_ESP32C3_JTAG);
+     object_initialize_child(OBJECT(ss), "gpio", &ss->gpio, TYPE_ESP32S3_GPIO);
++    object_initialize_child(OBJECT(ss), "iomux", &ss->iomux, TYPE_ESP32S3_IOMUX);
++    object_initialize_child(OBJECT(ss), "rtc-io", &ss->rtc_io, TYPE_ESP32S3_RTC_IO);
+     object_initialize_child(OBJECT(ss), "rng", &ss->rng, TYPE_ESP32S3_RNG);
+ 
+     object_initialize_child(OBJECT(ss), "regi2c", &ss->regi2c, TYPE_ESP32S3_REGI2C);
+@@ -1018,11 +1024,44 @@
+     }
+ 
+ 
++    /* IO_MUX realization (replaces the create_unimplemented_device placeholder) */
++    {
++        sysbus_realize(SYS_BUS_DEVICE(&ss->iomux), &error_fatal);
++        MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->iomux), 0);
++        memory_region_add_subregion_overlap(sys_mem, DR_REG_IO_MUX_BASE, mr, 0);
++        /* The GPIO model consumes MCU_SEL / FUN_IE / FUN_PU / FUN_PD */
++        object_property_set_link(OBJECT(&ss->gpio), "iomux",
++                                 OBJECT(&ss->iomux), &error_abort);
++        /* Pad register writes re-resolve the GPIO pad nets */
++        qdev_connect_gpio_out_named(DEVICE(&ss->iomux), ESP32S3_IOMUX_CHANGE_IRQ, 0,
++                                    qdev_get_gpio_in_named(DEVICE(&ss->gpio),
++                                                           ESP32S3_GPIO_IOMUX_CHANGE, 0));
++    }
++
+     /* GPIO realization */
+     {
+         sysbus_realize(SYS_BUS_DEVICE(&ss->gpio), &error_fatal);
+         MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->gpio), 0);
+         memory_region_add_subregion_overlap(sys_mem, DR_REG_GPIO_BASE, mr, 0);
++        /* PROCPU level interrupt: GPIO interrupt matrix source 16 */
++        sysbus_connect_irq(SYS_BUS_DEVICE(&ss->gpio), 0,
++                           qdev_get_gpio_in(intmatrix_dev, ETS_GPIO_INTR_SOURCE));
++        /* PROCPU NMI: source 17 */
++        qdev_connect_gpio_out_named(DEVICE(&ss->gpio), ESP32S3_GPIO_IRQ_NMI, 0,
++                                    qdev_get_gpio_in(intmatrix_dev, ETS_GPIO_NMI_SOURCE));
++        /* APPCPU level: source 18 */
++        qdev_connect_gpio_out_named(DEVICE(&ss->gpio), ESP32S3_GPIO_IRQ_APP, 0,
++                                    qdev_get_gpio_in(intmatrix_dev, ETS_GPIO_INTR_SOURCE2));
++        /* APPCPU NMI: source 19 */
++        qdev_connect_gpio_out_named(DEVICE(&ss->gpio), ESP32S3_GPIO_IRQ_APP_NMI, 0,
++                                    qdev_get_gpio_in(intmatrix_dev, ETS_GPIO_NMI_SOURCE2));
++    }
++
++    /* RTC IO MUX realization (inside the RTC_CNTL APB window) */
++    {
++        sysbus_realize(SYS_BUS_DEVICE(&ss->rtc_io), &error_fatal);
++        MemoryRegion *mr = sysbus_mmio_get_region(SYS_BUS_DEVICE(&ss->rtc_io), 0);
++        memory_region_add_subregion_overlap(sys_mem, DR_REG_RTC_IO_MUX_BASE, mr, 0);
+     }
+ 
+     {
+@@ -1120,7 +1159,6 @@
+     }
+ 
+     esp32s3_soc_add_unimp_device(sys_mem, "esp32s3.rmt", DR_REG_RMT_BASE, 0x1000);
+-    esp32s3_soc_add_unimp_device(sys_mem, "esp32s3.iomux", DR_REG_IO_MUX_BASE, 0x2000);
+ 
+     esp32s3_machine_init_sd(ss);
+ 
+--- a/tests/qtest/meson.build
++++ b/tests/qtest/meson.build
+@@ -344,7 +344,7 @@
+ endif
+ 
+ # ESP32-S3 clock tree / reset domain tests (coreclk lane)
+-qtests_xtensa = [ 'esp32s3-intmatrix-test', 'esp32s3-gdma-test', 'esp32s3-coreclk-test' ]
++qtests_xtensa = [ 'esp32s3-gpio-test', 'esp32s3-intmatrix-test', 'esp32s3-gdma-test', 'esp32s3-coreclk-test' ]
+ 
+ qtests = {
+   'bios-tables-test': [io, 'boot-sector.c', 'acpi-utils.c', 'tpm-emu.c'],
+--- /dev/null
++++ b/hw/gpio/esp32s3_iomux.c
+@@ -0,0 +1,158 @@
++/*
++ * ESP32-S3 IO MUX peripheral
++ *
++ * Register store for the 49 IO_MUX_GPIOn pad registers with TRM reset
++ * defaults.  The pad function select (MCU_SEL), the input enable (FUN_IE)
++ * and the internal pulls (FUN_PU / FUN_PD) are consumed by the GPIO model
++ * through the "iomux" link property; drive strength is stored but is
++ * electrically inert until the analog solver gate (documented boundary).
++ *
++ * Copyright (c) 2024 Espressif Systems (Shanghai) Co. Ltd.
++ * Copyright (c) 2026 ESP32S3VM project
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 or
++ * (at your option) any later version.
++ */
++
++#include "qemu/osdep.h"
++#include "qemu/log.h"
++#include "qemu/module.h"
++#include "qapi/error.h"
++#include "hw/hw.h"
++#include "hw/sysbus.h"
++#include "hw/irq.h"
++#include "hw/qdev-properties.h"
++#include "hw/gpio/esp32s3_iomux.h"
++
++#define IOMUX_WARNING 0
++
++/* Pad register write mask: bits [15:0] are implemented */
++#define IOMUX_PAD_WRITE_MASK 0x0000FFFF
++
++static bool esp32s3_iomux_pad_addr(hwaddr addr, unsigned *pad)
++{
++    if (addr < IO_MUX_GPIOn_REG_OFFSET(0) ||
++        addr > IO_MUX_GPIOn_REG_OFFSET(ESP32S3_IOMUX_GPIO_COUNT - 1) ||
++        ((addr - IO_MUX_GPIOn_REG_OFFSET(0)) % 4) != 0) {
++        return false;
++    }
++    *pad = (addr - IO_MUX_GPIOn_REG_OFFSET(0)) / 4;
++    return true;
++}
++
++static uint64_t esp32s3_iomux_read(void *opaque, hwaddr addr, unsigned int size)
++{
++    ESP32S3IOMuxState *s = ESP32S3_IOMUX(opaque);
++    uint64_t r = 0;
++    unsigned pad;
++
++    switch (addr) {
++    case A_IO_MUX_PIN_CTRL:
++        r = s->pin_ctrl;
++        break;
++
++    case A_IO_MUX_DATE:
++        r = s->date_reg;
++        break;
++
++    default:
++        if (esp32s3_iomux_pad_addr(addr, &pad)) {
++            r = esp32s3_iomux_get(s, pad);
++        } else if (IOMUX_WARNING) {
++            qemu_log_mask(LOG_GUEST_ERROR,
++                          "%s: bad read at offset 0x%04" HWADDR_PRIx "\n",
++                          __func__, addr);
++        }
++        break;
++    }
++
++    return r;
++}
++
++static void esp32s3_iomux_write(void *opaque, hwaddr addr, uint64_t value,
++                                unsigned int size)
++{
++    ESP32S3IOMuxState *s = ESP32S3_IOMUX(opaque);
++    unsigned pad;
++
++    switch (addr) {
++    case A_IO_MUX_PIN_CTRL:
++        s->pin_ctrl = (uint32_t)value & 0x00000FFF; /* CLK1/2/3, 4 bits each */
++        break;
++
++    case A_IO_MUX_DATE:
++        /* Version register is read-only */
++        break;
++
++    default:
++        if (esp32s3_iomux_pad_addr(addr, &pad)) {
++            s->gpio_reg[pad] = (uint32_t)value & IOMUX_PAD_WRITE_MASK;
++            /* Let the GPIO consumer re-resolve the pad nets */
++            qemu_set_irq(s->notify, 0);
++            qemu_set_irq(s->notify, 1);
++        } else if (IOMUX_WARNING) {
++            qemu_log_mask(LOG_GUEST_ERROR,
++                          "%s: bad write at offset 0x%04" HWADDR_PRIx "\n",
++                          __func__, addr);
++        }
++        break;
++    }
++}
++
++static const MemoryRegionOps esp32s3_iomux_ops = {
++    .read = esp32s3_iomux_read,
++    .write = esp32s3_iomux_write,
++    .endianness = DEVICE_LITTLE_ENDIAN,
++    .valid = {
++        .min_access_size = 4,
++        .max_access_size = 4,
++        .unaligned = false,
++    },
++};
++
++static void esp32s3_iomux_reset_hold(Object *obj, ResetType type)
++{
++    ESP32S3IOMuxState *s = ESP32S3_IOMUX(obj);
++
++    s->pin_ctrl = 0;
++    for (int i = 0; i < ESP32S3_IOMUX_GPIO_COUNT; i++) {
++        s->gpio_reg[i] = ESP32S3_IOMUX_GPIO_REG_DEFAULT;
++    }
++    s->date_reg = ESP32S3_IOMUX_DATE_VERSION;
++}
++
++static void esp32s3_iomux_init(Object *obj)
++{
++    ESP32S3IOMuxState *s = ESP32S3_IOMUX(obj);
++    SysBusDevice *sbd = SYS_BUS_DEVICE(obj);
++
++    memory_region_init_io(&s->iomem, obj, &esp32s3_iomux_ops, s,
++                          TYPE_ESP32S3_IOMUX, ESP32S3_IOMUX_REGS_SIZE);
++    sysbus_init_mmio(sbd, &s->iomem);
++    qdev_init_gpio_out_named(DEVICE(obj), &s->notify, ESP32S3_IOMUX_CHANGE_IRQ, 1);
++}
++
++static void esp32s3_iomux_class_init(ObjectClass *klass, void *data)
++{
++    DeviceClass *dc = DEVICE_CLASS(klass);
++    ResettableClass *rc = RESETTABLE_CLASS(klass);
++
++    rc->phases.hold = esp32s3_iomux_reset_hold;
++    dc->desc = "ESP32-S3 IO MUX";
++}
++
++static const TypeInfo esp32s3_iomux_info = {
++    .name = TYPE_ESP32S3_IOMUX,
++    .parent = TYPE_SYS_BUS_DEVICE,
++    .instance_size = sizeof(ESP32S3IOMuxState),
++    .instance_init = esp32s3_iomux_init,
++    .class_init = esp32s3_iomux_class_init,
++};
++
++static void esp32s3_iomux_register_types(void)
++{
++    type_register_static(&esp32s3_iomux_info);
++}
++
++type_init(esp32s3_iomux_register_types);
+--- /dev/null
++++ b/include/hw/gpio/esp32s3_iomux.h
+@@ -0,0 +1,117 @@
++/*
++ * ESP32-S3 IO MUX peripheral
++ *
++ * Per-pad configuration registers at DR_REG_IO_MUX_BASE (0x60009000):
++ *   IO_MUX_PIN_CTRL_REG @ 0x00 (stored only)
++ *   IO_MUX_GPIOn_REG    @ 0x04 + 4*n, n = 0..48
++ *   IO_MUX_DATE_REG     @ 0xFC
++ *
++ * Field layout per the ESP32-S3 TRM ch.6 register summary and the ESP-IDF 6.1
++ * header components/soc/esp32s3/register/soc/io_mux_reg.h:
++ *   bit 0     SLP_OE      output enable in sleep mode (stored, no sleep model)
++ *   bit 1     SLP_SEL     sleep-mode select (stored)
++ *   bit 2     SLP_PD      pull-down in sleep mode (stored)
++ *   bit 3     SLP_PU      pull-up in sleep mode (stored)
++ *   bit 4     SLP_IE      input enable in sleep mode (stored)
++ *   bit 5-6   SLP_DRV     drive strength in sleep mode (stored)
++ *   bit 7     FUN_PD      function pull-down enable (drives the digital line)
++ *   bit 8     FUN_PU      function pull-up enable (drives the digital line)
++ *   bit 9     FUN_IE      function input enable (gates GPIO_IN sampling)
++ *   bit 10-11 FUN_DRV     function drive strength (stored; electrically inert)
++ *   bit 12-14 MCU_SEL     pad function: 0 = GPIO matrix, != 0 = IO_MUX function
++ *   bit 15    FILTER_EN   input filter (stored; timing-neutral in this model)
++ *
++ * Reset value of every pad register is FUN_DRV=2 (20 mA), i.e. 0x800, per the
++ * TRM default column.  Pad-specific boot defaults for the SPI-flash pads
++ * (GPIO26-32) are not modelled; the ROM/bootloader re-programs them.
++ *
++ * Copyright (c) 2024 Espressif Systems (Shanghai) Co. Ltd.
++ * Copyright (c) 2026 ESP32S3VM project
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 or
++ * (at your option) any later version.
++ */
++
++#pragma once
++
++#include "hw/hw.h"
++#include "hw/sysbus.h"
++#include "hw/registerfields.h"
++
++#define TYPE_ESP32S3_IOMUX "esp32s3.iomux"
++#define ESP32S3_IOMUX(obj) OBJECT_CHECK(ESP32S3IOMuxState, (obj), TYPE_ESP32S3_IOMUX)
++
++/* ESP32-S3 has 49 GPIO pad registers (GPIO0 - GPIO48; pads 22..25 are holes) */
++#define ESP32S3_IOMUX_GPIO_COUNT   49
++
++/* Register offsets */
++REG32(IO_MUX_PIN_CTRL, 0x0000)
++    FIELD(IO_MUX_PIN_CTRL, CLK1, 0, 4)
++    FIELD(IO_MUX_PIN_CTRL, CLK2, 4, 4)
++    FIELD(IO_MUX_PIN_CTRL, CLK3, 8, 4)
++
++#define IO_MUX_GPIOn_REG_OFFSET(n) (0x0004 + (n) * 4)
++
++/* Fields within each IO_MUX_GPIOn_REG */
++REG32(IO_MUX_GPIOn, 0x0004)
++    FIELD(IO_MUX_GPIOn, SLP_OE, 0, 1)
++    FIELD(IO_MUX_GPIOn, SLP_SEL, 1, 1)
++    FIELD(IO_MUX_GPIOn, SLP_PD, 2, 1)
++    FIELD(IO_MUX_GPIOn, SLP_PU, 3, 1)
++    FIELD(IO_MUX_GPIOn, SLP_IE, 4, 1)
++    FIELD(IO_MUX_GPIOn, SLP_DRV, 5, 2)
++    FIELD(IO_MUX_GPIOn, FUN_PD, 7, 1)
++    FIELD(IO_MUX_GPIOn, FUN_PU, 8, 1)
++    FIELD(IO_MUX_GPIOn, FUN_IE, 9, 1)
++    FIELD(IO_MUX_GPIOn, FUN_DRV, 10, 2)
++    FIELD(IO_MUX_GPIOn, MCU_SEL, 12, 3)
++    FIELD(IO_MUX_GPIOn, FILTER_EN, 15, 1)
++
++/*
++ * MCU_SEL value that routes the pad through the GPIO matrix.  On the
++ * ESP32-S3 this is 1 (IDF PIN_FUNC_GPIO, io_mux_reg.h:140) — *not* 0 as on
++ * the classic ESP32; most pads use function 0 for a named direct peripheral
++ * (e.g. FUNC_U0TXD_U0TXD = 0 on GPIO43).  MCU_SEL != 1 hands the pad to a
++ * direct IO_MUX function.
++ */
++#define ESP32S3_IOMUX_MCU_SEL_GPIO  1
++
++/* Version register */
++REG32(IO_MUX_DATE, 0x00FC)
++
++/* Total register region size */
++#define ESP32S3_IOMUX_REGS_SIZE     0x100
++
++/* Named qdev line pulsing on pad register writes */
++#define ESP32S3_IOMUX_CHANGE_IRQ   "pad-change"
++
++/* Per-pad reset value: FUN_DRV = 2 (20 mA) */
++#define ESP32S3_IOMUX_GPIO_REG_DEFAULT  (0x2 << R_IO_MUX_GPIOn_FUN_DRV_SHIFT)
++
++/* IO_MUX_DATE version value (from TRM) */
++#define ESP32S3_IOMUX_DATE_VERSION      0x2006050
++
++typedef struct ESP32S3IOMuxState {
++    SysBusDevice parent_obj;
++
++    MemoryRegion iomem;
++
++    /* Pin control register */
++    uint32_t pin_ctrl;
++
++    /* Per-GPIO pad configuration registers */
++    uint32_t gpio_reg[ESP32S3_IOMUX_GPIO_COUNT];
++
++    /* Date/version register */
++    uint32_t date_reg;
++
++    /* Pulsed on every pad register write so the GPIO model re-resolves
++     * the affected pads (named output, one line) */
++    qemu_irq notify;
++} ESP32S3IOMuxState;
++
++static inline uint32_t esp32s3_iomux_get(ESP32S3IOMuxState *s, unsigned pad)
++{
++    return pad < ESP32S3_IOMUX_GPIO_COUNT ? s->gpio_reg[pad] : 0;
++}
+--- /dev/null
++++ b/hw/misc/esp32s3_rtc_io.c
+@@ -0,0 +1,504 @@
++/*
++ * ESP32-S3 RTC IO MUX
++ *
++ * 22 RTC pads (RTC_GPIO0..21 = GPIO0..21) with W1TS/W1TC atomic operations
++ * on OUT/ENABLE/STATUS (all in bits [31:10]), per-pin interrupt config
++ * (RTC_GPIO_PINn: PAD_DRIVER, INT_TYPE edge/level detection) and per-pad
++ * configuration (pulls, drive strength, RTC mux ownership) with TRM reset
++ * defaults.  External drivers connect to the named "rtcio-in" lines; the
++ * resolved pad levels are exposed on "rtcio-out".
++ *
++ * Boundaries (documented, not modelled): deep-sleep hold, touch/analog
++ * sense path, RTC power domains and the RTC_CNTL-side interrupt
++ * aggregation (RTC_CNTL_INT_ST_RTC_GPIO).
++ *
++ * Copyright (c) 2024-2026 Espressif Systems (Shanghai) Co. Ltd.
++ * Copyright (c) 2026 ESP32S3VM project
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 or
++ * (at your option) any later version.
++ */
++
++#include "qemu/osdep.h"
++#include "qemu/log.h"
++#include "qemu/module.h"
++#include "qapi/error.h"
++#include "hw/irq.h"
++#include "hw/qdev-properties.h"
++#include "hw/misc/esp32s3_rtc_io.h"
++
++#define RTC_IO_DEBUG 0
++
++static void esp32s3_rtc_io_update_all(ESP32S3RtcIoState *s);
++static void esp32s3_rtc_io_notify_observer(ESP32S3RtcIoState *s);
++
++/* Pad config fields common to every pad register */
++#define RTC_IO_PAD_FUN_IE     (1u << 13)
++#define RTC_IO_PAD_MUX_SEL    (1u << 19)
++
++static inline int rtc_io_pin_int_type(ESP32S3RtcIoState *s, int n)
++{
++    return extract32(s->pin[n], 7, 3);
++}
++
++static inline int rtc_io_pin_open_drain(ESP32S3RtcIoState *s, int n)
++{
++    return extract32(s->pin[n], 2, 1);
++}
++
++static inline int rtc_io_pad_ie(ESP32S3RtcIoState *s, int n)
++{
++    return s->pad[n] & RTC_IO_PAD_FUN_IE;
++}
++
++/* RUE/RDE are the RTC pad pull-up/down enables (IDF rtc_gpio_pullup_en) */
++static inline int rtc_io_pad_rue(ESP32S3RtcIoState *s, int n)
++{
++    return s->pad[n] & (1u << 27);
++}
++
++static inline int rtc_io_pad_rde(ESP32S3RtcIoState *s, int n)
++{
++    return s->pad[n] & (1u << 28);
++}
++
++static inline int rtc_io_data_bit(uint32_t reg, int n)
++{
++    return (reg >> (ESP32S3_RTC_IO_DATA_SHIFT + n)) & 1;
++}
++
++static uint64_t esp32s3_rtc_io_read(void *opaque, hwaddr addr, unsigned int size)
++{
++    ESP32S3RtcIoState *s = ESP32S3_RTC_IO(opaque);
++
++    /* RTC GPIO pin config registers */
++    if (addr >= RTC_IO_PIN_OFF(0) && addr <= RTC_IO_PIN_LAST_OFF &&
++        ((addr - RTC_IO_PIN_OFF(0)) % 4) == 0) {
++        return s->pin[(addr - RTC_IO_PIN_OFF(0)) / 4];
++    }
++
++    /* Per-pad config registers */
++    for (int n = 0; n < ESP32S3_RTC_IO_GPIO_COUNT; n++) {
++        if (addr == RTC_IO_PAD_OFF(n)) {
++            return s->pad[n];
++        }
++    }
++
++    switch (addr) {
++    case RTC_IO_OUT_OFF:
++        return s->out;
++    case RTC_IO_OUT_W1TS_OFF:
++    case RTC_IO_OUT_W1TC_OFF:
++        return 0;  /* write-only */
++    case RTC_IO_ENABLE_OFF:
++        return s->enable;
++    case RTC_IO_ENABLE_W1TS_OFF:
++    case RTC_IO_ENABLE_W1TC_OFF:
++        return 0;
++    case RTC_IO_STATUS_OFF:
++        return s->status;
++    case RTC_IO_STATUS_W1TS_OFF:
++    case RTC_IO_STATUS_W1TC_OFF:
++        return 0;
++    case RTC_IO_IN_OFF:
++        return s->in;
++    case RTC_IO_DEBUG_SEL_OFF:
++        return s->debug_sel;
++    case RTC_IO_EXT_WAKEUP0_OFF:
++        return s->ext_wakeup0;
++    case RTC_IO_XTL_EXT_CTR_OFF:
++        return s->xtl_ext_ctr;
++    case RTC_IO_SAR_I2C_IO_OFF:
++        return s->sar_i2c_io;
++    case RTC_IO_TOUCH_CTRL_OFF:
++        return s->touch_ctrl;
++    case RTC_IO_DATE_OFF:
++        return ESP32S3_RTC_IO_DATE_VERSION;
++    default:
++        if (RTC_IO_DEBUG) {
++            qemu_log_mask(LOG_UNIMP,
++                          "esp32s3_rtc_io: unhandled read 0x%03" HWADDR_PRIx "\n",
++                          addr);
++        }
++        return 0;
++    }
++}
++
++static void esp32s3_rtc_io_write(void *opaque, hwaddr addr,
++                                 uint64_t value, unsigned int size)
++{
++    ESP32S3RtcIoState *s = ESP32S3_RTC_IO(opaque);
++    uint32_t v = (uint32_t)value & ESP32S3_RTC_IO_DATA_MASK;
++
++    /* RTC GPIO pin config registers */
++    if (addr >= RTC_IO_PIN_OFF(0) && addr <= RTC_IO_PIN_LAST_OFF &&
++        ((addr - RTC_IO_PIN_OFF(0)) % 4) == 0) {
++        s->pin[(addr - RTC_IO_PIN_OFF(0)) / 4] = (uint32_t)value & 0x7FF;
++        return;
++    }
++
++    /* Per-pad config registers */
++    for (int n = 0; n < ESP32S3_RTC_IO_GPIO_COUNT; n++) {
++        if (addr == RTC_IO_PAD_OFF(n)) {
++            s->pad[n] = (uint32_t)value & 0x7FFFFFFF;
++            return;
++        }
++    }
++
++    switch (addr) {
++    case RTC_IO_OUT_OFF:
++        s->out = (s->out & ~ESP32S3_RTC_IO_DATA_MASK) | v;
++        break;
++    case RTC_IO_OUT_W1TS_OFF:
++        s->out |= v;
++        break;
++    case RTC_IO_OUT_W1TC_OFF:
++        s->out &= ~v;
++        break;
++    case RTC_IO_ENABLE_OFF:
++        s->enable = (s->enable & ~ESP32S3_RTC_IO_DATA_MASK) | v;
++        break;
++    case RTC_IO_ENABLE_W1TS_OFF:
++        s->enable |= v;
++        break;
++    case RTC_IO_ENABLE_W1TC_OFF:
++        s->enable &= ~v;
++        break;
++    case RTC_IO_STATUS_OFF:
++        s->status |= v;
++        break;
++    case RTC_IO_STATUS_W1TS_OFF:
++        s->status |= v;
++        break;
++    case RTC_IO_STATUS_W1TC_OFF:
++        s->status &= ~v;
++        break;
++    case RTC_IO_DEBUG_SEL_OFF:
++        s->debug_sel = (uint32_t)value & 0x03FFFFFF;
++        break;
++    case RTC_IO_EXT_WAKEUP0_OFF:
++        s->ext_wakeup0 = (uint32_t)value & 0xF8000000;
++        break;
++    case RTC_IO_XTL_EXT_CTR_OFF:
++        s->xtl_ext_ctr = (uint32_t)value & 0xF8000000;
++        break;
++    case RTC_IO_SAR_I2C_IO_OFF:
++        s->sar_i2c_io = (uint32_t)value & 0x000001FF;
++        break;
++    case RTC_IO_TOUCH_CTRL_OFF:
++        s->touch_ctrl = (uint32_t)value & 0x1F;
++        break;
++    case RTC_IO_DATE_OFF:
++        /* Version register — ignore writes */
++        break;
++    default:
++        if (RTC_IO_DEBUG) {
++            qemu_log_mask(LOG_UNIMP,
++                          "esp32s3_rtc_io: unhandled write 0x%03" HWADDR_PRIx "\n",
++                          addr);
++        }
++        break;
++    }
++
++    esp32s3_rtc_io_notify_observer(s);
++    esp32s3_rtc_io_update_all(s);
++}
++
++/* ================================================================== */
++/*  Pad resolution and interrupts                                      */
++/* ================================================================== */
++
++uint32_t esp32s3_rtc_io_pad_level(ESP32S3RtcIoState *s, unsigned pad)
++{
++    if (pad >= ESP32S3_RTC_IO_GPIO_COUNT) {
++        return 0;
++    }
++    return s->line_level[pad];
++}
++
++static void esp32s3_rtc_io_update_pad(ESP32S3RtcIoState *s, int n)
++{
++    int out_val = rtc_io_data_bit(s->out, n);
++    int oe = rtc_io_data_bit(s->enable, n);
++    bool attached = s->solver_owned || s->solver_attached[n];
++    int node;
++    int valid;
++    int sample;
++    int prev = s->sample[n];
++    int type = rtc_io_pin_int_type(s, n);
++    int event = 0;
++
++    if (oe && !(rtc_io_pin_open_drain(s, n) && out_val == 1)) {
++        if (attached && s->net_valid[n]) {
++            /* Attached solver level is authoritative; CONTENTION reports
++             * raw-desired vs solved sample */
++            s->diag[n] = (s->ext_level[n] != out_val) ?
++                         ESP32S3_RTC_IO_PAD_CONTENTION :
++                         ESP32S3_RTC_IO_PAD_DRIVEN;
++            node = s->ext_level[n];
++            valid = 1;
++        } else {
++            s->diag[n] = ESP32S3_RTC_IO_PAD_DRIVEN;
++            node = out_val;
++            valid = 1;
++        }
++    } else if (s->net_valid[n]) {
++        /* External/solver driver beats the weak pulls */
++        node = s->ext_level[n];
++        valid = 1;
++        s->diag[n] = ESP32S3_GPIO_RTC_PAD_EXTERNAL;
++    } else if (rtc_io_pad_rue(s, n) && !attached) {
++        node = 1;
++        valid = 1;
++        s->diag[n] = ESP32S3_RTC_IO_PAD_PULLED_HIGH;
++    } else if (rtc_io_pad_rde(s, n) && !attached) {
++        node = 0;
++        valid = 1;
++        s->diag[n] = ESP32S3_RTC_IO_PAD_PULLED_LOW;
++    } else if (attached) {
++        /* Solver owns the answer: an unresolved report stays UNKNOWN and
++         * never falls back to a pull or an implicit floating-0 */
++        node = 0;
++        valid = 0;
++        s->diag[n] = ESP32S3_RTC_IO_PAD_UNKNOWN;
++    } else {
++        /* Floating: unresolved, reported — never folded into a valid low */
++        node = 0;
++        valid = 0;
++        s->diag[n] = ESP32S3_RTC_IO_PAD_FLOATING;
++    }
++
++    if (s->line_level[n] != node) {
++        s->line_level[n] = node;
++        qemu_set_irq(s->output_lines[n], node);
++    }
++
++    if (!(rtc_io_pad_ie(s, n) && valid)) {
++        sample = (rtc_io_pad_ie(s, n) && attached) ? s->sample[n] : 0;
++    } else {
++        sample = node;
++    }
++
++    switch (type) {
++    case 1: /* rising edge */
++        event = !prev && sample;
++        break;
++    case 2: /* falling edge */
++        event = prev && !sample;
++        break;
++    case 3: /* any edge */
++        event = prev != sample;
++        break;
++    case 4: /* low level */
++        event = !sample;
++        break;
++    case 5: /* high level */
++        event = sample;
++        break;
++    default:
++        event = 0;
++        break;
++    }
++
++    if (event) {
++        s->status |= 1u << (ESP32S3_RTC_IO_DATA_SHIFT + n);
++    }
++    s->sample[n] = sample;
++
++    s->in = 0;
++    for (int i = 0; i < ESP32S3_RTC_IO_GPIO_COUNT; i++) {
++        s->in |= (uint32_t)s->sample[i] << (ESP32S3_RTC_IO_DATA_SHIFT + i);
++    }
++}
++
++static void esp32s3_rtc_io_update_all(ESP32S3RtcIoState *s)
++{
++    for (int n = 0; n < ESP32S3_RTC_IO_GPIO_COUNT; n++) {
++        esp32s3_rtc_io_update_pad(s, n);
++    }
++}
++
++void esp32s3_rtc_io_drive_net(ESP32S3RtcIoState *s, unsigned pad,
++                              bool valid, bool level, double volts)
++{
++    if (pad >= ESP32S3_RTC_IO_GPIO_COUNT) {
++        return;
++    }
++    s->solver_attached[pad] = true;
++    if (!valid) {
++        s->net_valid[pad] = false;
++        s->ext_level[pad] = 0;
++        s->diag[pad] = ESP32S3_RTC_IO_PAD_UNKNOWN;
++    } else {
++        s->net_valid[pad] = true;
++        s->ext_level[pad] = (level != 0);
++        s->diag[pad] = ESP32S3_GPIO_RTC_PAD_EXTERNAL;
++    }
++    esp32s3_rtc_io_update_pad(s, (int)pad);
++    /* No raw_notify here: the solver caused this update itself. */
++}
++
++void esp32s3_rtc_io_set_drive_observer(ESP32S3RtcIoState *s,
++                                   ESP32S3RtcIoDriveObserver fn, void *opaque)
++{
++    s->drive_observer = fn;
++    s->observer_opaque = opaque;
++}
++
++bool esp32s3_rtc_io_solver_attached(ESP32S3RtcIoState *s, unsigned pad)
++{
++    return pad < ESP32S3_RTC_IO_GPIO_COUNT ? s->solver_attached[pad] : false;
++}
++
++void esp32s3_rtc_io_set_solver_owned(ESP32S3RtcIoState *s, bool owned)
++{
++    s->solver_owned = owned;
++}
++
++static void esp32s3_rtc_io_notify_observer(ESP32S3RtcIoState *s)
++{
++    if (s->drive_observer) {
++        s->drive_observer(s->observer_opaque);
++    }
++}
++
++ESP32S3RtcIoPadState esp32s3_rtc_io_pad_state(ESP32S3RtcIoState *s, unsigned pad)
++{
++    return pad < ESP32S3_RTC_IO_GPIO_COUNT ?
++           s->diag[pad] : ESP32S3_RTC_IO_PAD_FLOATING;
++}
++
++bool esp32s3_rtc_io_net_valid(ESP32S3RtcIoState *s, unsigned pad)
++{
++    return pad < ESP32S3_RTC_IO_GPIO_COUNT ? s->net_valid[pad] : false;
++}
++
++void esp32s3_rtc_io_get_drive_snapshot(ESP32S3RtcIoState *s, unsigned pad,
++                                       ESP32S3RtcIoDriveSnapshot *out)
++{
++    memset(out, 0, sizeof(*out));
++    if (pad >= ESP32S3_RTC_IO_GPIO_COUNT) {
++        return;
++    }
++
++    out->mux_sel = s->pad[pad] & RTC_IO_PAD_MUX_SEL;
++    out->out_bit = rtc_io_data_bit(s->out, (int)pad);
++    out->out_oe = rtc_io_data_bit(s->enable, (int)pad);
++    out->open_drain = rtc_io_pin_open_drain(s, (int)pad);
++    out->int_type = rtc_io_pin_int_type(s, (int)pad);
++    out->fun_ie = s->pad[pad] & RTC_IO_PAD_FUN_IE;
++    out->rue = rtc_io_pad_rue(s, (int)pad);
++    out->rde = rtc_io_pad_rde(s, (int)pad);
++    out->drv = extract32(s->pad[pad], 29, 2);
++    out->slp_sel = extract32(s->pad[pad], 16, 1);
++    out->xpd = extract32(s->pad[pad], 20, 1);
++    /* hold stays false: deep-sleep hold is a documented boundary */
++}
++
++static void esp32s3_rtc_io_input_line(void *opaque, int n, int level)
++{
++    ESP32S3RtcIoState *s = ESP32S3_RTC_IO(opaque);
++
++    if (n < 0 || n >= ESP32S3_RTC_IO_GPIO_COUNT) {
++        return;
++    }
++    if (s->solver_owned) {
++        return; /* solver-owned: only drive_net writes the solved net */
++    }
++    s->ext_level[n] = (level != 0);
++    s->net_valid[n] = true;
++    s->diag[n] = ESP32S3_GPIO_RTC_PAD_EXTERNAL;
++    esp32s3_rtc_io_update_pad(s, n);
++}
++
++/* ================================================================== */
++/*  Lifecycle                                                          */
++/* ================================================================== */
++
++static const MemoryRegionOps esp32s3_rtc_io_ops = {
++    .read  = esp32s3_rtc_io_read,
++    .write = esp32s3_rtc_io_write,
++    .endianness = DEVICE_LITTLE_ENDIAN,
++    .valid = {
++        .min_access_size = 4,
++        .max_access_size = 4,
++        .unaligned = false,
++    },
++};
++
++static void esp32s3_rtc_io_reset_hold(Object *obj, ResetType type)
++{
++    ESP32S3RtcIoState *s = ESP32S3_RTC_IO(obj);
++
++    s->out = 0;
++    s->enable = 0;
++    s->status = 0;
++    s->in = 0;
++
++    for (int i = 0; i < ESP32S3_RTC_IO_GPIO_COUNT; i++) {
++        s->pin[i] = 0;
++        s->pad[i] = ESP32S3_RTC_IO_PAD_DEFAULT;
++        s->diag[i] = ESP32S3_RTC_IO_PAD_FLOATING;
++        s->net_valid[i] = false;
++        s->solver_attached[i] = false;
++        s->ext_level[i] = 0;
++        s->sample[i] = 0;
++        s->line_level[i] = 0;
++        qemu_set_irq(s->output_lines[i], 0);
++    }
++
++    s->debug_sel = 0;
++    s->ext_wakeup0 = 0;
++    s->xtl_ext_ctr = 0;
++    s->sar_i2c_io = 0;
++    s->touch_ctrl = 0;
++    esp32s3_rtc_io_notify_observer(s);
++}
++
++static void esp32s3_rtc_io_realize(DeviceState *dev, Error **errp)
++{
++    esp32s3_rtc_io_reset_hold(OBJECT(dev), RESET_TYPE_COLD);
++}
++
++static void esp32s3_rtc_io_init(Object *obj)
++{
++    ESP32S3RtcIoState *s = ESP32S3_RTC_IO(obj);
++    SysBusDevice *sbd = SYS_BUS_DEVICE(obj);
++
++    memory_region_init_io(&s->iomem, obj, &esp32s3_rtc_io_ops, s,
++                          TYPE_ESP32S3_RTC_IO, ESP32S3_RTC_IO_REG_SIZE);
++    sysbus_init_mmio(sbd, &s->iomem);
++
++    qdev_init_gpio_in_named(DEVICE(obj), esp32s3_rtc_io_input_line,
++                            ESP32S3_RTC_IO_INPUT_LINES, ESP32S3_RTC_IO_GPIO_COUNT);
++    qdev_init_gpio_out_named(DEVICE(obj), s->output_lines,
++                             ESP32S3_RTC_IO_OUTPUT_LINES, ESP32S3_RTC_IO_GPIO_COUNT);
++    /* No dedicated IRQ — RTC GPIO interrupts aggregate in RTC_CNTL
++     * (RTC_CNTL_INT_ST_RTC_GPIO), which is outside this model. */
++}
++
++static void esp32s3_rtc_io_class_init(ObjectClass *klass, void *data)
++{
++    DeviceClass *dc = DEVICE_CLASS(klass);
++    ResettableClass *rc = RESETTABLE_CLASS(klass);
++    rc->phases.hold = esp32s3_rtc_io_reset_hold;
++    dc->realize = esp32s3_rtc_io_realize;
++    dc->desc = "ESP32-S3 RTC IO MUX";
++}
++
++static const TypeInfo esp32s3_rtc_io_info = {
++    .name          = TYPE_ESP32S3_RTC_IO,
++    .parent        = TYPE_SYS_BUS_DEVICE,
++    .instance_size = sizeof(ESP32S3RtcIoState),
++    .instance_init = esp32s3_rtc_io_init,
++    .class_init    = esp32s3_rtc_io_class_init,
++    .class_size    = sizeof(ESP32S3RtcIoClass),
++};
++
++static void esp32s3_rtc_io_register_types(void)
++{
++    type_register_static(&esp32s3_rtc_io_info);
++}
++
++type_init(esp32s3_rtc_io_register_types)
+--- /dev/null
++++ b/include/hw/misc/esp32s3_rtc_io.h
+@@ -0,0 +1,226 @@
++/*
++ * ESP32-S3 RTC IO MUX
++ *
++ * Register file for the 22 RTC pads (RTC_GPIO0..21 = GPIO0..21) at
++ * DR_REG_RTC_IO_MUX_BASE (0x60008400).  Layout per the ESP32-S3 TRM ch.6
++ * register summary and the ESP-IDF 6.1 headers (rtc_io_reg.h / rtc_io_struct.h):
++ *
++ *   0x00 RTC_GPIO_OUT_REG      RTC GPIO 0-21 output data, bits [31:10]
++ *   0x04 RTC_GPIO_OUT_W1TS     write-1-to-set, bits [31:10]
++ *   0x08 RTC_GPIO_OUT_W1TC     write-1-to-clear, bits [31:10]
++ *   0x0C RTC_GPIO_ENABLE_REG   output enable, bits [31:10]
++ *   0x10 RTC_GPIO_ENABLE_W1TS
++ *   0x14 RTC_GPIO_ENABLE_W1TC
++ *   0x18 RTC_GPIO_STATUS_REG   interrupt status, bits [31:10]
++ *   0x1C RTC_GPIO_STATUS_W1TS
++ *   0x20 RTC_GPIO_STATUS_W1TC
++ *   0x24 RTC_GPIO_IN_REG       input data (read-only), bits [31:10]
++ *   0x28 RTC_GPIO_PINn_REG     n = 0..21: PAD_DRIVER [2], INT_TYPE [9:7],
++ *                              WAKEUP_ENABLE [10]
++ *   0x80 RTC_IO_RTC_DEBUG_SEL_REG (stored)
++ *   0x84..0xD8 pad configuration registers:
++ *       pad 0        -> RTC_IO_TOUCH_PAD14_REG (0xBC)
++ *       pads 1..14   -> RTC_IO_TOUCH_PAD0..13_REG (0x84..0xB8)
++ *       pad 15       -> RTC_IO_XTAL_32P_PAD_REG (0xC0)
++ *       pad 16       -> RTC_IO_XTAL_32N_PAD_REG (0xC4)
++ *       pad 17       -> RTC_IO_PAD_DAC1_REG (0xC8)
++ *       pad 18       -> RTC_IO_PAD_DAC2_REG (0xCC)
++ *       pads 19..21  -> RTC_IO_RTC_PAD19..21_REG (0xD0..0xD8)
++ *       common fields: FUN_IE [13], SLP_OE [14], SLP_IE [15], SLP_SEL [16],
++ *       FUN_SEL [18:17], MUX_SEL [19] (1 = RTC function owns the pad),
++ *       RUE [27], RDE [28], DRV [30:29]; TOUCH pads add XPD/TIE_OPT/START
++ *       [22:20], DAC pads add DAC [10:3], XPD_DAC [11], DAC_XPD_FORCE [12]
++ *   0xDC RTC_IO_EXT_WAKEUP0_REG (SEL [31:27], stored)
++ *   0xE0 RTC_IO_XTL_EXT_CTR_REG (SEL [31:27], stored)
++ *   0xE4 RTC_IO_SAR_I2C_IO_REG  (stored)
++ *   0xE8 RTC_IO_TOUCH_CTRL_REG  (stored)
++ *   0x1FC RTC_IO_DATE_REG       version (read-only)
++ *
++ * Boundaries (documented, not modelled): deep-sleep hold, the touch/analog
++ * sense path, the RTC-main/RTC-slow power domains, and the aggregation of
++ * RTC GPIO interrupts into RTC_CNTL (RTC_CNTL_INT_ST_RTC_GPIO, which the
++ * rtc_cntl device owns).
++ *
++ * Copyright (c) 2024-2026 Espressif Systems (Shanghai) Co. Ltd.
++ * Copyright (c) 2026 ESP32S3VM project
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 or
++ * (at your option) any later version.
++ */
++
++#pragma once
++
++#include "hw/hw.h"
++#include "hw/sysbus.h"
++#include "hw/registerfields.h"
++
++#define TYPE_ESP32S3_RTC_IO "esp32s3.rtc_io"
++#define ESP32S3_RTC_IO(obj) OBJECT_CHECK(ESP32S3RtcIoState, (obj), TYPE_ESP32S3_RTC_IO)
++
++#define ESP32S3_RTC_IO_REG_SIZE     0x200
++#define ESP32S3_RTC_IO_GPIO_COUNT   22
++
++/* RTC IO MUX base: inside the RTC_CNTL APB window, per TRM ch.4/ch.6 */
++#define DR_REG_RTC_IO_MUX_BASE      0x60008400
++
++/* RTC data fields (OUT/ENABLE/STATUS/IN) sit in bits [31:10] */
++#define ESP32S3_RTC_IO_DATA_SHIFT   10
++#define ESP32S3_RTC_IO_DATA_MASK    0xFFFFFC00u
++
++/* ------------------------------------------------------------------ */
++/*  Register offsets                                                   */
++/* ------------------------------------------------------------------ */
++
++#define RTC_IO_OUT_OFF            0x00
++#define RTC_IO_OUT_W1TS_OFF       0x04
++#define RTC_IO_OUT_W1TC_OFF       0x08
++#define RTC_IO_ENABLE_OFF         0x0C
++#define RTC_IO_ENABLE_W1TS_OFF    0x10
++#define RTC_IO_ENABLE_W1TC_OFF    0x14
++#define RTC_IO_STATUS_OFF         0x18
++#define RTC_IO_STATUS_W1TS_OFF    0x1C
++#define RTC_IO_STATUS_W1TC_OFF    0x20
++#define RTC_IO_IN_OFF             0x24
++
++/* RTC GPIO pin config: 22 registers at 0x28..0x7C (stride 4) */
++#define RTC_IO_PIN_OFF(n)         (0x28 + (n) * 0x04)
++#define RTC_IO_PIN_LAST_OFF       (0x28 + 21 * 0x04)  /* 0x7C */
++
++/* Debug select */
++#define RTC_IO_DEBUG_SEL_OFF      0x80
++
++/* Per-pad config register offset for RTC pad n (0..21) */
++#define RTC_IO_PAD_OFF(n) \
++    ((n) == 0 ? 0xBC : 0x84 + ((n) - 1) * 0x04)
++#define RTC_IO_PAD_LAST_OFF       0xD8
++
++/* Misc registers */
++#define RTC_IO_EXT_WAKEUP0_OFF    0xDC
++#define RTC_IO_XTL_EXT_CTR_OFF    0xE0
++#define RTC_IO_SAR_I2C_IO_OFF     0xE4
++#define RTC_IO_TOUCH_CTRL_OFF     0xE8
++
++/* Version */
++#define RTC_IO_DATE_OFF           0x1FC
++
++/* Per-pad config reset default: DRV = 2, RDE = 1 (TRM default column) */
++#define ESP32S3_RTC_IO_PAD_DEFAULT ((0x2 << 29) | (0x1 << 28))
++
++/* RTC_IO_DATE version value */
++#define ESP32S3_RTC_IO_DATE_VERSION 0x1905260
++
++/*
++ * Pad net resolution diagnostics (same policy as the digital GPIO model:
++ * floating is reported, never folded into a valid low).
++ */
++typedef enum {
++    ESP32S3_RTC_IO_PAD_FLOATING = 0,
++    ESP32S3_RTC_IO_PAD_DRIVEN,
++    ESP32S3_GPIO_RTC_PAD_EXTERNAL,
++    ESP32S3_RTC_IO_PAD_PULLED_HIGH, /* RUE resolved the net */
++    ESP32S3_RTC_IO_PAD_PULLED_LOW,  /* RDE resolved the net */
++    ESP32S3_RTC_IO_PAD_CONTENTION,  /* RTC_GPIO drive vs valid external
++                                     * driver at a different level */
++    ESP32S3_RTC_IO_PAD_UNKNOWN,     /* solver attached but unresolved */
++} ESP32S3RtcIoPadState;
++
++/*
++ * RAW effective drive configuration of one RTC pad for the net solver —
++ * register truth, separate from the resolved rtcio-out line.
++ */
++typedef struct ESP32S3RtcIoDriveSnapshot {
++    bool mux_sel;            /* RTC_IO pad MUX_SEL: 1 = RTC function owns */
++    bool out_bit;            /* RTC_GPIO_OUT data bit */
++    bool out_oe;             /* RTC_GPIO_ENABLE bit */
++    bool open_drain;         /* RTC_GPIO_PINn.PAD_DRIVER */
++    unsigned int_type;       /* RTC_GPIO_PINn.INT_TYPE */
++    bool fun_ie;             /* pad FUN_IE input-buffer enable */
++    bool rue, rde;           /* pad pull-up / pull-down enables */
++    unsigned drv;            /* pad drive strength (stored, inert) */
++    bool slp_sel;            /* pad SLP_SEL (stored) */
++    bool xpd;                /* TOUCH/DAC XPD bit (stored, no analog path) */
++    bool hold;               /* always false: deep-sleep hold is a boundary */
++} ESP32S3RtcIoDriveSnapshot;
++
++/* RTC_IO raw-truth change notifier type (see esp32s3_rtc_io_set_drive_observer) */
++typedef void (*ESP32S3RtcIoDriveObserver)(void *opaque);
++
++/* ------------------------------------------------------------------ */
++/*  Device state                                                       */
++/* ------------------------------------------------------------------ */
++
++typedef struct ESP32S3RtcIoState {
++    SysBusDevice parent_obj;
++
++    MemoryRegion iomem;
++
++    /* GPIO output / enable / status (bits [31:10]); input is sampled */
++    uint32_t out;
++    uint32_t enable;
++    uint32_t status;
++    uint32_t in;
++
++    /* Per-pin config (22 pins) */
++    uint32_t pin[ESP32S3_RTC_IO_GPIO_COUNT];
++
++    /* Per-pad config (22 pads) */
++    uint32_t pad[ESP32S3_RTC_IO_GPIO_COUNT];
++
++    /* Misc */
++    uint32_t debug_sel;
++    uint32_t ext_wakeup0;
++    uint32_t xtl_ext_ctr;
++    uint32_t sar_i2c_io;
++    uint32_t touch_ctrl;
++
++    /* Electrical view */
++    ESP32S3RtcIoPadState diag[ESP32S3_RTC_IO_GPIO_COUNT];
++    bool net_valid[ESP32S3_RTC_IO_GPIO_COUNT];
++    bool solver_attached[ESP32S3_RTC_IO_GPIO_COUNT];
++    bool solver_owned;
++    ESP32S3RtcIoDriveObserver drive_observer;
++    void *observer_opaque;
++    uint8_t ext_level[ESP32S3_RTC_IO_GPIO_COUNT];
++    uint8_t sample[ESP32S3_RTC_IO_GPIO_COUNT];
++    uint8_t line_level[ESP32S3_RTC_IO_GPIO_COUNT];
++    qemu_irq input_lines[ESP32S3_RTC_IO_GPIO_COUNT];
++    qemu_irq output_lines[ESP32S3_RTC_IO_GPIO_COUNT];
++} ESP32S3RtcIoState;
++
++typedef struct ESP32S3RtcIoClass {
++    SysBusDeviceClass parent_class;
++} ESP32S3RtcIoClass;
++
++/* Named qdev GPIO arrays */
++#define ESP32S3_RTC_IO_INPUT_LINES   "rtcio-in"
++#define ESP32S3_RTC_IO_OUTPUT_LINES  "rtcio-out"
++
++/*
++ * Resolved level of RTC pad n (0..21): the RTC_GPIO output when the pad
++ * drives, otherwise the external driver, otherwise 0.  Exposed for the
++ * future net-layer integration.
++ */
++uint32_t esp32s3_rtc_io_pad_level(ESP32S3RtcIoState *s, unsigned pad);
++
++/* Solver entry point: drive a RTC pad net with validity (and inert voltage). */
++void esp32s3_rtc_io_drive_net(ESP32S3RtcIoState *s, unsigned pad,
++                              bool valid, bool level, double volts);
++
++/* Resolution diagnostics / net validity for RTC pad @pad. */
++ESP32S3RtcIoPadState esp32s3_rtc_io_pad_state(ESP32S3RtcIoState *s, unsigned pad);
++bool esp32s3_rtc_io_net_valid(ESP32S3RtcIoState *s, unsigned pad);
++
++/* RAW effective drive configuration of RTC pad @pad (net-solver view). */
++void esp32s3_rtc_io_get_drive_snapshot(ESP32S3RtcIoState *s, unsigned pad,
++                                       ESP32S3RtcIoDriveSnapshot *out);
++
++/*
++ * Raw-truth change notifier and strict-sampling gate — same contract as
++ * the digital GPIO model (see esp32s3_gpio.h); RTC pad validity enum:
++ * ESP32S3_RTC_IO_PAD_UNKNOWN when the solver is attached but unresolved.
++ */
++void esp32s3_rtc_io_set_drive_observer(ESP32S3RtcIoState *s,
++                                   ESP32S3RtcIoDriveObserver fn, void *opaque);
++bool esp32s3_rtc_io_solver_attached(ESP32S3RtcIoState *s, unsigned pad);
++void esp32s3_rtc_io_set_solver_owned(ESP32S3RtcIoState *s, bool owned);
+--- /dev/null
++++ b/tests/qtest/esp32s3-gpio-test.c
+@@ -0,0 +1,501 @@
++/*
++ * ESP32-S3 GPIO / IO_MUX / RTC_IO register-level qtest
++ *
++ * Exercises the H-NET-02 models against the TRM chapter 6 semantics:
++ * W1TS/W1TC registers, IN/OUT/ENABLE banks, simple GPIO loopback through
++ * the resolved pad nets (open-drain + pulls + floating policy), GPIO
++ * matrix output selectors, GPIO_PINn interrupt types feeding the masked
++ * status registers, IO_MUX function select disconnecting the matrix, and
++ * the RTC_IO [31:10] register file.  IRQ end-to-end delivery (GPIO ->
++ * interrupt matrix -> CPU) is covered by the gpio_net firmware fixture.
++ *
++ * Copyright (c) 2026 ESP32S3VM project
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 or
++ * (at your option) any later version.
++ */
++
++#include "qemu/osdep.h"
++#include "qemu/bitops.h"
++#include "libqtest.h"
++#include "hw/gpio/esp32s3_gpio.h"
++#include "hw/gpio/esp32s3_iomux.h"
++#include "hw/misc/esp32s3_rtc_io.h"
++
++#define GPIO_BASE   0x60004000ULL
++#define IOMUX_BASE  0x60009000ULL
++#define RTCIO_BASE  0x60008400ULL
++
++#define GPIO(x)  (GPIO_BASE + (x))
++#define IOMUX(x) (IOMUX_BASE + (x))
++#define RTCIO(x) (RTCIO_BASE + (x))
++
++#define PIN_REG(n)     GPIO(GPIO_PINn_REG_OFFSET(n))
++#define FUNC_IN(n)     GPIO(GPIO_FUNC_IN_SEL_CFG_OFFSET(n))
++#define FUNC_OUT(n)    GPIO(GPIO_FUNC_OUT_SEL_CFG_OFFSET(n))
++#define IO_MUX_PAD(n)  IOMUX(IO_MUX_GPIOn_REG_OFFSET(n))
++
++#define RTC_PAD_CFG(n) RTCIO(RTC_IO_PAD_OFF(n))
++
++static QTestState *s;
++
++/* PIN_FUNC_GPIO (1 on the S3) + FUN_IE (bit 9): pad on the GPIO matrix,
++ * input enabled */
++#define IOMUX_GPIO_IN_EN  (R_IO_MUX_GPIOn_FUN_IE_MASK | \
++                           (ESP32S3_IOMUX_MCU_SEL_GPIO << R_IO_MUX_GPIOn_MCU_SEL_SHIFT))
++
++static void drive_input(unsigned pad, int level)
++{
++    qtest_set_irq_in(s, "/machine/soc/gpio", ESP32S3_GPIO_INPUT_LINES,
++                     (int)pad, level);
++}
++
++static void drive_rtc_input(unsigned pad, int level)
++{
++    qtest_set_irq_in(s, "/machine/soc/rtc-io", ESP32S3_RTC_IO_INPUT_LINES,
++                     (int)pad, level);
++}
++
++static void test_reset_defaults(void)
++{
++    /* GPIO date + matrix reset defaults */
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_DATE)), ==, ESP32S3_GPIO_DATE_VERSION);
++    g_assert_cmphex(qtest_readl(s, FUNC_IN(0)), ==, GPIO_FUNC_IN_LOW);
++    g_assert_cmphex(qtest_readl(s, FUNC_IN(255)), ==, GPIO_FUNC_IN_LOW);
++    g_assert_cmphex(qtest_readl(s, FUNC_OUT(0)), ==, GPIO_FUNC_OUT_SEL_NONE);
++    g_assert_cmphex(qtest_readl(s, PIN_REG(0)), ==, 0);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_OUT)), ==, 0);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_ENABLE)), ==, 0);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_STATUS)), ==, 0);
++
++    /* IO_MUX: FUN_DRV = 2 reset default, version register */
++    g_assert_cmphex(qtest_readl(s, IO_MUX_PAD(0)), ==, ESP32S3_IOMUX_GPIO_REG_DEFAULT);
++    g_assert_cmphex(qtest_readl(s, IO_MUX_PAD(48)), ==, ESP32S3_IOMUX_GPIO_REG_DEFAULT);
++    g_assert_cmphex(qtest_readl(s, IOMUX(A_IO_MUX_DATE)), ==, ESP32S3_IOMUX_DATE_VERSION);
++
++    /* RTC_IO pad config reset default: DRV = 2, RDE = 1 */
++    g_assert_cmphex(qtest_readl(s, RTC_PAD_CFG(0)), ==, ESP32S3_RTC_IO_PAD_DEFAULT);
++    g_assert_cmphex(qtest_readl(s, RTCIO(RTC_IO_DATE_OFF)), ==,
++                    ESP32S3_RTC_IO_DATE_VERSION);
++}
++
++static void test_w1ts_w1tc(void)
++{
++    /* Output enable / data with W1TS/W1TC */
++    qtest_writel(s, GPIO(A_GPIO_ENABLE_W1TS), BIT(5));
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_ENABLE)), ==, BIT(5));
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TS), BIT(5));
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_OUT)), ==, BIT(5));
++    /* W1TS/W1TC registers read as zero */
++    g_assert_cmpuint(qtest_readl(s, GPIO(A_GPIO_OUT_W1TS)), ==, 0);
++    g_assert_cmpuint(qtest_readl(s, GPIO(A_GPIO_OUT_W1TC)), ==, 0);
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(5));
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_OUT)), ==, 0);
++    /* Direct OUT write sets the whole register */
++    qtest_writel(s, GPIO(A_GPIO_OUT), 0x12340000);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_OUT)), ==, 0x12340000);
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), 0xFFFFFFFF);
++    qtest_writel(s, GPIO(A_GPIO_ENABLE_W1TC), 0xFFFFFFFF);
++
++    /* The "1" banks are 22 bits wide (GPIO32-48) */
++    qtest_writel(s, GPIO(A_GPIO_OUT1), 0xFFFFFFFF);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_OUT1)), ==, ESP32S3_GPIO1_MASK);
++    qtest_writel(s, GPIO(A_GPIO_ENABLE1_W1TS), 0xFFFFFFFF);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_ENABLE1)), ==, ESP32S3_GPIO1_MASK);
++    qtest_writel(s, GPIO(A_GPIO_ENABLE1_W1TC), 0xFFFFFFFF);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_ENABLE1)), ==, 0);
++    qtest_writel(s, GPIO(A_GPIO_OUT1_W1TC), 0xFFFFFFFF);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_OUT1)), ==, 0);
++}
++
++static void test_input_readonly(void)
++{
++    uint32_t before = qtest_readl(s, GPIO(A_GPIO_IN));
++
++    qtest_writel(s, GPIO(A_GPIO_IN), 0xFFFFFFFF);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, before);
++    qtest_writel(s, GPIO(A_GPIO_IN1), 0xFFFFFFFF);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN1)), ==, 0);
++}
++
++static void test_external_input(void)
++{
++    /* FUN_IE on pad 4, matrix function: external level reaches GPIO_IN */
++    qtest_writel(s, IO_MUX_PAD(4), IOMUX_GPIO_IN_EN);
++    g_assert_cmpuint(qtest_readl(s, GPIO(A_GPIO_IN)), ==, 0);
++
++    drive_input(4, 1);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, BIT(4));
++    drive_input(4, 0);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, 0);
++
++    /* Without FUN_IE the input buffer is disabled: samples 0 */
++    qtest_writel(s, IO_MUX_PAD(4), 0);
++    drive_input(4, 1);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, 0);
++    drive_input(4, 0);
++    qtest_writel(s, IO_MUX_PAD(4), 0);
++
++    /* High bank: pad 33 via GPIO_IN1 */
++    qtest_writel(s, IO_MUX_PAD(33), IOMUX_GPIO_IN_EN);
++    drive_input(33, 1);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN1)), ==, BIT(33 - 32));
++    drive_input(33, 0);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN1)), ==, 0);
++    qtest_writel(s, IO_MUX_PAD(33), 0);
++}
++
++static void test_simple_gpio_loopback(void)
++{
++    /* Pad 2: output enabled, drives the net, input loopback reads it */
++    qtest_writel(s, IO_MUX_PAD(2), IOMUX_GPIO_IN_EN);
++    qtest_writel(s, GPIO(A_GPIO_ENABLE_W1TS), BIT(2));
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TS), BIT(2));
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, BIT(2));
++
++    /* Open drain: output 1 releases the pad; no external driver, no pull ->
++     * the net is floating (unresolved, sampled 0), never a valid low */
++    qtest_writel(s, PIN_REG(2), R_GPIO_PINn_PAD_DRIVER_MASK);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, 0);
++    /* The weak pull-up resolves the released open-drain net to high */
++    qtest_writel(s, IO_MUX_PAD(2), IOMUX_GPIO_IN_EN | R_IO_MUX_GPIOn_FUN_PU_MASK);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, BIT(2));
++    /* An external low driver beats the weak pull */
++    drive_input(2, 0);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, 0);
++    drive_input(2, 1);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, BIT(2));
++
++    /* Cleanup: push-pull, disabled, external detached */
++    qtest_writel(s, PIN_REG(2), 0);
++    qtest_writel(s, IO_MUX_PAD(2), 0);
++    qtest_writel(s, GPIO(A_GPIO_ENABLE_W1TC), BIT(2));
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(2));
++    drive_input(2, 0);
++}
++
++static void test_matrix_out_routing(void)
++{
++    qtest_writel(s, IO_MUX_PAD(2), IOMUX_GPIO_IN_EN);
++    qtest_writel(s, GPIO(A_GPIO_ENABLE_W1TS), BIT(2));
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TS), BIT(2));
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, BIT(2));
++
++    /* Route the pad to a peripheral output signal (1): no model sources it,
++     * the pad driver releases and the floating net samples 0 */
++    qtest_writel(s, FUNC_OUT(2), 1);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, 0);
++
++    /* Reserved selector 511: still no drive */
++    qtest_writel(s, FUNC_OUT(2), 0x1FF);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, 0);
++
++    /* Simple GPIO (256) drives again */
++    qtest_writel(s, FUNC_OUT(2), GPIO_FUNC_OUT_SEL_NONE);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, BIT(2));
++
++    /* Simple GPIO (256): OE is hardwired to GPIO_ENABLE, OEN_SEL does
++     * not apply there (IDF gpio_config use-case) */
++    qtest_writel(s, FUNC_OUT(2), GPIO_FUNC_OUT_SEL_NONE | R_GPIO_FUNCn_OUT_SEL_CFG_FUNC_OEN_SEL_MASK);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, BIT(2));
++
++    /* Output inversion: OUT bit 0 but inverted -> drives 1 */
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(2));
++    qtest_writel(s, FUNC_OUT(2), GPIO_FUNC_OUT_SEL_NONE | R_GPIO_FUNCn_OUT_SEL_CFG_FUNC_OUT_INV_SEL_MASK);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, BIT(2));
++
++    /* OE inversion on the simple path: enable registered but inverted ->
++     * released */
++    qtest_writel(s, FUNC_OUT(2), GPIO_FUNC_OUT_SEL_NONE |
++                 R_GPIO_FUNCn_OUT_SEL_CFG_FUNC_OUT_INV_SEL_MASK |
++                 R_GPIO_FUNCn_OUT_SEL_CFG_FUNC_OEN_INV_SEL_MASK);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, 0);
++
++    /* Normal peripheral-OE route (IDF matrix use-case): route a real
++     * peripheral signal (I2CEXT0_SDA = 90) with OEN_SEL = 0 so OE comes
++     * from the peripheral signal while GPIO_ENABLE is unset.  No model
++     * sources the signal, so the pad stays released and the net floats
++     * (samples 0 under the permissive profile). */
++    qtest_writel(s, GPIO(A_GPIO_ENABLE_W1TC), BIT(2));
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(2));
++    qtest_writel(s, FUNC_OUT(2), 90);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, 0);
++
++    /* Same peripheral route with OEN_SEL = 1: OE from GPIO_ENABLE (still
++     * unset) -> released */
++    qtest_writel(s, FUNC_OUT(2), 90 | R_GPIO_FUNCn_OUT_SEL_CFG_FUNC_OEN_SEL_MASK);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, 0);
++
++    /* OEN_SEL = 1 with GPIO_ENABLE set: pad drives the (unmodelled)
++     * peripheral signal value 0 -> reads 0 (value-source boundary) */
++    qtest_writel(s, GPIO(A_GPIO_ENABLE_W1TS), BIT(2));
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, 0);
++
++    /* Back to simple GPIO 256 with the inverted source: drives 1 again
++     * (GPIO_ENABLE still set, OEN_SEL irrelevant on the simple path) */
++    qtest_writel(s, FUNC_OUT(2), GPIO_FUNC_OUT_SEL_NONE |
++                 R_GPIO_FUNCn_OUT_SEL_CFG_FUNC_OUT_INV_SEL_MASK);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, BIT(2));
++
++    /* Cleanup */
++    qtest_writel(s, FUNC_OUT(2), GPIO_FUNC_OUT_SEL_NONE);
++    qtest_writel(s, GPIO(A_GPIO_ENABLE_W1TC), BIT(2));
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(2));
++    qtest_writel(s, IO_MUX_PAD(2), 0);
++    drive_input(2, 0);
++}
++
++static void test_matrix_in_routing(void)
++{
++    /* Register semantics of the 256 input selectors */
++    qtest_writel(s, FUNC_IN(3), 5 | R_GPIO_FUNCn_IN_SEL_CFG_FUNC_IN_INV_SEL_MASK |
++                 R_GPIO_FUNCn_IN_SEL_CFG_SIG_IN_SEL_MASK);
++    g_assert_cmphex(qtest_readl(s, FUNC_IN(3)), ==,
++                    5 | R_GPIO_FUNCn_IN_SEL_CFG_FUNC_IN_INV_SEL_MASK |
++                    R_GPIO_FUNCn_IN_SEL_CFG_SIG_IN_SEL_MASK);
++    /* Only the low byte is implemented */
++    qtest_writel(s, FUNC_IN(3), 0xFFFFFFC1);
++    g_assert_cmphex(qtest_readl(s, FUNC_IN(3)), ==, 0xC1);
++    /* Constant-input selectors store as-is */
++    qtest_writel(s, FUNC_IN(4), GPIO_FUNC_IN_HIGH);
++    g_assert_cmphex(qtest_readl(s, FUNC_IN(4)), ==, GPIO_FUNC_IN_HIGH);
++    qtest_writel(s, FUNC_IN(4), GPIO_FUNC_IN_LOW);
++    g_assert_cmphex(qtest_readl(s, FUNC_IN(4)), ==, GPIO_FUNC_IN_LOW);
++}
++
++static void test_pin_interrupts(void)
++{
++    uint32_t pin5 = PIN_REG(5);
++
++    qtest_writel(s, IO_MUX_PAD(5), IOMUX_GPIO_IN_EN);
++    drive_input(5, 0);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_STATUS)), ==, 0);
++
++    /* Rising edge on pad 5, enabled for the PROCPU lane (INT_ENA bit 0) */
++    qtest_writel(s, pin5, (ESP32S3_GPIO_INT_RISING << R_GPIO_PINn_INT_TYPE_SHIFT) |
++                 ESP32S3_GPIO_INT_ENA_PROCPU);
++    drive_input(5, 1);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_STATUS)), ==, BIT(5));
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_PCPU_INT)), ==, BIT(5));
++    /* Not enabled for the NMI lane, and pad 5 is in the low bank */
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_PCPU_NMI_INT)), ==, 0);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_PCPU_INT1)), ==, 0);
++
++    /* W1TC clears the status; a rising edge already consumed does not
++     * re-assert the edge interrupt */
++    qtest_writel(s, GPIO(A_GPIO_STATUS_W1TC), BIT(5));
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_STATUS)), ==, 0);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_PCPU_INT)), ==, 0);
++
++    /* Falling edge */
++    qtest_writel(s, pin5, (ESP32S3_GPIO_INT_FALLING << R_GPIO_PINn_INT_TYPE_SHIFT) |
++                 ESP32S3_GPIO_INT_ENA_PROCPU);
++    drive_input(5, 0);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_STATUS)), ==, BIT(5));
++    qtest_writel(s, GPIO(A_GPIO_STATUS_W1TC), BIT(5));
++
++    /* Any edge */
++    qtest_writel(s, pin5, (ESP32S3_GPIO_INT_ANYEDGE << R_GPIO_PINn_INT_TYPE_SHIFT) |
++                 ESP32S3_GPIO_INT_ENA_PROCPU);
++    drive_input(5, 1);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_STATUS)), ==, BIT(5));
++    qtest_writel(s, GPIO(A_GPIO_STATUS_W1TC), BIT(5));
++    drive_input(5, 0);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_STATUS)), ==, BIT(5));
++    qtest_writel(s, GPIO(A_GPIO_STATUS_W1TC), BIT(5));
++
++    /* High level: the status re-asserts while the condition persists —
++     * clearing cannot stick until the level goes away (TRM level semantics) */
++    qtest_writel(s, pin5, (ESP32S3_GPIO_INT_HIGH << R_GPIO_PINn_INT_TYPE_SHIFT) |
++                 ESP32S3_GPIO_INT_ENA_PROCPU);
++    drive_input(5, 1);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_STATUS)), ==, BIT(5));
++    qtest_writel(s, GPIO(A_GPIO_STATUS_W1TC), BIT(5));
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_STATUS)), ==, BIT(5));
++    drive_input(5, 1); /* a fresh evaluation re-asserts the level */
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_STATUS)), ==, BIT(5));
++
++    /* STATUS_NEXT mirrors the pending level condition */
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_STATUS_NEXT)), ==, BIT(5));
++
++    /* APPCPU lane: INT_ENA bit 1 raises matrix source 18; the PROCPU
++     * masked views stay clear (there is no APPCPU status register) */
++    qtest_writel(s, pin5, (ESP32S3_GPIO_INT_HIGH << R_GPIO_PINn_INT_TYPE_SHIFT) |
++                 ESP32S3_GPIO_INT_ENA_APPCPU);
++    drive_input(5, 0);
++    drive_input(5, 1);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_STATUS)), ==, BIT(5));
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_PCPU_INT)), ==, 0);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_PCPU_INT1)), ==, 0);
++
++    /* PROCPU NMI lane: INT_ENA bit 2 feeds PCPU_NMI_INT */
++    qtest_writel(s, pin5, (ESP32S3_GPIO_INT_HIGH << R_GPIO_PINn_INT_TYPE_SHIFT) |
++                 ESP32S3_GPIO_INT_ENA_PROCPU_NMI);
++    drive_input(5, 0);
++    drive_input(5, 1);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_PCPU_NMI_INT)), ==, BIT(5));
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_PCPU_INT)), ==, 0);
++
++    /* High bank: pad 33 rising edge enabled for PROCPU shows up in
++     * PCPU_INT1, not in PCPU_INT */
++    qtest_writel(s, IO_MUX_PAD(33), IOMUX_GPIO_IN_EN);
++    qtest_writel(s, PIN_REG(33), (ESP32S3_GPIO_INT_RISING << R_GPIO_PINn_INT_TYPE_SHIFT) |
++                 ESP32S3_GPIO_INT_ENA_PROCPU);
++    drive_input(33, 1);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_STATUS1)), ==, BIT(33 - 32));
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_PCPU_INT1)), ==, BIT(33 - 32));
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_PCPU_INT)), ==, 0);
++
++    /* Disabled interrupt: no status update */
++    qtest_writel(s, pin5, 0);
++    qtest_writel(s, PIN_REG(33), 0);
++    qtest_writel(s, GPIO(A_GPIO_STATUS_W1TC), BIT(5));
++    qtest_writel(s, GPIO(A_GPIO_STATUS1_W1TC), BIT(33 - 32));
++    drive_input(5, 0);
++    drive_input(33, 0);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_STATUS)), ==, 0);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_STATUS1)), ==, 0);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_STATUS_NEXT)), ==, 0);
++
++    qtest_writel(s, IO_MUX_PAD(5), 0);
++    qtest_writel(s, IO_MUX_PAD(33), 0);
++    drive_input(5, 0);
++    drive_input(33, 0);
++}
++
++static void test_iomux_disconnect(void)
++{
++    /* With MCU_SEL != PIN_FUNC_GPIO the pad selects a direct IO_MUX
++     * function: the simple GPIO output no longer drives the net */
++    qtest_writel(s, IO_MUX_PAD(2), IOMUX_GPIO_IN_EN);
++    qtest_writel(s, GPIO(A_GPIO_ENABLE_W1TS), BIT(2));
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TS), BIT(2));
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, BIT(2));
++
++    qtest_writel(s, IO_MUX_PAD(2), R_IO_MUX_GPIOn_FUN_IE_MASK); /* MCU_SEL = 0 */
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)), ==, 0);
++
++    /* Pad register write mask: only bits [15:0] are implemented */
++    qtest_writel(s, IO_MUX_PAD(2), 0x12345678);
++    g_assert_cmphex(qtest_readl(s, IO_MUX_PAD(2)), ==, 0x5678);
++
++    /* PIN_CTRL stores bits [11:0] */
++    qtest_writel(s, IOMUX(A_IO_MUX_PIN_CTRL), 0xFFFFFFFF);
++    g_assert_cmphex(qtest_readl(s, IOMUX(A_IO_MUX_PIN_CTRL)), ==, 0xFFF);
++
++    /* Out-of-range IO_MUX register: the 0xC8..0xFB gap between the last
++     * pad register (GPIO48 at 0xC4) and DATE reads 0 and ignores writes */
++    qtest_writel(s, IOMUX(0xC8), 0xFFFFFFFF);
++    g_assert_cmpuint(qtest_readl(s, IOMUX(0xC8)), ==, 0);
++
++    /* Cleanup */
++    qtest_writel(s, GPIO(A_GPIO_ENABLE_W1TC), BIT(2));
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(2));
++    qtest_writel(s, IO_MUX_PAD(2), ESP32S3_IOMUX_GPIO_REG_DEFAULT);
++    drive_input(2, 0);
++}
++
++static void test_negative(void)
++{
++    /* GPIO_STRAP is read-only */
++    uint32_t strap = qtest_readl(s, GPIO(A_GPIO_STRAP));
++    qtest_writel(s, GPIO(A_GPIO_STRAP), 0xFFFF);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_STRAP)), ==, strap);
++
++    /* Status registers and read-only views ignore writes */
++    qtest_writel(s, GPIO(A_GPIO_STATUS_NEXT), 0xFFFFFFFF);
++    g_assert_cmpuint(qtest_readl(s, GPIO(A_GPIO_STATUS_NEXT)), ==, 0);
++    qtest_writel(s, GPIO(A_GPIO_PCPU_INT), 0xFFFFFFFF);
++    g_assert_cmpuint(qtest_readl(s, GPIO(A_GPIO_PCPU_INT)), ==, 0);
++
++    /* Reserved hole between the pin file and the matrix (pads 49..53 and
++     * the STATUS_NEXT gap at 0x138..0x14B read 0 and ignore writes) */
++    qtest_writel(s, GPIO(0x138), 0xFFFFFFFF);
++    g_assert_cmpuint(qtest_readl(s, GPIO(0x138)), ==, 0);
++
++    /* Reserved region between CLOCK_GATE and DATE */
++    qtest_writel(s, GPIO(0x640), 0xFFFFFFFF);
++    g_assert_cmpuint(qtest_readl(s, GPIO(0x640)), ==, 0);
++
++    /* RTC_IO reserved hole after TOUCH_CTRL */
++    qtest_writel(s, RTCIO(0xEC), 0xFFFFFFFF);
++    g_assert_cmpuint(qtest_readl(s, RTCIO(0xEC)), ==, 0);
++
++    /* RTC_IO version register ignores writes */
++    qtest_writel(s, RTCIO(RTC_IO_DATE_OFF), 0xFFFFFFFF);
++    g_assert_cmphex(qtest_readl(s, RTCIO(RTC_IO_DATE_OFF)), ==,
++                    ESP32S3_RTC_IO_DATE_VERSION);
++}
++
++static void test_rtc_io(void)
++{
++    /* RTC data registers live in bits [31:10] */
++    qtest_writel(s, RTCIO(RTC_IO_OUT_W1TS_OFF), 1u << (10 + 0));
++    g_assert_cmphex(qtest_readl(s, RTCIO(RTC_IO_OUT_OFF)), ==, 1u << 10);
++    qtest_writel(s, RTCIO(RTC_IO_ENABLE_W1TS_OFF), 1u << (10 + 0));
++    g_assert_cmphex(qtest_readl(s, RTCIO(RTC_IO_ENABLE_OFF)), ==, 1u << 10);
++    /* W1TC registers read as zero */
++    g_assert_cmpuint(qtest_readl(s, RTCIO(RTC_IO_OUT_W1TS_OFF)), ==, 0);
++    g_assert_cmpuint(qtest_readl(s, RTCIO(RTC_IO_ENABLE_W1TC_OFF)), ==, 0);
++
++    /* Direct write only touches bits [31:10] */
++    qtest_writel(s, RTCIO(RTC_IO_OUT_OFF), 0xFFFFFFFF);
++    g_assert_cmphex(qtest_readl(s, RTCIO(RTC_IO_OUT_OFF)), ==,
++                    ESP32S3_RTC_IO_DATA_MASK);
++
++    /* Input pad 3 with rising edge interrupt; FUN_IE (bit 13) gates the
++     * input buffer for both RTC_GPIO_IN and the interrupt detector */
++    qtest_writel(s, RTC_PAD_CFG(3), (1u << 13)); /* FUN_IE */
++    qtest_writel(s, RTCIO(RTC_IO_PIN_OFF(3)), (1 << 7)); /* rising */
++    drive_rtc_input(3, 1);
++    g_assert_cmphex(qtest_readl(s, RTCIO(RTC_IO_STATUS_OFF)), ==, 1u << (10 + 3));
++    g_assert_cmphex(qtest_readl(s, RTCIO(RTC_IO_IN_OFF)), ==, 1u << (10 + 3));
++    qtest_writel(s, RTCIO(RTC_IO_STATUS_W1TC_OFF), 1u << (10 + 3));
++    g_assert_cmphex(qtest_readl(s, RTCIO(RTC_IO_STATUS_OFF)), ==, 0);
++
++    /* Pull-down (RDE) resolves the released pad; the external driver wins */
++    qtest_writel(s, RTC_PAD_CFG(3), (1u << 13) | (1u << 28)); /* FUN_IE | RDE */
++    drive_rtc_input(3, 1);
++    g_assert_cmphex(qtest_readl(s, RTCIO(RTC_IO_IN_OFF)), ==, 1u << (10 + 3));
++    drive_rtc_input(3, 0);
++    g_assert_cmphex(qtest_readl(s, RTCIO(RTC_IO_IN_OFF)), ==, 0);
++
++    /* Out-of-range RTC pad config read: gap between pin file and DEBUG_SEL
++     * is the 0x80 DEBUG_SEL register; 0xD9..0xDB inside the pad map does
++     * not exist — the next word is EXT_WAKEUP0 which we do not disturb.
++     * Check the unmapped hole instead (0xEC is covered above). */
++
++    /* Cleanup */
++    qtest_writel(s, RTC_PAD_CFG(3), ESP32S3_RTC_IO_PAD_DEFAULT);
++    qtest_writel(s, RTCIO(RTC_IO_ENABLE_W1TC_OFF), ESP32S3_RTC_IO_DATA_MASK);
++    qtest_writel(s, RTCIO(RTC_IO_OUT_W1TC_OFF), ESP32S3_RTC_IO_DATA_MASK);
++    qtest_writel(s, RTCIO(RTC_IO_PIN_OFF(3)), 0);
++    drive_rtc_input(3, 0);
++}
++
++int main(int argc, char **argv)
++{
++    int ret;
++
++    g_test_init(&argc, &argv, NULL);
++
++    s = qtest_initf("-machine esp32s3 -L pc-bios "
++                    "-global driver=esp32s3.gpio,property=strap_mode,value=0x00");
++
++    qtest_add_func("esp32s3-gpio/reset-defaults", test_reset_defaults);
++    qtest_add_func("esp32s3-gpio/w1ts-w1tc", test_w1ts_w1tc);
++    qtest_add_func("esp32s3-gpio/input-readonly", test_input_readonly);
++    qtest_add_func("esp32s3-gpio/external-input", test_external_input);
++    qtest_add_func("esp32s3-gpio/simple-loopback", test_simple_gpio_loopback);
++    qtest_add_func("esp32s3-gpio/matrix-out", test_matrix_out_routing);
++    qtest_add_func("esp32s3-gpio/matrix-in", test_matrix_in_routing);
++    qtest_add_func("esp32s3-gpio/pin-interrupts", test_pin_interrupts);
++    qtest_add_func("esp32s3-gpio/iomux-disconnect", test_iomux_disconnect);
++    qtest_add_func("esp32s3-gpio/negative", test_negative);
++    qtest_add_func("esp32s3-gpio/rtc-io", test_rtc_io);
++
++    ret = g_test_run();
++    qtest_quit(s);
++    return ret;
++}
