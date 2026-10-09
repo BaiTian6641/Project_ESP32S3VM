@@ -5,6 +5,45 @@ parallel implementation in this session. Preserve the reviewed full scope; do no
 reduce completion to the foundation slices below. Historical heartbeat metadata
 is retained in the frozen packet; it is not an inventory of this session's jobs.
 
+## 2026-10-09 — source-bound SPI2/3 master PIO/GDMA/NOR;182 native and25 outcomes PASS
+
+Current candidate: `qemu-uart-40edccac4156-eb6707129054f40a`, executable SHA256
+`cabeb9c4eed50ab27f8896a2d3a0f9fe5860920450679ea1b3ffe8bead6bc967`.
+All **136 applied source hashes** match its immutable preparation receipt.
+
+* **182 native cases PASS, zero skipped**: SPI27, NOR8, UART64, UHCI17,
+  GDMA18, memory12, I2C controller18 and I2C service18.
+* **20 ordinary completed runs PASS on that same executable**: the previous
+  thirteen I2C master/slave and five UART/UHCI regressions, plus both complete
+  SPI connected-NOR and external-loopback fixtures. **Five additional strict
+  SPI negatives PASS** as expected paused hardware states, not completed transfers.
+* Both SPI controllers return actual8,201-byte NOR/loopback payloads with
+  descriptor ownership, EOF, callback and chip-select isolation checks.
+  Loopback includes all four clock modes, mixed bit order, non-byte phases,
+  queue identity, short RX bounds and pre-first-byte reset/no-EOF behavior.
+* Root-fixed missing released FSPIQ_OUT authority at ordinary MISO setup and
+  shared GDMA reset coupling. IN/OUT peripheral resets now preserve their
+  opposite active chain; memory-to-memory cancellation stays coupled.
+  Retained actual-transfer regressions fail before/pass after.
+* Fixture ARM records use the real nondeprecated console-idle API before
+  strict pauses; the runner waits for complete DONE lines. Two raw reset probes
+  share legal clock-divider fields rather than overflowing the hardware fields.
+  All seven final source-identity`75b29a1690026621` variants were compiled,
+  merged, pinned and actually exercised. Failing/cancelled/superseded images are
+  preserved, not reused as PASS.
+* The canonical source closure is tracked in SPI `foundation-dependencies.json`;
+  the obsolete standalone prefix-copy preparer is removed. Three current
+  aggregate recipes include canonical SPI sources plus direction-isolated GDMA.
+
+Exact evidence: `build-runtime-state/uart-continuation/spi-stage/qualification-receipt.json`.
+The full simulator goal remains **active and incomplete**: advanced/slave/
+direct-IO_MUX/PSRAM-specific SPI, other peripheral/native/metrology gates,
+Arduino/ROM and radio/SIMD independent proof are not implied. Parallel workers
+staged I2S raw-data/mono-right and LEDC/MCPWM refinements without changing this
+candidate; exact PCM/PDM converter coefficients/state/rounding/golden vectors
+remain unavailable after primary-source review. Arduino idle/ROM timing findings
+are staged and unqualified. No physical board operation occurred.
+
 ## 2026-10-09 — both ordinary I2C slave drivers;147 native and18 ordinary PASS
 
 Current source-bound candidate:

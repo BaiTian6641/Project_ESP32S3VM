@@ -1,0 +1,28 @@
+--- a/hw/dma/esp_gdma.c
++++ b/hw/dma/esp_gdma.c
+@@ -738,8 +738,8 @@
+ 
+ /**
+  * @brief Disarm both directions of a channel and cancel its quantum timer.
+- *        Used by RST (either direction) so a half-reset channel never keeps
+- *        a quantum-bounded transfer running.
++ *        Either direction's RST cancels a coupled memory-to-memory transfer.
++ *        Peripheral-handshake directions retain independent FSM ownership.
+  */
+ static void esp_gdma_channel_disarm(ESPGdmaState *s, uint32_t chan)
+ {
+@@ -837,7 +837,13 @@
+             if (FIELD_EX32(value,  GDMA_IN_CONF0, RST) == 0 &&
+                 FIELD_EX32(s->conf0, GDMA_IN_CONF0, RST) != 0)
+             {
+-                esp_gdma_channel_disarm(state, chan);
++                /* Only MEM_TRANS_EN couples the two directional FSMs. */
++                if (FIELD_EX32(state->ch_conf[ESP_GDMA_IN_IDX][chan].conf0,
++                               GDMA_IN_CONF0, MEM_TRANS_EN)) {
++                    esp_gdma_channel_disarm(state, chan);
++                } else {
++                    qemu_bh_cancel(state->quantum[chan].bh);
++                }
+                 esp_gdma_fsm_reset(s);
+             }
+             /* Update the register before going further */

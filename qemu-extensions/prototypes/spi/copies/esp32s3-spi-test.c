@@ -50,6 +50,7 @@
 #define CLOCK_10MHZ ((3U << 12) | (1U << 6))
 
 #define GDMA_BASE 0x6003f000ULL
+#define GDMA_IN(c, r) (GDMA_BASE + 0xc0 * (c) + (r))
 #define GDMA_OUT(c, r) (GDMA_BASE + 0xc0 * (c) + 0x60 + (r))
 #define G_CONF0 0x00
 #define G_CONF1 0x04
@@ -646,6 +647,39 @@ static void assert_other_channel(QTestState *s)
     g_assert_cmphex(qtest_readl(s, GDMA_OUT(1, G_LINK)) & G_PARK, ==, 0);
 }
 
+static void test_gdma_opposite_reset(gconstpointer opaque)
+{
+    unsigned c = GPOINTER_TO_UINT(opaque);
+    QTestState *s = setup(c);
+
+    qtest_writel(s, SYSTEM_GDMA_EN1,
+                 qtest_readl(s, SYSTEM_GDMA_EN1) | SYSTEM_GDMA);
+    qtest_memset(s, SOURCE_AREA, 0x96, 8);
+    descriptor(s, DESC_AREA, 8, true, SOURCE_AREA, 0);
+    arm_out(s, 0, c, DESC_AREA);
+    tx_config(s, c, 64);
+    wr(s, c, DMA, BIT(28));
+    wr(s, c, CMD, USR);
+    qtest_clock_step(s, 100);
+    busy(s, c);
+
+    /* Each peripheral-handshake direction owns its FSM. Resetting IN must
+     * not discard this controller's already-active OUT descriptor cursor. */
+    qtest_writel(s, GDMA_IN(0, G_CONF0), BIT(0));
+    qtest_writel(s, GDMA_IN(0, G_CONF0), 0);
+    g_assert_cmphex(qtest_readl(s, GDMA_OUT(0, G_LINK)) & G_PARK, ==, 0);
+    qtest_clock_step(s, 6299);
+    busy(s, c);
+    qtest_clock_step(s, 1);
+    done(s, c);
+    g_assert_cmphex(qtest_readl(s, DESC_AREA), ==,
+                    8U | (8U << 12) | DESC_EOF);
+    g_assert_cmphex(qtest_readl(s, GDMA_OUT(0, G_RAW)), ==,
+                    G_DONE | G_EOF | G_TOTAL_EOF);
+    g_assert_cmphex(qtest_readl(s, GDMA_OUT(0, G_EOF_DESC)), ==, DESC_AREA);
+    qtest_quit(s);
+}
+
 static void test_gdma_large_tx(gconstpointer opaque)
 {
     bool cpha = GPOINTER_TO_UINT(opaque);
@@ -735,6 +769,7 @@ int main(int argc, char **argv)
         { "register-width-bounds-full-pio", test_register_bounds },
         { "pio-overflow-strict-pause", test_pio_overflow },
         { "unknown-rx-strict-pause", test_unknown_rx },
+        { "gdma-opposite-direction-reset-preserves-active-tx", test_gdma_opposite_reset },
     };
 
     g_test_init(&argc, &argv, NULL);

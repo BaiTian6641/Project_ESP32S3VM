@@ -3,32 +3,15 @@
   "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
   "prefix_fingerprint": "dbe2a8a5ad4e07a607e76ab751e77ac85fe3bf30974359bd25a69354499f9b32",
   "license": "GPL-2.0-or-later",
-  "status": "graph-restack-qualified-0e2ab32b",
-  "native_checkout": "/home/polar/.cache/esp32s3vm/qemu-spi-40edccac4156-0e2ab32b",
-  "build_dir": "build-spi",
-  "evidence": "build-runtime-state/spi-native-2026-10-07",
-  "dependency_patches": [
-    {
-      "source": "prototypes/gpio/integration-v3.patch",
-      "sha256": "66c2b80a9e3ce664b1b43fa1a7c0783cb79dbec5056cdd805b498aa9b66aea22"
-    },
-    {
-      "source": "prototypes/coreclk/0010-hw-xtensa-esp32s3_clk-common-clock-ports-for-SPI2-3.patch",
-      "sha256": "e8b1487b941f7f80c3920da9d56723bcb39b34fa0dedb2dd98c4b80deb88bf4d"
-    },
-    {
-      "source": "prototypes/coreclk/0011-hw-xtensa-esp32s3_clk-UHCI0-clock-gate-and-reset-lines.patch",
-      "sha256": "c1ebe584a6dbe178743da9874bbcb25880afac10242c16f8f1bb043362b47606"
-    },
-    {
-      "source": "prototypes/coreclk/0012-hw-xtensa-esp32s3_clk-publish-the-0010-0011-gate-levels.patch",
-      "sha256": "6b1e8f79f0e4194213c67d309c5a88930bcb13b396fb118232945e3697434f66"
-    },
-    {
-      "source": "prototypes/coreclk/0013-hw-xtensa-esp32s3-BBPLL-power-validity-decoupled-from.patch",
-      "sha256": "2203d4cca82a1ff4a62400517ff2fe1ff6d98e0e53417f16a5f5c7a65c5a8081"
-    }
-  ],
+  "status": "current-foundation-qualified:182 native and25 ordinary scenario outcomes PASS",
+  "native_checkout": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-eb6707129054f40a",
+  "build_dir": "build-wsl",
+  "evidence": "build-runtime-state/uart-continuation/spi-stage",
+  "foundation_dependencies": {
+    "source": "foundation-dependencies.json",
+    "preparer": "../uart/prepare.py",
+    "contract": "Frozen common source record; apply each shared clock/GDMA/NativeNet dependency exactly once, then the UART-owned tail. No standalone-prefix copy or duplicate provider overlay."
+  },
   "copies": [
     {
       "source": "copies/esp32s3_gpspi.c",
@@ -56,18 +39,18 @@
     }
   ],
   "patches": [
-    "0001-gdma-peripheral-rx-packet-end.patch",
-    "0002-spi-controller-service-integration.patch"
+    "0008-current-foundation-integration.patch"
   ],
   "required_graph_contract": "integration-requirements.json",
   "canonical_gates": [
     "SPI0/1 official flash path remains unchanged",
     "Slave remains SPI-03 unqualified",
     "Dual/quad/octal/DDR remain SPI-03 unqualified",
-    "PSRAM/EDMA addresses are explicitly unsupported until CORE-04 reachable-memory qualification",
+    "Internal-SRAM DMA qualified; SPI-specific PSRAM/EDMA workloads remain unqualified despite the separately qualified mapped-memory foundation",
     "No claimed fast/edge equivalence or replay until both paths are truly exercised",
     "NOR mode1/2 unsupported; controller mode1/2 qualifies separately through actual loopback wire",
-    "ESP32-S3 half-duplex both TX and RX data phases are unsupported by the pinned target capability/ordinary driver"
+    "ESP32-S3 half-duplex both TX and RX data phases are unsupported by the pinned target capability/ordinary driver",
+    "Forced GPIO-matrix routing only; direct SPI2 IO_MUX remains an explicit GPIO/SPI gate"
   ],
   "graph_copies": [
     {
@@ -79,9 +62,9 @@
       "destination": "include/hw/ssi/esp32s3_spi_binding.h"
     }
   ],
-  "graph_patch": "0003-spi-existing-electrical-binding.patch",
-  "graph_status": "restacked-qualified-against-0e2ab32b-foundation",
-  "restack": {
+  "integration_patch": "0008-current-foundation-integration.patch",
+  "graph_status": "source-bound native182 plus ordinary20 and expected strict-negatives5 PASS",
+  "historical_restack": {
     "foundation_source": "/home/polar/.cache/esp32s3vm/qemu-runtime-40edccac4156-0e2ab32b9d57dee3",
     "foundation_fingerprint": "0e2ab32b9d57dee3d0454e063153f820877477e692a145a380640cd3a3193ccd",
     "foundation_record": "build-runtime-state/runtime-0e2ab32b9d57dee3-source.json",
@@ -94,13 +77,34 @@
     "evidence_round": "build-runtime-state/spi-native-2026-10-07/graph-restack-20261008",
     "prior_checkout_preserved": "/home/polar/.cache/esp32s3vm/qemu-spi-40edccac4156 (superseded standalone, no electrical/NOR graph binding)"
   },
-  "after_patches": [
+  "historical_after_patches": [
     {
       "source": "prototypes/gdma/0004-hw-dma-esp_gdma-served-RX-bytes-survive-post-store-a.patch",
       "sha256": "7640a6e06bf9c7d9919cbd4837c25dab3e85f0dfb03da74eb77ee3718dead251"
     }
   ],
-  "qtest_registered_cases": 25,
+  "qtest_registered_cases": 27,
+  "current_backend_qualification": {
+    "source_fingerprint": "eb6707129054f40aa9310491a675c921db80ddf190efafb02acaafb1739968d9",
+    "binary_sha256": "cabeb9c4eed50ab27f8896a2d3a0f9fe5860920450679ea1b3ffe8bead6bc967",
+    "applied_source_files_verified": 136,
+    "native_cases": {
+      "spi": 27,
+      "spi-service": 8,
+      "uart": 64,
+      "uhci": 17,
+      "gdma": 18,
+      "memory": 12,
+      "i2c": 18,
+      "i2c-service": 18
+    },
+    "native_failed": 0,
+    "native_skipped": 0,
+    "evidence": "build-runtime-state/uart-continuation/spi-stage/final-vectors/results.json",
+    "ordinary_status": "All25 outcomes PASS on the same executable:18 I2C/UART completed runs,2 complete SPI fixtures and5 expected strict pauses; no failing/time-out/cancelled run inherited",
+    "firmware_source_identity": "75b29a1690026621153125d67e70097ae973e3cacccc68b35a2ca0b80e6f4f56",
+    "ordinary_evidence": "build-runtime-state/uart-continuation/spi-stage/qualification-receipt.json"
+  },
   "independent_clock_dependency": {
     "source": "prototypes/coreclk/0013-hw-xtensa-esp32s3-BBPLL-power-validity-decoupled-from.patch",
     "sha256": "2203d4cca82a1ff4a62400517ff2fe1ff6d98e0e53417f16a5f5c7a65c5a8081",

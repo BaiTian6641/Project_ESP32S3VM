@@ -95,3 +95,21 @@ ESP-IDF UHCI/DMA and connected UART fixtures also **PASS**. This does not imply
 qualified SPI/RMT/I2S/LCD/camera consumers or independent silicon timing.
 Evidence: `build-runtime-state/uart-continuation/dma-final/`.
 
+## Peripheral direction reset isolation
+
+`0007-hw-dma-peripheral-direction-reset-isolation.patch` applies after the
+shared UART/GDMA API and descriptor-completion correction. TRM3.6.2 gives
+IN and OUT separate reset FSMs. An IN reset no longer parks an active
+peripheral OUT chain, and an OUT reset no longer discards an armed IN chain.
+`MEM_TRANS_EN` still couples both directions; reset cancels the pending
+memory-to-memory quantum. Peripheral reset also cancels a stale quantum
+without clearing the opposite direction's descriptor cursor.
+
+The retained SPI2/SPI3 regressions reset IN during an active eight-byte OUT
+transfer and assert unparked state, exact trailing-edge completion, descriptor
+ownership and EOF registers. SPI2 fails before with `PARK=0x00800000`;
+both pass after. Candidate `eb6707129054f40a` passed **182 native cases**:
+SPI27, NOR8, UART64, UHCI17, GDMA18, memory12, I2C18 and I2C-service18.
+Ordinary workload qualification is recorded separately in
+`build-runtime-state/uart-continuation/spi-stage/`.
+

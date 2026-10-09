@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "recorded_at": "2026-10-07",
-  "status": "Source implementation only; build and native qualification must be delegated after parent READY",
-  "verification_performed": [],
-  "scope": "SPI2/3 ordinary ESP-IDF master APIs on actual GPIO matrix and finite v3 graph; no SPI0/1 changes, no Qt or aggregate profile changes",
+  "status": "Current consolidated backend182 and all25 ordinary scenario outcomes PASS:20 complete transactions/runs plus5 expected strict SPI pauses",
+  "verification_performed": ["182 native cases, zero skipped on eb6707129054f40a", "13 ordinary I2C and5 ordinary UART/UHCI cases PASS on the same executable", "Both full ordinary SPI connected-NOR and mixed-mode loopback fixtures PASS", "5 actual SPI wiring/owner-error strict pauses PASS", "All seven final75b29a1690026621 firmware variants genuinely compiled, merged, pinned and exercised"],
+  "scope": "SPI2/3 ordinary ESP-IDF master APIs through actual GPIO-matrix NativeNet wires and finite NOR devices on the consolidated foundation; SPI0/1 memory paths unchanged; advanced/slave/direct-IO_MUX/PSRAM-specific gates remain explicit",
   "idf": {
-    "root": "build-idf-6.1",
+    "root": "/home/polar/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/source",
     "version": "v6.1",
     "commit": "fff9895c82d744c7237be8847347bdd1b07c6643",
     "headers_read": [
@@ -145,7 +145,7 @@
   "observations": {
     "uart": "Actual RX bytes in full including8201-byte payloads, recomputable FNV1a32, virtual timestamps, busy polls, register/descriptor words and named PASS/FAIL checks",
     "host": "QMP transcript, electrical snapshots, native guest-error log, read-only qtest register/memory evidence, launch command, input/log SHA256 hashes and result.json",
-    "watchdog": "180s default, allowed1..600s host monotonic watchdog; no clock_step, no guest timeout injection, no retries/provider substitution",
+    "watchdog": "180s default, allowed1..3600s host monotonic watchdog; no clock_step, guest timeout injection or provider substitution. Expiration remains FAIL. Current icount runs use shift0, single-thread TCG. Positive SPI workloads run serially to avoid verification-load contention.",
     "outcomes": [
       "PASS",
       "NEGATIVE_STRICT_PAUSE",
@@ -161,19 +161,19 @@
     "PSRAM DMA"
   ],
   "prerequisites": [
-    "Parent READY SPI-owned checkout must contain controller, shared GDMA RX finish implementation and ordinary interrupt route",
+    "Current hash-bound foundation must contain the canonical controller/binding/service, shared descriptor completion and direction-isolated GDMA reset, live clocks and ordinary interrupt routes",
     "NativeNet native electrical SPI registry/binding must accept exact spi-nor-1m parameters{} and six approved terminals, finite powered MISO branch and real graph pad sampling",
-    "Frozen runtime prefix is read-only and must never be used as a substituted native SPI qualification binary",
-    "Only a separately delegated verifier may execute builds/tests; no verification has been run by fixture implementation worker"
+    "Frozen source trees and historical prefix artifacts remain read-only; use ../uart/prepare.py with tracked foundation-dependencies.json, never the retired standalone prefix-copy preparer",
+    "Require --qemu and --runtime-source; verify recorded applied-file hashes and canonical SPI copies before runtime. Historical results do not qualify a new executable."
   ],
   "commands": {
-    "environment": "ROOT=/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM; bash \"$ROOT/tools/prepare-idf-wsl.sh\" idf-6.1; source \"$HOME/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/activate.sh\"; F=\"$ESP32S3_IDF_BUILD_ROOT/spi_native/e8af03f8c4a4e8a06c3a0d287c11c31e804d67650ad5090fa513ee1b0ebcd478/source\"; test -f \"$F/main/spi_native.c\"",
-    "qemu_build_after_parent_ready": "ninja -C /home/polar/.cache/esp32s3vm/qemu-spi-40edccac4156/build-spi qemu-system-xtensa",
+    "environment": "ROOT=/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM; source \"$HOME/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/activate.sh\"; S=/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-eb6707129054f40a; F=\"$ESP32S3_IDF_BUILD_ROOT/spi_native/75b29a1690026621153125d67e70097ae973e3cacccc68b35a2ca0b80e6f4f56/source\"; test -f \"$F/main/spi_native.c\"",
+    "qemu_build_after_parent_ready": "ninja -C \"$S/build-wsl\" qemu-system-xtensa tests/qtest/esp32s3-spi-test tests/unit/test-esp32s3-spi-service",
     "firmware_build_matrix_after_parent_ready": "for MODE in connected loopback wrong_cs disconnected_miso owner_error; do python3 \"$ROOT/qemu-extensions/prototypes/spi/build-native-fixture.py\" --mode \"$MODE\" || exit; done",
     "firmware_build_spi3_negatives_after_parent_ready": "for MODE in wrong_cs disconnected_miso; do python3 \"$ROOT/qemu-extensions/prototypes/spi/build-native-fixture.py\" --mode \"$MODE\" --negative-host 3 || exit; done",
-    "run_matrix_after_parent_ready": "for MODE in connected loopback wrong_cs disconnected_miso owner_error; do B=\"$ESP32S3_IDF_BUILD_ROOT/spi_native/e8af03f8c4a4e8a06c3a0d287c11c31e804d67650ad5090fa513ee1b0ebcd478/$MODE\"; python3 \"$ROOT/qemu-extensions/prototypes/spi/run-native-fixture.py\" --mode \"$MODE\" --flash \"$B/spi-native.merged.bin\" --sdkconfig \"$B/sdkconfig\" --watchdog-seconds 180; done",
-    "run_spi3_negatives_after_parent_ready": "for MODE in wrong_cs disconnected_miso; do B=\"$ESP32S3_IDF_BUILD_ROOT/spi_native/e8af03f8c4a4e8a06c3a0d287c11c31e804d67650ad5090fa513ee1b0ebcd478/$MODE-spi3\"; python3 \"$ROOT/qemu-extensions/prototypes/spi/run-native-fixture.py\" --mode \"$MODE\" --flash \"$B/spi-native.merged.bin\" --sdkconfig \"$B/sdkconfig\" --watchdog-seconds 180; done",
-    "runner_default_binary": "/home/polar/.cache/esp32s3vm/qemu-spi-40edccac4156/build-spi/qemu-system-xtensa",
+    "run_matrix_after_parent_ready": "for MODE in connected loopback wrong_cs disconnected_miso owner_error; do B=\"$ESP32S3_IDF_BUILD_ROOT/spi_native/75b29a1690026621153125d67e70097ae973e3cacccc68b35a2ca0b80e6f4f56/$MODE\"; python3 \"$ROOT/qemu-extensions/prototypes/spi/run-native-fixture.py\" --qemu \"$S/build-wsl/qemu-system-xtensa\" --runtime-source \"$S/uart-source.json\" --mode \"$MODE\" --flash \"$B/spi-native.merged.bin\" --sdkconfig \"$B/sdkconfig\" --icount --watchdog-seconds 3600 --evidence \"$ROOT/build-runtime-state/uart-continuation/spi-stage\" || exit; done",
+    "run_spi3_negatives_after_parent_ready": "for MODE in wrong_cs disconnected_miso; do B=\"$ESP32S3_IDF_BUILD_ROOT/spi_native/75b29a1690026621153125d67e70097ae973e3cacccc68b35a2ca0b80e6f4f56/$MODE-spi3\"; python3 \"$ROOT/qemu-extensions/prototypes/spi/run-native-fixture.py\" --qemu \"$S/build-wsl/qemu-system-xtensa\" --runtime-source \"$S/uart-source.json\" --mode \"$MODE\" --flash \"$B/spi-native.merged.bin\" --sdkconfig \"$B/sdkconfig\" --icount --watchdog-seconds 3600 --evidence \"$ROOT/build-runtime-state/uart-continuation/spi-stage\" || exit; done",
+    "runner_binary_contract": "Explicit --qemu and --runtime-source; no obsolete SPI-only checkout default",
     "runner_default_evidence": "build-runtime-state/spi-native-2026-10-07",
     "record_build_pin_after_real_build_merge": "python3 \"$ROOT/qemu-extensions/prototypes/spi/run-native-fixture.py\" --mode \"$MODE\" --flash \"$B/spi-native.merged.bin\" --sdkconfig \"$B/sdkconfig\" --record-build-pin --idf \"$IDF_PATH\""
   },
@@ -183,9 +183,12 @@
     "NOR busy polling is quiet until observations are captured; first WIP byte, poll count and modeled duration floors validated",
     "WREN-gated and1->0 readbacks print actual bytes independently checked by host",
     "Actual phase register fields and elapsed lower bound checked, not merely requested configuration",
-    "Firmware runtime requires pinned IDF6.1 source/image/sdkconfig build-pin.json"
+    "Firmware runtime requires pinned IDF6.1 source/image/sdkconfig build-pin.json",
+    "Strict-negative ARM/descriptor reports drain the real console using esp_rom_output_tx_wait_idle before SPI can pause virtual timers",
+    "Runner waits for the complete actual DONE line, not an asynchronous partial marker; compile-pin-only mode never requires an emulator",
+    "Canonical binding registers released FSPIQ_OUT authority; GDMA resets isolate peripheral directions while preserving coupled M2M cancellation"
   ],
-  "verification": "Seven final frozen variants genuinely compiled/merged/pinned oncanonical native SDK/source/tools/output, all exits0; source freezee8af03... preserved. Actual SPI graph bytes/IRQ/time qualification still waits compiled provider/binding READY; compile and official-entry proofs not SPI PASS.",
+  "verification": "All seven final source-identity75b29a1690026621153125d67e70097ae973e3cacccc68b35a2ca0b80e6f4f56 variants compiled/merged/pinned and genuinely exercised on executable cabeb9c4eed50ab27f8896a2d3a0f9fe5860920450679ea1b3ffe8bead6bc967. Full connected/loopback PASS plus5 expected strict negatives; all182 native and18 ordinary I2C/UART regressions PASS on the same backend. Earlier timeouts, invalid-divider failures and cancelled superseded runs remain unqualified and are not reused as PASS. Receipt: build-runtime-state/uart-continuation/spi-stage/qualification-receipt.json.",
   "native_sdk_contract": {
     "prepare": "bash tools/prepare-idf-wsl.sh idf-6.1",
     "activate": "source ~/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/activate.sh",
@@ -193,7 +196,7 @@
     "build_root": "$ESP32S3_IDF_BUILD_ROOT/spi_native/<frozen-sourceidentity>/<profile>",
     "source_snapshot": "Native ext4 byte-identical snapshot of firmware-source-freeze.json; no vendor headers or outputs on DrvFS",
     "owner": "NativeSdkBuildWorker",
-    "source_identity": "e8af03f8c4a4e8a06c3a0d287c11c31e804d67650ad5090fa513ee1b0ebcd478",
+    "source_identity": "75b29a1690026621153125d67e70097ae973e3cacccc68b35a2ca0b80e6f4f56",
     "snapshot_builder": "qemu-extensions/prototypes/spi/build-native-fixture.py (immutable authored files, full native activation/tools/source and explicit ninja -j4)"
   }
 }

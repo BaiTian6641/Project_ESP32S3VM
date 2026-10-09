@@ -1,0 +1,81 @@
+--- a/hw/misc/meson.build
++++ b/hw/misc/meson.build
+@@ -171,2 +171,3 @@
+   'esp32s3_rng.c',
++  'esp32s3_gpspi.c',
+   'esp32s3_pms.c',
+--- a/hw/ssi/meson.build
++++ b/hw/ssi/meson.build
+@@ -15,2 +15,3 @@
+ system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files('esp32s3_spi.c'))
++system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files('esp32s3_spi_service.c', 'esp32s3_spi_binding.c'))
+ system_ss.add(when: 'CONFIG_IBEX', if_true: files('ibex_spi_host.c'))
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -25,2 +25,4 @@
+ #include "hw/i2c/esp32s3_i2c_binding.h"
++#include "hw/misc/esp32s3_gpspi.h"
++#include "hw/ssi/esp32s3_spi_binding.h"
+ #include "hw/qdev-properties.h"
+@@ -163,2 +165,3 @@
+     ESP32S3SpiState spi1;
++    ESP32S3GpSpiState gpspi[2];
+     ESP32S3CacheState cache;
+@@ -373,2 +376,4 @@
+         device_cold_reset(DEVICE(&s->spi1));
++        device_cold_reset(DEVICE(&s->gpspi[0]));
++        device_cold_reset(DEVICE(&s->gpspi[1]));
+         device_cold_reset(DEVICE(&s->sdmmc));
+@@ -502,2 +507,4 @@
+         break;
++    case ESP32S3_RST_SPI2:     dev = DEVICE(&s->gpspi[0]); break;
++    case ESP32S3_RST_SPI3:     dev = DEVICE(&s->gpspi[1]); break;
+     case ESP32S3_RST_TWAI:     dev = DEVICE(&s->twai); break;
+@@ -1027,2 +1034,4 @@
+     object_initialize_child(OBJECT(ss), "gdma", &ss->gdma, TYPE_ESP32S3_GDMA);
++    object_initialize_child(OBJECT(ss), "spi2", &ss->gpspi[0], TYPE_ESP32S3_GPSPI);
++    object_initialize_child(OBJECT(ss), "spi3", &ss->gpspi[1], TYPE_ESP32S3_GPSPI);
+     object_initialize_child(OBJECT(ss), "sha", &ss->sha, TYPE_ESP32S3_SHA);
+@@ -1409,2 +1418,25 @@
+ 
++    /* GP-SPI is additive; the sole SPI0/1 flash/PSRAM paths above stay intact. */
++    for (unsigned i = 0; i < 2; ++i) {
++        DeviceState *dev = DEVICE(&ss->gpspi[i]);
++        qdev_prop_set_uint32(dev, "controller", i);
++        ss->gpspi[i].gdma = ESP_GDMA(&ss->gdma);
++        object_property_set_link(OBJECT(dev), "soc-reset", OBJECT(ss), &error_abort);
++        qdev_connect_clock_in(dev, "xtal-clk",
++                              qdev_get_clock_out(DEVICE(&ss->clock), "xtal-clk"));
++        qdev_connect_clock_in(dev, "pll-f80m-clk",
++                              qdev_get_clock_out(DEVICE(&ss->clock), "pll-f80m-clk"));
++        qdev_connect_gpio_out_named(DEVICE(&ss->clock), ESP32S3_CLK_GATES_GPIO,
++                                   i ? ESP32S3_GATE_SPI3 : ESP32S3_GATE_SPI2,
++                                   qdev_get_gpio_in_named(dev, "clk-gate", 0));
++        qdev_connect_gpio_out_named(DEVICE(&ss->clock), ESP32S3_CLK_RST_LEVEL_GPIO,
++                                   i ? ESP32S3_RST_SPI3 : ESP32S3_RST_SPI2,
++                                   qdev_get_gpio_in_named(dev, "reset", 0));
++        sysbus_realize(SYS_BUS_DEVICE(dev), &error_fatal);
++        memory_region_add_subregion_overlap(sys_mem, 0x60024000 + i * 0x1000,
++                sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 0), 0);
++        sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0,
++                           qdev_get_gpio_in(intmatrix_dev, 21 + i));
++    }
++
+     /* AES realization */
+@@ -1529,2 +1561,4 @@
+         esp32s3_i2c_bind_electrical(&ss->i2c[0], &ss->i2c[1], &ss->gpio, electrical);
++        esp32s3_spi_bind_electrical(&ss->gpspi[0], &ss->gpspi[1],
++                                   &ss->gpio, electrical);
+     }
+--- a/tests/unit/meson.build
++++ b/tests/unit/meson.build
+@@ -51,2 +51,3 @@
+   'test-esp32s3-i2c-service': ['../../hw/i2c/esp32s3_i2c_service.c'],
++  'test-esp32s3-spi-service': ['../../hw/ssi/esp32s3_spi_service.c'],
+ }
+--- a/tests/qtest/meson.build
++++ b/tests/qtest/meson.build
+@@ -351,2 +351,3 @@
+ qtests_xtensa += [ 'esp32s3-i2c-test' ]
++qtests_xtensa += [ 'esp32s3-spi-test' ]
+ 

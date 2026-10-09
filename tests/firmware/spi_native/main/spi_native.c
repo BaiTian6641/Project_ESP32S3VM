@@ -15,6 +15,7 @@
 #include "esp_err.h"
 #include "esp_timer.h"
 #include "esp_rom_sys.h"
+#include "esp_rom_serial_output.h"
 #include "esp_heap_caps.h"
 #include "hal/dma_types.h"
 #include "freertos/FreeRTOS.h"
@@ -28,6 +29,7 @@
 #define STORAGE_BYTES ((LARGE_BYTES + 3) & ~3)
 #define NOR_BASE 0x2000
 #define WAIT_TICKS pdMS_TO_TICKS(1000)
+#define SLOW_CLOCK_VALUE ((15u << 18) | (63u << 12) | (31u << 6) | 63u)
 static const int pins[2][5] = {{12, 11, 13, 10, 9}, {36, 35, 37, 34, 33}};
 static unsigned failures;
 static uintptr_t spi_base(unsigned host) { return host == 2 ? 0x60024000 : 0x60025000; }
@@ -355,7 +357,7 @@ static void controlled(unsigned host, spi_device_handle_t device)
          * 79/99/49/99 poke overflowed every field and truncated to an
          * invalid H+1>N+1 duty). 80MHz/(16*64)=78.125kHz: 512 bits is a
          * 6.5536ms uncancelled transfer, cancelled at +50us below. */
-        REG_WRITE(base + 0x0c, (15u << 18) | (63u << 12) | (31u << 6) | 63u);
+        REG_WRITE(base + 0x0c, SLOW_CLOCK_VALUE);
         REG_WRITE(base + 0x1c, 511);
         for (unsigned i = 0; i < 16; ++i) REG_WRITE(base + 0x98 + 4 * i, 0x93a6c571 ^ i);
         REG_WRITE(base, SPI_UPDATE);
@@ -541,6 +543,7 @@ static void direct_rx_end(bool owner_error)
                     printf("SPI_NATIVE_OWNER_ARM d0=%08" PRIxPTR " d1=%08" PRIxPTR " buffer=%08" PRIxPTR "\n",
                            (uintptr_t)&d[0], (uintptr_t)&d[1], (uintptr_t)buffer);
                     fflush(stdout);
+                    esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
                 }
                 REG_WRITE(GDMA_IN_CONF0_CH0_REG, GDMA_IN_RST_CH0);
                 REG_WRITE(GDMA_IN_CONF0_CH0_REG, 0);
@@ -558,12 +561,12 @@ static void direct_rx_end(bool owner_error)
                 unsigned bits = which == 1 ? 24 : 32;
                 REG_WRITE(base + 0x1c, bits - 1);
                 if (which == 2) REG_WRITE(base + 0x10, saved[3] & ~(SPI_USR_MOSI | SPI_USR_MISO));
-                if (which == 3) REG_WRITE(base + 0x0c, (79u << 18) | (99u << 12) | (49u << 6) | 99u);
+                if (which == 3) REG_WRITE(base + 0x0c, SLOW_CLOCK_VALUE);
                 REG_WRITE(base, SPI_UPDATE);
                 int64_t start = esp_timer_get_time();
                 REG_WRITE(base, SPI_USR);
                 if (which == 3) {
-                    esp_rom_delay_us(50); /* Less than one slow SCLK bit, no RX byte. */
+                    esp_rom_delay_us(50); /* First RX byte takes at least102.4us at PLL80. */
                     REG_WRITE(base + 0xe0, REG_READ(base + 0xe0) | BIT(27));
                     esp_rom_delay_us(5000);
                 } else {
@@ -649,6 +652,7 @@ void app_main(void)
             uint8_t id[3] = {0xa5, 0xa5, 0xa5};
             printf("SPI_NATIVE_NEGATIVE_ARM host=%u profile=%s virtual_us=%" PRId64 " expected=strict_pause_unknown_miso\n", host, profile(), esp_timer_get_time());
             fflush(stdout);
+            esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
             nor_transfer(host, device, 0x9f, 0, false, NULL, id, 3, false, NULL);
             payload(host, "unexpected_negative_rx", id, sizeof(id));
             check(host, "negative_must_not_complete", false);

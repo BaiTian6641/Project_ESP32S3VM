@@ -2,9 +2,9 @@
   "schema_version": 1,
   "lane": "native-spi2-spi3",
   "recorded_date": "2026-10-07",
-  "status": "source-ready-unverified",
-  "verification_policy": "Do not build, run, lint or format until the parent has integrated all controller/clock/GDMA/native-graph dependencies and delegated READY verification.",
-  "checkout": "/home/polar/.cache/esp32s3vm/qemu-spi-40edccac4156",
+  "status": "27 native controller cases PASS on source-bound consolidated candidate eb6707129054f40a",
+  "verification_policy": "Parent freezes the complete common/owned source closure, builds one immutable checkout and qualifies native plus ordinary consumers before stage publication.",
+  "checkout": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-eb6707129054f40a",
   "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
   "frozen_prefix_fingerprint": "dbe2a8a5ad4e07a607e76ab751e77ac85fe3bf30974359bd25a69354499f9b32",
   "copy": {
@@ -22,9 +22,9 @@
   "commands_after_READY": {
     "working_directory": "The parent's configured SPI QEMU build directory; the direct runtime command must run from that directory so -L pc-bios resolves the native machine ROMs.",
     "build": "ninja -C \"$SPI_BUILD\" qemu-system-xtensa tests/qtest/esp32s3-spi-test",
-    "runtime": "env QTEST_QEMU_BINARY=./qemu-system-xtensa tests/qtest/esp32s3-spi-test --tap -k",
+    "runtime": "env QTEST_QEMU_BINARY=./qemu-system-xtensa tests/qtest/esp32s3-spi-test --tap",
     "meson_alternative": "meson test -C \"$SPI_BUILD\" --print-errorlogs qtest-xtensa/esp32s3-spi-test",
-    "evidence_directory": "build-runtime-state/spi-native-2026-10-07",
+    "evidence_directory": "build-runtime-state/uart-continuation/spi-stage/final-vectors",
     "checks_exercised_by_author": []
   },
   "qtest_virtual_time": {
@@ -38,7 +38,7 @@
       "build-qemu-official-base/util/qemu-timer.c:674-702"
     ],
     "corrected_failure_interpretation": "Parent timer review identified disabled QEMU_CLOCK_VIRTUAL in -S/prelaunch positive timing cases: clock_step does not advance it. The previous inference of first-edge execution at 799 ns from a raw 750 ns request was incorrect; it is not genuine overdue-callback evidence. Enabling VM runstate, not subdividing clock requests, addresses this test setup prerequisite.",
-    "acceptance_preservation": "All original 23 cases and their MMIO, IRQ, data, descriptor ownership, duration bounds and assertions remain. Main-approved additive deadline-traversal/cancellation coverage adds one case per controller for 25 total. No mocked inputs, provider-dependent branches, backdated timestamps or source-text tests are introduced.",
+    "acceptance_preservation": "All original25 cases and their MMIO, IRQ, data, descriptor ownership and duration assertions remain. Two actual opposite-direction reset regressions bring the suite to27, all PASS on the current consolidated executable. No mocked inputs, provider-dependent branches, backdated timestamps or source-text tests.",
     "additive_deadline_traversal_case": "deadline-traversal-reset-gate-cancel (SPI2 and SPI3): step 49 ns then raw 750 ns; BUSY/no DONE/IRQ at 799 and DONE/IRQ after final 1 ns at 800. Restart and traverse to 799 before SLAVE softreset or local CLK_GATE cancellation; subsequent 100000 ns and restored-gate 1000 ns observations require no stale DONE/IRQ or resurrection.",
     "qualification_boundary": "Qtest deadline traversal is not a genuinely overdue guest callback and does not prove host-load/late-callback or fast-edge electrical equivalence. Current controller MAX(nextAbsolute, now + 1) guest overdue policy and NET04 icount/deadline-horizon electrical qualification remain separately UNQUALIFIED. No controller workaround is introduced by these tests.",
     "immutable_failure_evidence": "build-runtime-state/spi-native-2026-10-07/final-clock-20261007T172630 remains immutable afterCore13 actual23 evidence: 4 PASS, 17 timing assertion failures, 2 unknown-RX timeouts; binary fingerprint prefix 6b3c2f9b. Preserve the results while correcting the earlier coarse-overdue inference, without retroactive qualification."
@@ -72,7 +72,7 @@
     "no_synthetic_gpio_or_spi_provider": true
   },
   "coverage": {
-    "registered_cases": 25,
+    "registered_cases": 27,
     "each_controller": [
       "BUSY immediately after USR and before first edge; hardware DONE/IRQ only at the last trailing edge; TX completes without a receiver and makes no ACK assertion",
       "INT_ENA masks, masked ST, physical intercepted IRQ, CLR/RAW W1C, software SET masking and SET/CLR readback",
@@ -84,7 +84,8 @@
       "Mid-transfer SLAVE softreset, local CLK_GATE, SYSTEM gate and SYSTEM peripheral reset abort; no stale DONE and no resurrection after ungate; subsequent transfer succeeds",
       "Rejected byte/halfword/unaligned accesses do not expose or alter registers; aligned MMIO through the full 0x1000 aperture stays bounded; actual 64-byte and high-half 32-byte PIO boundaries complete",
       "65-byte TX, high-half 33-byte TX and 65-byte RX strictly pause before accessing beyond PIO capacity; all 16 PIO words and adjacent state remain unchanged",
-      "Unknown MISO strictly pauses at the first sampling edge, never completes and never manufactures RX bytes"
+      "Unknown MISO strictly pauses at the first sampling edge, never completes and never manufactures RX bytes",
+      "IN reset during active peripheral OUT preserves unparked state and byte cursor; the full eight-byte transfer completes at its final edge with actual owner/EOF writeback"
     ],
     "cross_controller": "Simultaneous independently timed SPI2/SPI3 transfers; softreset and SYSTEM gating of one do not cancel or complete the other",
     "gdma": {
@@ -124,7 +125,7 @@
     "Electrical CS/setup/hold waveform proof or slave acknowledgement",
     "Native NOR service/graph behavioral qualification owned by parent fixtures"
   ],
-  "changelog": "Adds permanent machine-MMIO SPI2/SPI3 Qtests and additive meson/runtime handoff; enables virtual timers through QMP CONT after deterministic -S setup and makes resume idempotent. Original 23 cases and assertions remain; two Main-approved deadline-traversal/cancellation cases bring the total to 25. The unnecessary 5 ns helper and false overdue-jump inference are removed. No verification has been run by this author; immutable actual23 failure evidence and separate unresolved NET04 qualification remain.",
-  "registered_cases": 25,
-  "new_independent_clock_case": "SPI2/SPI3 PLL_F80M remains clocked while CPU switches XTAL/RC_FAST; actual RTC BBPLL_FORCE_PD cancels/restores; unexercised until canonical0013 ownerrestack."
+  "changelog": "Current-foundation integration and per-direction GDMA reset isolation; permanent reset-during-active-transfer regressions on both controllers fail before / pass after. All27 native controller cases and8 NOR service cases pass; full ordinary firmware qualification remains separately recorded. Historical immutable timing-failure evidence and NET04/independent physical qualification remain separate.",
+  "registered_cases": 27,
+  "new_independent_clock_case": "SPI2/SPI3 PLL_F80M remains clocked while CPU switches XTAL/RC_FAST; actual RTC BBPLL_FORCE_PD cancels/restores. Exercised in the current27-case native suite."
 }

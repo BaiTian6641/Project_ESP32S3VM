@@ -58,5 +58,13 @@
     "verification": "Candidate c35deea6f7043884: native UART64/64, UHCI17/17, GDMA18/18, memory12/12, I2C9/9; ordinary UHCI/DMA and connected UART PASS.",
     "evidence": "build-runtime-state/uart-continuation/dma-final/"
   },
+  "current_direction_reset_patch": {
+    "source": "0007-hw-dma-peripheral-direction-reset-isolation.patch",
+    "raw_sha256": "6d8db4f7884418256fd4305d6034906cfa2a471a814ab0cb2a43910c730f3de0",
+    "order": "After the shared UART/GDMA API and0006; one canonical delta, not historical entire0005 or SPI0007 replay",
+    "contract": "Peripheral IN/OUT RST isolates its own FSM/cursors; MEM_TRANS_EN preserves paired disarm; all RST paths cancel queued M2M work",
+    "verification": "SPI2/SPI3 active-OUT reset regressions fail before / pass after; all182 native and18 ordinary I2C/UART cases pass on eb6707129054f40a; full SPI ordinary outcomes separately recorded",
+    "evidence": "build-runtime-state/uart-continuation/spi-stage/"
+  },
   "runtime_prefix_note": "Authoritative combined runtime prefix (per parent ledger, UART-parent manifest): hostbus series + SIMD PIE series + coreclk 0001..0006 + gdma 0001..0003 + INTC 0001..0003 + radio 0001..0004 + coreclk 0008/0009 (+3 hostbus copies); coreclk 0007 BBPLL bridge EXCLUDED; common additive core 0010/0011 follow the frozen prefix. gdma 0004 applies after the frozen SPI finish_rx (d0a472c5) which applies after the prefix. My standalone verification checkout (coreclk 0001..0007 stack) is supporting evidence only, not the runtime prefix composition."
 }

@@ -203,6 +203,38 @@
     {
       "source": "prototypes/i2c/copies/test-esp32s3-i2c-service.c",
       "destination": "tests/unit/test-esp32s3-i2c-service.c"
+    },
+    {
+      "source": "prototypes/spi/copies/esp32s3_gpspi.c",
+      "destination": "hw/misc/esp32s3_gpspi.c"
+    },
+    {
+      "source": "prototypes/spi/copies/esp32s3_gpspi.h",
+      "destination": "include/hw/misc/esp32s3_gpspi.h"
+    },
+    {
+      "source": "prototypes/spi/copies/esp32s3_spi_service.c",
+      "destination": "hw/ssi/esp32s3_spi_service.c"
+    },
+    {
+      "source": "prototypes/spi/copies/esp32s3_spi_service.h",
+      "destination": "include/hw/ssi/esp32s3_spi_service.h"
+    },
+    {
+      "source": "prototypes/spi/copies/test-esp32s3-spi-service.c",
+      "destination": "tests/unit/test-esp32s3-spi-service.c"
+    },
+    {
+      "source": "prototypes/spi/copies/esp32s3-spi-test.c",
+      "destination": "tests/qtest/esp32s3-spi-test.c"
+    },
+    {
+      "source": "prototypes/spi/copies/esp32s3_spi_binding.c",
+      "destination": "hw/ssi/esp32s3_spi_binding.c"
+    },
+    {
+      "source": "prototypes/spi/copies/esp32s3_spi_binding.h",
+      "destination": "include/hw/ssi/esp32s3_spi_binding.h"
     }
   ],
   "patches": [
@@ -627,6 +659,22 @@
       "source": "prototypes/lcd-cam/0002-native-lcd-cam-qtest-integration.patch",
       "targets": [
         "tests/qtest/meson.build"
+      ]
+    },
+    {
+      "source": "prototypes/spi/0008-current-foundation-integration.patch",
+      "targets": [
+        "hw/misc/meson.build",
+        "hw/ssi/meson.build",
+        "hw/xtensa/esp32s3.c",
+        "tests/unit/meson.build",
+        "tests/qtest/meson.build"
+      ]
+    },
+    {
+      "source": "prototypes/gdma/0007-hw-dma-peripheral-direction-reset-isolation.patch",
+      "targets": [
+        "hw/dma/esp_gdma.c"
       ]
     }
   ],

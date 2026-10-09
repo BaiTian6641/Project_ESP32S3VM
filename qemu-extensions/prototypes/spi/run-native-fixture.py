@@ -17,7 +17,6 @@ import tempfile
 import time
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
-CHECKOUT = pathlib.Path('/home/polar/.cache/esp32s3vm/qemu-spi-40edccac4156-0e2ab32b')
 IDF_COMMIT = 'fff9895c82d744c7237be8847347bdd1b07c6643'
 PROFILES = {'connected': 'CONNECTED', 'loopback': 'LOOPBACK',
             'wrong_cs': 'WRONG_CS', 'disconnected_miso': 'DISCONNECTED_MISO',
@@ -426,9 +425,41 @@ def firmware_pin(args):
     return pin
 
 
+def runtime_pin(args):
+    require(args.qemu is not None and args.runtime_source is not None,
+            'Runtime execution requires --qemu and --runtime-source')
+    record_path = args.runtime_source.resolve(strict=True)
+    record = json.loads(record_path.read_text())
+    source = pathlib.Path(record['source']).resolve(strict=True)
+    require(source in args.qemu.parents, 'QEMU must belong to the recorded source checkout')
+    identity = {key: record[key] for key in
+                ('base_commit', 'frozen_prefix', 'dependency_record_sha256', 'inputs', 'copies', 'patches')}
+    fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    require(fingerprint == record['fingerprint'], 'Runtime source fingerprint differs from its inputs')
+    applied = record['applied_files']
+    for relative, expected in applied.items():
+        path = pathlib.PurePosixPath(relative)
+        require(not path.is_absolute() and '..' not in path.parts,
+                f'Unsafe applied-source path: {relative}')
+        actual = source / relative
+        require(actual.is_file() and sha256(actual) == expected,
+                f'Recorded runtime source changed: {relative}')
+    mapping = json.loads((pathlib.Path(__file__).parent / 'source-map.json').read_text())
+    for item in mapping['copies'] + mapping['graph_copies']:
+        canonical = pathlib.Path(__file__).parent / item['source']
+        expected = hashlib.sha256(canonical.read_bytes().replace(b'\r\n', b'\n')).hexdigest()
+        require(applied.get(item['destination']) == expected,
+                f'Runtime does not contain canonical SPI source: {item["destination"]}')
+    return dict(source=str(source), fingerprint=fingerprint,
+                source_record=str(record_path), source_record_sha256=sha256(record_path),
+                binary_sha256=sha256(args.qemu), verified_applied_files=len(applied))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--qemu', type=pathlib.Path, default=CHECKOUT / 'build-spi/qemu-system-xtensa')
+    parser.add_argument('--qemu', type=pathlib.Path)
+    parser.add_argument('--runtime-source', type=pathlib.Path,
+                        help='Hash-bound prepare.py source record for the selected consolidated QEMU')
     parser.add_argument('--flash', type=pathlib.Path, required=True)
     parser.add_argument('--sdkconfig', type=pathlib.Path, required=True)
     parser.add_argument('--mode', choices=PROFILES, required=True)
@@ -440,7 +471,7 @@ def main():
     parser.add_argument('--watchdog-seconds', type=float, default=180,
                         help='Bounded host watchdog only, independent of guest virtual timestamps')
     parser.add_argument('--icount', action='store_true',
-                        help='Run under -icount shift=1,align=off,sleep=off: deterministic instruction-driven virtual time (the exact-timing regime). Required for fixtures whose driver-side virtual timeouts cannot tolerate non-icount host-paced dilation (NET04-documented 1332x-2477x catch-up replay on this graph binary).')
+                        help='Run with single-thread TCG and -icount shift=0,align=off,sleep=off, matching the consolidated timebase profile')
     args = parser.parse_args()
     # Bounded host watchdog only (never a guest timeout). Cap raised from 600
     # after the graph binary's real connected-fixture host duration exceeded
@@ -459,13 +490,15 @@ def main():
     deadline = started + args.watchdog_seconds
     proc = qmp = None
     try:
+        if not args.record_build_pin:
+            require(args.qemu is not None, 'Runtime execution requires --qemu')
         names = ('flash', 'sdkconfig') if args.record_build_pin else ('qemu', 'flash', 'sdkconfig')
         for name in names:
             path = getattr(args, name).resolve(strict=True)
             require(path.is_file(), f'--{name} must name a file')
             setattr(args, name, path)
         if not args.record_build_pin:
-            require(CHECKOUT.resolve() in args.qemu.parents, 'QEMU must come from the SPI-owned checkout, never frozen/aggregate prefixes')
+            result['runtime_pin'] = runtime_pin(args)
         config = configuration(args.sdkconfig, args.mode)
         result['firmware_configuration'] = config
         result['firmware_build_pin'] = firmware_pin(args)
@@ -481,7 +514,7 @@ def main():
                        '-qmp', f'unix:{qmp_path},server=on,wait=off', '-qtest', f'unix:{qtest_path},server=on,wait=off',
                        '-qtest-log', str(qtest_log), '-d', 'guest_errors', '-D', str(guest_errors)]
             if args.icount:
-                command += ['-icount', 'shift=1,align=off,sleep=off']
+                command += ['-accel', 'tcg,thread=single', '-icount', 'shift=0,align=off,sleep=off']
             result['command'] = command
             (evidence / 'command.json').write_text(json.dumps(command, indent=2) + '\n')
             with output.open('wb') as stdout, errors.open('wb') as stderr:
@@ -498,7 +531,7 @@ def main():
                     qmp.call('qom-set', dict(path='/machine/soc/electrical', property='project-json', value=json.dumps(graph)))
                 except RuntimeError as exc:
                     result['status'] = 'PREREQUISITE'
-                    raise RuntimeError(f'Exact prerequisite: SPI-owned binary must include native v3 electrical graph and approved spi-nor-1m registry/binding with mosi/miso/sclk/cs/vdd/gnd and parameters={{}}. Native Apply rejected the real graph: {exc}') from exc
+                    raise RuntimeError(f'Exact prerequisite: source-bound binary must include native v3 electrical graph and approved spi-nor-1m registry/binding with mosi/miso/sclk/cs/vdd/gnd and parameters={{}}. Native Apply rejected the real graph: {exc}') from exc
                 applied = qmp.snapshot()
                 result['snapshots'].append(dict(phase='applied-before-boot', graph=applied))
                 qmp.call('cont')
@@ -506,7 +539,7 @@ def main():
                 while True:
                     text = uart.read_text(errors='replace') if uart.exists() else ''
                     runtime = qmp.call('query-status')
-                    if 'SPI_NATIVE_DONE ' in text:
+                    if re.search(r'^SPI_NATIVE_DONE [^\r\n]*\n', text, re.MULTILINE):
                         require(not negative, 'Strict-pause negative unexpectedly reached DONE')
                         qmp.call('stop')
                         final = qmp.snapshot()
@@ -556,7 +589,8 @@ def main():
         archived_uart = evidence / 'uart.log'
         result['uart'] = observations(archived_uart.read_text(errors='replace') if archived_uart.exists() else '')
         sources = [pathlib.Path(__file__).resolve()]
-        sources.extend(path for path in (args.qemu, args.flash, args.sdkconfig) if path.is_file())
+        sources.extend(path for path in (args.qemu, args.flash, args.sdkconfig)
+                       if path is not None and path.is_file())
         sources.extend(path for path in evidence.iterdir() if path.is_file())
         result['hashes'] = {str(path): sha256(path) for path in sources}
         (evidence / 'result.json').write_text(json.dumps(result, indent=2) + '\n')

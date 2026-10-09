@@ -344,6 +344,13 @@ void esp32s3_spi_bind_electrical(ESP32S3GpSpiState *a, ESP32S3GpSpiState *b,
     S3SPIProvider provider = {.opaque = binding, .drive = drive, .sample = sample, .end = end};
     esp32s3_gpspi_bind(a, &provider);
     esp32s3_gpspi_bind(b, &provider);
+    /* IDF routes the MISO pad output through FSPIQ_OUT with peripheral OE.
+     * The qualified master never drives it; register its released authority
+     * so the electrical owner leaves the input buffer uncontended. */
+    for (unsigned c = 0; c < 2; c++) {
+        esp32s3_electrical_set_matrix_drive(electrical, miso_signal[c],
+                                           false, false, false);
+    }
     if (!esp32s3_electrical_subscribe(electrical, physical_frame, binding)) {
         error_report("SPI native service electrical observer capacity unavailable");
         exit(1);
