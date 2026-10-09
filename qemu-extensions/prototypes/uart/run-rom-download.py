@@ -207,13 +207,21 @@ def slip_frames(raw):
                 escaped = True
             else:
                 frame.append(byte)
+        else:
+            raise RuntimeError(f"Non-SLIP byte {byte:#x} before actual protocol frame")
     require(not escaped and not frame, "Incomplete actual SLIP frame")
     return frames
 
 
 def protocol_proof(evidence, payload, address, block_size, commands):
     sent = slip_frames((evidence / "host-to-rom.bin").read_bytes())
-    received = slip_frames((evidence / "rom-to-host.bin").read_bytes())
+    incoming = (evidence / "rom-to-host.bin").read_bytes()
+    marker = b"waiting for download\r\n"
+    banner_end = incoming.find(marker)
+    require(incoming.startswith(b"ESP-ROM:esp32s3-20210327\r\n") and banner_end >= 0,
+            "Actual ESP32-S3 ROM download banner missing from raw evidence")
+    # Only the complete startup banner is excluded; later panic text is not ACK.
+    received = slip_frames(incoming[banner_end + len(marker):])
     requests = []
     responses = []
     for frame in sent:
@@ -224,7 +232,8 @@ def protocol_proof(evidence, payload, address, block_size, commands):
     for frame in received:
         require(len(frame) >= 12, "Short actual ROM reply")
         direction, op, size, value = struct.unpack("<BBHI", frame[:8])
-        require(direction == 1 and len(frame) == size + 8, "Malformed actual ROM reply")
+        require(direction == 1 and op in (5, 6, 7, 8) and size == 4 and len(frame) == 12,
+                "Malformed actual ESP32-S3 ROM status reply")
         require(frame[8:10] == b"\x00\x00", f"Actual ROM reported failure status for opcode {op}")
         responses.append(dict(opcode=op, value=value, status_hex=frame[8:].hex()))
     blocks = (len(payload) + block_size - 1) // block_size
@@ -240,6 +249,8 @@ def protocol_proof(evidence, payload, address, block_size, commands):
     memory_requests = requests[sync_count:]
     require([request["opcode"] for request in memory_requests] == [5] + [7] * blocks + [6],
             "Actual sent command sequence differs from SYNC/MEM-only traversal")
+    require(memory_requests[0]["checksum"] == 0 and memory_requests[-1]["checksum"] == 0,
+            "Actual MEM_BEGIN/MEM_END checksums must be zero")
     require(memory_requests[0]["data"] == struct.pack("<IIII", len(payload), blocks, block_size, address),
             "Actual MEM_BEGIN address/size differs")
     for sequence, request in enumerate(memory_requests[1:-1]):
@@ -250,9 +261,17 @@ def protocol_proof(evidence, payload, address, block_size, commands):
             checksum ^= byte
         require(request["checksum"] == checksum, f"Actual MEM_DATA{sequence} checksum differs")
     require(memory_requests[-1]["data"] == struct.pack("<II", 1, 0), "MEM_END must have no-execute flag and zero entry")
-    require([response["opcode"] for response in responses] == [8] * 8 + [5] + [7] * blocks + [6],
-            "Missing/mismatched real ROM ACK traversal")
-    require(any(response["value"] != 0 for response in responses[:8]), "SYNC replies identify a stub, not the actual ROM")
+    response_sync_count = 0
+    while response_sync_count < len(responses) and responses[response_sync_count]["opcode"] == 8:
+        response_sync_count += 1
+    # Ordinary acquisition may receive replies to more than one retried SYNC.
+    # Every received request produces eight replies; retain all complete groups.
+    require(8 <= response_sync_count <= sync_count * 8 and response_sync_count % 8 == 0,
+            "Missing/incomplete or unsolicited real ROM SYNC reply group")
+    require([response["opcode"] for response in responses[response_sync_count:]] ==
+            [5] + [7] * blocks + [6], "Missing/mismatched real ROM memory ACK traversal")
+    require(all(response["value"] != 0 for response in responses[:response_sync_count]),
+            "SYNC replies identify a stub, not the actual ROM")
     require(max(len(request["data"]) - 16 for request in memory_requests if request["opcode"] == 7) > 128,
             "ROM regression lacks a >FIFO actual MEM_DATA payload")
     synced = False
@@ -264,6 +283,7 @@ def protocol_proof(evidence, payload, address, block_size, commands):
                     "esptool did not observe every actual protocol reply after initial SYNC acquisition")
     require(synced, "esptool never acquired the real ROM")
     return dict(request_count=len(requests), response_count=len(responses), data_blocks=blocks,
+                sync_requests=sync_count, sync_reply_groups=response_sync_count // 8,
                 payload_bytes=len(payload), responses=responses,
                 qualification="Real ROM checksum/status ACK traversal; no execution, flash write or RAM readback claim")
 
@@ -286,7 +306,8 @@ def run(args):
     result = dict(status="FAIL", commands=[], qmp=[], snapshots=[], qemu_sha256=frozen["qemu_sha256"],
                   frozen_manifest_sha256=digest(args.frozen / "freeze.json"),
                   payload_sha256=hashlib.sha256(payload).hexdigest(), esptool_version=PINNED_ESPTOOL,
-                  host_watchdog_seconds=args.watchdog_seconds)
+                  host_watchdog_seconds=args.watchdog_seconds,
+                  host_command_timeout_seconds=args.command_timeout_seconds)
     process = qmp = relay = uart_socket = None
     qemu_listener = listener()
     tool_listener = listener()
@@ -296,17 +317,25 @@ def run(args):
     class CapturedROM(rom_class):
         def command(self, op=None, data=b"", chk=0, wait_response=True, timeout=3):
             require(op in (None, 5, 6, 7, 8), "Only SYNC/MEM protocol is permitted; no register/flash/eFuse commands")
-            entry = dict(opcode=op, data_size=len(data), data_sha256=hashlib.sha256(data).hexdigest(), checksum=chk)
+            entry = dict(opcode=op, data_size=len(data), data_sha256=hashlib.sha256(data).hexdigest(),
+                         checksum=chk, esptool_timeout_seconds=timeout,
+                         started_monotonic_ns=time.monotonic_ns())
             result["commands"].append(entry)
             remaining = deadline - time.monotonic()
             require(remaining > 0, "Host ROM diagnostic watchdog expired")
+            # Hardware esptool deadlines are host time, not modeled UART time.
+            # Preserve ordinary commands/retries and bound all waits uniformly.
+            command_timeout = min(max(timeout, args.command_timeout_seconds), remaining)
+            entry["effective_timeout_seconds"] = command_timeout
             try:
-                value, response = super().command(op, data, chk, wait_response, min(timeout, remaining))
+                value, response = super().command(op, data, chk, wait_response, command_timeout)
                 entry["reply"] = dict(value=value, data_hex=response.hex())
                 return value, response
             except Exception as exc:
                 entry["error"] = f"{type(exc).__name__}: {exc}"
                 raise
+            finally:
+                entry["finished_monotonic_ns"] = time.monotonic_ns()
 
     try:
         with tempfile.TemporaryDirectory(prefix="rom-qmp-") as transport:
@@ -405,10 +434,16 @@ def main():
     running = sub.add_parser("run")
     for name in ("qemu", "frozen", "evidence"):
         running.add_argument(f"--{name}", required=True, type=pathlib.Path)
-    running.add_argument("--watchdog-seconds", type=float, default=60)
+    running.add_argument("--watchdog-seconds", type=float, default=900,
+                         help="Overall host diagnostic deadline; never guest UART/ROM time")
+    running.add_argument("--command-timeout-seconds", type=float, default=180,
+                         help="Minimum host wait per ordinary esptool command, including SYNC replies")
     args = parser.parse_args()
-    if args.action == "run" and not 1 <= args.watchdog_seconds <= 300:
-        parser.error("--watchdog-seconds must be within1..300")
+    if args.action == "run":
+        if not 1 <= args.watchdog_seconds <= 900:
+            parser.error("--watchdog-seconds must be within1..900")
+        if not 0 < args.command_timeout_seconds <= min(240, args.watchdog_seconds):
+            parser.error("--command-timeout-seconds must be positive, <=240 and <=watchdog-seconds")
     return freeze(args) if args.action == "freeze" else run(args)
 
 

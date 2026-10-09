@@ -11,3 +11,4 @@ qemu-extensions/prototypes/spi/foundation-dependencies.json text eol=lf
 tests/firmware/rmt_native/** text eol=lf
 qemu-extensions/prototypes/rmt/foundation-dependencies.json text eol=lf
 tests/firmware/uart_native/arduino/** text eol=lf
+build-runtime-state/uart-continuation/rom-stage/**/*.json text eol=lf

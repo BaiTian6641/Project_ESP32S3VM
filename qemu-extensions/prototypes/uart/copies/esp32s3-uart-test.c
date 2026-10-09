@@ -576,6 +576,46 @@ static void test_threshold_timeout(gconstpointer opaque)
     teardown(&f);
 }
 
+static void test_rx_full_clear_rearm(gconstpointer opaque)
+{
+    unsigned c = GPOINTER_TO_UINT(opaque);
+    Fixture f = setup(c);
+
+    wr(&f, c, CONF1, 2);
+    frame(&f, c, 0x11, 8, -1, 1, false, false);
+    frame(&f, c, 0x22, 8, -1, 1, false, false);
+    g_assert_cmphex(rd(&f, c, RAW) & RX_FULL, ==, RX_FULL);
+    wr(&f, c, CLR, RX_FULL);
+    g_assert_cmphex(rd(&f, c, RAW) & RX_FULL, ==, 0);
+    wr(&f, c, ENA, RX_FULL);
+    g_assert_cmphex(rd(&f, c, ST), ==, 0);
+    g_assert_false(qtest_get_irq(f.q, 0));
+    /* TX progress and mask writes must not manufacture a new RX event from
+     * unchanged queued bytes. The next actual received frame rearms it. */
+    wr(&f, c, FIFO, 0xa5);
+    wr(&f, c, ENA, 0);
+    wr(&f, c, ENA, RX_FULL);
+    step(&f, 10000);
+    g_assert_cmphex(rd(&f, c, ST), ==, 0);
+    g_assert_false(qtest_get_irq(f.q, 0));
+    g_assert_cmpuint(rx_used(&f, c), ==, 2);
+    frame(&f, c, 0x33, 8, -1, 1, false, false);
+    g_assert_cmphex(rd(&f, c, ST), ==, RX_FULL);
+    g_assert_true(qtest_get_irq(f.q, 0));
+    g_assert_cmphex(rd(&f, c, FIFO), ==, 0x11);
+    g_assert_cmphex(rd(&f, c, ST), ==, RX_FULL);
+    g_assert_cmphex(rd(&f, c, FIFO), ==, 0x22);
+    g_assert_cmphex(rd(&f, c, ST), ==, 0);
+    /* A committed lower threshold applies to the existing physical FIFO. */
+    wr(&f, c, CONF1, 1);
+    g_assert_cmphex(rd(&f, c, ST), ==, RX_FULL);
+    g_assert_true(qtest_get_irq(f.q, 0));
+    g_assert_cmphex(rd(&f, c, FIFO), ==, 0x33);
+    g_assert_cmphex(rd(&f, c, ST), ==, 0);
+    g_assert_false(qtest_get_irq(f.q, 0));
+    teardown(&f);
+}
+
 static void test_fifo_empty_full(gconstpointer opaque)
 {
     unsigned c = GPOINTER_TO_UINT(opaque);
@@ -1421,6 +1461,7 @@ int main(int argc, char **argv)
         {"controller-net-isolation", test_isolation},
         {"rx-parity-frame-break-errors", test_rx_errors},
         {"threshold-timeout-irq", test_threshold_timeout},
+        {"rx-full-clear-next-receive", test_rx_full_clear_rearm},
         {"fifo-empty-full-overflow", test_fifo_empty_full},
         {"physical-fifo-allocation-safety-bounds", test_allocation_bounds},
         {"cts-physical-stall-resume", test_cts},

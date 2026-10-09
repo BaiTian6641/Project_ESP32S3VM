@@ -248,6 +248,13 @@ starting QEMU and uses snapshot-on flash. Use new frozen directories rather
 than rewriting prior evidence. Build/runtime success is still separate from
 these source identities.
 
+The ordinary runner defaults to a900s host diagnostic watchdog and accepts
+up to3600s for slow concurrent electrical-model runs. This is a wall-time
+capture bound only; guest deadlines, exact payloads, physical durations and
+every required firmware assertion are unchanged. A watchdog expiration remains
+FAIL/unqualified. Extend it explicitly with `--watchdog-seconds 3600`, then
+strictly freeze the current public helper into a new directory before rerunning.
+
 Existing pinned Arduino infrastructure permits the separate IDF5.5.5 wrapper
 above. The lock currently has no Arduino-on-IDF6.1 firmware profile, so this
 fixture makes no such qualification claim; SDK mismatch is not treated as
@@ -275,12 +282,26 @@ before any VM launch; no package/source download or installation is performed.
 
 The runner waits for the complete CRLF-terminated actual ROM download banner.
 Raw banner bytes are retained as evidence but excluded from the tool stream,
-preventing a relay/input-flush race. It requires eight ordinary ROM SYNC replies
-(not stub synchronization), then performs MEM_BEGIN, all
-checksum-protected MEM_DATA blocks (>128-byte data is mandatory), and checked
+preventing a relay/input-flush race. Every received ordinary SYNC produces
+eight ROM replies (not stub synchronization). Legal acquisition retries may
+produce several complete eight-reply groups; all raw replies are checked, the
+group count cannot exceed actual SYNC requests, and partial/unsolicited groups
+fail. MEM_BEGIN and all checksum-protected MEM_DATA blocks follow
+(>128-byte data is mandatory), and checked
 MEM_END with `(no_execute=1, entry=0)`. It uses ordinary `check_command` for
 MEM_END because the library's `mem_finish` suppresses missing ROM ACK errors;
 this regression requires the actual ACK instead of silently accepting it.
+
+Host-only command waits default to180s and the overall diagnostic watchdog
+to900s; per-command requested/effective waits and monotonic boundaries are
+recorded. Neither option changes guest clocks, packet bytes or normal retries.
+Only the complete startup banner is excluded from protocol proof; later panic
+text, malformed replies, nonzero status and missing memory ACKs fail.
+The pinned loader's `sync()` reads one reply plus seven more and its normal
+connection loop permits five attempts. The vendor
+[serial protocol](https://docs.espressif.com/projects/esptool/en/latest/esp32s3/advanced-topics/serial-protocol.html)
+also requires reading until a reply matches the requested command. Retried
+SYNC bursts are retained, not trimmed or synthesized.
 
 The TCP relay records actual bytes, never creates an ACK or echo. Only the
 initial captured banner is withheld; protocol bytes forward unmodified.
@@ -305,7 +326,7 @@ ROM_PYTHON="$IDF_PYTHON_ENV_PATH/bin/python"
 # Freeze copies/hashes inputs only; no QEMU launch occurs above.
 "$ROM_PYTHON" qemu-extensions/prototypes/uart/run-rom-download.py run \
   --qemu "$QEMU" --frozen "$ROM_FROZEN" --evidence "$EVIDENCE" \
-  --watchdog-seconds 60
+  --watchdog-seconds 900 --command-timeout-seconds 180
 ```
 
 The existing Linux IDF6.1 environment is recorded in
@@ -317,6 +338,15 @@ lock also records esptool5.4.0 and pyserial3.5 in
 not a hardware operation. Consume the canonical native IDF6.1 activation's
 Python environment above after the Arduino IDF5.5.5 build; do not fall back to
 the historical SDK checkout or silently download/rewrite dependencies.
-No ROM regression or baseline comparison was launched by this
-author; fresh ROM behavior remains pending actual delegated verification.
+Fresh source-bound backend `7b8dad7015d9332a` completed the actual ROM traversal:
+four ordinary SYNC requests, two complete eight-reply groups, MEM_BEGIN,
+6144-byte and1688-byte MEM_DATA chunks, and MEM_END(1,0), all with successful
+four-byte ROM status. Flash stayed unchanged and the external graph remained
+empty. Evidence: `build-runtime-state/uart-continuation/rom-stage/`.
+Earlier panic and fixed-single-burst validator failures remain immutable.
+Host-only parser boundary tests are separate from that real native evidence:
+
+```sh
+python -m unittest discover -s tests/firmware/uart_native -p test_rom_protocol.py -v
+```
 

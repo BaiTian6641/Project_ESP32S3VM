@@ -1,0 +1,71 @@
+{
+  "qemu_sha256": "9bdf0b64804488a9c4cd457732310d1e20cf211c405f187bd4ce2e0f18a5dbd1",
+  "source_fingerprint": "7b8dad7015d9332a00e6175d5ce1eae23d6936a84a4c4ed9a0de1bb3c18305ee",
+  "applied_source_files_verified": 147,
+  "native_suites": {
+    "rmt": {
+      "exit": 0,
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 23
+    },
+    "spi": {
+      "exit": 0,
+      "passed": 27,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 27
+    },
+    "spi-service": {
+      "exit": 0,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 8
+    },
+    "uart": {
+      "exit": 0,
+      "passed": 67,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 67
+    },
+    "uhci": {
+      "exit": 0,
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 17
+    },
+    "gdma": {
+      "exit": 0,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 18
+    },
+    "memory": {
+      "exit": 0,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 12
+    },
+    "i2c": {
+      "exit": 0,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 18
+    },
+    "i2c-service": {
+      "exit": 0,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 18
+    }
+  },
+  "native_passed_total": 208
+}

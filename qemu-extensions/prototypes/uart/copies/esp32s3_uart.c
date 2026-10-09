@@ -191,9 +191,9 @@ static void update(ESP32S3UARTState *s)
 {
     unsigned rx = fifo8_num_used(&s->parent.rx_fifo);
     unsigned tx = fifo8_num_used(&s->parent.tx_fifo);
-    uint32_t raw = REG(s, 4) & ~(IRQ_RX_FULL | IRQ_TX_EMPTY);
-    if (rx && rx >= (CORE(s, 0x24) & 1023)) {
-        raw |= IRQ_RX_FULL;
+    uint32_t raw = REG(s, 4) & ~IRQ_TX_EMPTY;
+    if (!rx || rx < (CORE(s, 0x24) & 1023)) {
+        raw &= ~IRQ_RX_FULL;
     }
     if (tx <= ((CORE(s, 0x24) >> 10) & 1023)) {
         raw |= IRQ_TX_EMPTY;
@@ -369,6 +369,12 @@ static bool received(ESP32S3UARTState *s, uint8_t byte, bool external)
         fifo8_push(&s->parent.rx_fifo, byte);
         queued = true;
         s->rx_wptr = (s->rx_wptr + 1) % MAX(1, s->rx_capacity);
+    }
+    /* RXFIFO_FULL is write-to-clear. Mask/TX updates cannot replace the
+     * cleared receive event; actual receive progress rearms it. */
+    unsigned rx = fifo8_num_used(&s->parent.rx_fifo);
+    if (rx && rx >= (CORE(s, 0x24) & 1023)) {
+        REG(s, 4) |= IRQ_RX_FULL;
     }
     unsigned command = CORE(s, 0x5c) & 255;
     unsigned count = (CORE(s, 0x5c) >> 8) & 255;
@@ -1030,6 +1036,7 @@ static void retime(ESP32S3UARTState *s, QEMUTimer *timer, unsigned slot,
 static void synchronize(ESP32S3UARTState *s, int changed)
 {
     uint64_t old_num = s->bit_num, old_den = s->bit_den;
+    unsigned old_rx_threshold = CORE(s, 0x24) & 1023;
     bool autobaud_start = (changed == UART_SYNC_ALL || changed == 0x20) &&
                           !(CONF(s) & B(27)) && (REG(s, 0x20) & B(27));
     if (changed == UART_SYNC_ALL) {
@@ -1038,6 +1045,11 @@ static void synchronize(ESP32S3UARTState *s, int changed)
         CORE(s, changed) = REG(s, changed);
     }
     timing(s);
+    unsigned rx = fifo8_num_used(&s->parent.rx_fifo);
+    unsigned rx_threshold = CORE(s, 0x24) & 1023;
+    if (rx_threshold != old_rx_threshold && rx && rx >= rx_threshold) {
+        REG(s, 4) |= IRQ_RX_FULL;
+    }
     if (autobaud_start) {
         REG(s, 0x28) = REG(s, 0x2c) = REG(s, 0x70) = REG(s, 0x74) = 4095;
         REG(s, 0x30) = 0;

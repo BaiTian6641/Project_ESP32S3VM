@@ -5,6 +5,55 @@ parallel implementation in this session. Preserve the reviewed full scope; do no
 reduce completion to the foundation slices below. Historical heartbeat metadata
 is retained in the frozen packet; it is not an inventory of this session's jobs.
 
+## 2026-10-10 — real ROM UART0 memory download and208 native cases PASS
+
+Fresh immutable UART candidate `7b8dad7015d9332a`, executable SHA256
+`9bdf0b64804488a9c4cd457732310d1e20cf211c405f187bd4ce2e0f18a5dbd1`,
+matches all **147 applied source hashes**. All nine previously qualified native
+suites now total **208 PASS, zero skipped**; UART grows from64 to67 with three
+actual powered-net clear/rearm regressions.
+
+Native debugger capture proved the old ROM crash path: port4/FIFO22 at
+clear-all40048e9f immediately regenerated RXFULL; enable40048eae raised CPU5
+before the port0 store40048eb0. Receive progress or a changed committed threshold
+now rearms RXFULL, not unchanged FIFO occupancy during mask/TX-only updates.
+This event-rearm convention is explicitly **[INFERENCE]**, not independently
+measured silicon clear/core-clock propagation. No invalid aperture alias,
+guessed delay, ROM-specific branch or synthetic ACK was added.
+
+Fresh real ROM traversal **PASS**: four normal SYNC requests, two complete
+eight-reply groups, MEM_BEGIN,6144+1688 payload bytes and checked MEM_END(1,0).
+Every actual four-byte ROM status succeeds, flash stays unchanged, the external
+graph is empty and payload execution is disabled. Raw bytes are retained.
+The validator permits only complete eight-reply groups bounded by actual
+ordinary acquisition requests; it never removes retry replies. Four host-only
+protocol boundary tests PASS separately. Uniform180s command/900s overall host
+waits do not modify guest clocks or ordinary protocol packets/retries.
+
+Exact proof: `build-runtime-state/uart-continuation/rom-stage/qualification-receipt.json`.
+The original panic and fixed-single-total-burst validator failures remain
+immutable. All **six same-binary ordinary UART/Arduino reruns PASS**, including
+the full connected1517s run under the explicit3600s host diagnostic ceiling.
+The900s expiration remains FAIL, with guest timing/assertions unchanged.
+Publication is recorded separately in the stage's `publication-receipt.json`.
+Previous Arduino stage **`a2a08e7`** is pushed.
+
+Parallel I2S and pulse stages remain active. The scoped GDMA0008 partial
+continuous RX completion correction now passes the entire I2S79 native suite,
+including cleared full-descriptor IN_DONE non-reassertion; full ordinary148/
+external68 gates remain active. RAW2626 and protected caches are unchanged.
+The previously unexecuted LCD/camera66 suite now passes66/66 in an isolated
+fixture candidate: named IRQ group, actual S3 GPIOs, complete registered terminal
+layout/directions, real virtual-clock resume, wired input enables, valid wrong
+topology, actual filter edge origins and explicit fresh IRQ initialization.
+No LCD/CAM model or canonical source changed; ordinary25 remains unqualified.
+Separate proof: `build-runtime-state/uart-continuation/lcd-stage/qualification-receipt.json`.
+LCD/camera read-only scouts failed on provider quota/billing before any work;
+the integration owner completed the reachable native investigation directly.
+Full simulator acceptance remains active/incomplete; exact PCM/PDM converter
+arithmetic, broader peripheral/reference gates and independent metrology are
+not inferred. No physical-board operation.
+
 ## 2026-10-09 — ordinary pinned Arduino HardwareSerial and five IDF regressions PASS
 
 The Arduino wrapper now completes ordinary `setup`/`loop`, all five exact

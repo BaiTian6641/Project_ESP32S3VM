@@ -211,5 +211,20 @@
    "Fresh native SDK source/image/ELF/config/Arduino identities are frozen. The five unchanged IDF6.1 firmware images are strictly re-frozen against the modified validator and all complete runs PASS.",
    "Exact evidence: build-runtime-state/uart-continuation/arduino-idle-stage/qualification-receipt.json; older FAIL reports are preserved."
   ]
+ },
+ {
+  "date": "2026-10-10",
+  "packages": ["UART-01", "UART-02", "UART-03"],
+  "qualification": "Fresh source-bound7b8dad7015d9332a:208 native cases PASS, zero skipped, all six complete ordinary UART/Arduino profiles PASS, plus actual ROM SYNC/MEM-only download PASS on the same executable.",
+  "changes": [
+   "Native debugger capture identified selected port4/FIFO22 at clear-all40048e9f and mask-enable40048eae: unconditional RXFULL regeneration raised CPU5 before the ROM port0 store40048eb0.",
+   "RXFULL is rearmed by actual receive progress or changed committed threshold, not interrupt-mask/TX-only updates of unchanged queued bytes. Three physical powered-net regressions fail before / pass after; event-rearm interpretation remains INFERENCE, not silicon core-clock metrology.",
+   "Uniform host-only waits preserve ordinary esptool packets/retries and guest virtual clocks; actual requested/effective waits and monotonic command boundaries are retained. Default command180s/overall900s, no hardware reset or register/security/flash commands.",
+   "Strict proof excludes only the full actual startup banner. All real S3 four-byte statuses, payload bytes, checksums and ACK ordering are required; panic text is never an ACK.",
+   "Legal repeated SYNC requests may return multiple complete eight-reply groups. The validator now retains/checks every reply, rejects partial/unsolicited groups and bounds groups by actual requests; four host-only behavioral boundary tests PASS.",
+   "Fresh actual run:four SYNC requests/two complete groups, MEM_BEGIN,6144+1688 actual payload bytes and checked MEM_END(1,0), every status successful, no execution/readback claim, unchanged flash and no external project.",
+   "Ordinary host watchdog defaults900s and explicitly accepts3600s, matching the existing RMT diagnostic convention without changing guest timings/assertions. The original connected900s FAIL is preserved; all six images/helpers were strictly refrozen and full connectedPASS completed in1517.165590s. ROM was freshly refrozen/requalified again against the updated QMP helper.",
+   "The original ROM panic and old fixed-single-burst validator failures remain immutable. Exact native/ROM identities and proof:build-runtime-state/uart-continuation/rom-stage/qualification-receipt.json."
+  ]
  }
 ]

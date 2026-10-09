@@ -1,0 +1,9 @@
+{
+  "kind": "official-installed-esptool-S3-stub-text-inert",
+  "address": 1077379072,
+  "official_entry": 1077384484,
+  "execute": false,
+  "size": 7832,
+  "block_size": 6144,
+  "payload_sha256": "c37a7d12d52633fd629fbed13f3a7418216af368d8e80f17853ce6de29741374"
+}

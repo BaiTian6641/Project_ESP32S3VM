@@ -65,13 +65,13 @@
   ],
   "source_preparation": "prepare.py --dependencies authoritative frozen common source record including profile and input hashes; unique new qemu-uart cache, no mutable cache borrowing",
   "authored_native_vectors": {
-    "uart_qtests": 64,
+    "uart_qtests": 67,
     "uhci_system_vectors": 17,
     "executed": true,
     "results": {
-      "uart_qtests": "64/64 PASS, zero skips, on source-bound candidate1e937cf0ad1822bb. Evidence: build-runtime-state/uart-continuation/i2c-slave-final/vectors/uart.log",
-      "uhci_system_vectors": "17/17 PASS, zero skips, on the same executable. Evidence: build-runtime-state/uart-continuation/i2c-slave-final/vectors/uhci.log",
-      "build": "Fresh prepared checkout and ninja exit0; all127 applied source hashes verified. Shared regressions also PASS: GDMA18/18, memory12/12, I2C18/18 and service18/18. Existing compiler warnings are not suppressed or claimed absent."
+      "uart_qtests": "67/67 PASS, zero skips, on source-bound candidate7b8dad7015d9332a. Evidence:build-runtime-state/uart-continuation/rom-stage/native/uart.log",
+      "uhci_system_vectors": "17/17 PASS, zero skips, on the same executable. Evidence:build-runtime-state/uart-continuation/rom-stage/native/uhci.log",
+      "build": "Fresh immutable preparation/build and147 applied source hashes verified. Nine previously qualified native suites total208 PASS:UART67,UHCI17,GDMA18,memory12,I2C18/service18,SPI27/service8,RMT23. Existing warnings are not suppressed or claimed absent."
     }
   },
   "qtests": [
@@ -158,9 +158,10 @@
     "console": "Independent completed-TX observer plus bounded host-console sender queue; 8N1 console-baud defaults115200 and actual timed input edges feed autobaud, never external nets"
   },
   "mode_qualification": {
-    "routed_uart0_1_2": "64 native cases and strict ordinary connected/absent/disconnected/wrong fixtures PASS; real UART0 physical loopback and crossed UART1/2 traffic, no input injection.",
+    "routed_uart0_1_2": "67 native cases and all six strictly source-refrozen ordinary UART/Arduino profiles PASS on7b8dad7015d9332a, including actual powered RXFULL clear/rearm boundaries and exact physical payloads.",
     "baud_source_fractional_dividers": "Native rational-average source/divider cases PASS; nonzero A/B and hardware pulse jitter remain explicitly unqualified below.",
     "fifo_threshold_timeout_overflow": "Ordinary connected threshold/timeout IRQ, exact tail, FIFO and driver-ring overflow/recovery checks PASS.",
+    "rx_full_write_clear_rearm": "PASS:actual powered receive frames rearm cleared RXFULL; mask/TX-only updates cannot regenerate it; threshold changes and FIFO drain preserve queued-byte/IRQ behavior on all three UARTs. Event rearm is a model interpretation [INFERENCE], not independent silicon clear/core-clock propagation proof.",
     "width5_6_7_8_parity_stop1_1p5_2": "Ordinary connected baud/format and recovery vectors PASS with actual513-byte streams; no independent silicon timing claim.",
     "break_framing_parity_errors": "Ordinary parity, width/stop mismatch, break IRQ and recovery checks PASS; framing IRQ is explicitly enabled through the public API.",
     "cts_rts_stall_resume": "Ordinary physical CTS stall/resume, automatic RTS threshold/recovery, and queued VM stop/resume checks PASS.",
@@ -180,33 +181,32 @@
     "uart_clkdiv_frag_cycle_jitter": "unqualified: rational-average baud model has no independently referenced16pulse phase/interleave fidelity; integer and average-rate behavior are separate",
     "uhci_break_delimiter_payload": "modelcontractexcludesonlyexplicitlyidentifiedactuallyqueuedphysicalNULLdelimiter; targetTRMdoesnotenumerateGDMApayloadinclusion, independenthardwareboundaryreference required",
     "fifo_size_zero": "unqualified: primary sources do not resolve zero encoding versus eight-block UART0 TX limit",
-    "rom_download_and_ordinary_boot": "All six ordinary IDF6.1/Arduino UART fixtures PASS on984f71fe6aadd031 with exact physical payloads and current frozen inputs. ROM checksum/status-ACK download remains separately unqualified.",
+    "rom_download_and_ordinary_boot": "All six ordinary IDF6.1/Arduino UART fixtures and actual ROM checksum/status-ACK download PASS on the same7b8dad7015d9332a executable. Complete SYNC reply groups,7832 inert bytes, MEM_END(1,0), unchanged flash and empty external graph are separately retained.",
     "hardware_timing": "not independently qualified; no approved physical reference operation performed",
-    "arduino": "PASS: pinned Arduino3.3.12/IDF5.5.5 normal setup/loop and HardwareSerial, all five exact513-byte duplex vectors, three physical UART0 loopbacks and per-vector released electrical idle on backend984f71fe6aadd031."
+    "arduino": "PASS: pinned Arduino3.3.12/IDF5.5.5 normal setup/loop and HardwareSerial, all five exact513-byte duplex vectors, three physical UART0 loopbacks and per-vector released electrical idle on backend7b8dad7015d9332a."
   },
   "firmware": "tests/firmware/uart_native; firmware/build-idf-fixture.sh freezes original images before run-native-fixture.py creates writable evidence disks",
-  "evidence": "build-runtime-state/uart-continuation/arduino-idle-stage/",
-  "blocked_by": [
-    "ROM download: banner bytes are retained in raw evidence but excluded from the tool stream through a CRLF readiness barrier. Standard esptool no-reset SYNC acquisition is used without register/security commands. No valid ROM ACK traversal yet; a separate SYNC probe produced a LoadStoreError panic at EPC1=0x40044290, EXCVADDR=0x5ffd0000. The panic text is not a protocol reply."
-  ],
+  "evidence": "build-runtime-state/uart-continuation/rom-stage/",
+  "blocked_by": [],
   "primary_source_grounding": {
     "uart_rs485_conf": "TRM v1.8 register 26.17 UART_RS485_CONF_REG (0x004C): bit0 UART_RS485_EN, bit1 DL0_EN (1-bit turnaround delay before the start bit), bit2 DL1_EN (1-bit turnaround delay after the stop bit), bit3 RS485TX_RX_EN (receiver works while transmitting), bit4 RS485RXBY_TX_EN (transmitter sends while the receiver line is busy), bits[9:6] TX_DLY_NUM, bit5 RX_DLY_NUM. The model's usage matches this map; the vector previously omitted bit4 for the mirror rows.",
     "pdf_sha256": "4484bf8a69035ec42a731c58c64ada6fbd1f1618c5559409f134d9ea083f444f"
   },
   "ordinary_fixture_results": {
-    "binary": "qemu-uart-40edccac4156-984f71fe6aadd031/build-wsl/qemu-system-xtensa sha256 03bb3bbcc2eb2b69ac4d2f376d7ab85f321b9a712c7da745c6f7ff703f9d00b6",
-    "qualification_receipt": "build-runtime-state/uart-continuation/arduino-idle-stage/qualification-receipt.json",
-    "frozen": "build-runtime-state/uart-continuation/arduino-idle-stage/idf61-frozen/<mode>; separate arduino-frozen/",
-    "runs": "build-runtime-state/uart-continuation/arduino-idle-stage/idf61-runs/<mode>; separate arduino-run/",
+    "binary": "qemu-uart-40edccac4156-7b8dad7015d9332a/build-wsl/qemu-system-xtensa sha256 9bdf0b64804488a9c4cd457732310d1e20cf211c405f187bd4ce2e0f18a5dbd1",
+    "qualification_receipt": "build-runtime-state/uart-continuation/rom-stage/qualification-receipt.json",
+    "frozen": "build-runtime-state/uart-continuation/rom-stage/uart-frozen/<mode>; separate rom-frozen/",
+    "runs": "build-runtime-state/uart-continuation/rom-stage/uart-runs/<mode>; separate rom-runs/",
     "connected": "PASS: strict full-run validation, physical stop/resume, expected vectors and exact streams, zero firmware failures.",
     "absent": "PASS: strict complete-run validation, all expected vectors, zero firmware failures.",
     "disconnected": "PASS: strict complete-run validation, all expected vectors, zero firmware failures.",
     "wrong": "PASS: strict complete-run validation, all expected vectors, zero firmware failures.",
     "uhci": "PASS: exact ordinary513-byte full-duplex idle/multibuffer/length/break packets, real partial DMA callbacks, TX completion, EOF, and physical UART0 overlap.",
+    "ordinary_host_watchdog": "Default900s, diagnostic ceiling3600s, guest timing/assertions unchanged. Initial concurrent connected run reached framing-error reports before900s expiration (FAIL preserved); fresh strict source-refrozen full connected runPASS in1517.165590s.",
     "console_report_fix": "Preserved trace proved uart_param_config reset discarded 127 queued report bytes. Fixture now drains UART0 with uart_wait_tx_idle_polling before driver installation and again after installation logs, before configuration. No parser relaxation or payload suppression.",
-    "arduino_build": "PASS: pinned Arduino3.3.12/IDF5.5.5 native build/freeze and complete ordinary HardwareSerial runtime. Real pinMode(INPUT) releases both detached LOW TX pads before either peer RX starts; no model/SDK patch or received-byte filtering.",
+    "arduino_build": "PASS: pinned Arduino3.3.12/IDF5.5.5 native build/freeze and complete ordinary HardwareSerial on current7b8UARTmodel. Prior ordinary pinMode(INPUT) idle release remains unchanged; no SDK patch, RX flush or received-byte filtering.",
     "arduino_idle_evidence": "Both solved peer TX levels are HIGH before each of five vectors; actual digitalRead reports and exact independently checked RX bytes are mandatory. Older one-leadingNULL failures remain preserved.",
-    "rom_download": "FAIL: standard no-reset acquisition does not establish real ROM ACK traversal; SYNC/MEM-only proof and no-execute/unchanged-flash assertions remain mandatory.",
+    "rom_download": "PASS on7b8dad7015d9332a/SHA9bdf0b64804488a9c4cd457732310d1e20cf211c405f187bd4ce2e0f18a5dbd1:four normal SYNC requests/two complete eight-reply groups,7832 bytes in6144+1688 MEM_DATA chunks, actual success status for MEM_BEGIN/DATA/END(1,0), unchanged flash, empty external graph. Strict new source-frozen run:rom-stage/qualification-receipt.json.",
     "crash_note": "The review-era console-retry prototype crashed QEMU at teardown (heap corruption); reverted, and the ordinary fixtures then ran cleanly. The console TX drop-on-busy-backend gap remains documented and unfixed (the original single-shot qemu_chr_fe_write stays)."
   },
   "timing_profile": {

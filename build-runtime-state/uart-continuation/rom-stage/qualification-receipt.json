@@ -1,0 +1,267 @@
+{
+  "status": "PASS:208 native, six ordinary UART/Arduino profiles and actual ROM memory-only download on the same executable",
+  "source_fingerprint": "7b8dad7015d9332a00e6175d5ce1eae23d6936a84a4c4ed9a0de1bb3c18305ee",
+  "runtime_sha256": "9bdf0b64804488a9c4cd457732310d1e20cf211c405f187bd4ce2e0f18a5dbd1",
+  "applied_source_files_verified": 147,
+  "native_suites": {
+    "rmt": {
+      "exit": 0,
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 23
+    },
+    "spi": {
+      "exit": 0,
+      "passed": 27,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 27
+    },
+    "spi-service": {
+      "exit": 0,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 8
+    },
+    "uart": {
+      "exit": 0,
+      "passed": 67,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 67
+    },
+    "uhci": {
+      "exit": 0,
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 17
+    },
+    "gdma": {
+      "exit": 0,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 18
+    },
+    "memory": {
+      "exit": 0,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 12
+    },
+    "i2c": {
+      "exit": 0,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 18
+    },
+    "i2c-service": {
+      "exit": 0,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 18
+    }
+  },
+  "native_passed_total": 208,
+  "rom_download": {
+    "status": "PASS",
+    "native_evidence": "/home/polar/.cache/esp32s3vm/rom-rxfull-7b8dad7015d9332a-host3600/rom-runs/rom-download-fi10g307",
+    "frozen_manifest_sha256": "096bd13945fe5574d04633ad705851e1c7e7ec442acb9b34f8d0ef2c47cb34da",
+    "host_elapsed_seconds": 586.0210310879629,
+    "proof": {
+      "request_count": 8,
+      "response_count": 20,
+      "data_blocks": 2,
+      "sync_requests": 4,
+      "sync_reply_groups": 2,
+      "payload_bytes": 7832,
+      "responses": [
+        {
+          "opcode": 8,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 8,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 8,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 8,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 8,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 8,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 8,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 8,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 8,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 8,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 8,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 8,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 8,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 8,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 8,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 8,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 5,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 7,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 7,
+          "value": 538052359,
+          "status_hex": "00000000"
+        },
+        {
+          "opcode": 6,
+          "value": 538052359,
+          "status_hex": "00000000"
+        }
+      ],
+      "qualification": "Real ROM checksum/status ACK traversal; no execution, flash write or RAM readback claim"
+    },
+    "flash_unchanged": true,
+    "external_graph": "No applied external project before or after actual memory-only traversal",
+    "payload_execute": false,
+    "ram_readback_claim": false,
+    "raw_status": "Every retained SYNC/MEM response success; no panic filtering/ACK synthesis"
+  },
+  "ordinary_uart": {
+    "connected": {
+      "status": "PASS",
+      "native_evidence": "/home/polar/.cache/esp32s3vm/rom-rxfull-7b8dad7015d9332a-host3600/uart-runs/connected/connected-j4thgsqs",
+      "elapsed_seconds": 1517.1655900439946,
+      "frozen_manifest_sha256": "f22016f59d9b7c787e3202c85ce01ff1b8787239c42839be2f722d8e45b9081c",
+      "flash_sha256": "19661fda414c13c77571fe03ea4749defce9dc0923021d17e753d88b5ac96e36",
+      "firmware_source_sha256": "0aff99f84f209d81fb48edaf5f3dd65d9858a27e10f41c43c02a95e307198a81",
+      "evidence": "build-runtime-state/uart-continuation/rom-stage/uart-runs/connected/connected-j4thgsqs"
+    },
+    "uhci": {
+      "status": "PASS",
+      "native_evidence": "/home/polar/.cache/esp32s3vm/rom-rxfull-7b8dad7015d9332a-host3600/uart-runs/uhci/uhci-eqsbv57_",
+      "elapsed_seconds": 442.2610399250407,
+      "frozen_manifest_sha256": "4f2c9ac3d318d2f32fe12335ef779fccdae03c06c17873ab254b3fef60fe380c",
+      "flash_sha256": "191ad51483a828408805b0da98dbc5e9813c981fdd5b9c05b18c00a1156c65b5",
+      "firmware_source_sha256": "de372893e4ee5485e11808c81b76877fe7070813ca28dedd7f9b556b4a07c91c",
+      "evidence": "build-runtime-state/uart-continuation/rom-stage/uart-runs/uhci/uhci-eqsbv57_"
+    },
+    "absent": {
+      "status": "PASS",
+      "native_evidence": "/home/polar/.cache/esp32s3vm/rom-rxfull-7b8dad7015d9332a-host3600/uart-runs/absent/absent-ouduk_6o",
+      "elapsed_seconds": 134.62847746995976,
+      "frozen_manifest_sha256": "9f13a3fa76361464796081c93bf29f71c1eb17d50ffb61d1aa8080a3b03f9063",
+      "flash_sha256": "fe888c07d5e6e6cae0b7581c50ce487537e74e711bde821797e7051e7ee5e504",
+      "firmware_source_sha256": "8d9fdec82b271b5a04054724e006f704e628afdd0f208991587ee94f49085235",
+      "evidence": "build-runtime-state/uart-continuation/rom-stage/uart-runs/absent/absent-ouduk_6o"
+    },
+    "disconnected": {
+      "status": "PASS",
+      "native_evidence": "/home/polar/.cache/esp32s3vm/rom-rxfull-7b8dad7015d9332a-host3600/uart-runs/disconnected/disconnected-2fb9w12u",
+      "elapsed_seconds": 119.31633489800151,
+      "frozen_manifest_sha256": "07a036d175e25b6cc6f1a97938b42eb34659d95333eb4a2a8eda3e152f656691",
+      "flash_sha256": "e6e94fe4bfa6ae6d39b69c55a307dabec8573c85c2532000ff4ec5bdd087b1bd",
+      "firmware_source_sha256": "697855623017cc2f6bb9a39cec3aefdb91d270a8b28c8085d3ffc96087a8e940",
+      "evidence": "build-runtime-state/uart-continuation/rom-stage/uart-runs/disconnected/disconnected-2fb9w12u"
+    },
+    "wrong": {
+      "status": "PASS",
+      "native_evidence": "/home/polar/.cache/esp32s3vm/rom-rxfull-7b8dad7015d9332a-host3600/uart-runs/wrong/wrong-87z6r4js",
+      "elapsed_seconds": 148.71106787299505,
+      "frozen_manifest_sha256": "7da5c4777b4371ad425cee7d07633fa30065f41cf37932ba909b76cf6d1ee6ca",
+      "flash_sha256": "53a99809262604524645004c13566ffa7128a2bee58e50384d302eee6c055c63",
+      "firmware_source_sha256": "56023cda1b90b65eec45269b83ae00f7b3c1d7e7accd8e1ee38352132183687d",
+      "evidence": "build-runtime-state/uart-continuation/rom-stage/uart-runs/wrong/wrong-87z6r4js"
+    },
+    "arduino": {
+      "status": "PASS",
+      "native_evidence": "/home/polar/.cache/esp32s3vm/rom-rxfull-7b8dad7015d9332a-host3600/uart-runs/arduino/arduino-wtlm1z6p",
+      "elapsed_seconds": 384.3133660379681,
+      "frozen_manifest_sha256": "71fddd8765a3a799a29c78ebb34aceca6cc1717ca17ad1cb34d25d836f879692",
+      "flash_sha256": "a5968d00a7706cf3cf6d25e0f6d15aab8872c1a7dbf734302092eb6d31ef975c",
+      "firmware_source_sha256": "891fd7b0f5b0d9ed0ee952ce7a95a2051119a85514d669b4c1ec55503c4c1d92",
+      "evidence": "build-runtime-state/uart-continuation/rom-stage/uart-runs/arduino/arduino-wtlm1z6p"
+    }
+  },
+  "ordinary_watchdog": {
+    "default_seconds": 900,
+    "diagnostic_max_seconds": 3600,
+    "connected_elapsed_seconds": 1517.1655900439946,
+    "prior900s_failure": "connected-watchdog-failure/",
+    "guest_timing_or_assertions_changed": false
+  },
+  "host_protocol_boundary_tests": {
+    "command": "python -m unittest discover -s tests/firmware/uart_native -p test_rom_protocol.py -v",
+    "tests": 4,
+    "status": "PASS",
+    "boundary": "Synthetic strict-parser boundary fixtures, not native ROM qualification"
+  },
+  "rx_full_semantics": "Write-to-clear receive-event rearm on actual reception or committed threshold change; mask/TX-only progress cannot regenerate RXFULL. Model interpretation [INFERENCE], independent silicon clear/core-clock propagation not qualified.",
+  "fail_before": "irq-causal-receipt.json and before-provenance.json; original panic and single-total-burst proof FAIL remain unchanged.",
+  "hardware_operations": false,
+  "lcd_camera_baseline": "Separate isolated fixture candidate repairs the previously unexecuted66 suite and now passes66/66 on unchangedQEMU9bdf. Canonical/model sources unchanged and ordinary25 still unqualified; separate lcd-stage/qualification-receipt.json holds actual source/test identities."
+}

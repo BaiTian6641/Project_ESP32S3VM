@@ -1,0 +1,120 @@
+{
+  "status": "PASS_REANALYSIS_ONLY; fresh runtime rerun still required",
+  "original_failed_result": "\\\\wsl.localhost\\Ubuntu\\home\\polar\\.cache\\esp32s3vm\\rom-rxfull-7b8dad7015d9332a\\rom-runs\\rom-download-dl_lcc3j\\result.json",
+  "original_failed_result_sha256": "dd57a6de00f926f1c4623c16bcdce2ee2aaf384e94bbcab18e94c77b99c30a61",
+  "runner_sha256": "632a708a2c4e9befabb86095861fb9f45f29aa3fe8092857dc1e0f25d9bf32df",
+  "actual_raw_proof": {
+    "request_count": 8,
+    "response_count": 20,
+    "data_blocks": 2,
+    "sync_requests": 4,
+    "sync_reply_groups": 2,
+    "payload_bytes": 7832,
+    "responses": [
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 5,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 7,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 7,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 6,
+        "value": 538052359,
+        "status_hex": "00000000"
+      }
+    ],
+    "qualification": "Real ROM checksum/status ACK traversal; no execution, flash write or RAM readback claim"
+  },
+  "flash_unchanged": true,
+  "basis": "Pinned esptool5.4.0 loader.py708..722 consumes eight replies perSYNC;777..785 permits five unchanged ordinary retry requests. All actual raw responses retained and individually checked; whole groups <=actualrequestcount, exact memoryACK ordering unchanged.",
+  "primary_url": "https://docs.espressif.com/projects/esptool/en/latest/esp32s3/advanced-topics/serial-protocol.html"
+}

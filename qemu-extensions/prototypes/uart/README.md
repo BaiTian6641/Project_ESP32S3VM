@@ -158,8 +158,8 @@ resulting touched source hash is recorded under the evidence directory.
 python3 qemu-extensions/prototypes/uart/prepare.py --dependencies "$FOUNDATION_SOURCE_RECORD"
 ```
 
-A verification subagent, not the UART author, must configure/build that exact
-checkout and run the complete authored native targets:
+Verification must configure/build that exact checkout and run the complete
+authored native targets:
 
 ```sh
 ninja -C "$BUILD" qemu-system-xtensa tests/qtest/esp32s3-uart-test test-esp32s3-uhci
@@ -182,19 +182,40 @@ that changing the mux releases the wire before restoring it.
 
 `TX_DONE` is latched on final busy-to-idle completion. Clearing it while idle
 must not immediately regenerate it; `tx-done-clear-next-completion` checks that
-invariant and the next real transfer's IRQ on each UART. The current native
-suite is **64/64 UART + 17/17 UHCI**, zero skipped, on source-bound
-candidate `1e937cf0ad1822bb`. All five strict ordinary
-connected/absent/disconnected/wrong/UHCI firmware runners **PASS** on that same
-executable. This includes FIFO/error recovery, physical flow control and queued
-VM pause/resume, digital RS485, receive-only IrDA, and actual 513-byte UHCI DMA
-idle/multibuffer/length/break packets with partial callbacks and TX completion.
+invariant and the next real transfer's IRQ on each UART.
+
+`RXFIFO_FULL` clear is no longer immediately undone by interrupt-mask or
+TX-only updates on an unchanged receive FIFO. Actual receive progress or a
+changed committed threshold rearms it; draining below threshold still removes
+the condition. Native `rx-full-clear-next-receive` checks real powered frames,
+mask/TX independence, queued bytes and threshold changes on all three UARTs.
+This event-rearm convention is a model interpretation [INFERENCE], not
+independently measured silicon clear/core-clock propagation.
+
+Native debugger capture proved the prior ROM race: selected port4,22 queued
+bytes, clear-all at40048e9f immediately regenerated RXFULL, and enable at
+40048eae raised CPU5 before the port0 store40048eb0. No invalid USB/UART alias,
+guessed IRQ delay, ROM/SYNC special case or ACK synthesis was added.
+The current source-bound `7b8dad7015d9332a` native suite is **67/67 UART +
+17/17 UHCI**, zero skipped; the nine previously qualified peripheral suites
+total **208 PASS** on that executable. Exact records live under
+`build-runtime-state/uart-continuation/rom-stage/`.
+
+All **six complete ordinary IDF6.1/Arduino UART runners PASS** on the same
+`7b8dad7015d9332a` executable with strictly refreshed public helper/image freezes.
+Connected initially made progress but hit the900s host watchdog; its preserved
+FAIL was followed by a full1517s PASS under the explicit3600s diagnostic ceiling.
+Guest deadlines, physical timing and every payload/assertion are unchanged.
 The central GDMA `IN_DONE` descriptor-boundary correction prevents the ordinary
 driver from recycling buffers after each single-byte pump.
 
-Arduino, ROM download, undocumented packet fields and independent hardware
-timing remain separate gates. See `source-map.json` and
-`build-runtime-state/uart-continuation/i2c-slave-final/qualification-receipt.json`.
+Fresh real ROM download on `7b8dad7015d9332a` **PASS**: complete eight-reply
+SYNC groups bounded by normal acquisition requests,7832 inert payload bytes
+in6144/1688-byte blocks, actual success status for every MEM command and
+MEM_END(1,0), unchanged flash and no external project. Retried SYNC groups are
+retained and individually validated; panic bytes and incomplete/unsolicited
+groups fail. Undocumented packet fields and independent hardware timing remain
+separate gates. See `source-map.json` and the ROM-stage qualification receipt.
 
 
 `tests/firmware/uart_native/README.md` contains ordinary pinned IDF build/freeze

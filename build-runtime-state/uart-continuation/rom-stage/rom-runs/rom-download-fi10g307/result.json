@@ -1,0 +1,2774 @@
+{
+  "status": "PASS",
+  "commands": [
+    {
+      "opcode": 8,
+      "data_size": 36,
+      "data_sha256": "bae6bbf92eb1ea10a0c83a96d211a32cc3e6be80e6703277f8d6b0621018d1d8",
+      "checksum": 0,
+      "esptool_timeout_seconds": 0.1,
+      "started_monotonic_ns": 472204676707973,
+      "effective_timeout_seconds": 180.0,
+      "error": "FatalError: No serial data received.",
+      "finished_monotonic_ns": 472384776382755
+    },
+    {
+      "opcode": 8,
+      "data_size": 36,
+      "data_sha256": "bae6bbf92eb1ea10a0c83a96d211a32cc3e6be80e6703277f8d6b0621018d1d8",
+      "checksum": 0,
+      "esptool_timeout_seconds": 0.1,
+      "started_monotonic_ns": 472384827535777,
+      "effective_timeout_seconds": 180.0,
+      "error": "FatalError: No serial data received.",
+      "finished_monotonic_ns": 472564928179342
+    },
+    {
+      "opcode": 8,
+      "data_size": 36,
+      "data_sha256": "bae6bbf92eb1ea10a0c83a96d211a32cc3e6be80e6703277f8d6b0621018d1d8",
+      "checksum": 0,
+      "esptool_timeout_seconds": 0.1,
+      "started_monotonic_ns": 472564982192506,
+      "effective_timeout_seconds": 180.0,
+      "error": "FatalError: No serial data received.",
+      "finished_monotonic_ns": 472745080200049
+    },
+    {
+      "opcode": 8,
+      "data_size": 36,
+      "data_sha256": "bae6bbf92eb1ea10a0c83a96d211a32cc3e6be80e6703277f8d6b0621018d1d8",
+      "checksum": 0,
+      "esptool_timeout_seconds": 0.1,
+      "started_monotonic_ns": 472745130998854,
+      "effective_timeout_seconds": 180.0,
+      "reply": {
+        "value": 538052359,
+        "data_hex": "00000000"
+      },
+      "finished_monotonic_ns": 472745333428456
+    },
+    {
+      "opcode": null,
+      "data_size": 0,
+      "data_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "checksum": 0,
+      "esptool_timeout_seconds": 3,
+      "started_monotonic_ns": 472745333472859,
+      "effective_timeout_seconds": 180.0,
+      "reply": {
+        "value": 538052359,
+        "data_hex": "00000000"
+      },
+      "finished_monotonic_ns": 472745504942333
+    },
+    {
+      "opcode": null,
+      "data_size": 0,
+      "data_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "checksum": 0,
+      "esptool_timeout_seconds": 3,
+      "started_monotonic_ns": 472745504976682,
+      "effective_timeout_seconds": 180.0,
+      "reply": {
+        "value": 538052359,
+        "data_hex": "00000000"
+      },
+      "finished_monotonic_ns": 472745833375037
+    },
+    {
+      "opcode": null,
+      "data_size": 0,
+      "data_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "checksum": 0,
+      "esptool_timeout_seconds": 3,
+      "started_monotonic_ns": 472745833412771,
+      "effective_timeout_seconds": 180.0,
+      "reply": {
+        "value": 538052359,
+        "data_hex": "00000000"
+      },
+      "finished_monotonic_ns": 472746170574185
+    },
+    {
+      "opcode": null,
+      "data_size": 0,
+      "data_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "checksum": 0,
+      "esptool_timeout_seconds": 3,
+      "started_monotonic_ns": 472746170605499,
+      "effective_timeout_seconds": 180.0,
+      "reply": {
+        "value": 538052359,
+        "data_hex": "00000000"
+      },
+      "finished_monotonic_ns": 472746544650308
+    },
+    {
+      "opcode": null,
+      "data_size": 0,
+      "data_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "checksum": 0,
+      "esptool_timeout_seconds": 3,
+      "started_monotonic_ns": 472746544689129,
+      "effective_timeout_seconds": 180.0,
+      "reply": {
+        "value": 538052359,
+        "data_hex": "00000000"
+      },
+      "finished_monotonic_ns": 472746918957290
+    },
+    {
+      "opcode": null,
+      "data_size": 0,
+      "data_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "checksum": 0,
+      "esptool_timeout_seconds": 3,
+      "started_monotonic_ns": 472746919000006,
+      "effective_timeout_seconds": 180.0,
+      "reply": {
+        "value": 538052359,
+        "data_hex": "00000000"
+      },
+      "finished_monotonic_ns": 472747237915519
+    },
+    {
+      "opcode": null,
+      "data_size": 0,
+      "data_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "checksum": 0,
+      "esptool_timeout_seconds": 3,
+      "started_monotonic_ns": 472747237953095,
+      "effective_timeout_seconds": 180.0,
+      "reply": {
+        "value": 538052359,
+        "data_hex": "00000000"
+      },
+      "finished_monotonic_ns": 472747331996327
+    },
+    {
+      "opcode": 5,
+      "data_size": 16,
+      "data_sha256": "d5737c3a69ec30a0e7c0f307691862e70933dfdf24fedaad458bddf47f909412",
+      "checksum": 0,
+      "esptool_timeout_seconds": 3,
+      "started_monotonic_ns": 472747333778414,
+      "effective_timeout_seconds": 180.0,
+      "reply": {
+        "value": 538052359,
+        "data_hex": "00000000"
+      },
+      "finished_monotonic_ns": 472748148912275
+    },
+    {
+      "opcode": 7,
+      "data_size": 6160,
+      "data_sha256": "bee9f5c4b1376d863dcc2be47f80d9a3d8993b726a6fc87ba0b88a2ba3d72241",
+      "checksum": 47,
+      "esptool_timeout_seconds": 3,
+      "started_monotonic_ns": 472748149242451,
+      "effective_timeout_seconds": 180.0,
+      "reply": {
+        "value": 538052359,
+        "data_hex": "00000000"
+      },
+      "finished_monotonic_ns": 472776999945489
+    },
+    {
+      "opcode": 7,
+      "data_size": 1704,
+      "data_sha256": "b6426a7144f4af6836c345e39c662f5735520b17ae4fc7a0cd57de66290326ec",
+      "checksum": 56,
+      "esptool_timeout_seconds": 3,
+      "started_monotonic_ns": 472777000110765,
+      "effective_timeout_seconds": 180.0,
+      "reply": {
+        "value": 538052359,
+        "data_hex": "00000000"
+      },
+      "finished_monotonic_ns": 472784488694045
+    },
+    {
+      "opcode": 6,
+      "data_size": 8,
+      "data_sha256": "7c9fa136d4413fa6173637e883b6998d32e1d675f88cddff9dcbcf331820f4b8",
+      "checksum": 0,
+      "esptool_timeout_seconds": 3,
+      "started_monotonic_ns": 472784488752123,
+      "effective_timeout_seconds": 180.0,
+      "reply": {
+        "value": 538052359,
+        "data_hex": "00000000"
+      },
+      "finished_monotonic_ns": 472784665698297
+    }
+  ],
+  "qmp": [
+    {
+      "direction": "receive",
+      "message": {
+        "QMP": {
+          "version": {
+            "qemu": {
+              "micro": 2,
+              "minor": 2,
+              "major": 9
+            },
+            "package": ""
+          },
+          "capabilities": [
+            "oob"
+          ]
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "execute": "qmp_capabilities",
+        "arguments": {},
+        "id": 1
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "return": {},
+        "id": 1
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "execute": "qom-get",
+        "arguments": {
+          "path": "/machine/soc/electrical",
+          "property": "project-json"
+        },
+        "id": 2
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "return": "",
+        "id": 2
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "execute": "qom-get",
+        "arguments": {
+          "path": "/machine/soc/electrical",
+          "property": "snapshot-json"
+        },
+        "id": 3
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "return": "{\"source_generation\": \"0\", \"support\": {\"awake_sleep_configuration\": true, \"rc\": true, \"dc\": true, \"adc\": true, \"profile\": \"s3-explicit-finite-v1\", \"hold\": false, \"active_sleep\": false}, \"currents\": [], \"dc_factorizations\": 0, \"status\": \"unconfigured\", \"diagnostic\": \"Apply explicit v3 graph before electrical samples\", \"timestamp_ns\": \"0\", \"pads\": [], \"max_source_residual_v\": null, \"max_kcl_residual_a\": null, \"physical_pads\": [], \"nets\": [], \"generation\": \"0\", \"abi\": 1}",
+        "id": 3
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "execute": "cont",
+        "arguments": {},
+        "id": 4
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "timestamp": {
+          "seconds": 1791574666,
+          "microseconds": 346400
+        },
+        "event": "RESUME"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "return": {},
+        "id": 4
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "execute": "stop",
+        "arguments": {},
+        "id": 5
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "timestamp": {
+          "seconds": 1791575281,
+          "microseconds": 329440
+        },
+        "event": "STOP"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "return": {},
+        "id": 5
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "execute": "qom-get",
+        "arguments": {
+          "path": "/machine/soc/electrical",
+          "property": "snapshot-json"
+        },
+        "id": 6
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "return": "{\"source_generation\": \"0\", \"support\": {\"awake_sleep_configuration\": true, \"rc\": true, \"dc\": true, \"adc\": true, \"profile\": \"s3-explicit-finite-v1\", \"hold\": false, \"active_sleep\": false}, \"currents\": [], \"dc_factorizations\": 0, \"status\": \"unconfigured\", \"diagnostic\": \"Apply explicit v3 graph before electrical samples\", \"timestamp_ns\": \"0\", \"pads\": [], \"max_source_residual_v\": null, \"max_kcl_residual_a\": null, \"physical_pads\": [], \"nets\": [], \"generation\": \"0\", \"abi\": 1}",
+        "id": 6
+      }
+    }
+  ],
+  "snapshots": [
+    {
+      "phase": "empty_external_graph_before_ROM",
+      "graph": {
+        "source_generation": "0",
+        "support": {
+          "awake_sleep_configuration": true,
+          "rc": true,
+          "dc": true,
+          "adc": true,
+          "profile": "s3-explicit-finite-v1",
+          "hold": false,
+          "active_sleep": false
+        },
+        "currents": [],
+        "dc_factorizations": 0,
+        "status": "unconfigured",
+        "diagnostic": "Apply explicit v3 graph before electrical samples",
+        "timestamp_ns": "0",
+        "pads": [],
+        "max_source_residual_v": null,
+        "max_kcl_residual_a": null,
+        "physical_pads": [],
+        "nets": [],
+        "generation": "0",
+        "abi": 1
+      }
+    },
+    {
+      "phase": "ROM_ACK_completed_empty_external_graph",
+      "graph": {
+        "source_generation": "0",
+        "support": {
+          "awake_sleep_configuration": true,
+          "rc": true,
+          "dc": true,
+          "adc": true,
+          "profile": "s3-explicit-finite-v1",
+          "hold": false,
+          "active_sleep": false
+        },
+        "currents": [],
+        "dc_factorizations": 0,
+        "status": "unconfigured",
+        "diagnostic": "Apply explicit v3 graph before electrical samples",
+        "timestamp_ns": "0",
+        "pads": [],
+        "max_source_residual_v": null,
+        "max_kcl_residual_a": null,
+        "physical_pads": [],
+        "nets": [],
+        "generation": "0",
+        "abi": 1
+      }
+    }
+  ],
+  "qemu_sha256": "9bdf0b64804488a9c4cd457732310d1e20cf211c405f187bd4ce2e0f18a5dbd1",
+  "frozen_manifest_sha256": "096bd13945fe5574d04633ad705851e1c7e7ec442acb9b34f8d0ef2c47cb34da",
+  "payload_sha256": "c37a7d12d52633fd629fbed13f3a7418216af368d8e80f17853ce6de29741374",
+  "esptool_version": "5.4.0",
+  "host_watchdog_seconds": 900.0,
+  "host_command_timeout_seconds": 180.0,
+  "serial_events": [
+    {
+      "direction": "rom-to-host",
+      "offset": 0,
+      "size": 1,
+      "monotonic_ns": 472200000711630
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 1,
+      "size": 1,
+      "monotonic_ns": 472200032926525
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 2,
+      "size": 1,
+      "monotonic_ns": 472200065617300
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 3,
+      "size": 1,
+      "monotonic_ns": 472200104932527
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 4,
+      "size": 1,
+      "monotonic_ns": 472200153275205
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 5,
+      "size": 1,
+      "monotonic_ns": 472200182080775
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 6,
+      "size": 1,
+      "monotonic_ns": 472200215162809
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 7,
+      "size": 1,
+      "monotonic_ns": 472200246772654
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 8,
+      "size": 1,
+      "monotonic_ns": 472200295295093
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 9,
+      "size": 1,
+      "monotonic_ns": 472200326574892
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 10,
+      "size": 1,
+      "monotonic_ns": 472200360181062
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 11,
+      "size": 1,
+      "monotonic_ns": 472200393655551
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 12,
+      "size": 1,
+      "monotonic_ns": 472200426052529
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 13,
+      "size": 1,
+      "monotonic_ns": 472200456109079
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 14,
+      "size": 1,
+      "monotonic_ns": 472200485572078
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 15,
+      "size": 1,
+      "monotonic_ns": 472200538937112
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 16,
+      "size": 1,
+      "monotonic_ns": 472200576175927
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 17,
+      "size": 1,
+      "monotonic_ns": 472200609801087
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 18,
+      "size": 1,
+      "monotonic_ns": 472200647526780
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 19,
+      "size": 1,
+      "monotonic_ns": 472200694009600
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 20,
+      "size": 1,
+      "monotonic_ns": 472200746034536
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 21,
+      "size": 1,
+      "monotonic_ns": 472200786373595
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 22,
+      "size": 1,
+      "monotonic_ns": 472200821569921
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 23,
+      "size": 1,
+      "monotonic_ns": 472200855158001
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 24,
+      "size": 1,
+      "monotonic_ns": 472200893446978
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 25,
+      "size": 1,
+      "monotonic_ns": 472200948031854
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 26,
+      "size": 1,
+      "monotonic_ns": 472200982269401
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 27,
+      "size": 1,
+      "monotonic_ns": 472201022258089
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 28,
+      "size": 1,
+      "monotonic_ns": 472201055642806
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 29,
+      "size": 1,
+      "monotonic_ns": 472201115515313
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 30,
+      "size": 1,
+      "monotonic_ns": 472201153314225
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 31,
+      "size": 1,
+      "monotonic_ns": 472201191860991
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 32,
+      "size": 1,
+      "monotonic_ns": 472201227215650
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 33,
+      "size": 1,
+      "monotonic_ns": 472201298004547
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 34,
+      "size": 1,
+      "monotonic_ns": 472201340992326
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 35,
+      "size": 1,
+      "monotonic_ns": 472201374579185
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 36,
+      "size": 1,
+      "monotonic_ns": 472201434069294
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 37,
+      "size": 1,
+      "monotonic_ns": 472201482636701
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 38,
+      "size": 1,
+      "monotonic_ns": 472201537410997
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 39,
+      "size": 1,
+      "monotonic_ns": 472201568155548
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 40,
+      "size": 1,
+      "monotonic_ns": 472201603654096
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 41,
+      "size": 1,
+      "monotonic_ns": 472201637520309
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 42,
+      "size": 1,
+      "monotonic_ns": 472201685833953
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 43,
+      "size": 1,
+      "monotonic_ns": 472201719591436
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 44,
+      "size": 1,
+      "monotonic_ns": 472201755644399
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 45,
+      "size": 1,
+      "monotonic_ns": 472201791931372
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 46,
+      "size": 1,
+      "monotonic_ns": 472201838404221
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 47,
+      "size": 1,
+      "monotonic_ns": 472201873225835
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 48,
+      "size": 1,
+      "monotonic_ns": 472201911163602
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 49,
+      "size": 1,
+      "monotonic_ns": 472201953848556
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 50,
+      "size": 1,
+      "monotonic_ns": 472202009794087
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 51,
+      "size": 1,
+      "monotonic_ns": 472202049783893
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 52,
+      "size": 1,
+      "monotonic_ns": 472202083779356
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 53,
+      "size": 1,
+      "monotonic_ns": 472202121090746
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 54,
+      "size": 1,
+      "monotonic_ns": 472202167912600
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 55,
+      "size": 1,
+      "monotonic_ns": 472202200972607
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 56,
+      "size": 1,
+      "monotonic_ns": 472202236867644
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 57,
+      "size": 1,
+      "monotonic_ns": 472202283303299
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 58,
+      "size": 1,
+      "monotonic_ns": 472202317751923
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 59,
+      "size": 1,
+      "monotonic_ns": 472202357009887
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 60,
+      "size": 1,
+      "monotonic_ns": 472202404674574
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 61,
+      "size": 1,
+      "monotonic_ns": 472202436788168
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 62,
+      "size": 1,
+      "monotonic_ns": 472202486548150
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 63,
+      "size": 1,
+      "monotonic_ns": 472202524563002
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 64,
+      "size": 1,
+      "monotonic_ns": 472202563091917
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 65,
+      "size": 1,
+      "monotonic_ns": 472202610162016
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 66,
+      "size": 1,
+      "monotonic_ns": 472202661455585
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 67,
+      "size": 1,
+      "monotonic_ns": 472202700230906
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 68,
+      "size": 1,
+      "monotonic_ns": 472202750495388
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 69,
+      "size": 1,
+      "monotonic_ns": 472202785537548
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 70,
+      "size": 1,
+      "monotonic_ns": 472202827259389
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 71,
+      "size": 1,
+      "monotonic_ns": 472202879000942
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 72,
+      "size": 1,
+      "monotonic_ns": 472202914773240
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 73,
+      "size": 1,
+      "monotonic_ns": 472202948943724
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 74,
+      "size": 1,
+      "monotonic_ns": 472202987963883
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 75,
+      "size": 1,
+      "monotonic_ns": 472203032657498
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 76,
+      "size": 1,
+      "monotonic_ns": 472203071170983
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 77,
+      "size": 1,
+      "monotonic_ns": 472203112970277
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 78,
+      "size": 1,
+      "monotonic_ns": 472203162594113
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 79,
+      "size": 1,
+      "monotonic_ns": 472203200176289
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 80,
+      "size": 1,
+      "monotonic_ns": 472203238570466
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 81,
+      "size": 1,
+      "monotonic_ns": 472203289183148
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 82,
+      "size": 1,
+      "monotonic_ns": 472203331970451
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 83,
+      "size": 1,
+      "monotonic_ns": 472203381446009
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 84,
+      "size": 1,
+      "monotonic_ns": 472203424743447
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 85,
+      "size": 1,
+      "monotonic_ns": 472203479665886
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 86,
+      "size": 1,
+      "monotonic_ns": 472203515877620
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 87,
+      "size": 1,
+      "monotonic_ns": 472203555140086
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 88,
+      "size": 1,
+      "monotonic_ns": 472203614097187
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 89,
+      "size": 1,
+      "monotonic_ns": 472203650934761
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 90,
+      "size": 1,
+      "monotonic_ns": 472203690760150
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 91,
+      "size": 1,
+      "monotonic_ns": 472203734370384
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 92,
+      "size": 1,
+      "monotonic_ns": 472203787593604
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 93,
+      "size": 1,
+      "monotonic_ns": 472203822653276
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 94,
+      "size": 1,
+      "monotonic_ns": 472203860768657
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 95,
+      "size": 1,
+      "monotonic_ns": 472203896238365
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 96,
+      "size": 1,
+      "monotonic_ns": 472203933671016
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 97,
+      "size": 1,
+      "monotonic_ns": 472203973349411
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 98,
+      "size": 1,
+      "monotonic_ns": 472204009846362
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 99,
+      "size": 1,
+      "monotonic_ns": 472204049811214
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 100,
+      "size": 1,
+      "monotonic_ns": 472204085197237
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 101,
+      "size": 1,
+      "monotonic_ns": 472204122838551
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 102,
+      "size": 1,
+      "monotonic_ns": 472204149740763
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 103,
+      "size": 1,
+      "monotonic_ns": 472204191654822
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 104,
+      "size": 1,
+      "monotonic_ns": 472204225129277
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 105,
+      "size": 1,
+      "monotonic_ns": 472204261468228
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 106,
+      "size": 1,
+      "monotonic_ns": 472204294358859
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 107,
+      "size": 1,
+      "monotonic_ns": 472204338197347
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 108,
+      "size": 1,
+      "monotonic_ns": 472204374390868
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 109,
+      "size": 1,
+      "monotonic_ns": 472204425162071
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 110,
+      "size": 1,
+      "monotonic_ns": 472204459414503
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 111,
+      "size": 1,
+      "monotonic_ns": 472204503831558
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 112,
+      "size": 1,
+      "monotonic_ns": 472204536818189
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 113,
+      "size": 1,
+      "monotonic_ns": 472204572746008
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 114,
+      "size": 1,
+      "monotonic_ns": 472204606174376
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 115,
+      "size": 1,
+      "monotonic_ns": 472204640956582
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 116,
+      "size": 1,
+      "monotonic_ns": 472204671081213
+    },
+    {
+      "direction": "host-to-rom",
+      "offset": 0,
+      "size": 46,
+      "monotonic_ns": 472204678201763
+    },
+    {
+      "direction": "host-to-rom",
+      "offset": 46,
+      "size": 46,
+      "monotonic_ns": 472384828513054
+    },
+    {
+      "direction": "host-to-rom",
+      "offset": 92,
+      "size": 46,
+      "monotonic_ns": 472564983411300
+    },
+    {
+      "direction": "host-to-rom",
+      "offset": 138,
+      "size": 46,
+      "monotonic_ns": 472745132324965
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 117,
+      "size": 1,
+      "monotonic_ns": 472745241422336
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 118,
+      "size": 6,
+      "monotonic_ns": 472745285957174
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 124,
+      "size": 1,
+      "monotonic_ns": 472745286839394
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 125,
+      "size": 1,
+      "monotonic_ns": 472745293233712
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 126,
+      "size": 1,
+      "monotonic_ns": 472745299930720
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 127,
+      "size": 1,
+      "monotonic_ns": 472745305920751
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 128,
+      "size": 1,
+      "monotonic_ns": 472745314770422
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 129,
+      "size": 1,
+      "monotonic_ns": 472745323151741
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 130,
+      "size": 1,
+      "monotonic_ns": 472745332682663
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 131,
+      "size": 1,
+      "monotonic_ns": 472745338587472
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 132,
+      "size": 1,
+      "monotonic_ns": 472745348088478
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 133,
+      "size": 1,
+      "monotonic_ns": 472745356592717
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 134,
+      "size": 1,
+      "monotonic_ns": 472745371777642
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 135,
+      "size": 1,
+      "monotonic_ns": 472745381313514
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 136,
+      "size": 1,
+      "monotonic_ns": 472745402711829
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 137,
+      "size": 1,
+      "monotonic_ns": 472745405873308
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 138,
+      "size": 1,
+      "monotonic_ns": 472745414785908
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 139,
+      "size": 1,
+      "monotonic_ns": 472745415815817
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 140,
+      "size": 1,
+      "monotonic_ns": 472745427103567
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 141,
+      "size": 1,
+      "monotonic_ns": 472745446428860
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 142,
+      "size": 1,
+      "monotonic_ns": 472745467517939
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 143,
+      "size": 1,
+      "monotonic_ns": 472745486854230
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 144,
+      "size": 1,
+      "monotonic_ns": 472745504352763
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 145,
+      "size": 1,
+      "monotonic_ns": 472745524994008
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 146,
+      "size": 1,
+      "monotonic_ns": 472745548664381
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 147,
+      "size": 1,
+      "monotonic_ns": 472745569983720
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 148,
+      "size": 1,
+      "monotonic_ns": 472745592740530
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 149,
+      "size": 1,
+      "monotonic_ns": 472745610290271
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 150,
+      "size": 1,
+      "monotonic_ns": 472745629907227
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 151,
+      "size": 1,
+      "monotonic_ns": 472745649221285
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 152,
+      "size": 1,
+      "monotonic_ns": 472745696899536
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 153,
+      "size": 1,
+      "monotonic_ns": 472745720268170
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 154,
+      "size": 1,
+      "monotonic_ns": 472745739580845
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 155,
+      "size": 1,
+      "monotonic_ns": 472745761136830
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 156,
+      "size": 1,
+      "monotonic_ns": 472745783661977
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 157,
+      "size": 1,
+      "monotonic_ns": 472745806960134
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 158,
+      "size": 1,
+      "monotonic_ns": 472745832035351
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 159,
+      "size": 1,
+      "monotonic_ns": 472745856265365
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 160,
+      "size": 1,
+      "monotonic_ns": 472745877142725
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 161,
+      "size": 1,
+      "monotonic_ns": 472745905312759
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 162,
+      "size": 1,
+      "monotonic_ns": 472745924086834
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 163,
+      "size": 1,
+      "monotonic_ns": 472745958256917
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 164,
+      "size": 1,
+      "monotonic_ns": 472745977898974
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 165,
+      "size": 1,
+      "monotonic_ns": 472745997779879
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 166,
+      "size": 1,
+      "monotonic_ns": 472746040613090
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 167,
+      "size": 1,
+      "monotonic_ns": 472746058612737
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 168,
+      "size": 1,
+      "monotonic_ns": 472746081868481
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 169,
+      "size": 1,
+      "monotonic_ns": 472746102986125
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 170,
+      "size": 1,
+      "monotonic_ns": 472746123453898
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 171,
+      "size": 1,
+      "monotonic_ns": 472746147105323
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 172,
+      "size": 1,
+      "monotonic_ns": 472746169925107
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 173,
+      "size": 1,
+      "monotonic_ns": 472746193396397
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 174,
+      "size": 1,
+      "monotonic_ns": 472746228181751
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 175,
+      "size": 1,
+      "monotonic_ns": 472746259838890
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 176,
+      "size": 1,
+      "monotonic_ns": 472746282223814
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 177,
+      "size": 1,
+      "monotonic_ns": 472746303170329
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 178,
+      "size": 1,
+      "monotonic_ns": 472746325585841
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 179,
+      "size": 1,
+      "monotonic_ns": 472746348972406
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 180,
+      "size": 1,
+      "monotonic_ns": 472746379887899
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 181,
+      "size": 1,
+      "monotonic_ns": 472746403926250
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 182,
+      "size": 1,
+      "monotonic_ns": 472746430325098
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 183,
+      "size": 1,
+      "monotonic_ns": 472746454560742
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 184,
+      "size": 1,
+      "monotonic_ns": 472746492775202
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 185,
+      "size": 1,
+      "monotonic_ns": 472746516285422
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 186,
+      "size": 1,
+      "monotonic_ns": 472746543493298
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 187,
+      "size": 1,
+      "monotonic_ns": 472746588690710
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 188,
+      "size": 1,
+      "monotonic_ns": 472746610542263
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 189,
+      "size": 1,
+      "monotonic_ns": 472746639310617
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 190,
+      "size": 1,
+      "monotonic_ns": 472746668203882
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 191,
+      "size": 1,
+      "monotonic_ns": 472746690764054
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 192,
+      "size": 1,
+      "monotonic_ns": 472746714440409
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 193,
+      "size": 1,
+      "monotonic_ns": 472746738127337
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 194,
+      "size": 1,
+      "monotonic_ns": 472746760667506
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 195,
+      "size": 1,
+      "monotonic_ns": 472746785770048
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 196,
+      "size": 1,
+      "monotonic_ns": 472746819590828
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 197,
+      "size": 1,
+      "monotonic_ns": 472746841681709
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 198,
+      "size": 1,
+      "monotonic_ns": 472746865993300
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 199,
+      "size": 1,
+      "monotonic_ns": 472746890505080
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 200,
+      "size": 1,
+      "monotonic_ns": 472746917979212
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 201,
+      "size": 1,
+      "monotonic_ns": 472746940375508
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 202,
+      "size": 1,
+      "monotonic_ns": 472746961087809
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 203,
+      "size": 1,
+      "monotonic_ns": 472747011071778
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 204,
+      "size": 1,
+      "monotonic_ns": 472747030473410
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 205,
+      "size": 1,
+      "monotonic_ns": 472747054922796
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 206,
+      "size": 1,
+      "monotonic_ns": 472747078792627
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 207,
+      "size": 1,
+      "monotonic_ns": 472747106844228
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 208,
+      "size": 1,
+      "monotonic_ns": 472747129800357
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 209,
+      "size": 1,
+      "monotonic_ns": 472747154249698
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 210,
+      "size": 1,
+      "monotonic_ns": 472747181241318
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 211,
+      "size": 1,
+      "monotonic_ns": 472747206488510
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 212,
+      "size": 1,
+      "monotonic_ns": 472747212764897
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 213,
+      "size": 1,
+      "monotonic_ns": 472747218080613
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 214,
+      "size": 1,
+      "monotonic_ns": 472747227032871
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 215,
+      "size": 1,
+      "monotonic_ns": 472747243061440
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 216,
+      "size": 2,
+      "monotonic_ns": 472747255896439
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 218,
+      "size": 1,
+      "monotonic_ns": 472747260260292
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 219,
+      "size": 1,
+      "monotonic_ns": 472747264793460
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 220,
+      "size": 1,
+      "monotonic_ns": 472747267301646
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 221,
+      "size": 1,
+      "monotonic_ns": 472747270602906
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 222,
+      "size": 1,
+      "monotonic_ns": 472747283085821
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 223,
+      "size": 1,
+      "monotonic_ns": 472747288216596
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 224,
+      "size": 1,
+      "monotonic_ns": 472747292350095
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 225,
+      "size": 1,
+      "monotonic_ns": 472747303638143
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 226,
+      "size": 1,
+      "monotonic_ns": 472747309276507
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 227,
+      "size": 1,
+      "monotonic_ns": 472747329403080
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 228,
+      "size": 1,
+      "monotonic_ns": 472747331182192
+    },
+    {
+      "direction": "host-to-rom",
+      "offset": 184,
+      "size": 26,
+      "monotonic_ns": 472747334769727
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 229,
+      "size": 1,
+      "monotonic_ns": 472747335222100
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 230,
+      "size": 1,
+      "monotonic_ns": 472747347420578
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 231,
+      "size": 5,
+      "monotonic_ns": 472747396657585
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 236,
+      "size": 1,
+      "monotonic_ns": 472747402134833
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 237,
+      "size": 1,
+      "monotonic_ns": 472747408175939
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 238,
+      "size": 1,
+      "monotonic_ns": 472747419582520
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 239,
+      "size": 1,
+      "monotonic_ns": 472747423573414
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 240,
+      "size": 1,
+      "monotonic_ns": 472747428840102
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 241,
+      "size": 1,
+      "monotonic_ns": 472747443517062
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 242,
+      "size": 1,
+      "monotonic_ns": 472747450023214
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 243,
+      "size": 1,
+      "monotonic_ns": 472747460864068
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 244,
+      "size": 1,
+      "monotonic_ns": 472747470459984
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 245,
+      "size": 1,
+      "monotonic_ns": 472747500900936
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 246,
+      "size": 1,
+      "monotonic_ns": 472747505519007
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 247,
+      "size": 1,
+      "monotonic_ns": 472747514505518
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 248,
+      "size": 1,
+      "monotonic_ns": 472747522100968
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 249,
+      "size": 1,
+      "monotonic_ns": 472747527629825
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 250,
+      "size": 1,
+      "monotonic_ns": 472747535268286
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 251,
+      "size": 1,
+      "monotonic_ns": 472747540296559
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 252,
+      "size": 1,
+      "monotonic_ns": 472747545852779
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 253,
+      "size": 1,
+      "monotonic_ns": 472747551250896
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 254,
+      "size": 1,
+      "monotonic_ns": 472747556097627
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 255,
+      "size": 1,
+      "monotonic_ns": 472747574504021
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 256,
+      "size": 1,
+      "monotonic_ns": 472747580974434
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 257,
+      "size": 1,
+      "monotonic_ns": 472747585807428
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 258,
+      "size": 1,
+      "monotonic_ns": 472747589948153
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 259,
+      "size": 1,
+      "monotonic_ns": 472747593244272
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 260,
+      "size": 1,
+      "monotonic_ns": 472747598820001
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 261,
+      "size": 1,
+      "monotonic_ns": 472747604787376
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 262,
+      "size": 1,
+      "monotonic_ns": 472747609773212
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 263,
+      "size": 1,
+      "monotonic_ns": 472747617791668
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 264,
+      "size": 1,
+      "monotonic_ns": 472747623672036
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 265,
+      "size": 2,
+      "monotonic_ns": 472747627471829
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 267,
+      "size": 1,
+      "monotonic_ns": 472747630442530
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 268,
+      "size": 1,
+      "monotonic_ns": 472747637871780
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 269,
+      "size": 1,
+      "monotonic_ns": 472747641499376
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 270,
+      "size": 1,
+      "monotonic_ns": 472747642617786
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 271,
+      "size": 1,
+      "monotonic_ns": 472747647039327
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 272,
+      "size": 1,
+      "monotonic_ns": 472747648285536
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 273,
+      "size": 1,
+      "monotonic_ns": 472747651969572
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 274,
+      "size": 1,
+      "monotonic_ns": 472747660394470
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 275,
+      "size": 1,
+      "monotonic_ns": 472747664830404
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 276,
+      "size": 1,
+      "monotonic_ns": 472747673229857
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 277,
+      "size": 1,
+      "monotonic_ns": 472747678573607
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 278,
+      "size": 1,
+      "monotonic_ns": 472747684361790
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 279,
+      "size": 1,
+      "monotonic_ns": 472747686282993
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 280,
+      "size": 1,
+      "monotonic_ns": 472747696184256
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 281,
+      "size": 1,
+      "monotonic_ns": 472747697337527
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 282,
+      "size": 1,
+      "monotonic_ns": 472747702064733
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 283,
+      "size": 1,
+      "monotonic_ns": 472747707310047
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 284,
+      "size": 1,
+      "monotonic_ns": 472747713854943
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 285,
+      "size": 1,
+      "monotonic_ns": 472747715929467
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 286,
+      "size": 1,
+      "monotonic_ns": 472747718659189
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 287,
+      "size": 1,
+      "monotonic_ns": 472747735643036
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 288,
+      "size": 1,
+      "monotonic_ns": 472747746226461
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 289,
+      "size": 1,
+      "monotonic_ns": 472747748918032
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 290,
+      "size": 1,
+      "monotonic_ns": 472747754065925
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 291,
+      "size": 1,
+      "monotonic_ns": 472747755464718
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 292,
+      "size": 1,
+      "monotonic_ns": 472747763409106
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 293,
+      "size": 1,
+      "monotonic_ns": 472747768102737
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 294,
+      "size": 1,
+      "monotonic_ns": 472747781957310
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 295,
+      "size": 1,
+      "monotonic_ns": 472747787401810
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 296,
+      "size": 1,
+      "monotonic_ns": 472747790563527
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 297,
+      "size": 1,
+      "monotonic_ns": 472747803073567
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 298,
+      "size": 1,
+      "monotonic_ns": 472747806968623
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 299,
+      "size": 1,
+      "monotonic_ns": 472747809302631
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 300,
+      "size": 1,
+      "monotonic_ns": 472747812558545
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 301,
+      "size": 1,
+      "monotonic_ns": 472747815103785
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 302,
+      "size": 1,
+      "monotonic_ns": 472747822583633
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 303,
+      "size": 1,
+      "monotonic_ns": 472747831763167
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 304,
+      "size": 1,
+      "monotonic_ns": 472747834610717
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 305,
+      "size": 1,
+      "monotonic_ns": 472747838904342
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 306,
+      "size": 1,
+      "monotonic_ns": 472747845750566
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 307,
+      "size": 1,
+      "monotonic_ns": 472747847929041
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 308,
+      "size": 1,
+      "monotonic_ns": 472747853416172
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 309,
+      "size": 1,
+      "monotonic_ns": 472747862307561
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 310,
+      "size": 1,
+      "monotonic_ns": 472747882136581
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 311,
+      "size": 1,
+      "monotonic_ns": 472747885416380
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 312,
+      "size": 1,
+      "monotonic_ns": 472747890820042
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 313,
+      "size": 1,
+      "monotonic_ns": 472747895470782
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 314,
+      "size": 1,
+      "monotonic_ns": 472747902220702
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 315,
+      "size": 1,
+      "monotonic_ns": 472747907285300
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 316,
+      "size": 1,
+      "monotonic_ns": 472747910967276
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 317,
+      "size": 1,
+      "monotonic_ns": 472747922224793
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 318,
+      "size": 1,
+      "monotonic_ns": 472747927484069
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 319,
+      "size": 1,
+      "monotonic_ns": 472747933185618
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 320,
+      "size": 1,
+      "monotonic_ns": 472747939367544
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 321,
+      "size": 1,
+      "monotonic_ns": 472747944624892
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 322,
+      "size": 1,
+      "monotonic_ns": 472747952921113
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 323,
+      "size": 1,
+      "monotonic_ns": 472747962683236
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 324,
+      "size": 1,
+      "monotonic_ns": 472747964516192
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 325,
+      "size": 1,
+      "monotonic_ns": 472747967679133
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 326,
+      "size": 1,
+      "monotonic_ns": 472747977149285
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 327,
+      "size": 1,
+      "monotonic_ns": 472747982258455
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 328,
+      "size": 1,
+      "monotonic_ns": 472747985989947
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 329,
+      "size": 1,
+      "monotonic_ns": 472747995989423
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 330,
+      "size": 1,
+      "monotonic_ns": 472747999084515
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 331,
+      "size": 1,
+      "monotonic_ns": 472748001586693
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 332,
+      "size": 1,
+      "monotonic_ns": 472748005682274
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 333,
+      "size": 1,
+      "monotonic_ns": 472748009812497
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 334,
+      "size": 1,
+      "monotonic_ns": 472748018167091
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 335,
+      "size": 1,
+      "monotonic_ns": 472748041068961
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 336,
+      "size": 1,
+      "monotonic_ns": 472748045357538
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 337,
+      "size": 1,
+      "monotonic_ns": 472748049029930
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 338,
+      "size": 1,
+      "monotonic_ns": 472748053961724
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 339,
+      "size": 1,
+      "monotonic_ns": 472748061989657
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 340,
+      "size": 1,
+      "monotonic_ns": 472748066147168
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 341,
+      "size": 1,
+      "monotonic_ns": 472748070485146
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 342,
+      "size": 1,
+      "monotonic_ns": 472748080493777
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 343,
+      "size": 1,
+      "monotonic_ns": 472748085502241
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 344,
+      "size": 1,
+      "monotonic_ns": 472748090365831
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 345,
+      "size": 1,
+      "monotonic_ns": 472748097257087
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 346,
+      "size": 1,
+      "monotonic_ns": 472748100808312
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 347,
+      "size": 1,
+      "monotonic_ns": 472748105368383
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 348,
+      "size": 1,
+      "monotonic_ns": 472748111907164
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 349,
+      "size": 1,
+      "monotonic_ns": 472748118858464
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 350,
+      "size": 1,
+      "monotonic_ns": 472748124520713
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 351,
+      "size": 1,
+      "monotonic_ns": 472748130281268
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 352,
+      "size": 1,
+      "monotonic_ns": 472748134608649
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 353,
+      "size": 1,
+      "monotonic_ns": 472748140886061
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 354,
+      "size": 1,
+      "monotonic_ns": 472748148404066
+    },
+    {
+      "direction": "host-to-rom",
+      "offset": 210,
+      "size": 6406,
+      "monotonic_ns": 472748166128056
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 355,
+      "size": 1,
+      "monotonic_ns": 472776917381245
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 356,
+      "size": 9,
+      "monotonic_ns": 472776967769001
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 365,
+      "size": 1,
+      "monotonic_ns": 472776969853713
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 366,
+      "size": 1,
+      "monotonic_ns": 472776983932362
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 367,
+      "size": 2,
+      "monotonic_ns": 472776998848660
+    },
+    {
+      "direction": "host-to-rom",
+      "offset": 6616,
+      "size": 1726,
+      "monotonic_ns": 472777005607764
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 369,
+      "size": 1,
+      "monotonic_ns": 472784407513661
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 370,
+      "size": 7,
+      "monotonic_ns": 472784449328433
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 377,
+      "size": 1,
+      "monotonic_ns": 472784455047749
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 378,
+      "size": 1,
+      "monotonic_ns": 472784459296942
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 379,
+      "size": 1,
+      "monotonic_ns": 472784463422486
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 380,
+      "size": 1,
+      "monotonic_ns": 472784470172216
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 381,
+      "size": 1,
+      "monotonic_ns": 472784476281108
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 382,
+      "size": 1,
+      "monotonic_ns": 472784487907420
+    },
+    {
+      "direction": "host-to-rom",
+      "offset": 8342,
+      "size": 18,
+      "monotonic_ns": 472784489659475
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 383,
+      "size": 1,
+      "monotonic_ns": 472784594221597
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 384,
+      "size": 6,
+      "monotonic_ns": 472784642409194
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 390,
+      "size": 1,
+      "monotonic_ns": 472784643433697
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 391,
+      "size": 1,
+      "monotonic_ns": 472784644980964
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 392,
+      "size": 1,
+      "monotonic_ns": 472784647673211
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 393,
+      "size": 1,
+      "monotonic_ns": 472784655568147
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 394,
+      "size": 1,
+      "monotonic_ns": 472784657295900
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 395,
+      "size": 1,
+      "monotonic_ns": 472784661087086
+    },
+    {
+      "direction": "rom-to-host",
+      "offset": 396,
+      "size": 1,
+      "monotonic_ns": 472784664999138
+    }
+  ],
+  "proof": {
+    "request_count": 8,
+    "response_count": 20,
+    "data_blocks": 2,
+    "sync_requests": 4,
+    "sync_reply_groups": 2,
+    "payload_bytes": 7832,
+    "responses": [
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 8,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 5,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 7,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 7,
+        "value": 538052359,
+        "status_hex": "00000000"
+      },
+      {
+        "opcode": 6,
+        "value": 538052359,
+        "status_hex": "00000000"
+      }
+    ],
+    "qualification": "Real ROM checksum/status ACK traversal; no execution, flash write or RAM readback claim"
+  },
+  "relay_error": null,
+  "host_elapsed_seconds": 586.0210310879629,
+  "evidence_sha256": {
+    "stderr.log": "b96e9d36bdbfbb239f074dc0bc988c6046479b2685b829c185e23e12d2c6690c",
+    "stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "command.json": "217302b471fcc31724edf6e4e16c7cc0177a7f710118c2b45d70f86a04730f32",
+    "rom-to-host.bin": "58ff7a704a57b6d92e78046dcda4bf6166f9809a9933b8f5724e09c5a1f11bb8",
+    "flash-working.bin": "19661fda414c13c77571fe03ea4749defce9dc0923021d17e753d88b5ac96e36",
+    "host-to-rom.bin": "792bc71958b36210dcf5d5fd4a07973bdd0f9dd40d0a3db7bb0b6c18fea5b55e"
+  }
+}

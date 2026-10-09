@@ -476,10 +476,10 @@ def main():
     for name in ("qemu", "frozen", "evidence"):
         running.add_argument(f"--{name}", required=True, type=pathlib.Path)
     running.add_argument("--watchdog-seconds", type=float, default=900,
-                         help="Host diagnostic deadline; electrical bit-by-bit qualification is much slower than guest time")
+                         help="Host diagnostic deadline (1..3600s, default900); guest timing/assertions are unchanged")
     args = parser.parse_args()
-    if args.action == "run" and not 1 <= args.watchdog_seconds <= 900:
-        parser.error("--watchdog-seconds must be within 1..900")
+    if args.action == "run" and not 1 <= args.watchdog_seconds <= 3600:
+        parser.error("--watchdog-seconds must be within 1..3600")
     return freeze(args) if args.action == "freeze" else run(args)
 
 

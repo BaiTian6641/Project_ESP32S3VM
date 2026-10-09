@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "source_sha256": "56023cda1b90b65eec45269b83ae00f7b3c1d7e7accd8e1ee38352132183687d",
+  "identity": {
+    "mode": "wrong",
+    "sdk_profile": "idf-6.1",
+    "sdk_commit": "fff9895c82d744c7237be8847347bdd1b07c6643",
+    "fixture_files": {
+      "CMakeLists.txt": "4762b8220adf1dac1a71f9f8fc251d61ae477892d1c92cc5d57e62377b72fbd5",
+      "sdkconfig.absent.defaults": "7bdb769f2233519b25c30f7ad1c71e490c80f8629d41037b3b78144303252aa5",
+      "sdkconfig.defaults": "697aa5561b50662ecf6617d600a96fa572dca92c1e8c401a89c575387394b961",
+      "sdkconfig.disconnected.defaults": "debca11d7871d0e1081eed234b6812acd0256ab33c5950ed7c7f8ec1f901bab1",
+      "sdkconfig.uhci.defaults": "ecbdae22783bbb16dd6a04928a1aa99a28cbfb18abf93d05b5d55056322bd873",
+      "sdkconfig.wrong.defaults": "33e1645899098d991aedc205d54ce0b58e8c3b64340e7c126c69d92ead56d5e0",
+      "main/CMakeLists.txt": "bf6064c231b74b8af7e0d30ebbd534b18b931a3bed9dbf42658b6cf7c030da96",
+      "main/Kconfig.projbuild": "fe40222d2b98daba9bfcde48f2c945b9c8cd25726268208b70060ffd0cedc800",
+      "main/uart_native.c": "9c42555df4b76224c2fe905b3bb30fc5a7d5cb5f38f9593f368b268d9dffa763",
+      "main/uart_uhci_native.c": "383a3d0121920a9af48b42d10535c0b7fba3be8c0b88cfbf66a1c7196e8e6bb4"
+    },
+    "arduino_commit": null,
+    "arduino_files": {},
+    "sdk_manifest_sha256": "69b5d7061d59b3bc59b8bc85bcebca51ef1728566c045c1539310e6d5e49a866"
+  },
+  "sdk_manifest_sha256": "69b5d7061d59b3bc59b8bc85bcebca51ef1728566c045c1539310e6d5e49a866",
+  "sdk_manifest": "/home/polar/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/sdk-manifest.json",
+  "fixture_original": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/uart_native",
+  "fixture_snapshot": "/home/polar/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/builds/uart_native/wrong-56023cda1b90b65eec45269b83ae00f7b3c1d7e7accd8e1ee38352132183687d/source",
+  "arduino_original": null,
+  "arduino_snapshot": null,
+  "files": {
+    "source/CMakeLists.txt": "4762b8220adf1dac1a71f9f8fc251d61ae477892d1c92cc5d57e62377b72fbd5",
+    "source/sdkconfig.absent.defaults": "7bdb769f2233519b25c30f7ad1c71e490c80f8629d41037b3b78144303252aa5",
+    "source/sdkconfig.defaults": "697aa5561b50662ecf6617d600a96fa572dca92c1e8c401a89c575387394b961",
+    "source/sdkconfig.disconnected.defaults": "debca11d7871d0e1081eed234b6812acd0256ab33c5950ed7c7f8ec1f901bab1",
+    "source/sdkconfig.uhci.defaults": "ecbdae22783bbb16dd6a04928a1aa99a28cbfb18abf93d05b5d55056322bd873",
+    "source/sdkconfig.wrong.defaults": "33e1645899098d991aedc205d54ce0b58e8c3b64340e7c126c69d92ead56d5e0",
+    "source/main/CMakeLists.txt": "bf6064c231b74b8af7e0d30ebbd534b18b931a3bed9dbf42658b6cf7c030da96",
+    "source/main/Kconfig.projbuild": "fe40222d2b98daba9bfcde48f2c945b9c8cd25726268208b70060ffd0cedc800",
+    "source/main/uart_native.c": "9c42555df4b76224c2fe905b3bb30fc5a7d5cb5f38f9593f368b268d9dffa763",
+    "source/main/uart_uhci_native.c": "383a3d0121920a9af48b42d10535c0b7fba3be8c0b88cfbf66a1c7196e8e6bb4"
+  },
+  "qualification": "Source identity only; no compile/runtime success implied"
+}
