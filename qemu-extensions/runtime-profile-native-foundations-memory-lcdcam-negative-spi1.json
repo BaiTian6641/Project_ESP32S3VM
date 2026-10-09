@@ -235,6 +235,42 @@
     {
       "source": "prototypes/spi/copies/esp32s3_spi_binding.h",
       "destination": "include/hw/ssi/esp32s3_spi_binding.h"
+    },
+    {
+      "source": "prototypes/rmt/copies/esp32s3_rmt.c",
+      "destination": "hw/timer/esp32s3_rmt.c"
+    },
+    {
+      "source": "prototypes/rmt/copies/esp32s3_rmt.h",
+      "destination": "include/hw/timer/esp32s3_rmt.h"
+    },
+    {
+      "source": "prototypes/rmt/copies/esp32s3-rmt-test.c",
+      "destination": "tests/qtest/esp32s3-rmt-test.c"
+    },
+    {
+      "source": "prototypes/rmt/copies/esp32s3_rmt_ws2812.c",
+      "destination": "hw/timer/esp32s3_rmt_ws2812.c"
+    },
+    {
+      "source": "prototypes/rmt/copies/esp32s3_rmt_ws2812.h",
+      "destination": "include/hw/timer/esp32s3_rmt_ws2812.h"
+    },
+    {
+      "source": "prototypes/rmt/copies/esp32s3_rmt_nec.c",
+      "destination": "hw/timer/esp32s3_rmt_nec.c"
+    },
+    {
+      "source": "prototypes/rmt/copies/esp32s3_rmt_nec.h",
+      "destination": "include/hw/timer/esp32s3_rmt_nec.h"
+    },
+    {
+      "source": "prototypes/rmt/copies/esp32s3_rmt_peers.h",
+      "destination": "include/hw/timer/esp32s3_rmt_peers.h"
+    },
+    {
+      "source": "prototypes/rmt/copies/esp32s3_rmt_peers.c",
+      "destination": "hw/timer/esp32s3_rmt_peers.c"
     }
   ],
   "patches": [
@@ -669,6 +705,15 @@
       "source": "prototypes/gdma/0007-hw-dma-peripheral-direction-reset-isolation.patch",
       "targets": [
         "hw/dma/esp_gdma.c"
+      ]
+    },
+    {
+      "source": "prototypes/rmt/0001-current-foundation-integration.patch",
+      "targets": [
+        "hw/xtensa/esp32s3.c",
+        "hw/timer/meson.build",
+        "hw/timer/trace-events",
+        "tests/qtest/meson.build"
       ]
     }
   ],

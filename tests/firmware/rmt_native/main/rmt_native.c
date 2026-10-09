@@ -384,11 +384,14 @@ static void disable_case(lane_t *lane)
     rmt_symbol_word_t cycle = {.level0 = 1, .duration0 = 200, .level1 = 0, .duration1 = 200};
     rmt_transmit_config_t cfg = {.loop_count = -1};
     int64_t start = esp_timer_get_time();
-    status(phase, "transmit_loop", rmt_transmit(lane->tx, encoder, &cycle, sizeof(cycle), &cfg));
+    /* UART reporting must not extend the active loop or the stop timestamp. */
+    esp_err_t transmitted = rmt_transmit(lane->tx, encoder, &cycle, sizeof(cycle), &cfg);
     esp_err_t waiting = rmt_tx_wait_all_done(lane->tx, 3);
-    check(phase, "loop_wait_timeout", waiting == ESP_ERR_TIMEOUT);
-    status(phase, "disable_working_tx", rmt_disable(lane->tx));
+    esp_err_t disabled = rmt_disable(lane->tx);
     int64_t stopped = esp_timer_get_time();
+    status(phase, "transmit_loop", transmitted);
+    check(phase, "loop_wait_timeout", waiting == ESP_ERR_TIMEOUT);
+    status(phase, "disable_working_tx", disabled);
     wait_receive(lane);
     dump(lane, phase, start);
     check(phase, "no_fabricated_tx_done", lane->tx_events == 0);

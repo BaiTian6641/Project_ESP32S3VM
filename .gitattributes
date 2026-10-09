@@ -8,3 +8,5 @@ CMakeLists.txt text eol=lf
 # These source snapshots are SHA-bound before the native SDK copies them.
 tests/firmware/spi_native/** text eol=lf
 qemu-extensions/prototypes/spi/foundation-dependencies.json text eol=lf
+tests/firmware/rmt_native/** text eol=lf
+qemu-extensions/prototypes/rmt/foundation-dependencies.json text eol=lf

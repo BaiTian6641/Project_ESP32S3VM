@@ -5,6 +5,40 @@ parallel implementation in this session. Preserve the reviewed full scope; do no
 reduce completion to the foundation slices below. Historical heartbeat metadata
 is retained in the frozen packet; it is not an inventory of this session's jobs.
 
+## 2026-10-09 — current-foundation RMT TX/RX and real peers;205 native plus both ordinary profiles PASS
+
+Current RMT candidate: `qemu-uart-40edccac4156-984f71fe6aadd031`,
+executable SHA256
+`03bb3bbcc2eb2b69ac4d2f376d7ab85f321b9a712c7da745c6f7ff703f9d00b6`.
+All **147 applied source hashes** match the immutable receipt.
+
+* **205 native cases PASS, zero skipped**: RMT23 plus the complete182-case
+  SPI/NOR/UART/UHCI/GDMA/memory/I2C foundation suite.
+* **Both complete ordinary pinned-IDF RMT profiles PASS** on the same backend:
+  connected and disconnected. Actual phase clocks/pulses, exact closed RX
+  symbols, filters, stop/recovery, carrier, synchronization, long PIO/GDMA,
+  real powered WS2812 DIN decode and external NEC OD source/capture are asserted.
+* New canonical integration uses existing clock/gate/reset/IRQ/GDMA/NativeNet
+  owners once. It adds RMT to global peripheral cold reset and removes the last
+  unimplemented-device mapping/helper/import. SPI0/1 memory paths remain intact.
+* Ordinary stop timing initially failed because UART status reporting extended
+  the active400us loop to about26ms and delayed the stop timestamp. The fixture
+  now captures API results/timestamp before reporting, without relaxing either
+  exact-prefix or stop-causes-idle assertions. Before/after evidence is retained.
+* Phase-ready/DONE barriers require complete real UART lines. The bounded host
+  watchdog permits3600s; the earlier600s expiration remains FAIL, not simulated
+  guest timeout or a passing fallback. SDK source/build provenance is frozen on
+  native Linux and the new exact source closure is tracked in RMT
+  `foundation-dependencies.json`.
+
+Exact evidence: `build-runtime-state/uart-continuation/rmt-stage/qualification-receipt.json`.
+This is functional modeled timing, **not physical pulse metrology**. RX carrier
+demodulation's exact envelope algorithm, broader RC_FAST/source/memory/fast-edge/
+replay and independent silicon gates remain unqualified. The previous SPI stage
+was pushed as **`522a589`** after182 native and25 ordinary outcomes passed;
+those older ordinary results are not silently attributed to this executable.
+The full simulator goal remains **active and incomplete**. No hardware operation.
+
 ## 2026-10-09 — source-bound SPI2/3 master PIO/GDMA/NOR;182 native and25 outcomes PASS
 
 Current candidate: `qemu-uart-40edccac4156-eb6707129054f40a`, executable SHA256

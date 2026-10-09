@@ -1,0 +1,915 @@
+{
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "inputs": {
+    "prototypes/hostbus/integration.patch": "accab4e5ad30e2c5aaca432d3ca813b20537be515c69787a0fb135c2ba26b960",
+    "prototypes/hostbus/gdb-execution-preflight.patch": "e810a5008208b3e0c65be137d3021d149925969f17af041226823666ade3c2d6",
+    "prototypes/hostbus/state-restore-guard.patch": "9c0b5d11534842ccedc48f980be8e795e28dd722348fedfcce89c7dd1864e0de",
+    "prototypes/hostbus/qom-options.patch": "3215c5f649a4bb05f2ba55cd72bbaff69108bd7d9f4d0908f428f3edb571b560",
+    "prototypes/hostbus/creation-order.patch": "6c2d9a28e807f585969ab1dd8336d1e52e05bd98fffb0b2ea917ddab1f346f44",
+    "prototypes/simd-pie/qemu-simd-pie-01-vadds-vsubs-negative-rails.patch": "538842e3ac70fef7d2501dc55c55be852f9cb47605fc956e49b5d73f091e498c",
+    "prototypes/simd-pie/qemu-simd-pie-02-vmulas-u8-qacc-saturate.patch": "99c0d36f6834e44a9d856c69103df72acc0b21dbbd8ef4e5c766e78aee591ef8",
+    "prototypes/simd-pie/qemu-simd-pie-03-vmulas-s8-qacc-negative-rail.patch": "221887f81ad35ac5ad1885350bb09f844eb3214d6f0cfbff129676ce363d7410",
+    "prototypes/coreclk/0001-hw-xtensa-esp32s3_clk-ESP32-S3-clock-tree-with-qdev-.patch": "fbccf46795600ae45fadb2335270a4544c5581cd4c31a1c31077087eb900764b",
+    "prototypes/coreclk/0002-hw-misc-esp32s3_rtc_cntl-S3-RTC-clock-tables-and-XTA.patch": "0a641346c6a8b427cfd378b68af349c07dadbbee4ad634a4b883d9e719191c0d",
+    "prototypes/coreclk/0003-hw-timer-live-clock-inputs-for-TIMG-and-SYSTIMER.patch": "92ac013ecd26681175442242fa232e7215446d4da2b456357b69d95432e2be0c",
+    "prototypes/coreclk/0004-hw-gate-digital-peripheral-holds-by-the-ESP32-S3-res.patch": "3ad98d8e3c067d2b0eda5e7cc13f6b38b2fda190f73b5357274c2954a487817c",
+    "prototypes/coreclk/0005-hw-xtensa-esp32s3-propagate-the-clock-tree-and-reset.patch": "41529387f563628bf165ee97cf6c53953b57068b0d74128f3c2fe51e78136379",
+    "prototypes/coreclk/0006-tests-qtest-ESP32-S3-clock-tree-and-reset-domain-tes.patch": "308f21f478ef40d35c4613e106fbcfdcdf1bee49f9f6b2ee265f7f472e49363e",
+    "prototypes/gdma/0001-hw-dma-esp_gdma-bounded-descriptor-walking-persisten.patch": "fc49f48a2a5c8c19656e077e87fe3645e86f50f39ec3474860db2a2d6d9ea288",
+    "prototypes/gdma/0002-hw-dma-esp32s3_gdma-validate-GDMA_PERI_SEL-periphera.patch": "fd8be52c532c968ea21f85d10dabc905686b2239486e02bde80cadee5d5fd5d7",
+    "prototypes/gdma/0003-tests-qtest-add-esp32s3-gdma-test-suite.patch": "d724b60f41b1bfc5582666712987a8a6f0fbb111f644f1773abf50d87fc8e91d",
+    "prototypes/intc/0001-hw-xtensa-esp32s3_intc-model-source-OR-remap-disable.patch": "91643098fe7e7ac70e895e48ee5b81c9b2e5ec9d7a228fd171dc2cd20cd7551e",
+    "prototypes/intc/0002-tests-qtest-esp32s3-intmatrix-test-drive-matrix-OR-r.patch": "4c38b024b1e99bd82a920ef7cd3838a867183512599fa5ca41a110e210b4f93e",
+    "prototypes/intc/0003-tests-qtest-wire-intmatrix-test-and-align-coreclk-re.patch": "310ffec7791d9d4ee725373a8f4d72c5280ce299bb5a7d52b4287e98531d2c30",
+    "prototypes/radio-bringup/0001-hw-xtensa-esp32s3_clk-store-SYSTEM_BT_LPCK-divider-r.patch": "0a1d32af3218d6c97d669413160650cab09d29cc806dc17d93b600547a94aad6",
+    "prototypes/radio-bringup/0002-hw-xtensa-esp32s3-map-undocumented-BT-modem-EM-RAM-w.patch": "ea36fdc3feb47a43433a399380c35e08e0cee3deadc42f718bc5a64bed9560a7",
+    "prototypes/radio-bringup/0003-hw-misc-esp32s3_regi2c-model-REGI2C-analog-I2C-maste.patch": "845217d8483f5dc9e5b455c30cfbd1c94e203b593af292b889e50f126c12904a",
+    "prototypes/radio-bringup/0004-hw-misc-esp32s3_regi2c-model-BBPLL_CAL_DONE-0x40-BIT.patch": "b7224516d494b8d941c0874a709c5226c43c96ef99fb702dda83c180dda1f6b1",
+    "prototypes/coreclk/0008-hw-timer-esp_timg-hardware-divider-field-encoding-and-exact.patch": "efb0abff632616d3944e86cdcc86a8cfa5b555f61edd6425a649c6cd69632869",
+    "prototypes/coreclk/0009-hw-timer-esp_timg-exact-rational-tick-conversion.patch": "07a207555a82e7f8ac8e0ced5c7a9ec9c19e451fc1fe599889d52e5f83fd9031",
+    "prototypes/coreclk/0010-hw-xtensa-esp32s3_clk-common-clock-ports-for-SPI2-3.patch": "e8b1487b941f7f80c3920da9d56723bcb39b34fa0dedb2dd98c4b80deb88bf4d",
+    "prototypes/coreclk/0011-hw-xtensa-esp32s3_clk-UHCI0-clock-gate-and-reset-lines.patch": "c1ebe584a6dbe178743da9874bbcb25880afac10242c16f8f1bb043362b47606",
+    "prototypes/coreclk/0012-hw-xtensa-esp32s3_clk-publish-the-0010-0011-gate-levels.patch": "6b1e8f79f0e4194213c67d309c5a88930bcb13b396fb118232945e3697434f66",
+    "prototypes/coreclk/0013-hw-xtensa-esp32s3-BBPLL-power-validity-decoupled-from.patch": "2203d4cca82a1ff4a62400517ff2fe1ff6d98e0e53417f16a5f5c7a65c5a8081",
+    "prototypes/coreclk/0014-hw-xtensa-esp32s3_clk-LEDC-PCNT-MCPWM-LCD_CAM-clock-ports.patch": "0e7a5c62e8a62e2425073ea5474bfea1068b970da2b007b6c84f10be295c67f3",
+    "prototypes/coreclk/0015-hw-xtensa-esp32s3-CPU1-reset-gate-runstall-lifecycle.patch": "e66fb5ae5d994994ce6c49ce3e0f2fad68647a08ee33fb5f88007aa686758932",
+    "prototypes/coreclk/0016-system-capture-reset-entry-cause-gate-S3-reset.patch": "f1a3c4986080edb56fe679b451427157015761ca1f68b5142eaea9f878521898",
+    "prototypes/gpio/integration-native-foundations.patch": "e1a45cdb2e8e388fea1e0775a29b7639f236ff226e39dd3ad08f0df9a2a030bf",
+    "prototypes/radio-bringup/0005-regi2c-config-accessor-and-slave-range.patch": "d1d4966b5185ffcec53a15db5a19375e6ca0b9b34a6c9edd4c142075bf444719",
+    "prototypes/gpio/pad-input-semantics-correction.patch": "120997cde9691d0630e018b08351bbbfd385b7693af4ba41c75aaf633577bb03",
+    "prototypes/gpio/pad-input-semantics-correction-tests.patch": "ee5becc31f2320ede68991f4818b222ba052e9be67714a2586aada8d0fbac1de",
+    "prototypes/gpio/gpio-c6fc-whole-feature.patch": "722b9e315b3e3e5959ac6a62591976721641daf4dcb570f38c5d14dfa74b558c",
+    "prototypes/gpio/gpio-hold-od-inversion-solver-correction.patch": "68fa8f43e1d1db1b16464f80908359e5284c2cd7389dab55a1f514fbce0ff3d4",
+    "prototypes/adc/integration-native-foundations-adc.patch": "21dbb41996ec5450aa2bcd43d1cf9801f15d3103ac1f3ffc915df5e0bb09eefd",
+    "prototypes/electrical-runtime/0001-native-v3-electrical-boundary.patch": "7acb418f96e3410f12f3e20f8a4d84bc7de028769043aef849c09e4f81c6b504",
+    "prototypes/memory/machine-integration-native-foundations.patch": "61dadd71dec85627930650c3ab83d851ab03c5764e29811740055a61cf0ba0ef",
+    "prototypes/memory/spi1-transport.patch": "f8849d7d5db8cd140bb0c80384d23105358e5af2cab0d375a76288070171c725",
+    "prototypes/memory/spi0-cache-phases.patch": "8238b21fb729c0eb43a85fe6b6ca9521679517516525f0d81ef47f7273ea0e2b",
+    "prototypes/memory/qtest-integration.patch": "3cf7dc0f4ad90fb7778c88549e077a3e7211c14b28f60fd98cd1208e5f7fac55",
+    "prototypes/spi/0001-gdma-peripheral-rx-packet-end.patch": "d0a472c53f444304e29dbd4c979d60840e73a42bfbc935277041deec6b8ad422",
+    "prototypes/gdma/0004-hw-dma-esp_gdma-served-RX-bytes-survive-post-store-a.patch": "77b875566f9b1d6a4a605c8995a8bed5cdeae604c93b427932a74df39e852295",
+    "prototypes/uart/0001-gdma-uhci-demand-and-packet-status.patch": "2626ab0cad1955d02bc20cb9a190bc782a388eea0fac452b3524f15b4ab7b9fa",
+    "prototypes/i2c/integration-after-electrical.patch": "73edec28016fbf89ebc9c309986e684c9b7c694f8b96a62eb898d8f4d834a810",
+    "prototypes/lcd-cam/0001-native-lcd-cam-machine-integration.patch": "037dfb0f0eb0b4bc6de1df31810b9c031b6b2722c461a885955b8f2e83ce8b00",
+    "prototypes/lcd-cam/0002-native-lcd-cam-qtest-integration.patch": "7bf822ca8358b09e941d1f4e5698272caa5ef92c5700fda89deb728567c5ba78",
+    "prototypes/timebase/0002-util-qemu-timer-remove-rearm-icount-warp.patch": "5808446f9655b36baf6511c54b71a7fd97ed51f3b841bf5ca35eeaae3003f538",
+    "prototypes/memory/copies/esp32s3-memory-test.c": "856d8fcafd9006138ac62a50ffbca76e07a220d6b6a72dc06aa26330aa475831",
+    "electrical/net-dc.h": "578bc7c05ae6ee53b9819624674fbc31cd5d40ab0ddf223fdcf2eb9de8d738eb",
+    "prototypes/gpio/copies/esp32s3_iomux.c": "489d8133a79300130f3a72203513be73aac272257c29146612291e1b150a0d1f",
+    "prototypes/electrical-runtime/copies/esp32s3_electrical_observers.c": "7f767943ca32aff419904979089cd718ee56ccb2919e832dad55c0ef3600d0b5",
+    "prototypes/adc/copies/esp32s3_apb_saradc.c": "be0c55b24b4ff213ed6941e42def288be9d7e17b3ccb9383cdaa484e6ae24248",
+    "prototypes/hostbus/hostbus-probe.c": "66f4e07f1f394835621e89ee4cbef635ea657613f602621800fe1812e79e65ef",
+    "prototypes/memory/copies/esp32s3_cache.h": "08699546d0c1b743efd0afb51df51447144a167b371b1fdb76ed5b4274d81c60",
+    "prototypes/hostbus/hostbus-json.h": "ff95c97763d6ce69b342aa17573652288487cc63561d186806e0f305df88420d",
+    "prototypes/lcd-cam/copies/esp32s3_lcd_cam.h": "9acedfef5eefc39c63fab1209b6d0819b61a53a3e09617513894fc57eb8732c0",
+    "prototypes/electrical-runtime/copies/esp32s3-electrical-test.c": "7b8ccfeb18d746989473497420a1bb2d96aead7e643e5b374f7a6a2cb3e7591a",
+    "prototypes/lcd-cam/copies/esp32s3_lcd_panel_service.c": "07102532158379dbc971beee4427be3357d97dbb1190a7b087e0c889bf7818f9",
+    "electrical/net-rc.c": "f5cd58f53086ea875d5f59da9b52523012b75774f151fe556708a17d421cb09b",
+    "prototypes/adc/copies/esp32s3_sens.c": "b1ebbf3f30959e4cf8b9a6e4632499ceed82335975efa965eeeaea144c84e6b3",
+    "prototypes/electrical-runtime/copies/esp32s3_project.h": "e2bb939783a9d86050089b6622a35f43376cc94e2e9097915ba46cb76fac4b88",
+    "prototypes/adc/copies/esp32s3_apb_saradc.h": "28d3fd635d21a0943a0d0f117f0a89842ff72bb3ddf9dd26fd1758ce0bb82713",
+    "prototypes/adc/copies/esp32s3_sens.h": "e32e19e2c3aa854f39ff05e272aceae98d47ea14aec26f08f8fd52ca97e70c10",
+    "electrical/net-dc.c": "63ee6c60cea2e77a7c33b31a8af4db8a4ecc2b76079453322cf335e5c49e1e69",
+    "prototypes/memory/copies/esp32s3_cache.c": "a9877647062234d66c576499691cd2df959d142e0e741635853ddd7b7838057c",
+    "prototypes/lcd-cam/copies/esp32s3_lcd_panel_service.h": "d3f6ed5ba3f4d89857c0dc5a28ccdfe30b009c3b5041a7588960847ac9fbfd75",
+    "prototypes/lcd-cam/copies/esp32s3-lcd-cam-test.c": "0fa0a8bbf4864b62cd46ad55123da9f3ab75d7d8ce4e8169f75fe125ec24f7f2",
+    "prototypes/gpio/copies/esp32s3_iomux.h": "20ea6f5ac56cae31874b97492ce164b7d1ac6df07d28f7e89aeba24b9ad6d9c6",
+    "prototypes/memory/copies/esp32s3_psram_cache.c": "958574deb5ecc90c24420007948b2c203dc032f49b04ba32503308bee4ecf6dd",
+    "prototypes/electrical-runtime/copies/esp32s3_project.c": "b290c386860a3722fdc681e3a2bde4c6bab2574def0c508f960c9cd0088b2563",
+    "electrical/net-rc.h": "457b579295cb981bf6d4307a0a7b7a92f84f6e79d3c23f7f620d9cfe6ed383fb",
+    "prototypes/gpio/copies/esp32_gpio.c": "3424311facc6836bf065ef788f3e3bf34f75645f995c1b3f06cb90b0ddff1815",
+    "prototypes/electrical-runtime/copies/esp32s3_electrical.c": "8cabd70810780a84cbeac8f2a75dfb09cfcc85a129ea1d4ab598e9d931cfc51d",
+    "prototypes/electrical-runtime/copies/esp32s3_electrical.h": "1138a4d75ef38cc77308a16b836515e9e456bb6e56ee084f22a16f3020712fa7",
+    "prototypes/electrical-runtime/copies/esp32s3_electrical_models.c": "acffb32d172abe348bb6e6d7467d4b2667ab5b4990b517d0a1255e36bcc6cedc",
+    "prototypes/lcd-cam/copies/esp32s3_ov2640_service.h": "495f40fd9318f45a77032dcbf4a2ec1e277dc5cc9439eea78870b27c5242d644",
+    "prototypes/gpio/copies/esp32_gpio.h": "a4d67f645cd6883ca4b91836f2fc646a0b98e4a7a67bae35f495225b70f2d2a4",
+    "prototypes/adc/copies/esp32s3_adc_net_provider.c": "b956c348379378618b1f067041bb91b5841a4b14668f7a003028382c6d1150e6",
+    "electrical/net-adapter.c": "00eea258dee763b4ae8ff064f32db1fcb5ee49cceacc60aa6261a3f533d7a8b1",
+    "prototypes/memory/copies/ssi_psram.c": "ec635997d67a0fb3e820e521b8d3c52c34feb721ee7ecce057957731d36f8719",
+    "prototypes/hostbus/hostbus-probe.h": "d33fd684efda06e440e0041259681731e72691ad3b8c0cfb50b7432239d79130",
+    "prototypes/lcd-cam/copies/esp32s3_ov2640_service.c": "e4c7bff53efd808f185ea4d50659a98aba28fb243b01866b1cfa80a93e4faec2",
+    "prototypes/lcd-cam/copies/esp32s3_lcd_cam.c": "518a464106a6781c1c707fb41ba477c9f45972e6cdd382b79f8bbad59dcc6d5b",
+    "prototypes/adc/copies/esp32s3_adc_provider.h": "63530e845df5830b6ec61f165f68fbf174c57373d9947969eb57399ee3530fd0",
+    "prototypes/electrical-runtime/copies/esp32s3_electrical_observers.h": "fcdeecf87e9ff5d67b64d3f47b8b91cf47142b4bb79ae4cd209171ad7424cdb6",
+    "prototypes/adc/copies/esp32s3-adc-test.c": "693acac556f0040459e733962cb8c6e8579cb39c9ca9513de75ba07a847c1977",
+    "prototypes/electrical-runtime/copies/esp32s3_electrical_internal.h": "40b7e621d62031d6ed1d3c447ee839ad9afdbcb8a4f939f90773d0221ab0794b",
+    "electrical/net-adapter.h": "fb2a949b71e8e17edad562c0d49e0ef42f7d028026c4362923f80c48910a96e1",
+    "prototypes/memory/copies/ssi_psram.h": "b42bafed212ac922b6e8a36cd5fbfb0f730c1c3d4b462d8dcab9f5b7e04ee6ad",
+    "prototypes/gdma/0006-hw-dma-in-done-on-descriptor-completion.patch": "8f857217af69acacb6772d28465b327445e878b55cc87760ca6b12423d35c49c",
+    "prototypes/i2c/copies/esp32s3-i2c-test.c": "8edc3257ab8c19e094de02d51f0df675e2d7ef700626fc236cb952a574f8ac2b",
+    "prototypes/i2c/copies/esp32s3_i2c.h": "63370ecd3259db4069268dfb7e267cac0d460033e543d66a4f07db074f068a39",
+    "prototypes/i2c/copies/esp32s3_i2c.c": "763a3ac0d9cab2adb74842774a966bcae83729cb397c0334186fcb9e306e5e52",
+    "prototypes/i2c/copies/esp32s3_i2c_service.h": "737286e8cb1cd78bd79187e7cffa4ea77840856df02353aa64a833138418e047",
+    "prototypes/i2c/copies/esp32s3_i2c_service.c": "09db4b0e3407e3b0b0bc777766d72d5b3c44f041759fa2bb8982a6f96dc58670",
+    "prototypes/i2c/copies/esp32s3_i2c_binding.h": "f3bb50a4bbf7cb534eec35bd1e3e9d746fc1cbe0d7f54e40f0eddd087621f297",
+    "prototypes/i2c/copies/esp32s3_i2c_binding.c": "b02598599124a27cecd278970e9a9e1cf8b72b8bc1b58a836f57909adb00787f",
+    "prototypes/i2c/copies/test-esp32s3-i2c-service.c": "2807776795c98cf4725bc759b07ac19d92deafefd56fa61fbdac4f2b6ae3dced",
+    "prototypes/spi/0008-current-foundation-integration.patch": "750704af12ceb1c360dd91a98235bffabf5e11dfe32080fdede02e8736a14a05",
+    "prototypes/spi/copies/esp32s3_gpspi.c": "d437b4cb224148ae7c0d100aa053a396a12b927da562095b052555c81ef3fca0",
+    "prototypes/spi/copies/esp32s3_gpspi.h": "acbbb5140eceba88697490807daa354b35124ec721ff156b192cd3cd7278e423",
+    "prototypes/spi/copies/esp32s3_spi_service.c": "393f25b77b7e2f64950c307d21dbbd42e3d09e5b0f11bf8f466c19abbee19ee0",
+    "prototypes/spi/copies/esp32s3_spi_service.h": "325759183c2f7692e584f6c41ce73f89fc16b25b567701f4e13514a2633835f0",
+    "prototypes/spi/copies/test-esp32s3-spi-service.c": "25f57f1e67d0421fe57748c8d8c2e7ca2652a424b943c62b12b1cd12515419ff",
+    "prototypes/spi/copies/esp32s3-spi-test.c": "0d52c471fbed3c54e9797ca41e959bfe6918c79951f3900f68d29db5c174cb77",
+    "prototypes/spi/copies/esp32s3_spi_binding.c": "f8599c3fb9995ddabb0c82d09fd3ddf7494348c01d9281b23d32f1eb62444130",
+    "prototypes/spi/copies/esp32s3_spi_binding.h": "68271682b23aad58d20cb4b647ef82745d9d5b5e6d01277ad551eadf8fdfdb4f",
+    "prototypes/gdma/0007-hw-dma-peripheral-direction-reset-isolation.patch": "6d8db4f7884418256fd4305d6034906cfa2a471a814ab0cb2a43910c730f3de0",
+    "prototypes/rmt/0001-current-foundation-integration.patch": "ca423a223b051510493f9d0a23528d3d9732fe40394a6d5531cac8baf01acdbf",
+    "prototypes/rmt/copies/esp32s3_rmt.c": "c29af90003628368216af5b4d6603ef4e77ccab525c1d9281f4d1c8e3a4e9f7c",
+    "prototypes/rmt/copies/esp32s3_rmt.h": "1784b5c56dcb8f3e5f40e55ec6536a1b590ddd1591571ce0f675b573f0a523f6",
+    "prototypes/rmt/copies/esp32s3-rmt-test.c": "8605f43312aa6b7ac485ba918b74c16ab8a969f01e1ef76a1893672ab3894f09",
+    "prototypes/rmt/copies/esp32s3_rmt_ws2812.c": "bce4232ba5e95d72bba891e99afb7714cefe4c45b9089a89b8a2cb689b2e0016",
+    "prototypes/rmt/copies/esp32s3_rmt_ws2812.h": "338d17f0fff95d169cac12d7fc655a031c01200b95c837870787ae4560611728",
+    "prototypes/rmt/copies/esp32s3_rmt_nec.c": "03ff6852def8980df16d22ba30b05e9eda417a3c4b38fc1954439b915e2eb771",
+    "prototypes/rmt/copies/esp32s3_rmt_nec.h": "0360a3b4148dd6d9e85f522e95ec992524e5c750d9275a1a25febb5edf26ad9a",
+    "prototypes/rmt/copies/esp32s3_rmt_peers.h": "b02d1cec69c168948206cd17a1d5a711331303479af77827ed8a671f4fa4f528",
+    "prototypes/rmt/copies/esp32s3_rmt_peers.c": "d7000b59b1edf55d352dc859970e01f9712e60e31345d7de6db6f1b7961de3f4"
+  },
+  "profile": {
+    "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+    "patches": [
+      {
+        "source": "prototypes/hostbus/integration.patch",
+        "patch_context": "strict",
+        "targets": [
+          "backends/meson.build",
+          "system/cpus.c"
+        ]
+      },
+      {
+        "source": "prototypes/hostbus/gdb-execution-preflight.patch",
+        "patch_context": "strict",
+        "targets": [
+          "gdbstub/gdbstub.c"
+        ]
+      },
+      {
+        "source": "prototypes/hostbus/state-restore-guard.patch",
+        "patch_context": "strict",
+        "targets": [
+          "migration/migration-hmp-cmds.c",
+          "migration/migration.c",
+          "migration/savevm.c"
+        ]
+      },
+      {
+        "source": "prototypes/hostbus/qom-options.patch",
+        "patch_context": "strict",
+        "targets": [
+          "qapi/qom.json"
+        ]
+      },
+      {
+        "source": "prototypes/hostbus/creation-order.patch",
+        "patch_context": "strict",
+        "targets": [
+          "system/vl.c"
+        ]
+      },
+      {
+        "source": "prototypes/simd-pie/qemu-simd-pie-01-vadds-vsubs-negative-rails.patch",
+        "patch_context": "strict",
+        "targets": [
+          "target/xtensa/translate_tie_esp32s3.c"
+        ]
+      },
+      {
+        "source": "prototypes/simd-pie/qemu-simd-pie-02-vmulas-u8-qacc-saturate.patch",
+        "patch_context": "strict",
+        "targets": [
+          "target/xtensa/translate_tie_esp32s3.c"
+        ]
+      },
+      {
+        "source": "prototypes/simd-pie/qemu-simd-pie-03-vmulas-s8-qacc-negative-rail.patch",
+        "patch_context": "strict",
+        "targets": [
+          "target/xtensa/translate_tie_esp32s3.c"
+        ]
+      },
+      {
+        "source": "prototypes/coreclk/0001-hw-xtensa-esp32s3_clk-ESP32-S3-clock-tree-with-qdev-.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/xtensa/esp32s3_clk.c",
+          "include/hw/xtensa/esp32s3_clk.h",
+          "include/hw/xtensa/esp32s3_clk_defs.h"
+        ]
+      },
+      {
+        "source": "prototypes/coreclk/0002-hw-misc-esp32s3_rtc_cntl-S3-RTC-clock-tables-and-XTA.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/misc/esp32s3_rtc_cntl.c",
+          "include/hw/misc/esp32s3_rtc_cntl.h"
+        ]
+      },
+      {
+        "source": "prototypes/coreclk/0003-hw-timer-live-clock-inputs-for-TIMG-and-SYSTIMER.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/timer/esp_systimer.c",
+          "hw/timer/esp_timg.c",
+          "include/hw/timer/esp_systimer.h",
+          "include/hw/timer/esp_timg.h",
+          "include/hw/xtensa/esp32s3_reset_domain.h"
+        ]
+      },
+      {
+        "source": "prototypes/coreclk/0004-hw-gate-digital-peripheral-holds-by-the-ESP32-S3-res.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/char/esp32_uart.c",
+          "hw/dma/esp_gdma.c",
+          "hw/misc/esp_aes.c",
+          "hw/misc/esp_ds.c",
+          "hw/misc/esp_hmac.c",
+          "hw/misc/esp_rsa.c",
+          "hw/misc/esp_sha.c",
+          "hw/net/can/esp32s3_twai.c",
+          "hw/net/can/esp32s3_twai.h",
+          "hw/ssi/esp32s3_spi.c",
+          "hw/xtensa/esp32s3_intc.c",
+          "include/hw/char/esp32_uart.h",
+          "include/hw/dma/esp_gdma.h",
+          "include/hw/misc/esp_aes.h",
+          "include/hw/misc/esp_ds.h",
+          "include/hw/misc/esp_hmac.h",
+          "include/hw/misc/esp_rsa.h",
+          "include/hw/misc/esp_sha.h",
+          "include/hw/ssi/esp32s3_spi.h",
+          "include/hw/xtensa/esp32s3_intc.h"
+        ]
+      },
+      {
+        "source": "prototypes/coreclk/0005-hw-xtensa-esp32s3-propagate-the-clock-tree-and-reset.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/xtensa/esp32s3.c"
+        ]
+      },
+      {
+        "source": "prototypes/coreclk/0006-tests-qtest-ESP32-S3-clock-tree-and-reset-domain-tes.patch",
+        "patch_context": "strict",
+        "targets": [
+          "tests/qtest/esp32s3-coreclk-test.c",
+          "tests/qtest/meson.build"
+        ]
+      },
+      {
+        "source": "prototypes/gdma/0001-hw-dma-esp_gdma-bounded-descriptor-walking-persisten.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/dma/esp_gdma.c",
+          "include/hw/dma/esp_gdma.h"
+        ]
+      },
+      {
+        "source": "prototypes/gdma/0002-hw-dma-esp32s3_gdma-validate-GDMA_PERI_SEL-periphera.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/dma/esp32s3_gdma.c"
+        ]
+      },
+      {
+        "source": "prototypes/gdma/0003-tests-qtest-add-esp32s3-gdma-test-suite.patch",
+        "patch_context": "strict",
+        "targets": [
+          "tests/qtest/esp32s3-gdma-test.c",
+          "tests/qtest/meson.build"
+        ]
+      },
+      {
+        "source": "prototypes/intc/0001-hw-xtensa-esp32s3_intc-model-source-OR-remap-disable.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/xtensa/esp32s3_intc.c",
+          "include/hw/xtensa/esp32s3_intc.h",
+          "tests/qtest/esp32s3-intmatrix-test.c",
+          "tests/qtest/meson.build"
+        ]
+      },
+      {
+        "source": "prototypes/intc/0002-tests-qtest-esp32s3-intmatrix-test-drive-matrix-OR-r.patch",
+        "patch_context": "strict",
+        "targets": [
+          "tests/qtest/esp32s3-intmatrix-test.c"
+        ]
+      },
+      {
+        "source": "prototypes/intc/0003-tests-qtest-wire-intmatrix-test-and-align-coreclk-re.patch",
+        "patch_context": "strict",
+        "targets": [
+          "tests/qtest/esp32s3-coreclk-test.c",
+          "tests/qtest/meson.build"
+        ]
+      },
+      {
+        "source": "prototypes/radio-bringup/0001-hw-xtensa-esp32s3_clk-store-SYSTEM_BT_LPCK-divider-r.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/xtensa/esp32s3_clk.c",
+          "include/hw/xtensa/esp32s3_clk.h"
+        ]
+      },
+      {
+        "source": "prototypes/radio-bringup/0002-hw-xtensa-esp32s3-map-undocumented-BT-modem-EM-RAM-w.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/xtensa/esp32s3.c"
+        ]
+      },
+      {
+        "source": "prototypes/radio-bringup/0003-hw-misc-esp32s3_regi2c-model-REGI2C-analog-I2C-maste.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/misc/esp32s3_regi2c.c",
+          "hw/misc/meson.build",
+          "hw/xtensa/esp32s3.c",
+          "include/hw/misc/esp32s3_regi2c.h",
+          "include/hw/misc/esp32s3_regi2c_defs.h"
+        ]
+      },
+      {
+        "source": "prototypes/radio-bringup/0004-hw-misc-esp32s3_regi2c-model-BBPLL_CAL_DONE-0x40-BIT.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/misc/esp32s3_regi2c.c",
+          "include/hw/misc/esp32s3_regi2c.h",
+          "include/hw/misc/esp32s3_regi2c_defs.h"
+        ]
+      },
+      {
+        "source": "prototypes/coreclk/0008-hw-timer-esp_timg-hardware-divider-field-encoding-and-exact.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/timer/esp_timg.c",
+          "tests/qtest/esp32s3-coreclk-test.c"
+        ]
+      },
+      {
+        "source": "prototypes/coreclk/0009-hw-timer-esp_timg-exact-rational-tick-conversion.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/timer/esp_timg.c",
+          "include/hw/timer/esp_timg.h",
+          "tests/qtest/esp32s3-coreclk-test.c"
+        ]
+      },
+      {
+        "source": "prototypes/coreclk/0010-hw-xtensa-esp32s3_clk-common-clock-ports-for-SPI2-3.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/misc/esp32s3_rtc_cntl.c",
+          "hw/xtensa/esp32s3.c",
+          "hw/xtensa/esp32s3_clk.c",
+          "include/hw/misc/esp32s3_rtc_cntl.h",
+          "include/hw/xtensa/esp32s3_clk.h",
+          "tests/qtest/esp32s3-coreclk-test.c"
+        ]
+      },
+      {
+        "source": "prototypes/coreclk/0011-hw-xtensa-esp32s3_clk-UHCI0-clock-gate-and-reset-lines.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/xtensa/esp32s3_clk.c",
+          "include/hw/xtensa/esp32s3_clk.h"
+        ]
+      },
+      {
+        "source": "prototypes/coreclk/0012-hw-xtensa-esp32s3_clk-publish-the-0010-0011-gate-levels.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/xtensa/esp32s3_clk.c"
+        ]
+      },
+      {
+        "source": "prototypes/coreclk/0013-hw-xtensa-esp32s3-BBPLL-power-validity-decoupled-from.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/misc/esp32s3_rtc_cntl.c",
+          "hw/xtensa/esp32s3.c",
+          "hw/xtensa/esp32s3_clk.c",
+          "include/hw/misc/esp32s3_rtc_cntl.h",
+          "include/hw/xtensa/esp32s3_clk.h",
+          "tests/qtest/esp32s3-coreclk-test.c"
+        ]
+      },
+      {
+        "source": "prototypes/coreclk/0014-hw-xtensa-esp32s3_clk-LEDC-PCNT-MCPWM-LCD_CAM-clock-ports.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/xtensa/esp32s3_clk.c",
+          "include/hw/xtensa/esp32s3_clk.h"
+        ]
+      },
+      {
+        "source": "prototypes/coreclk/0015-hw-xtensa-esp32s3-CPU1-reset-gate-runstall-lifecycle.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/xtensa/esp32s3.c",
+          "hw/xtensa/esp32s3_clk.c",
+          "hw/xtensa/pic_cpu.c",
+          "include/hw/xtensa/esp32s3_clk.h",
+          "include/hw/xtensa/esp32s3_clk_defs.h",
+          "target/xtensa/cpu.c",
+          "target/xtensa/cpu.h",
+          "target/xtensa/gdbstub.c",
+          "target/xtensa/helper.c",
+          "target/xtensa/op_helper.c",
+          "tests/qtest/esp32s3-coreclk-test.c",
+          "tests/qtest/esp32s3-cpu1-lifecycle.py"
+        ]
+      },
+      {
+        "source": "prototypes/coreclk/0016-system-capture-reset-entry-cause-gate-S3-reset.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/xtensa/esp32s3.c",
+          "include/sysemu/runstate.h",
+          "system/runstate.c"
+        ]
+      },
+      {
+        "source": "prototypes/gpio/integration-native-foundations.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/gpio/esp32_gpio.c",
+          "hw/gpio/esp32s3_gpio.c",
+          "hw/gpio/esp32s3_iomux.c",
+          "hw/gpio/meson.build",
+          "hw/misc/esp32s3_rtc_io.c",
+          "hw/misc/meson.build",
+          "hw/xtensa/esp32s3.c",
+          "include/hw/gpio/esp32_gpio.h",
+          "include/hw/gpio/esp32s3_gpio.h",
+          "include/hw/gpio/esp32s3_iomux.h",
+          "include/hw/misc/esp32s3_rtc_io.h",
+          "tests/qtest/esp32s3-gpio-test.c",
+          "tests/qtest/meson.build"
+        ]
+      },
+      {
+        "source": "prototypes/radio-bringup/0005-regi2c-config-accessor-and-slave-range.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/misc/esp32s3_regi2c.c",
+          "include/hw/misc/esp32s3_regi2c.h",
+          "include/hw/misc/esp32s3_regi2c_defs.h"
+        ]
+      },
+      {
+        "source": "prototypes/gpio/pad-input-semantics-correction.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/gpio/esp32s3_gpio.c",
+          "hw/misc/esp32s3_rtc_io.c",
+          "include/hw/gpio/esp32s3_gpio.h",
+          "include/hw/misc/esp32s3_rtc_io.h"
+        ]
+      },
+      {
+        "source": "prototypes/gpio/pad-input-semantics-correction-tests.patch",
+        "patch_context": "strict",
+        "targets": [
+          "tests/qtest/esp32s3-gpio-test.c"
+        ]
+      },
+      {
+        "source": "prototypes/gpio/gpio-c6fc-whole-feature.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/gpio/esp32s3_gpio.c",
+          "hw/misc/esp32s3_rtc_cntl.c",
+          "hw/misc/esp32s3_rtc_io.c",
+          "hw/xtensa/esp32s3.c",
+          "include/hw/gpio/esp32s3_gpio.h",
+          "include/hw/misc/esp32s3_rtc_cntl.h",
+          "include/hw/misc/esp32s3_rtc_io.h",
+          "tests/qtest/esp32s3-gpio-test.c"
+        ]
+      },
+      {
+        "source": "prototypes/gpio/gpio-hold-od-inversion-solver-correction.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/gpio/esp32s3_gpio.c",
+          "tests/qtest/esp32s3-gpio-test.c"
+        ]
+      },
+      {
+        "source": "prototypes/adc/integration-native-foundations-adc.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/adc/meson.build",
+          "hw/misc/esp32s3_regi2c.c",
+          "hw/misc/meson.build",
+          "hw/xtensa/esp32s3.c",
+          "include/hw/misc/esp32s3_regi2c.h",
+          "qapi/qom.json",
+          "tests/qtest/meson.build"
+        ]
+      },
+      {
+        "source": "prototypes/electrical-runtime/0001-native-v3-electrical-boundary.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/adc/meson.build",
+          "hw/xtensa/esp32s3.c",
+          "tests/qtest/meson.build"
+        ]
+      },
+      {
+        "source": "prototypes/memory/machine-integration-native-foundations.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/misc/meson.build",
+          "hw/xtensa/esp32s3.c"
+        ]
+      },
+      {
+        "source": "prototypes/memory/spi1-transport.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/ssi/esp32s3_spi.c"
+        ]
+      },
+      {
+        "source": "prototypes/memory/spi0-cache-phases.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/ssi/esp32s3_spi.c",
+          "include/hw/ssi/esp32s3_spi.h"
+        ]
+      },
+      {
+        "source": "prototypes/memory/qtest-integration.patch",
+        "patch_context": "strict",
+        "targets": [
+          "tests/qtest/meson.build"
+        ]
+      },
+      {
+        "source": "prototypes/spi/0001-gdma-peripheral-rx-packet-end.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/dma/esp_gdma.c",
+          "include/hw/dma/esp_gdma.h"
+        ]
+      },
+      {
+        "source": "prototypes/gdma/0004-hw-dma-esp_gdma-served-RX-bytes-survive-post-store-a.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/dma/esp_gdma.c",
+          "tests/qtest/esp32s3-gdma-test.c"
+        ]
+      },
+      {
+        "source": "prototypes/uart/0001-gdma-uhci-demand-and-packet-status.patch",
+        "patch_context": "ignore-space-change",
+        "targets": [
+          "hw/dma/esp_gdma.c",
+          "include/hw/dma/esp_gdma.h"
+        ]
+      },
+      {
+        "source": "prototypes/i2c/integration-after-electrical.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/i2c/meson.build",
+          "hw/xtensa/esp32s3.c",
+          "tests/qtest/meson.build",
+          "tests/unit/meson.build"
+        ]
+      },
+      {
+        "source": "prototypes/lcd-cam/0001-native-lcd-cam-machine-integration.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/misc/meson.build",
+          "hw/xtensa/esp32s3.c"
+        ]
+      },
+      {
+        "source": "prototypes/lcd-cam/0002-native-lcd-cam-qtest-integration.patch",
+        "patch_context": "strict",
+        "targets": [
+          "tests/qtest/meson.build"
+        ]
+      },
+      {
+        "source": "prototypes/timebase/0002-util-qemu-timer-remove-rearm-icount-warp.patch",
+        "patch_context": "strict",
+        "targets": [
+          "util/qemu-timer.c"
+        ]
+      },
+      {
+        "source": "prototypes/gdma/0006-hw-dma-in-done-on-descriptor-completion.patch",
+        "patch_context": "ignore-space-change",
+        "targets": [
+          "hw/dma/esp_gdma.c"
+        ]
+      },
+      {
+        "source": "prototypes/spi/0008-current-foundation-integration.patch",
+        "targets": [
+          "hw/misc/meson.build",
+          "hw/ssi/meson.build",
+          "hw/xtensa/esp32s3.c",
+          "tests/unit/meson.build",
+          "tests/qtest/meson.build"
+        ],
+        "patch_context": "strict"
+      },
+      {
+        "source": "prototypes/gdma/0007-hw-dma-peripheral-direction-reset-isolation.patch",
+        "targets": [
+          "hw/dma/esp_gdma.c"
+        ],
+        "patch_context": "ignore-space-change"
+      },
+      {
+        "source": "prototypes/rmt/0001-current-foundation-integration.patch",
+        "targets": [
+          "hw/xtensa/esp32s3.c",
+          "hw/timer/meson.build",
+          "hw/timer/trace-events",
+          "tests/qtest/meson.build"
+        ],
+        "patch_context": "strict"
+      }
+    ],
+    "copies": [
+      {
+        "source": "prototypes/hostbus/hostbus-probe.c",
+        "destination": "backends/hostbus-probe.c"
+      },
+      {
+        "source": "prototypes/hostbus/hostbus-probe.h",
+        "destination": "include/sysemu/hostbus-probe.h"
+      },
+      {
+        "source": "prototypes/hostbus/hostbus-json.h",
+        "destination": "backends/hostbus-json.h"
+      },
+      {
+        "source": "prototypes/gpio/copies/esp32_gpio.h",
+        "destination": "include/hw/gpio/esp32_gpio.h"
+      },
+      {
+        "source": "prototypes/gpio/copies/esp32_gpio.c",
+        "destination": "hw/gpio/esp32_gpio.c"
+      },
+      {
+        "source": "prototypes/gpio/copies/esp32s3_iomux.h",
+        "destination": "include/hw/gpio/esp32s3_iomux.h"
+      },
+      {
+        "source": "prototypes/gpio/copies/esp32s3_iomux.c",
+        "destination": "hw/gpio/esp32s3_iomux.c"
+      },
+      {
+        "source": "prototypes/adc/copies/esp32s3_adc_provider.h",
+        "destination": "include/hw/misc/esp32s3_adc_provider.h"
+      },
+      {
+        "source": "prototypes/adc/copies/esp32s3_sens.h",
+        "destination": "include/hw/misc/esp32s3_sens.h"
+      },
+      {
+        "source": "prototypes/adc/copies/esp32s3_sens.c",
+        "destination": "hw/misc/esp32s3_sens.c"
+      },
+      {
+        "source": "prototypes/adc/copies/esp32s3_apb_saradc.h",
+        "destination": "include/hw/misc/esp32s3_apb_saradc.h"
+      },
+      {
+        "source": "prototypes/adc/copies/esp32s3_apb_saradc.c",
+        "destination": "hw/misc/esp32s3_apb_saradc.c"
+      },
+      {
+        "source": "prototypes/adc/copies/esp32s3_adc_net_provider.c",
+        "destination": "hw/adc/esp32s3_adc_net_provider.c"
+      },
+      {
+        "source": "prototypes/adc/copies/esp32s3-adc-test.c",
+        "destination": "tests/qtest/esp32s3-adc-test.c"
+      },
+      {
+        "source": "prototypes/electrical-runtime/copies/esp32s3_project.c",
+        "destination": "hw/adc/esp32s3_project.c"
+      },
+      {
+        "source": "prototypes/electrical-runtime/copies/esp32s3_project.h",
+        "destination": "hw/adc/esp32s3_project.h"
+      },
+      {
+        "source": "prototypes/electrical-runtime/copies/esp32s3_electrical.c",
+        "destination": "hw/adc/esp32s3_electrical.c"
+      },
+      {
+        "source": "prototypes/electrical-runtime/copies/esp32s3_electrical.h",
+        "destination": "include/hw/misc/esp32s3_electrical.h"
+      },
+      {
+        "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_internal.h",
+        "destination": "hw/adc/esp32s3_electrical_internal.h"
+      },
+      {
+        "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_models.c",
+        "destination": "hw/adc/esp32s3_electrical_models.c"
+      },
+      {
+        "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_observers.c",
+        "destination": "hw/adc/esp32s3_electrical_observers.c"
+      },
+      {
+        "source": "prototypes/electrical-runtime/copies/esp32s3_electrical_observers.h",
+        "destination": "hw/adc/esp32s3_electrical_observers.h"
+      },
+      {
+        "source": "prototypes/electrical-runtime/copies/esp32s3-electrical-test.c",
+        "destination": "tests/qtest/esp32s3-electrical-test.c"
+      },
+      {
+        "source": "electrical/net-dc.c",
+        "destination": "hw/adc/net-dc.c"
+      },
+      {
+        "source": "electrical/net-dc.h",
+        "destination": "hw/adc/net-dc.h"
+      },
+      {
+        "source": "electrical/net-adapter.c",
+        "destination": "hw/adc/net-adapter.c"
+      },
+      {
+        "source": "electrical/net-adapter.h",
+        "destination": "hw/adc/net-adapter.h"
+      },
+      {
+        "source": "electrical/net-rc.c",
+        "destination": "hw/adc/net-rc.c"
+      },
+      {
+        "source": "electrical/net-rc.h",
+        "destination": "hw/adc/net-rc.h"
+      },
+      {
+        "source": "prototypes/memory/copies/ssi_psram.c",
+        "destination": "hw/misc/ssi_psram.c"
+      },
+      {
+        "source": "prototypes/memory/copies/ssi_psram.h",
+        "destination": "include/hw/misc/ssi_psram.h"
+      },
+      {
+        "source": "prototypes/memory/copies/esp32s3_cache.c",
+        "destination": "hw/misc/esp32s3_cache.c"
+      },
+      {
+        "source": "prototypes/memory/copies/esp32s3_cache.h",
+        "destination": "include/hw/misc/esp32s3_cache.h"
+      },
+      {
+        "source": "prototypes/memory/copies/esp32s3_psram_cache.c",
+        "destination": "hw/misc/esp32s3_psram_cache.c"
+      },
+      {
+        "source": "prototypes/memory/copies/esp32s3-memory-test.c",
+        "destination": "tests/qtest/esp32s3-memory-test.c"
+      },
+      {
+        "source": "prototypes/lcd-cam/copies/esp32s3_lcd_cam.c",
+        "destination": "hw/misc/esp32s3_lcd_cam.c"
+      },
+      {
+        "source": "prototypes/lcd-cam/copies/esp32s3_lcd_cam.h",
+        "destination": "include/hw/misc/esp32s3_lcd_cam.h"
+      },
+      {
+        "source": "prototypes/lcd-cam/copies/esp32s3_lcd_panel_service.c",
+        "destination": "hw/misc/esp32s3_lcd_panel_service.c"
+      },
+      {
+        "source": "prototypes/lcd-cam/copies/esp32s3_lcd_panel_service.h",
+        "destination": "include/hw/misc/esp32s3_lcd_panel_service.h"
+      },
+      {
+        "source": "prototypes/lcd-cam/copies/esp32s3_ov2640_service.c",
+        "destination": "hw/misc/esp32s3_ov2640_service.c"
+      },
+      {
+        "source": "prototypes/lcd-cam/copies/esp32s3_ov2640_service.h",
+        "destination": "include/hw/misc/esp32s3_ov2640_service.h"
+      },
+      {
+        "source": "prototypes/lcd-cam/copies/esp32s3-lcd-cam-test.c",
+        "destination": "tests/qtest/esp32s3-lcd-cam-test.c"
+      },
+      {
+        "source": "prototypes/i2c/copies/esp32s3_i2c.h",
+        "destination": "include/hw/i2c/esp32s3_i2c.h"
+      },
+      {
+        "source": "prototypes/i2c/copies/esp32s3_i2c.c",
+        "destination": "hw/i2c/esp32s3_i2c.c"
+      },
+      {
+        "source": "prototypes/i2c/copies/esp32s3_i2c_service.h",
+        "destination": "include/hw/i2c/esp32s3_i2c_service.h"
+      },
+      {
+        "source": "prototypes/i2c/copies/esp32s3_i2c_service.c",
+        "destination": "hw/i2c/esp32s3_i2c_service.c"
+      },
+      {
+        "source": "prototypes/i2c/copies/esp32s3_i2c_binding.h",
+        "destination": "include/hw/i2c/esp32s3_i2c_binding.h"
+      },
+      {
+        "source": "prototypes/i2c/copies/esp32s3_i2c_binding.c",
+        "destination": "hw/i2c/esp32s3_i2c_binding.c"
+      },
+      {
+        "source": "prototypes/i2c/copies/esp32s3-i2c-test.c",
+        "destination": "tests/qtest/esp32s3-i2c-test.c"
+      },
+      {
+        "source": "prototypes/i2c/copies/test-esp32s3-i2c-service.c",
+        "destination": "tests/unit/test-esp32s3-i2c-service.c"
+      },
+      {
+        "source": "prototypes/spi/copies/esp32s3_gpspi.c",
+        "destination": "hw/misc/esp32s3_gpspi.c"
+      },
+      {
+        "source": "prototypes/spi/copies/esp32s3_gpspi.h",
+        "destination": "include/hw/misc/esp32s3_gpspi.h"
+      },
+      {
+        "source": "prototypes/spi/copies/esp32s3_spi_service.c",
+        "destination": "hw/ssi/esp32s3_spi_service.c"
+      },
+      {
+        "source": "prototypes/spi/copies/esp32s3_spi_service.h",
+        "destination": "include/hw/ssi/esp32s3_spi_service.h"
+      },
+      {
+        "source": "prototypes/spi/copies/test-esp32s3-spi-service.c",
+        "destination": "tests/unit/test-esp32s3-spi-service.c"
+      },
+      {
+        "source": "prototypes/spi/copies/esp32s3-spi-test.c",
+        "destination": "tests/qtest/esp32s3-spi-test.c"
+      },
+      {
+        "source": "prototypes/spi/copies/esp32s3_spi_binding.c",
+        "destination": "hw/ssi/esp32s3_spi_binding.c"
+      },
+      {
+        "source": "prototypes/spi/copies/esp32s3_spi_binding.h",
+        "destination": "include/hw/ssi/esp32s3_spi_binding.h"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3_rmt.c",
+        "destination": "hw/timer/esp32s3_rmt.c"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3_rmt.h",
+        "destination": "include/hw/timer/esp32s3_rmt.h"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3-rmt-test.c",
+        "destination": "tests/qtest/esp32s3-rmt-test.c"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3_rmt_ws2812.c",
+        "destination": "hw/timer/esp32s3_rmt_ws2812.c"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3_rmt_ws2812.h",
+        "destination": "include/hw/timer/esp32s3_rmt_ws2812.h"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3_rmt_nec.c",
+        "destination": "hw/timer/esp32s3_rmt_nec.c"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3_rmt_nec.h",
+        "destination": "include/hw/timer/esp32s3_rmt_nec.h"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3_rmt_peers.h",
+        "destination": "include/hw/timer/esp32s3_rmt_peers.h"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3_rmt_peers.c",
+        "destination": "hw/timer/esp32s3_rmt_peers.c"
+      }
+    ]
+  }
+}

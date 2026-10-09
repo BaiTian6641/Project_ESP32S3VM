@@ -676,8 +676,8 @@ def main():
     parser.add_argument("--sdkconfig", type=pathlib.Path)
     parser.add_argument("--watchdog-seconds", type=float, default=90)
     args = parser.parse_args()
-    if not 1 <= args.watchdog_seconds <= 600:
-        parser.error("--watchdog-seconds must be 1..600")
+    if not 1 <= args.watchdog_seconds <= 3600:
+        parser.error("--watchdog-seconds must be 1..3600 (host diagnostic only)")
     if not args.build and (args.flash is None or args.sdkconfig is None):
         parser.error("Use --build or provide both --flash and --sdkconfig")
     args.evidence.mkdir(parents=True, exist_ok=True)
@@ -750,7 +750,7 @@ def main():
             nec_powered = False
             while True:
                 text = uart.read_text(errors="replace") if uart.exists() else ""
-                if not nec_powered and re.search(r"^RMT_NATIVE_EXTERNAL_READY rx_gpio=8 armed_us=\d+$", text, re.M):
+                if not nec_powered and re.search(r"^RMT_NATIVE_EXTERNAL_READY rx_gpio=8 armed_us=\d+\n", text, re.M):
                     qmp.call("stop")
                     powered_graph = project(args.mode, nec_powered=True)
                     (live / "project-powered.json").write_text(json.dumps(powered_graph, indent=2) + "\n")
@@ -760,7 +760,7 @@ def main():
                                                     graph=qmp.snapshot(), peers=qmp.peers()))
                     nec_powered = True
                     qmp.call("cont")
-                if re.search(r"^RMT_NATIVE_DONE .*$", text, re.M):
+                if re.search(r"^RMT_NATIVE_DONE [^\r\n]*\n", text, re.M):
                     break
                 if proc.poll() is not None:
                     raise RuntimeError(f"QEMU exited {proc.returncode} before completion")
