@@ -1,1 +1,5 @@
-idf_component_register(SRCS "i2c_native.c" INCLUDE_DIRS "." REQUIRES esp_driver_i2c esp_timer)
+set(fixture_source "i2c_native.c")
+if(CONFIG_I2C_NATIVE_PROFILE_SLAVE OR CONFIG_I2C_NATIVE_PROFILE_SLAVE_DISCONNECTED)
+    set(fixture_source "i2c_slave_native.c")
+endif()
+idf_component_register(SRCS "${fixture_source}" INCLUDE_DIRS "." REQUIRES esp_driver_i2c esp_driver_gpio esp_timer)

@@ -1,6 +1,6 @@
 {
   "prefix_commit": "2b0e49021de6cb5e91dc1dc0b1a8804334a1c083",
-  "qualification": "Current working-source identity snapshot; aggregate native18/controller and18/service qualification belongs to the separate1411f3a2d8676631 preparation/qualification receipts, not the historical bootstrap prefix",
+  "qualification": "Working-source identity snapshot; aggregate1e937cf0ad1822bb separately qualifies147 native and18 ordinary scenarios, including both public slave drivers and a continuous-stretch watchdog regression",
   "sources": [
     {
       "source": "prototypes/i2c/copies/esp32s3_i2c.h",
@@ -10,7 +10,7 @@
     {
       "source": "prototypes/i2c/copies/esp32s3_i2c.c",
       "destination": "hw/i2c/esp32s3_i2c.c",
-      "sha256": "3fbcd078d0d3f3d88d59fbd12243b3a990b724416328dc52bf1185ca4cae8a05"
+      "sha256": "763a3ac0d9cab2adb74842774a966bcae83729cb397c0334186fcb9e306e5e52"
     },
     {
       "source": "prototypes/i2c/copies/esp32s3_i2c_service.h",
@@ -30,12 +30,12 @@
     {
       "source": "prototypes/i2c/copies/esp32s3_i2c_binding.c",
       "destination": "hw/i2c/esp32s3_i2c_binding.c",
-      "sha256": "5129664f7854a9da89e171f605fd4cf76deffefff55b56857dcd52e4f2561132"
+      "sha256": "b02598599124a27cecd278970e9a9e1cf8b72b8bc1b58a836f57909adb00787f"
     },
     {
       "source": "prototypes/i2c/copies/esp32s3-i2c-test.c",
       "destination": "tests/qtest/esp32s3-i2c-test.c",
-      "sha256": "451000df0026db1b56ef53656755afdb183982b5b8f6ac269bbc9c65ef57e23c"
+      "sha256": "8edc3257ab8c19e094de02d51f0df675e2d7ef700626fc236cb952a574f8ac2b"
     },
     {
       "source": "prototypes/i2c/copies/test-esp32s3-i2c-service.c",

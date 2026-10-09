@@ -2,10 +2,10 @@
   "schema_version": 1,
   "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
   "license": "GPL-2.0-or-later",
-  "status": "18/18 native master/slave/routing/error vectors,18/18 service vectors and ten strict ordinary master scenarios PASS on canonical aggregate1411f3a2d8676631; complete canonical gates remain open",
-  "work_package": "I2C-01/02 plus tested slave, filter and address-arbitration I2C-03 subsets; not full canonical I2C support",
+  "status": "18/18 native controller/error vectors,18/18 service vectors, ten ordinary master and three ordinary slave scenarios PASS on aggregate1e937cf0ad1822bb; complete canonical gates remain open",
+  "work_package": "I2C-01/02 plus both ordinary seven-bit slave drivers and tested filter/address-arbitration I2C-03 subsets; not full canonical I2C support",
   "combined_v3_fingerprint": "105a156e5dec5fc63f347cc1d989c1d11ab402c63668d8426869462d6387b999",
-  "native_checkout": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-1411f3a2d8676631",
+  "native_checkout": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-1e937cf0ad1822bb",
   "prefix_commit": "2b0e49021de6cb5e91dc1dc0b1a8804334a1c083",
   "copies": [
     {
@@ -97,9 +97,9 @@
     "tests/unit/meson.build"
   ],
   "firmware_fixture": "tests/firmware/i2c_native",
-  "evidence": "build-runtime-state/uart-continuation/i2c-final/",
+  "evidence": "build-runtime-state/uart-continuation/i2c-slave-final/",
   "canonical_gates": [
-    "ordinary SDK slave-driver qualification on both controllers and broader native slave boundaries",
+    "broader ordinary/native slave boundaries beyond seven-bit receive/request/TX-reset and disconnected scenarios",
     "master ten-bit/general-call and full ten-bit slave read/restart/boundary qualification",
     "multi-master data-phase/full-transfer arbitration and replay beyond tested address win/loss",
     "master-data edge/fast-path equivalence and replay",
@@ -110,7 +110,7 @@
     "EEPROM write-protection/endurance",
     "external environmental and hostbus device services",
     "asynchronous queued multi-batch transfers",
-    "scripted-peer capacity and power-cycle replay beyond the tested single-peer scenarios"
+    "scripted-peer capacity and power-cycle replay beyond the tested two-peer scenarios"
   ],
   "layered_integration_patch": "integration-after-electrical.patch",
   "electrical_prerequisite_patch": "electrical-prerequisites.patch",
@@ -139,12 +139,12 @@
   },
   "service_verification": {
     "result": "18/18 PASS",
-    "evidence": "Historical external-service proof retained; same-executable native/service/ordinary results: build-runtime-state/uart-continuation/i2c-final/qualification-receipt.json",
+    "evidence": "Same-executable native/service/master/slave/UART results: build-runtime-state/uart-continuation/i2c-slave-final/qualification-receipt.json",
     "scope": "18 stateful service/dispatch cases PASS; separate controller and ordinary-driver evidence recorded below, no camera promotion"
   },
   "provider_freeze_verified": [
-    "Consolidated runtime1411f3a2d8676631 uses the recorded GPIO/raw-selector/OEN, multicast electrical/power, single-owner SENS/radio and canonical I2C sources.",
-    "Runtime executable SHA256 880b9dbe735f9c6258245b53f4b43929fd7abf5f2bc68410a29b025c2172c75a; all127 applied source hashes verified."
+    "Consolidated runtime1e937cf0ad1822bb uses recorded GPIO/clock/power/NativeNet authority and canonical I2C inputs with a continuous-stretch watchdog.",
+    "Runtime executable SHA256 6e2c78411f0ef48215ad1c8be3f23fd0eef0ccfe4ea151c891a357ef8c49347f; all127 applied source hashes verified."
   ],
   "native_checks_exercised": [
     "both-masters-timing-irq",
@@ -166,8 +166,10 @@
     "master-arbitration",
     "script-preflight-reject"
   ],
-  "native_harness_build": "The aggregate now copies canonical I2C controller/binding/test inputs. Native18-case proof and source/build identities are recorded in build-runtime-state/uart-continuation/i2c-final/. Earlier isolated harness and frozen9-case records remain historical.",
-  "ordinary_verification": "Ten complete pinned-IDF6.1 scenarios PASS on both controllers on1411: connected device transfers at100/400kHz plus wrong/disconnected/no-pull/stuck-SDA/stuck-SCL and three invalid-power graphs. SDK probes run100kHz regardless of the device-transfer speed label. Exact frozen firmware/config hashes and raw reports: build-runtime-state/uart-continuation/i2c-final/qualification-receipt.json.",
+  "native_harness_build": "Native18-case proof includes the failing-before/passing-after watchdog regression: unrelated GPIO activity cannot rearm a continuous stretch. Full source/build identities: build-runtime-state/uart-continuation/i2c-slave-final/.",
+  "ordinary_verification": "Ten pinned-IDF6.1 master scenarios PASS on both controllers:100/400kHz connected data and eight physical negatives. Negative probes use100kHz. New ordinary slave results are separately recorded below.",
+  "ordinary_slave_verification": "Both seven-bit public slave APIs PASS connected100/400kHz and disconnected100kHz:65-byte receive,65-byte requested TX/physical relay,49 queued bytes discarded by TX reset before17 replacement bytes, exact callback boundaries and disconnected silence. Physical GPIO12 gates peer activation through public QMP Apply; no RX or GPIO input injection.",
+  "scripted_peer_bounds": "Four peers,32 transactions per peer,256 actual wire bytes per transaction; bounded per-bit progression, no per-bit heap allocation or receive tables.",
   "external_service_api": {
     "header": "copies/esp32s3_i2c_service.h",
     "registration_header": "copies/esp32s3_i2c_binding.h",
@@ -186,7 +188,7 @@
     {
       "source": "copies/esp32s3_i2c.c",
       "destination": "hw/i2c/esp32s3_i2c.c",
-      "sha256": "3fbcd078d0d3f3d88d59fbd12243b3a990b724416328dc52bf1185ca4cae8a05"
+      "sha256": "763a3ac0d9cab2adb74842774a966bcae83729cb397c0334186fcb9e306e5e52"
     },
     {
       "source": "copies/esp32s3_i2c_service.h",
@@ -206,12 +208,12 @@
     {
       "source": "copies/esp32s3_i2c_binding.c",
       "destination": "hw/i2c/esp32s3_i2c_binding.c",
-      "sha256": "5129664f7854a9da89e171f605fd4cf76deffefff55b56857dcd52e4f2561132"
+      "sha256": "b02598599124a27cecd278970e9a9e1cf8b72b8bc1b58a836f57909adb00787f"
     },
     {
       "source": "copies/esp32s3-i2c-test.c",
       "destination": "tests/qtest/esp32s3-i2c-test.c",
-      "sha256": "451000df0026db1b56ef53656755afdb183982b5b8f6ac269bbc9c65ef57e23c"
+      "sha256": "8edc3257ab8c19e094de02d51f0df675e2d7ef700626fc236cb952a574f8ac2b"
     },
     {
       "source": "copies/test-esp32s3-i2c-service.c",

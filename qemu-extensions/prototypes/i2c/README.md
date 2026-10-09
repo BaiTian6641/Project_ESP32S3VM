@@ -154,14 +154,25 @@ python3 qemu-extensions/prototypes/i2c/run-native-fixture.py \
 ```
 
 Modes are `connected`, `wrong`, `disconnected`, `no_pull`, `stuck_sda`,
-`stuck_scl`, `power_disconnected`, `power_undervoltage`, and
-`power_overvoltage`. Each run creates a fresh scoped evidence directory with
+`stuck_scl`, `power_disconnected`, `power_undervoltage`, `power_overvoltage`,
+`slave`, and `slave_disconnected`. Each run creates a fresh scoped evidence
+directory with
 UART, stderr, graph snapshots, QMP transcript, command, status and hashes. Its
 600-second host watchdog diagnoses an unfinished run; it never injects a firmware
 bus timeout. The runner uses single-thread TCG/icount virtual time and waits for
 a complete DONE/result line, not a partially flushed prefix. Service GLib tests
 and `esp32s3-i2c-test` exercise state, FIFO/error boundaries, cancellation, IRQs,
 time and actual graph routes.
+
+The `slave` fixture uses ordinary `i2c_new_slave_device`, receive/request
+callbacks, `i2c_slave_write` and `i2c_slave_reset_tx_fifo` on both controllers.
+Physical graph masters clock65-byte receive/request transfers and verify that
+49 discarded TX bytes never precede17 replacement bytes. Public GPIO12 input
+is the host gate; reserve it outside the four SDA/SCL pads. After each complete
+READY line, the runner pauses, applies actual powered peer terminals and the
+gate pull, then resumes. It never injects data, callback results or register
+completions. Response service precedes blocking UART reports.
+
 
 The changed service-only executable passed **18/18** cases in delegated
 verification (the original14 plus external register-bank dispatch boundaries):
@@ -171,8 +182,8 @@ Coverage includes every missing callback/NULL ops, actual register mutations,
 pointer wrap, START/restart/STOP, address/data/read failures, final NACK,
 cancel preservation, physical power reset and readiness deadlines.
 This is service-state evidence only, not native controller/electrical/camera evidence.
-Current consolidated candidate `1411f3a2d8676631`, executable SHA256
-`880b9dbe735f9c6258245b53f4b43929fd7abf5f2bc68410a29b025c2172c75a`,
+Current consolidated candidate `1e937cf0ad1822bb`, executable SHA256
+`6e2c78411f0ef48215ad1c8be3f23fd0eef0ccfe4ea151c891a357ef8c49347f`,
 passes **18/18 native controller/edge cases** and **18/18 service cases**.
 All127 applied source hashes match its immutable preparation receipt.
 
@@ -183,15 +194,23 @@ SDK's probe API always programs100000Hz; negative probes do not inherit the
 printed device-transfer frequency. Actual bytes, CRC/conversion timing,
 EEPROM page/STOP semantics and transfers beyond FIFO depth are checked.
 The same executable also passes UART64, UHCI17, GDMA18 and memory12 native cases
-and all five strict ordinary UART/UHCI profiles: **147 native +15 ordinary PASS**,
+and all five strict ordinary UART/UHCI profiles: **147 native +18 ordinary PASS**,
 zero native skips. Exact frozen inputs, reports and snapshots:
-`build-runtime-state/uart-continuation/i2c-final/qualification-receipt.json`.
+`build-runtime-state/uart-continuation/i2c-slave-final/qualification-receipt.json`.
 
 The new software vectors exercise routed controller0 slave writes, clocked
 read/relay bytes, served and unserved address stretching, one ten-bit write with
 seven-bit-alias rejection, general-call enable/disable,100ns SDA glitch rejection,
 and address-arbitration win/loss. Peers drive actual registered NativeNet
 terminals; no RX FIFO injection or controller/address response table is used.
+
+Three ordinary slave runs also PASS on both controllers: connected100/400kHz
+and disconnected100kHz. The native continuous-stretch watchdog now retains its
+original deadline across unrelated solved frames. GPIO toggles previously
+postponed timeout indefinitely; the retained regression fails before the fix
+and passes afterward. Scripted peer payloads are bounded at256 bytes so actual
+FIFO32/software-buffer crossings can be exercised without a synthetic shortcut.
+
 
 Corrections include route-OK enum handling (success is zero), physical
 SCL-before-SDA sequencing and real STOP edges, address-ACK/data-bit separation,
@@ -207,8 +226,8 @@ close every canonical gate below.
 
 ## Canonical gates not silently marked complete
 
-Ordinary SDK slave-driver behavior on both controllers, broader slave/ten-bit
-read/restart boundaries, master ten-bit/general-call support, data-phase/full
+Broader ordinary/native slave and ten-bit read/restart boundaries, master
+ten-bit/general-call support, data-phase/full
 multi-master arbitration, master-data edge/fast-path equivalence and replay,
 SCL/SDA filter sweeps, slow analog RC rise/recovery, inverted/direct/split-pad
 routes, non-FIFO RAM mode, asynchronous queued transfers, EEPROM write

@@ -616,14 +616,18 @@ static void slave_rearm(ESP32S3I2CState *s, int64_t now)
         when = s->slave_filter_deadline;
     }
     if (s->slave_stretch) {
-        unsigned protect = REG(s, 0x84) & 0x3ff;
-        if (protect) {
-            int64_t limit = cycles_ns(s, protect);
-            if (limit > 0) {
-                s->slave_protect_deadline = now + limit;
-                when = when ? MIN(when, s->slave_protect_deadline)
-                            : s->slave_protect_deadline;
+        if (!s->slave_protect_deadline) {
+            unsigned protect = REG(s, 0x84) & 0x3ff;
+            if (protect) {
+                int64_t limit = cycles_ns(s, protect);
+                if (limit > 0) {
+                    s->slave_protect_deadline = now + limit;
+                }
             }
+        }
+        if (s->slave_protect_deadline > now) {
+            when = when ? MIN(when, s->slave_protect_deadline)
+                        : s->slave_protect_deadline;
         }
     }
     if (when > now) {

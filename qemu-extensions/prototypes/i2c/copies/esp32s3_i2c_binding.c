@@ -21,7 +21,7 @@
  * same connectivity and line-state authority as physical peers. */
 #define SCRIPT_LIMIT 4
 #define SCRIPT_TXN_LIMIT 32
-#define SCRIPT_DATA_LIMIT 32
+#define SCRIPT_DATA_LIMIT 256
 #define SCRIPT_WAIT_POLLS 8192
 
 typedef struct I2cScriptTxn {

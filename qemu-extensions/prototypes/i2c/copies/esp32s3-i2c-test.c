@@ -492,11 +492,13 @@ static void script_graph(const char *script_json, bool with_sensor,
         char role[16]; snprintf(role, sizeof(role), "io%u", i);
         terminal(c, role, "digital", "inout", i);
     }
+    terminal(c, "io12", "digital", "inout", 12);
     c = component(p, "G", "ground"); terminal(c, "ref", "ground", "unspecified", -1);
     c = component(p, "V", "voltage-source");
     terminal(c, "p", "power", "unspecified", -1); terminal(c, "n", "ground", "unspecified", -1);
     quantity(c, "voltage", 3.3, "V");
     net(p, "vdd", "V.p", "U.vdd"); net(p, "gnd", "G.ref", "V.n"); net(p, "gnd", "U.gnd", NULL);
+    net(p, "unrelated-gpio", "U.io12", NULL);
     /* The graph-owned scripted master drives this bus as a physical peer. */
     c = component(p, "SM", "device"); qdict_put_str(c, "type", "i2c-scripted-master");
     terminal(c, "sda", "digital", "inout", -1); terminal(c, "scl", "digital", "inout", -1);
@@ -569,11 +571,18 @@ static void test_slave_read_stretch(void)
     g_assert_cmphex((rd(8) >> 18) & 63, ==, 0);
     g_assert_cmphex(rd(8) & BIT(5), ==, 0);
     qtest_quit(s);
-    /* Unserved read: stretch protection releases SCL and ends the transfer. */
+    /* Unserved read: unrelated GPIO frames cannot feed stretch protection. */
     peer_boot(0x2A, true, true);
     wr(0x1c, 0x12); wr(0x1c, 0x34);
     script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":42,\"read\":true,\"count\":2}]}", false, false);
-    ticks(3000000);
+    qtest_writel(s, PAD(12), INPUT);
+    qtest_writel(s, GPIO(GPIO_FUNC_OUT_SEL_CFG_OFFSET(12)), GPIO_FUNC_OUT_SEL_NONE);
+    qtest_writel(s, GPIO(A_GPIO_ENABLE_W1TS), BIT(12));
+    ticks(150000);
+    for (unsigned i = 0; i < 40; ++i) {
+        qtest_writel(s, GPIO(i & 1 ? A_GPIO_OUT_W1TS : A_GPIO_OUT_W1TC), BIT(12));
+        ticks(25000);
+    }
     g_assert_cmphex(rd(0x20) & MAIN_ST_TO_INT, ==, MAIN_ST_TO_INT);
     g_assert_cmphex(rd(8) & BIT(5), ==, 0);
     g_assert_cmphex((rd(8) >> 18) & 63, ==, 2);

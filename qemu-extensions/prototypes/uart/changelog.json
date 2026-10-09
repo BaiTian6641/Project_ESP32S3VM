@@ -182,5 +182,18 @@
    "UART64/64, UHCI17/17, GDMA18/18 and memory12/12 requalify; all five ordinary UART/UHCI profiles are strictly re-frozen from their actual original compiled roots and PASS on the same new executable.",
    "Exact source/firmware/manifest/log results: build-runtime-state/uart-continuation/i2c-final/qualification-receipt.json."
   ]
+ },
+ {
+  "date": "2026-10-09",
+  "packages": ["I2C-01", "I2C-02", "I2C-03", "UART-01", "UART-02", "UART-03"],
+  "qualification": "Slave-driver stage1e937cf0ad1822bb:147 native and18 ordinary master/slave/UART/UHCI scenarios PASS on the same source-bound binary, zero native skips. Stage147/15 was previously committed/pushed as fd43572; broader canonical/reference gates remain open.",
+  "changes": [
+   "Ordinary pinned-IDF slave APIs now exercise both controllers:65-byte receive, requested65-byte TX through physical relay,49-byte TX discard followed by17 replacement bytes, exact callback boundaries and disconnected silence at100/400kHz.",
+   "Public GPIO12 input gates real registered-master activation through stopped QMP Apply. Peer data bounds increase from32 to256 bytes; progression remains bounded per physical bit and uses no RX injection or response table.",
+   "Continuous-stretch protection arms once per hold. Unrelated GPIO/electrical frames no longer move its deadline; the retained regression fails before / passes after without changing timeout semantics.",
+   "Fixture response service precedes UART reporting: native debugger evidence showed the later controller's empty TX FIFO and address-stretch expiry when earlier response logs blocked the task.",
+   "GPIO dependency is declared unconditionally during both IDF component discovery and configured passes; only the fixture source selection is conditional.",
+   "Ten ordinary master and five strict re-frozen UART/UHCI regressions remain PASS on the same new executable. Full identities and raw evidence: build-runtime-state/uart-continuation/i2c-slave-final/qualification-receipt.json."
+  ]
  }
 ]

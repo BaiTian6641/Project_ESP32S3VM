@@ -5,6 +5,43 @@ parallel implementation in this session. Preserve the reviewed full scope; do no
 reduce completion to the foundation slices below. Historical heartbeat metadata
 is retained in the frozen packet; it is not an inventory of this session's jobs.
 
+## 2026-10-09 — both ordinary I2C slave drivers;147 native and18 ordinary PASS
+
+Current source-bound candidate:
+`qemu-uart-40edccac4156-1e937cf0ad1822bb`, executable SHA256
+`6e2c78411f0ef48215ad1c8be3f23fd0eef0ccfe4ea151c891a357ef8c49347f`.
+All **127 applied source hashes** match its immutable preparation receipt.
+The simulator's full goal remains **active and incomplete**.
+
+* **147 native cases PASS, zero skipped**: UART64, UHCI17, GDMA18,
+  memory12, I2C controller/error18 and service18.
+* **18 ordinary scenarios PASS on that same binary**: the ten master and five
+  UART/UHCI regressions, plus slave-connected100/400kHz and disconnected100kHz.
+  Both public slave drivers receive65 bytes, respond with65 bytes through
+  actual physical relay clocks, and prove that TX reset discards49 queued bytes
+  before17 replacement bytes. Callback/request boundaries and silence on
+  disconnected wires are asserted from actual driver output.
+* Native debugger evidence localized the initial controller1 reset-row failure
+  to an empty TX FIFO and address-stretch expiry while earlier UART reports
+  blocked response service. The fixture now services pending requests before
+  reporting; driver status/bytes/callback checks are not relaxed.
+* Fixed a separate model watchdog defect: unrelated GPIO frames previously
+  postponed a continuous-stretch deadline. The retained native regression
+  toggles real unrelated GPIO output and fails before / passes after.
+* Peer payloads are bounded at256 bytes for genuine FIFO32/software-ring
+  crossings. Host scheduling uses public GPIO12 and actual QMP circuit Apply,
+  never register/callback/RX injection. Native cache sources are not edited.
+
+Stage1 was committed and pushed as **`fd43572`** on
+`origin/codex/simulator-foundation`; subsequent verified refinements use separate
+stage commits. Exact new-stage inputs/reports/snapshots:
+`build-runtime-state/uart-continuation/i2c-slave-final/qualification-receipt.json`.
+Broader ten-bit/read/restart/full multi-master/filter/RC/replay and other
+canonical I2C gates remain open, alongside other peripherals, Arduino/ROM,
+radio/SIMD and independent reference proof. SPI/RMT workers failed before edits
+because the configured provider reported insufficient funds; no alternative
+model was substituted. No physical-board operation occurred.
+
 ## 2026-10-09 — canonical I2C cutover;147 native and15 ordinary PASS
 
 Current source-bound candidate is

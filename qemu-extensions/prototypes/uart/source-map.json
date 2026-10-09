@@ -69,8 +69,8 @@
     "uhci_system_vectors": 17,
     "executed": true,
     "results": {
-      "uart_qtests": "64/64 PASS, zero skips, on source-bound candidate1411f3a2d8676631; includes native IO_MUX release/restore, TX_DONE clear/re-arm and no premature DMA descriptor completion. Evidence: build-runtime-state/uart-continuation/i2c-final/vectors/uart.log",
-      "uhci_system_vectors": "17/17 PASS, zero skips, on the same executable. Evidence: build-runtime-state/uart-continuation/i2c-final/vectors/uhci.log",
+      "uart_qtests": "64/64 PASS, zero skips, on source-bound candidate1e937cf0ad1822bb. Evidence: build-runtime-state/uart-continuation/i2c-slave-final/vectors/uart.log",
+      "uhci_system_vectors": "17/17 PASS, zero skips, on the same executable. Evidence: build-runtime-state/uart-continuation/i2c-slave-final/vectors/uhci.log",
       "build": "Fresh prepared checkout and ninja exit0; all127 applied source hashes verified. Shared regressions also PASS: GDMA18/18, memory12/12, I2C18/18 and service18/18. Existing compiler warnings are not suppressed or claimed absent."
     }
   },
@@ -180,12 +180,12 @@
     "uart_clkdiv_frag_cycle_jitter": "unqualified: rational-average baud model has no independently referenced16pulse phase/interleave fidelity; integer and average-rate behavior are separate",
     "uhci_break_delimiter_payload": "modelcontractexcludesonlyexplicitlyidentifiedactuallyqueuedphysicalNULLdelimiter; targetTRMdoesnotenumerateGDMApayloadinclusion, independenthardwareboundaryreference required",
     "fifo_size_zero": "unqualified: primary sources do not resolve zero encoding versus eight-block UART0 TX limit",
-    "rom_download_and_ordinary_boot": "Strict ordinary connected/absent/disconnected/wrong/uhci fixtures PASS on1411f3a2d8676631. ROM download remains separately unqualified.",
+    "rom_download_and_ordinary_boot": "Strict ordinary connected/absent/disconnected/wrong/uhci fixtures PASS on1e937cf0ad1822bb. ROM download remains separately unqualified.",
     "hardware_timing": "not independently qualified; no approved physical reference operation performed",
     "arduino": "Pinned Arduino3.3.12/IDF5.5.5 builds/freezes and emits the actual SDK git description; ordinary HardwareSerial runtime exercised but remains FAIL."
   },
   "firmware": "tests/firmware/uart_native; firmware/build-idf-fixture.sh freezes original images before run-native-fixture.py creates writable evidence disks",
-  "evidence": "build-runtime-state/uart-continuation/i2c-final/",
+  "evidence": "build-runtime-state/uart-continuation/i2c-slave-final/",
   "blocked_by": [
     "Arduino: the pinned SDK really reports git description b774170f. The validator accepts that exact hash alongside 5.5.5; initial report boundaries are repaired. Remaining failure is ordinary HardwareSerial behavioral completion, not a missing emitted identity marker.",
     "ROM download: banner bytes are retained in raw evidence but excluded from the tool stream through a CRLF readiness barrier. Standard esptool no-reset SYNC acquisition is used without register/security commands. No valid ROM ACK traversal yet; a separate SYNC probe produced a LoadStoreError panic at EPC1=0x40044290, EXCVADDR=0x5ffd0000. The panic text is not a protocol reply."
@@ -195,10 +195,10 @@
     "pdf_sha256": "4484bf8a69035ec42a731c58c64ada6fbd1f1618c5559409f134d9ea083f444f"
   },
   "ordinary_fixture_results": {
-    "binary": "qemu-uart-40edccac4156-1411f3a2d8676631/build-wsl/qemu-system-xtensa sha256 880b9dbe735f9c6258245b53f4b43929fd7abf5f2bc68410a29b025c2172c75a",
-    "qualification_receipt": "build-runtime-state/uart-continuation/i2c-final/qualification-receipt.json",
-    "frozen": "build-runtime-state/uart-continuation/i2c-final/uart-qualified-frozen/<mode>",
-    "runs": "build-runtime-state/uart-continuation/i2c-final/uart-runs/<mode>",
+    "binary": "qemu-uart-40edccac4156-1e937cf0ad1822bb/build-wsl/qemu-system-xtensa sha256 6e2c78411f0ef48215ad1c8be3f23fd0eef0ccfe4ea151c891a357ef8c49347f",
+    "qualification_receipt": "build-runtime-state/uart-continuation/i2c-slave-final/qualification-receipt.json",
+    "frozen": "build-runtime-state/uart-continuation/i2c-slave-final/uart-frozen/<mode>",
+    "runs": "build-runtime-state/uart-continuation/i2c-slave-final/uart-runs/<mode>",
     "connected": "PASS: strict full-run validation, physical stop/resume, expected vectors and exact streams, zero firmware failures.",
     "absent": "PASS: strict complete-run validation, all expected vectors, zero firmware failures.",
     "disconnected": "PASS: strict complete-run validation, all expected vectors, zero firmware failures.",

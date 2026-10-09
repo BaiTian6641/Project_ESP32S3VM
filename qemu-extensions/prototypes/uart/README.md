@@ -184,7 +184,7 @@ that changing the mux releases the wire before restoring it.
 must not immediately regenerate it; `tx-done-clear-next-completion` checks that
 invariant and the next real transfer's IRQ on each UART. The current native
 suite is **64/64 UART + 17/17 UHCI**, zero skipped, on source-bound
-candidate `1411f3a2d8676631`. All five strict ordinary
+candidate `1e937cf0ad1822bb`. All five strict ordinary
 connected/absent/disconnected/wrong/UHCI firmware runners **PASS** on that same
 executable. This includes FIFO/error recovery, physical flow control and queued
 VM pause/resume, digital RS485, receive-only IrDA, and actual 513-byte UHCI DMA
@@ -194,7 +194,7 @@ driver from recycling buffers after each single-byte pump.
 
 Arduino, ROM download, undocumented packet fields and independent hardware
 timing remain separate gates. See `source-map.json` and
-`build-runtime-state/uart-continuation/i2c-final/qualification-receipt.json`.
+`build-runtime-state/uart-continuation/i2c-slave-final/qualification-receipt.json`.
 
 
 `tests/firmware/uart_native/README.md` contains ordinary pinned IDF build/freeze

@@ -26,6 +26,8 @@ PROFILES = {
     "power_disconnected": "POWER",
     "power_undervoltage": "POWER",
     "power_overvoltage": "POWER",
+    "slave": "SLAVE",
+    "slave_disconnected": "SLAVE_DISCONNECTED",
 }
 
 
@@ -122,6 +124,136 @@ def project(mode, pads=(8, 9, 10, 11)):
                 components=components, nets=nets, geometry=dict(components={}, nets={}))
 
 
+def slave_payload(phase, port):
+    length = 17 if phase == 2 else 65
+    if phase == 0:
+        return bytes((i * 7 + port * 29 + 3) & 255 for i in range(length))
+    if phase == 1:
+        return bytes((i * 11 + port * 17 + 0x50) & 255 for i in range(length))
+    return bytes((i * 13 + port * 19 + 0xa0) & 255 for i in range(length))
+
+
+def slave_project(mode, pads, speed, phase=None):
+    """Physical masters appear only after both guest slave drivers are ready."""
+    terms = [terminal("U1", "vdd", "power", "input"),
+             terminal("U1", "gnd", "ground", "input")]
+    terms.extend(terminal("U1", f"io{pad}", "digital", "inout", pad, "gpio")
+                 for pad in sorted(set(pads) | {12}))
+    components = [
+        component("U1", "mcu", terms),
+        component("G", "ground", [terminal("G", "ref", "ground", "passive")]),
+        component("V", "voltage-source", [
+            terminal("V", "p", "power", "output"),
+            terminal("V", "n", "ground", "input")],
+            {"voltage": quantity(3.3, "V")}),
+    ]
+    endpoints = {"gnd": ["G.ref", "V.n", "U1.gnd"], "vdd": ["V.p", "U1.vdd"]}
+
+    def pull(cid, net, supply):
+        components.append(component(cid, "resistor", [
+            terminal(cid, "a", "passive", "passive"),
+            terminal(cid, "b", "passive", "passive")],
+            {"resistance": quantity(4700, "ohm")}))
+        endpoints.setdefault(net, []).append(f"{cid}.a")
+        endpoints[supply].append(f"{cid}.b")
+
+    endpoints["host_gate"] = ["U1.io12"]
+    pull("RGATE", "host_gate", "gnd" if phase is None else "vdd")
+    for port in range(2):
+        for line, pad in zip(("sda", "scl"), pads[port * 2:port * 2 + 2]):
+            net = f"bus{port}_{line}"
+            endpoints[net] = [f"U1.io{pad}"]
+            pull(f"R{port}_{line}", net, "vdd")
+        if phase is None:
+            continue
+        cid = f"SM{port}"
+        master = component(cid, "device", [
+            terminal(cid, "sda", "digital", "inout"),
+            terminal(cid, "scl", "digital", "inout"),
+            terminal(cid, "vdd", "power", "input"),
+            terminal(cid, "gnd", "ground", "input")], model="i2c-scripted-master")
+        payload = slave_payload(phase, port)
+        transaction = dict(address=0x2a)
+        if phase == 0:
+            transaction["data"] = list(payload)
+        else:
+            transaction["relay"] = len(payload)
+        master["attributes"] = dict(native_i2c_script=dict(
+            bit_ns=1000000000 // speed, start_delay_ns=2000000,
+            transactions=[transaction]))
+        components.append(master)
+        endpoints["vdd"].append(f"{cid}.vdd")
+        endpoints["gnd"].append(f"{cid}.gnd")
+        for line in ("sda", "scl"):
+            net = f"bus{port}_{line}"
+            if mode == "slave_disconnected":
+                net = f"peer{port}_{line}"
+                endpoints[net] = []
+                pull(f"RP{port}_{line}", net, "vdd")
+            endpoints[net].append(f"{cid}.{line}")
+    return dict(
+        version=3, id="i2c-native-slave", name="Ordinary I2C slave peers",
+        profile=dict(chip="esp32s3", board="esp32-s3-devkitc-1", module="esp32-s3-wroom-1"),
+        firmware={}, runtime=dict(electrical=dict(driver_profile="s3-explicit-finite-v1", mode="dc")),
+        components=components,
+        nets=[dict(id=name, name=name, endpoints=ends) for name, ends in endpoints.items()],
+        geometry=dict(components={}, nets={}))
+
+
+def slave_progress(text, config, mode, qmp, evidence, result, started, finished):
+    phases = range(1 if mode == "slave_disconnected" else 3)
+    for phase in phases:
+        length = len(slave_payload(phase, 0))
+        ready = rf"^I2C_SLAVE_READY phase={phase} length={length} gate_gpio=12$"
+        if phase not in started and re.search(ready, text, re.MULTILINE):
+            qmp.call("stop")
+            graph = slave_project(mode, config["pads"], config["speed_hz"], phase)
+            (evidence / f"project-slave-{phase}.json").write_text(json.dumps(graph, indent=2) + "\n")
+            qmp.apply(graph)
+            result["snapshots"].append(dict(phase=f"slave-active-{phase}", graph=qmp.snapshot()))
+            started.add(phase)
+            qmp.call("cont")
+        if phase in started and phase not in finished and re.search(
+                rf"^I2C_SLAVE_FINISHED phase={phase}$", text, re.MULTILINE):
+            finished.add(phase)
+            if phase != phases.stop - 1:
+                qmp.call("stop")
+                qmp.apply(slave_project(mode, config["pads"], config["speed_hz"]))
+                result["snapshots"].append(dict(phase=f"slave-idle-{phase}", graph=qmp.snapshot()))
+                qmp.call("cont")
+
+
+def validate_slave_uart(text, config):
+    profile, speed, pads = config["profile"], config["speed_hz"], config["pads"]
+    disconnected = profile == "slave_disconnected"
+    for port in range(2):
+        require(re.search(
+            rf"^I2C_NATIVE_PHASE port={port} profile={profile} sda={pads[port*2]} scl={pads[port*2+1]} speed_hz={speed} pullup=external$",
+            text, re.MULTILINE), f"Slave{port} configuration mismatch")
+        checks = dict(re.findall(rf"^I2C_NATIVE_CHECK port={port} name=(\w+) result=(\w+)$",
+                                 text, re.MULTILINE))
+        expected = {"new_slave", "slave_callbacks", "delete_slave"}
+        if disconnected:
+            expected |= {"disconnected_no_receive", "disconnected_no_request"}
+            require(re.search(
+                rf"^I2C_SLAVE_RESULT port={port} phase=0 callbacks=0 requests=0 length=0$",
+                text, re.MULTILINE), f"Disconnected slave{port} received an event")
+        else:
+            for phase in range(3):
+                expected |= {f"slave_phase{phase}_{name}" for name in ("bytes", "callbacks", "requests")}
+                payload = slave_payload(phase, port)
+                require(re.search(
+                    rf"^I2C_SLAVE_BYTES port={port} phase={phase} data={payload.hex()}$",
+                    text, re.MULTILINE), f"Slave{port} phase{phase} actual bytes differ")
+                require(re.search(
+                    rf"^I2C_SLAVE_RESULT port={port} phase={phase} callbacks=1 requests={int(phase != 0)} length={len(payload)}$",
+                    text, re.MULTILINE), f"Slave{port} phase{phase} callback boundary differs")
+            expected |= {"queue_discarded49", "queued_discarded49", "reset_tx_fifo",
+                         "respond_write", "respond_written_exact"}
+        require(all(checks.get(name) == "PASS" for name in expected),
+                f"Slave{port} missing passing checks: {sorted(expected - checks.keys())}")
+
+
 def configuration(path, mode):
     values = dict(re.findall(r"^(CONFIG_[A-Z0-9_]+)=(.*)$", path.read_text(), re.MULTILINE))
     selected = [key.removeprefix("CONFIG_I2C_NATIVE_PROFILE_") for key, value in values.items()
@@ -135,6 +267,8 @@ def configuration(path, mode):
                  for port in range(2) for line in ("SDA", "SCL"))
     if len(set(pads)) != 4 or any(pad < 0 or pad > 48 or 22 <= pad <= 25 for pad in pads):
         raise ValueError(f"Both masters require four distinct valid ESP32S3 pads: {pads}")
+    if mode.startswith("slave") and 12 in pads:
+        raise ValueError("Slave fixture GPIO12 is reserved for the physical host gate")
     return dict(profile=PROFILES[mode].lower(), speed_hz=speed, pads=pads)
 
 
@@ -224,6 +358,9 @@ def validate_uart(text, config):
     require(re.search(rf"^I2C_NATIVE_DONE profile={profile} failures=0 result=PASS$", text, re.MULTILINE),
             "Ordinary firmware did not complete with failures=0 result=PASS")
     require(not re.search(r"^I2C_NATIVE_CHECK .*result=FAIL$", text, re.MULTILINE), "Firmware reported failed check")
+    if profile.startswith("slave"):
+        validate_slave_uart(text, config)
+        return
     pullup = "none" if profile == "no_pull" else "external"
     for port in range(2):
         require(re.search(rf"^I2C_NATIVE_PHASE port={port} profile={profile} sda={pads[port*2]} scl={pads[port*2+1]} speed_hz={speed} pullup={pullup}$",
@@ -294,7 +431,12 @@ def main():
     try:
         config = configuration(args.sdkconfig, args.mode)
         result["firmware_configuration"] = config
-        graph = project(args.mode, config["pads"])
+        slave_mode = args.mode.startswith("slave")
+        graph = (slave_project(args.mode, config["pads"], config["speed_hz"])
+                 if slave_mode else project(args.mode, config["pads"]))
+        if slave_mode:
+            result["qualification"] = "Ordinary driver slave receive/request/TX-reset through physical peer clocks on both controllers; broader canonical gates remain separate"
+        slave_started, slave_finished = set(), set()
         (evidence / "project.json").write_text(json.dumps(graph, indent=2) + "\n")
         # UNIX sockets have a short path limit; keep this ephemeral path outside
         # potentially long evidence roots. Only transport is ephemeral.
@@ -326,6 +468,9 @@ def main():
                         if re.search(r"^I2C_NATIVE_DONE profile=\w+ failures=\d+ result=(?:PASS|FAIL)$",
                                      text, re.MULTILINE):
                             break
+                        if slave_mode:
+                            slave_progress(text, config, args.mode, qmp, evidence, result,
+                                           slave_started, slave_finished)
                         if proc.poll() is not None:
                             raise RuntimeError(f"QEMU exited {proc.returncode} before UART completion")
                         if time.monotonic() >= deadline:
@@ -334,6 +479,10 @@ def main():
                     qmp.call("stop")
                     result["snapshots"].append(dict(phase="firmware-completed", graph=qmp.snapshot()))
                     validate_uart(text, config)
+                    if slave_mode:
+                        phases = set(range(1 if args.mode == "slave_disconnected" else 3))
+                        require(slave_started == phases and slave_finished == phases,
+                                "Ordinary slave physical phases did not complete")
                     result["status"] = "PASS"
                 finally:
                     try:
@@ -356,6 +505,8 @@ def main():
         result["uart"] = uart_observations(uart.read_text(errors="replace") if uart.exists() else "")
         sources = [args.qemu, args.flash, args.sdkconfig, pathlib.Path(__file__).resolve()]
         sources.extend(path for path in (evidence / "project.json", evidence / "command.json", uart, stderr, stdout) if path.exists())
+        sources.extend(evidence / f"project-slave-{phase}.json" for phase in range(3)
+                       if (evidence / f"project-slave-{phase}.json").exists())
         result["hashes"] = {str(path): sha256(path) for path in sources}
         (evidence / "result.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(dict(status=result["status"], evidence=str(evidence), error=result.get("error"))))

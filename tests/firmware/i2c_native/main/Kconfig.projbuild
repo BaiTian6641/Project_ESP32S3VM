@@ -14,9 +14,13 @@ config I2C_NATIVE_PROFILE_NO_PULL
     bool "No internal or external pull-ups"
 config I2C_NATIVE_PROFILE_STUCK
     bool "SDA or SCL held low"
+config I2C_NATIVE_PROFILE_SLAVE
+    bool "Slave receive/request/reset through physical scripted masters"
+config I2C_NATIVE_PROFILE_SLAVE_DISCONNECTED
+    bool "Slave callbacks remain silent with disconnected physical masters"
 endchoice
 config I2C_NATIVE_SPEED_HZ
-    int "Master SCL frequency (Hz)"
+    int "Master or external-peer SCL frequency (Hz)"
     range 100000 400000
     default 100000
     help
