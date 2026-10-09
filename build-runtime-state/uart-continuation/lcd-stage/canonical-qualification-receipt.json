@@ -1,0 +1,100 @@
+{
+  "status": "CANONICAL_NATIVE274_PASS; all25 ordinary profiles remain unqualified",
+  "source_fingerprint": "931bf38939aa9c83faceecb30154dc3762ab6ba494521573e902058b61447a65",
+  "runtime_sha256": "0368a8a49889713c4b03f02ef0bf197002f82def4989e5cea493fa3f748f891b",
+  "applied_source_files_verified": 147,
+  "runtime_model_source_delta": [],
+  "only_applied_source_delta": [
+    "tests/qtest/esp32s3-lcd-cam-test.c"
+  ],
+  "native_suites": {
+    "rmt": {
+      "exit": 0,
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 23
+    },
+    "spi": {
+      "exit": 0,
+      "passed": 27,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 27
+    },
+    "spi-service": {
+      "exit": 0,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 8
+    },
+    "uart": {
+      "exit": 0,
+      "passed": 67,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 67
+    },
+    "uhci": {
+      "exit": 0,
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 17
+    },
+    "gdma": {
+      "exit": 0,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 18
+    },
+    "memory": {
+      "exit": 0,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 12
+    },
+    "i2c": {
+      "exit": 0,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 18
+    },
+    "i2c-service": {
+      "exit": 0,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 18
+    },
+    "lcd-cam": {
+      "exit": 0,
+      "passed": 66,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 66
+    }
+  },
+  "native_passed_total": 274,
+  "lcd_cam_cases": 66,
+  "qtest_sha256": "b84047998b1289b49bed3bc3e41556e44731ba33d8c4dff4714fed112773d029",
+  "qtest_source_sha256": "05cb659170570da0628acdcee7bafa9d5f8c83a0e00c5f880c61793114402b2e",
+  "evidence": "build-runtime-state/uart-continuation/lcd-stage/canonical-native/",
+  "original_isolated_proof": "qualification-receipt.json",
+  "scope": "Fixture/native-only cutover; actual emulator+powered physical peers and GPIO camera loops, no runtime model code changed. Source-bound old ordinaryUART/ROM proof96eebfa is not attributed to this freshly linked executable. All25 ordinaryLCD/sensor and full external memory/source/metrology gates remain open.",
+  "native_fixture_changes": [
+    "Correct named sysbus-irq interception, not dummy outputs.",
+    "Pinned S3 valid GPIO mask excludes22..25: actual valid LCDcontrol2/3 and cameraRX20,21,26..42; no validation bypass.",
+    "Registered LCD peers always expose16data+named/power terminals, explicit input directions.8bit active bus uses actual low8 wires; high device terminals retain real pull-downs.",
+    "Stopped Apply followed by actual VM virtual-clock resume; no timer injection.",
+    "GPIO input enables only actual wired/read consumers, not every unused pad. Floating negative camera inputs still surface strict UNKNOWN.",
+    "WR attachedDC uses one physically merged input net; MCU endpoint no longer appears on two nets.",
+    "Filter boundaries anchor at actual GPIO edge, not the helper return100ns later; same1999/2000ns threshold.",
+    "Explicit IRQ clear initializes eachcamera start separately from module/FIFO reset; no model status masking."
+  ],
+  "hardware_operations": false
+}

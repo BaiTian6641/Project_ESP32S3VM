@@ -2,14 +2,12 @@
   "schema_version": 1,
   "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
   "prefix_fingerprint": "dbe2a8a5ad4e07a607e76ab751e77ac85fe3bf30974359bd25a69354499f9b32",
-  "status": "blocked-owner-publication",
+  "status": "NATIVE_REGISTER66_PASS_ORDINARY25_PENDING",
   "blockers": [
-    "NativeNet approved model enums/API/physical OV2640 I2C routes and typed ADC source freeze awaiting owner publication",
-    "I2C external SCCB dispatch owner reports service18/18; integrated binding/camera native qualification unobserved",
-    "Real LEDC XCLK publication and integrated ordinary-camera proof pending",
-    "Final source prepared native build, 66 qtests, real graph captures, all 25 ordinary firmware profile builds/runtime and post-cutover reviews not exercised",
-    "Qualified CORE04 PSRAM CPU cache/GDMA visibility assigned MemoryNativeWorker; no existing qualified path",
-    "RGB independent bus/pixel width migration is authored but not verified against actual native captures"
+    "All25 ordinary firmware profile builds/runtimes and exact physical panel/sensor captures remain unqualified by native66.",
+    "Real LEDC XCLK integration and ordinary OV2640 SCCB/DVP driver proof await the active pulse/ordinary qualification stages.",
+    "Broader bus8/16 versus pixel8/16/24 RGB source/order modes remain unqualified; default16/16 native captures are not all15 ordinary RGB profiles.",
+    "Qualified native PSRAMCPU/GDMA foundation exists; all current same-executable external RGB/CAM consumers and independent memory/hardware gates remain separate."
   ],
   "preparation_order": [
     {
@@ -458,8 +456,8 @@
       "kind": "copy",
       "source": "prototypes/lcd-cam/copies/esp32s3-lcd-cam-test.c",
       "destination": "tests/qtest/esp32s3-lcd-cam-test.c",
-      "sha256": "0fa0a8bbf4864b62cd46ad55123da9f3ab75d7d8ce4e8169f75fe125ec24f7f2",
-      "copied_sha256": "0fa0a8bbf4864b62cd46ad55123da9f3ab75d7d8ce4e8169f75fe125ec24f7f2"
+      "sha256": "05cb659170570da0628acdcee7bafa9d5f8c83a0e00c5f880c61793114402b2e",
+      "copied_sha256": "05cb659170570da0628acdcee7bafa9d5f8c83a0e00c5f880c61793114402b2e"
     },
     {
       "kind": "patch",
@@ -541,7 +539,7 @@
   "software_profile": "s3-lcdcam-edge-functional-v1",
   "memory_contract": "Real GDMA owner validates internal/external buffer access. No additional PSRAM mapping and no qualification from internal RAM proof.",
   "capture_contract": "Registered services consume resolved actual terminals. Bounded immutable QOM snapshots/windows only; project filesystem paths rejected. Host evidence runner writes QOM results separately from GUI redraw.",
-  "qualification": "AUTHORED / NOT NATIVE QUALIFIED. User-requested wrap-up; no native build, 66-vector execution, firmware build PASS, actual LCD/CAM capture, boot regression or PSRAM/hardware acceptance. Primary/reference/source-provenance observations remain explicitly separate.",
+  "qualification": "Fresh source-bound931bf38939aa9c83:274 complete native cases PASS, zero skipped, including all66 LCD/CAM register/actual-wire cases. This fixture-only cutover changes no runtime model source; actual ordinary25 profiles, real OV2640/LEDC sensor and broader memory/metrology gates remain unqualified.",
   "sources": [
     {
       "url": "https://github.com/espressif/esp-idf/tree/v5.5.5/components/hal/esp32s3/include/hal",
@@ -637,7 +635,7 @@
     "historical_text_reference_only": "3a8169e167b35ca48daa813161be7727911a986b35df165a770e79c2ead733d4",
     "preparation": "Raw guard, raw immutable snapshot, explicit --ignore-space-change application; no input normalization/rewriting and no alternate runtime identity accepted."
   },
-  "own_source_status": "Authored complete reachable native source; post-RGB-migration native compilation/review unobserved.",
+  "own_source_status": "Canonical native fixture repaired and all66 cases execute/PASS in the full274 native closure. Runtime LCD/CAM/panel/sensor model bytes unchanged; ordinary SDK proof remains separate.",
   "rgb_pixel_contract": {
     "required_bits_per_pixel": [
       8,
@@ -661,7 +659,36 @@
     ],
     "profile_boundary": "Declared functional byte streams, not universal panel order; ordinary firmware fills corresponding real buffers."
   },
-  "continuation_contract": "Do not bypass SOURCE_READY guard or rewrite raw UART patch identity. Main owns integration/verification continuation; all verification through subagents. No permanent DONE promotion or hardware/PSRAM claim.",
+  "continuation_contract": "Do not bypass SOURCE_READY guard or rewrite rawUART patch identity. Main owns integration and actual verification; historical author-only/subagent-only restrictions are superseded by user-authorized continuation. No blanket DONE/hardware/ordinary-sensor promotion from native66.",
   "final_reference_source_record": "reference/provenance.json (RGB migration SOURCE_READY authored only; historical 77 checks do not qualify migrated sources)",
+  "current_native_qualification": {
+    "status": "PASS",
+    "source_fingerprint": "931bf38939aa9c83faceecb30154dc3762ab6ba494521573e902058b61447a65",
+    "runtime_sha256": "0368a8a49889713c4b03f02ef0bf197002f82def4989e5cea493fa3f748f891b",
+    "applied_source_files_verified": 147,
+    "native_passed_total": 274,
+    "lcd_cam_cases": 66,
+    "failed": 0,
+    "skipped": 0,
+    "qtest_sha256": "b84047998b1289b49bed3bc3e41556e44731ba33d8c4dff4714fed112773d029",
+    "test_source_sha256": "05cb659170570da0628acdcee7bafa9d5f8c83a0e00c5f880c61793114402b2e",
+    "evidence": "build-runtime-state/uart-continuation/lcd-stage/canonical-native/",
+    "scope": "Full native register/electrical/peer captures; real GPIO camera loops, not ordinary OV2640 sensor. Runtime model sources identical to qualified7b8; only native LCDtestsource changed. All25 ordinary profiles and broader source/memory/metrology gates remain unqualified."
+  },
+  "native_fixture_changelog": {
+    "date": "2026-10-10",
+    "runtime_model_changed": false,
+    "changes": [
+      "Correct named sysbus-irq interception, not dummy outputs.",
+      "Pinned S3 valid GPIO mask excludes22..25: actual valid LCDcontrol2/3 and cameraRX20,21,26..42; no validation bypass.",
+      "Registered LCD peers always expose16data+named/power terminals, explicit input directions.8bit active bus uses actual low8 wires; high device terminals retain real pull-downs.",
+      "Stopped Apply followed by actual VM virtual-clock resume; no timer injection.",
+      "GPIO input enables only actual wired/read consumers, not every unused pad. Floating negative camera inputs still surface strict UNKNOWN.",
+      "WR attachedDC uses one physically merged input net; MCU endpoint no longer appears on two nets.",
+      "Filter boundaries anchor at actual GPIO edge, not the helper return100ns later; same1999/2000ns threshold.",
+      "Explicit IRQ clear initializes eachcamera start separately from module/FIFO reset; no model status masking."
+    ],
+    "qualification": "Fresh canonical931bf38939aa9c83 full274native PASS, zero skipped; actual all66 fixture cases, no ordinary25 or sensor/metrology claim."
+  },
   "final_firmware_profiles": 25
 }

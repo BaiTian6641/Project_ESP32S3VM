@@ -105,11 +105,14 @@ static QDict *get_json(Fixture *f, const char *path, const char *property)
 static void set_json(Fixture *f, const char *path, const char *property, QDict *d)
 {
     GString *json = qobject_to_json(QOBJECT(d));
+    qtest_qmp_assert_success(f->q, "{'execute':'stop'}");
     QDict *reply = qtest_qmp(f->q, "{'execute':'qom-set','arguments':"
         "{'path':%s,'property':%s,'value':%s}}", path, property, json->str);
     g_assert_false(qdict_haskey(reply, "error"));
     qobject_unref(reply);
     g_string_free(json, true);
+    /* Apply is stopped; timers need the real VM virtual clock enabled. */
+    qtest_qmp_assert_success(f->q, "{'execute':'cont'}");
 }
 static QDict *component(QDict *p, const char *id, const char *kind)
 {
@@ -123,8 +126,8 @@ static QDict *component(QDict *p, const char *id, const char *kind)
     qlist_append(qdict_get_qlist(p, "components"), c);
     return c;
 }
-static void terminal(QDict *c, const char *id, const char *role,
-                     const char *domain, int gpio)
+static QDict *terminal(QDict *c, const char *id, const char *role,
+                       const char *domain, int gpio)
 {
     QDict *t = qdict_new();
     qdict_put_str(t, "id", id);
@@ -136,6 +139,7 @@ static void terminal(QDict *c, const char *id, const char *role,
         qdict_put_int(t, "gpio", gpio);
     }
     qlist_append(qdict_get_qlist(c, "terminals"), t);
+    return t;
 }
 static void quantity(QDict *c, const char *key, double value, const char *unit)
 {
@@ -168,6 +172,10 @@ static QDict *project(const char *name, unsigned pads, QList **vdd, QList **gnd)
     terminal(c, "U.vdd", "vdd", "power", -1);
     terminal(c, "U.gnd", "gnd", "ground", -1);
     for (unsigned i = 0; i < pads; ++i) {
+        /* Pinned S3 SOC_GPIO_VALID_GPIO_MASK excludes the unbonded22..25. */
+        if (i >= 22 && i <= 25) {
+            continue;
+        }
         g_autofree char *id = g_strdup_printf("U.io%u", i);
         g_autofree char *role = g_strdup_printf("io%u", i);
         terminal(c, id, role, "digital", i);
@@ -227,26 +235,34 @@ static void panel_graph(Fixture *f, bool rgb, unsigned bits,
     }
     qdict_put(attrs, "native_lcd_panel", cfg);
     qdict_put(c, "attributes", attrs);
-    terminal(c, "D.vdd", "vdd", "power", -1);
-    terminal(c, "D.gnd", "gnd", "ground", -1);
+    qdict_put_str(terminal(c, "D.vdd", "vdd", "power", -1), "direction", "input");
+    qdict_put_str(terminal(c, "D.gnd", "gnd", "ground", -1), "direction", "input");
     qlist_append_str(vdd, "D.vdd");
     qlist_append_str(gnd, "D.gnd");
-    for (unsigned i = 0; i < bits + (rgb ? 5 : 4); ++i) {
+    static const unsigned control_pads[] = {20, 21, 2, 3, 1};
+    QList *wr_dc_wire = NULL;
+    for (unsigned i = 0; i < 16 + (rgb ? 5 : 4); ++i) {
         const char *control[] = {"wr", "dc", "cs", "reset"};
         const char *rgb_control[] = {"pclk", "de", "hsync", "vsync", "reset"};
-        g_autofree char *role = i < bits ? g_strdup_printf("d%u", i) :
-            g_strdup(rgb ? rgb_control[i - bits] : control[i - bits]);
+        g_autofree char *role = i < 16 ? g_strdup_printf("d%u", i) :
+            g_strdup(rgb ? rgb_control[i - 16] : control[i - 16]);
         g_autofree char *id = g_strdup_printf("D.%s", role);
-        unsigned pad = i < bits ? 4 + i : 20 + i - bits;
-        terminal(c, id, role, "digital", -1);
-        QList *wire = net(p, role);
+        unsigned pad = i < 16 ? 4 + i : control_pads[i - 16];
+        qdict_put_str(terminal(c, id, role, "digital", -1), "direction", "input");
+        bool joined_dc = fault == 2 && !strcmp(role, "dc");
+        QList *wire = joined_dc ? wr_dc_wire : net(p, role);
+        if (!strcmp(role, "wr")) {
+            wr_dc_wire = wire;
+        }
         qlist_append_str(wire, id);
         bool reset = !strcmp(role, "reset");
-        bool connected = !(fault == 1 && !strcmp(role, "wr")) &&
+        bool connected = !(i < 16 && i >= bits) &&
+                         !(fault == 1 && !strcmp(role, "wr")) &&
                          !(fault == 3 && i == 0);
-        if (!reset && connected) {
-            g_autofree char *pin = g_strdup_printf("U.io%u", fault == 2 &&
-                !strcmp(role, "wr") ? 21 : pad);
+        if (!reset && connected && !joined_dc) {
+            unsigned gpio = fault == 2 && !strcmp(role, "wr") ? 21 : pad;
+            g_autofree char *pin = g_strdup_printf("U.io%u", gpio);
+            qtest_writel(f->q, PAD(gpio), INPUT);
             qlist_append_str(wire, pin);
         }
         pull(p, i, wire, reset || !strcmp(role, "cs") ? vdd : gnd);
@@ -284,23 +300,26 @@ static void panel_graph(Fixture *f, bool rgb, unsigned bits,
     }
     qtest_writel(f->q, OUT(20), 154);
     qtest_writel(f->q, OUT(21), rgb ? 150 : 153);
-    qtest_writel(f->q, OUT(22), rgb ? 151 : 132);
+    qtest_writel(f->q, OUT(2), rgb ? 151 : 132);
     if (rgb) {
-        qtest_writel(f->q, OUT(23), 152);
+        qtest_writel(f->q, OUT(3), 152);
     }
     qtest_writel(f->q, GPIO(A_GPIO_ENABLE_W1TS),
-                 (((1U << bits) - 1) << 4) | BIT(20) | BIT(21) | BIT(22) |
-                 (rgb ? BIT(23) : 0));
+                 (((1U << bits) - 1) << 4) | BIT(20) | BIT(21) | BIT(2) |
+                 (rgb ? BIT(3) : 0));
     step(f, 0);
 }
 static Fixture start(void)
 {
     Fixture f = { .q = qtest_init("-machine esp32s3 -S -L pc-bios "
         "-global driver=esp32s3.gpio,property=strap_mode,value=0x00") };
-    qtest_irq_intercept_out(f.q, CONTROLLER);
+    qtest_irq_intercept_out_named(f.q, CONTROLLER, "sysbus-irq");
     qtest_writel(f.q, EN1, qtest_readl(f.q, EN1) | GATE);
-    for (unsigned i = 0; i < 39; ++i) {
-        qtest_writel(f.q, PAD(i), INPUT);
+    for (unsigned i = 0; i < 43; ++i) {
+        if (i >= 22 && i <= 25) {
+            continue;
+        }
+        qtest_writel(f.q, PAD(i), INPUT & ~R_IO_MUX_GPIOn_FUN_IE_MASK);
     }
     f.now = qtest_clock_step(f.q, 0);
     return f;
@@ -366,7 +385,7 @@ static void i80(Fixture *f, unsigned command, const uint8_t *data,
     step(f, (cycles + 1) * 1000 + 500);
     g_assert_cmphex(rd(f, RAW) & BIT(1), ==, BIT(1));
     g_assert_false(pin(f, 20));
-    g_assert_true(pin(f, 22));
+    g_assert_true(pin(f, 2));
 }
 static uint16_t reverse_bits(uint16_t value, unsigned bits)
 {
@@ -494,7 +513,7 @@ static void test_i80_wire_hold(void)
     irq(&f, 0, BIT(1));
     g_assert_true(pin(&f, 20));
     g_assert_false(pin(&f, 21));
-    g_assert_false(pin(&f, 22));
+    g_assert_false(pin(&f, 2));
     for (unsigned i = 0; i < 8; ++i) {
         g_assert_cmpint(pin(&f, 4 + i), ==, !!(0x2c & BIT(i)));
     }
@@ -505,7 +524,7 @@ static void test_i80_wire_hold(void)
     }
     step(&f, 1000); /* final data rising edge */
     irq(&f, 0, BIT(1));
-    g_assert_false(pin(&f, 22));
+    g_assert_false(pin(&f, 2));
     step(&f, 500); /* final falling edge/hold */
     irq(&f, 0, BIT(1));
     g_assert_false(pin(&f, 20));
@@ -513,7 +532,7 @@ static void test_i80_wire_hold(void)
     irq(&f, 0, BIT(1));
     step(&f, 1);
     irq(&f, BIT(1), BIT(1));
-    g_assert_true(pin(&f, 22));
+    g_assert_true(pin(&f, 2));
     wr(&f, CLR, BIT(1));
     irq(&f, 0, BIT(1));
     qtest_quit(f.q);
@@ -680,21 +699,22 @@ static void test_rgb_starvation(void)
     qtest_quit(f.q);
 }
 /* Camera-loop physical GPIO roles: 0..15 data sources, 16 PCLK, 17 HREF,
- * 18 VSYNC; receivers 20..35 data, 36 PCLK, 37 HREF, 38 VSYNC. Reserved
- * module pads are used ONLY in this paused controller-loop qtest, not in
+ * 18 VSYNC; receiver data20,21,26..39, PCLK40, HREF41, VSYNC42.
+ * Reserved module pads are used ONLY in this controller-loop qtest, not in
  * ordinary firmware/hardware qualification. Every source is a real finite
- * GPIO output; qtest never sets GPIO input or controller IRQ directly. */
+ * GPIO output; no unbonded22..25, GPIO-input injection or forced IRQ is used. */
 static void cam_graph(Fixture *f, unsigned bits, int missing)
 {
     QList *vdd, *gnd;
-    QDict *p = project("cam-mcu-physical-loop-register-boundary-only", 39, &vdd, &gnd);
+    QDict *p = project("cam-mcu-physical-loop-register-boundary-only", 43, &vdd, &gnd);
     for (unsigned i = 0; i < 19; ++i) {
         if (i >= bits && i < 16) {
             continue;
         }
+        unsigned receiver = i < 2 ? 20 + i : 24 + i;
         g_autofree char *id = g_strdup_printf("loop%u", i);
         g_autofree char *source = g_strdup_printf("U.io%u", i);
-        g_autofree char *sink = g_strdup_printf("U.io%u", i + 20);
+        g_autofree char *sink = g_strdup_printf("U.io%u", receiver);
         QList *wire = net(p, id);
         qlist_append_str(wire, source);
         if ((int)i != missing) {
@@ -704,9 +724,10 @@ static void cam_graph(Fixture *f, unsigned bits, int missing)
             qlist_append_str(net(p, absent), sink);
         }
         pull(p, i, wire, gnd);
+        qtest_writel(f->q, PAD(receiver), INPUT);
         qtest_writel(f->q, OUT(i), 256);
         qtest_writel(f->q, IN(i < 16 ? 133 + i : i == 16 ? 149 : i == 17 ? 150 : 152),
-                     (i + 20) | BIT(7));
+                     receiver | BIT(7));
     }
     set_json(f, ELECTRICAL, "project-json", p);
     qobject_unref(p);
@@ -715,16 +736,19 @@ static void cam_graph(Fixture *f, unsigned bits, int missing)
     qtest_writel(f->q, GPIO(A_GPIO_ENABLE_W1TS), ((1U << bits) - 1) | BIT(16) | BIT(17) | BIT(18));
     step(f, 0);
 }
-static void cam_drive(Fixture *f, uint16_t data, bool pclk, bool href, bool vsync)
+static int64_t cam_drive(Fixture *f, uint16_t data, bool pclk, bool href, bool vsync)
 {
+    int64_t edge = f->now;
     f->gpio_output = data | (pclk ? BIT(16) : 0) |
         (href ? BIT(17) : 0) | (vsync ? BIT(18) : 0);
     qtest_writel(f->q, GPIO(A_GPIO_OUT), f->gpio_output);
     step(f, 100);
+    return edge;
 }
 static void cam_setup(Fixture *f, unsigned bits, bool frame_eof,
                       bool reverse, bool swap, bool inverted, bool swap8)
 {
+    wr(f, CLR, 15); /* Explicit fresh IRQ boundary; module/FIFO reset is separate. */
     wr(f, ENA, BIT(2) | BIT(3));
     wr(f, CAM_CONV, swap8 ? BIT(21) : 0);
     wr(f, CAM_CTRL, (frame_eof ? BIT(8) : 0) | BIT(7) |
@@ -1016,8 +1040,9 @@ static void test_cam_vsync_filter_and_rearm(void)
     cam_drive(&f, 0, false, false, false);
     step(&f, 2000);
     irq(&f, 0, BIT(2)); /* short pulse was rejected, not delayed into an IRQ */
-    cam_drive(&f, 0, false, false, true);
-    step(&f, 1999);
+    /* The helper settles100ns after the real edge; use its actual origin. */
+    int64_t rising = cam_drive(&f, 0, false, false, true);
+    step(&f, rising + 1999 - (int64_t)f.now);
     irq(&f, 0, BIT(2));
     step(&f, 1);
     irq(&f, BIT(2), BIT(2));
@@ -1029,8 +1054,8 @@ static void test_cam_vsync_filter_and_rearm(void)
     step(&f, 2000);
     const uint8_t expected[] = {0x12, 0x34, 0x56, 0x78};
     for (unsigned i = 0; i < sizeof(expected); ++i) { cam_word(&f, expected[i], false); }
-    cam_drive(&f, 0, false, false, true);
-    step(&f, 1999);
+    rising = cam_drive(&f, 0, false, false, true);
+    step(&f, rising + 1999 - (int64_t)f.now);
     irq(&f, 0, BIT(2));
     g_assert_cmphex(qtest_readl(f.q, RD) & BIT(30), ==, 0);
     step(&f, 1);
@@ -1100,17 +1125,17 @@ static void test_st_reset_ram_and_c2(gconstpointer opaque)
         QLIST_FOREACH_ENTRY(qdict_get_qlist(p, "nets"), entry) {
             QDict *wire = qobject_to(QDict, qlist_entry_obj(entry));
             if (!strcmp(qdict_get_str(wire, "id"), "reset")) {
-                qlist_append_str(qdict_get_qlist(wire, "endpoints"), "U.io23");
+                qlist_append_str(qdict_get_qlist(wire, "endpoints"), "U.io3");
             }
         }
         set_json(&f, ELECTRICAL, "project-json", p);
         qobject_unref(p);
-        qtest_writel(f.q, GPIO(A_GPIO_OUT_W1TS), BIT(23));
-        qtest_writel(f.q, OUT(23), 256);
-        qtest_writel(f.q, GPIO(A_GPIO_ENABLE_W1TS), BIT(23));
-        qtest_writel(f.q, GPIO(A_GPIO_OUT_W1TC), BIT(23));
+        qtest_writel(f.q, GPIO(A_GPIO_OUT_W1TS), BIT(3));
+        qtest_writel(f.q, OUT(3), 256);
+        qtest_writel(f.q, GPIO(A_GPIO_ENABLE_W1TS), BIT(3));
+        qtest_writel(f.q, GPIO(A_GPIO_OUT_W1TC), BIT(3));
         step(&f, 1000);
-        qtest_writel(f.q, GPIO(A_GPIO_OUT_W1TS), BIT(23));
+        qtest_writel(f.q, GPIO(A_GPIO_OUT_W1TS), BIT(3));
     } else {
         i80(&f, 0x01, NULL, 0, (Order){.bits = 8});
     }

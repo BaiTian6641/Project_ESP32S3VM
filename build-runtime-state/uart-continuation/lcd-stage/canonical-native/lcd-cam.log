@@ -1,0 +1,241 @@
+TAP version 13
+# random seed: R02S52eaf5f30e02e1a3a41cbfe67998d4d9
+1..66
+# Start of xtensa tests
+# Start of esp32s3 tests
+# Start of lcd-cam tests
+# Start of i80 tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 1 /xtensa/esp32s3/lcd-cam/i80/command-wire-hold-vs-gdma-eof
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 2 /xtensa/esp32s3/lcd-cam/i80/gate-reset-underflow
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 3 /xtensa/esp32s3/lcd-cam/i80/physical-wire-fault1
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 4 /xtensa/esp32s3/lcd-cam/i80/physical-wire-fault2
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 5 /xtensa/esp32s3/lcd-cam/i80/physical-wire-fault3
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 6 /xtensa/esp32s3/lcd-cam/i80/physical-wire-fault4
+# Start of bus8 tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 7 /xtensa/esp32s3/lcd-cam/i80/bus8/reverse0-swap0
+# slow test /xtensa/esp32s3/lcd-cam/i80/bus8/reverse0-swap0 executed in 9.04 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 8 /xtensa/esp32s3/lcd-cam/i80/bus8/reverse1-swap0
+# slow test /xtensa/esp32s3/lcd-cam/i80/bus8/reverse1-swap0 executed in 9.08 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 9 /xtensa/esp32s3/lcd-cam/i80/bus8/reverse0-swap1
+# slow test /xtensa/esp32s3/lcd-cam/i80/bus8/reverse0-swap1 executed in 8.99 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 10 /xtensa/esp32s3/lcd-cam/i80/bus8/reverse1-swap1
+# slow test /xtensa/esp32s3/lcd-cam/i80/bus8/reverse1-swap1 executed in 9.15 secs
+# End of bus8 tests
+# Start of bus16 tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 11 /xtensa/esp32s3/lcd-cam/i80/bus16/reverse0-swap0
+# slow test /xtensa/esp32s3/lcd-cam/i80/bus16/reverse0-swap0 executed in 4.88 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 12 /xtensa/esp32s3/lcd-cam/i80/bus16/reverse1-swap0
+# slow test /xtensa/esp32s3/lcd-cam/i80/bus16/reverse1-swap0 executed in 4.65 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 13 /xtensa/esp32s3/lcd-cam/i80/bus16/reverse0-swap1
+# slow test /xtensa/esp32s3/lcd-cam/i80/bus16/reverse0-swap1 executed in 4.78 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 14 /xtensa/esp32s3/lcd-cam/i80/bus16/reverse1-swap1
+# slow test /xtensa/esp32s3/lcd-cam/i80/bus16/reverse1-swap1 executed in 4.61 secs
+# End of bus16 tests
+# End of i80 tests
+# Start of panels tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 15 /xtensa/esp32s3/lcd-cam/panels/immutable-bounded-qom-windows
+# End of panels tests
+# Start of rgb tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 16 /xtensa/esp32s3/lcd-cam/rgb/positive-porches-divider-vsync
+# slow test /xtensa/esp32s3/lcd-cam/rgb/positive-porches-divider-vsync executed in 0.54 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 17 /xtensa/esp32s3/lcd-cam/rgb/inverted-porches-divider-vsync
+# slow test /xtensa/esp32s3/lcd-cam/rgb/inverted-porches-divider-vsync executed in 0.59 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 18 /xtensa/esp32s3/lcd-cam/rgb/starvation-real-dma-recovery
+# slow test /xtensa/esp32s3/lcd-cam/rgb/starvation-real-dma-recovery executed in 0.56 secs
+# End of rgb tests
+# Start of clock tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 19 /xtensa/esp32s3/lcd-cam/clock/divider-field-0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 20 /xtensa/esp32s3/lcd-cam/clock/divider-field-1
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 21 /xtensa/esp32s3/lcd-cam/clock/divider-field-2
+# End of clock tests
+# Start of phase tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 22 /xtensa/esp32s3/lcd-cam/phase/lcd-rising-delay
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 23 /xtensa/esp32s3/lcd-cam/phase/lcd-falling-delay
+# End of phase tests
+# Start of cam-physical-loop tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 24 /xtensa/esp32s3/lcd-cam/cam-physical-loop/vsync-filter-official-hal-rearm
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 25 /xtensa/esp32s3/lcd-cam/cam-physical-loop/overflow-real-vsync-fulfilled-packet
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 26 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-00
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 27 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-01
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 28 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-02
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 29 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-03
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 30 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-04
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 31 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-05
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 32 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-06
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 33 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-07
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 34 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-08
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 35 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-09
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 36 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-10
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 37 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-11
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 38 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-12
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 39 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-13
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 40 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-14
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 41 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-15
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 42 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-16
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 43 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-17
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 44 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-18
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 45 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-19
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 46 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-20
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 47 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-21
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 48 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-22
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 49 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-23
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 50 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-24
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 51 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-25
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 52 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-26
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 53 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-27
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 54 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-28
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 55 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-29
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 56 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-30
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 57 /xtensa/esp32s3/lcd-cam/cam-physical-loop/order-eof-polarity-31
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 58 /xtensa/esp32s3/lcd-cam/cam-physical-loop/slow-consumer-overflow-owner-reset-short-frame
+# slow test /xtensa/esp32s3/lcd-cam/cam-physical-loop/slow-consumer-overflow-owner-reset-short-frame executed in 0.64 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+qemu-system-xtensa: warning: esp32s3.gpio: pad 20 sampled UNKNOWN (enabled input, no resolved net: attach a physical pull/source via the electrical layer); VM paused (strict profile; resume explicitly after the net resolves)
+ok 59 /xtensa/esp32s3/lcd-cam/cam-physical-loop/absent-data0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+qemu-system-xtensa: warning: esp32s3.gpio: pad 40 sampled UNKNOWN (enabled input, no resolved net: attach a physical pull/source via the electrical layer); VM paused (strict profile; resume explicitly after the net resolves)
+ok 60 /xtensa/esp32s3/lcd-cam/cam-physical-loop/absent-pclk
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+qemu-system-xtensa: warning: esp32s3.gpio: pad 41 sampled UNKNOWN (enabled input, no resolved net: attach a physical pull/source via the electrical layer); VM paused (strict profile; resume explicitly after the net resolves)
+ok 61 /xtensa/esp32s3/lcd-cam/cam-physical-loop/absent-href
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+qemu-system-xtensa: warning: esp32s3.gpio: pad 42 sampled UNKNOWN (enabled input, no resolved net: attach a physical pull/source via the electrical layer); VM paused (strict profile; resume explicitly after the net resolves)
+ok 62 /xtensa/esp32s3/lcd-cam/cam-physical-loop/absent-vsync
+# End of cam-physical-loop tests
+# Start of st7789 tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 63 /xtensa/esp32s3/lcd-cam/st7789/software-reset-ram-retention-c2
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 64 /xtensa/esp32s3/lcd-cam/st7789/resx-ram-retention-c2
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 65 /xtensa/esp32s3/lcd-cam/st7789/colmod-rgb18-mcu16
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-931bf38939aa9c83/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-3791400.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-3791400.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+Not initializing SPI Flash
+ok 66 /xtensa/esp32s3/lcd-cam/st7789/colmod-rgb16-mcu18
+# End of st7789 tests
+# End of lcd-cam tests
+# End of esp32s3 tests
+# End of xtensa tests

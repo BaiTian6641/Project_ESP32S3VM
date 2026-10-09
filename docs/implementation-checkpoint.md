@@ -5,6 +5,33 @@ parallel implementation in this session. Preserve the reviewed full scope; do no
 reduce completion to the foundation slices below. Historical heartbeat metadata
 is retained in the frozen packet; it is not an inventory of this session's jobs.
 
+## 2026-10-10 — canonical LCD/camera native fixture66 plus full274 native closure PASS
+
+Fresh immutable `931bf38939aa9c83`, executable SHA256
+`0368a8a49889713c4b03f02ef0bf197002f82def4989e5cea493fa3f748f891b`,
+matches all147 applied-source hashes. **274 native cases PASS, zero skipped**:
+all66 LCD/CAM cases plus the complete208 previously qualified native cases.
+The sole applied-source difference from the published ROM foundation is
+`tests/qtest/esp32s3-lcd-cam-test.c`; no runtime model source changed.
+
+The previously unexecuted fixture is now a real strict circuit:
+named sysbus IRQ output, valid S3GPIOs (22..25 are unbonded), complete registered
+16-data-terminal peers and explicit directions, stopped Apply/real clock resume,
+input enables limited to actual wired consumers, one genuinely merged WR/DC
+wrong-wire net, filter deadlines relative to actual GPIO edges, and explicit
+fresh IRQ initialization independent of module/FIFO reset.
+No forced GPIO input, injected IRQ, fake capture, weaker timing or model special
+case was introduced. Before/after diagnostics remain preserved.
+
+Exact proof: `build-runtime-state/uart-continuation/lcd-stage/canonical-qualification-receipt.json`.
+Canonical source and operative RMT/SPI/LCD freeze hashes are migrated.
+**All25 ordinary LCD/sensor profiles remain unqualified**; GPIO camera loops are
+not real OV2640 SCCB/LEDCXCLK/driver proof. Broader source/memory/pixel-format and
+independent metrology gates remain open. The previous UART/ROM stage was
+committed and pushed as **`96eebfa`** after208 native, all six ordinary UART
+profiles and actual7832-byte ROM memory-only download PASS.
+Full simulator goal remains active/incomplete. No hardware operation.
+
 ## 2026-10-10 — real ROM UART0 memory download and208 native cases PASS
 
 Fresh immutable UART candidate `7b8dad7015d9332a`, executable SHA256

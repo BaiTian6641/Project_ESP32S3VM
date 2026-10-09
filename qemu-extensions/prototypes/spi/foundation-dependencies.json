@@ -72,7 +72,7 @@
     "electrical/net-dc.c": "63ee6c60cea2e77a7c33b31a8af4db8a4ecc2b76079453322cf335e5c49e1e69",
     "prototypes/memory/copies/esp32s3_cache.c": "a9877647062234d66c576499691cd2df959d142e0e741635853ddd7b7838057c",
     "prototypes/lcd-cam/copies/esp32s3_lcd_panel_service.h": "d3f6ed5ba3f4d89857c0dc5a28ccdfe30b009c3b5041a7588960847ac9fbfd75",
-    "prototypes/lcd-cam/copies/esp32s3-lcd-cam-test.c": "0fa0a8bbf4864b62cd46ad55123da9f3ab75d7d8ce4e8169f75fe125ec24f7f2",
+    "prototypes/lcd-cam/copies/esp32s3-lcd-cam-test.c": "05cb659170570da0628acdcee7bafa9d5f8c83a0e00c5f880c61793114402b2e",
     "prototypes/gpio/copies/esp32s3_iomux.h": "20ea6f5ac56cae31874b97492ce164b7d1ac6df07d28f7e89aeba24b9ad6d9c6",
     "prototypes/memory/copies/esp32s3_psram_cache.c": "958574deb5ecc90c24420007948b2c203dc032f49b04ba32503308bee4ecf6dd",
     "prototypes/electrical-runtime/copies/esp32s3_project.c": "b290c386860a3722fdc681e3a2bde4c6bab2574def0c508f960c9cd0088b2563",
