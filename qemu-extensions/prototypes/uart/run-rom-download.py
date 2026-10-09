@@ -119,6 +119,7 @@ class Relay:
         self.lock = threading.Lock()
         self.received = bytearray()
         self.banner_done = False
+        self.banner_ready = threading.Event()
         self.events = []
         self.error = None
         self.thread = threading.Thread(target=self.forward, name="qemu-only-uart0-capture", daemon=True)
@@ -165,6 +166,7 @@ class Relay:
                             self.banner_done = True
                             chunk_start = len(self.received) - len(data)
                             data = data[max(0, idx + len(marker) - chunk_start):]
+                            self.banner_ready.set()
                             if not data:
                                 continue
                         destination.sendall(data)
@@ -226,24 +228,41 @@ def protocol_proof(evidence, payload, address, block_size, commands):
         require(frame[8:10] == b"\x00\x00", f"Actual ROM reported failure status for opcode {op}")
         responses.append(dict(opcode=op, value=value, status_hex=frame[8:].hex()))
     blocks = (len(payload) + block_size - 1) // block_size
-    expected_ops = [8, 5] + [7] * blocks + [6]
-    require([request["opcode"] for request in requests] == expected_ops, "Actual sent command sequence differs from SYNC/MEM-only traversal")
-    require(requests[0]["data"] == b"\x07\x07\x12\x20" + b"\x55" * 32, "Actual normal ROM SYNC payload differs")
-    require(requests[1]["data"] == struct.pack("<IIII", len(payload), blocks, block_size, address), "Actual MEM_BEGIN address/size differs")
-    for sequence, request in enumerate(requests[2:-1]):
+    # The normal esptool connection procedure can send several identical SYNC
+    # packets while the real ROM acquires baud. Only that prefix may repeat.
+    sync_count = 0
+    while sync_count < len(requests) and requests[sync_count]["opcode"] == 8:
+        sync_count += 1
+    require(1 <= sync_count <= 5, "Unexpected normal ROM SYNC attempt count")
+    for request in requests[:sync_count]:
+        require(request["checksum"] == 0 and request["data"] == b"\x07\x07\x12\x20" + b"\x55" * 32,
+                "Actual normal ROM SYNC payload differs")
+    memory_requests = requests[sync_count:]
+    require([request["opcode"] for request in memory_requests] == [5] + [7] * blocks + [6],
+            "Actual sent command sequence differs from SYNC/MEM-only traversal")
+    require(memory_requests[0]["data"] == struct.pack("<IIII", len(payload), blocks, block_size, address),
+            "Actual MEM_BEGIN address/size differs")
+    for sequence, request in enumerate(memory_requests[1:-1]):
         data = payload[sequence * block_size:(sequence + 1) * block_size]
         require(request["data"] == struct.pack("<IIII", len(data), sequence, 0, 0) + data, f"Actual MEM_DATA{sequence} bytes differ")
         checksum = 0xef
         for byte in data:
             checksum ^= byte
         require(request["checksum"] == checksum, f"Actual MEM_DATA{sequence} checksum differs")
-    require(requests[-1]["data"] == struct.pack("<II", 1, 0), "MEM_END must have no-execute flag and zero entry")
+    require(memory_requests[-1]["data"] == struct.pack("<II", 1, 0), "MEM_END must have no-execute flag and zero entry")
     require([response["opcode"] for response in responses] == [8] * 8 + [5] + [7] * blocks + [6],
             "Missing/mismatched real ROM ACK traversal")
     require(any(response["value"] != 0 for response in responses[:8]), "SYNC replies identify a stub, not the actual ROM")
-    require(max(len(request["data"]) - 16 for request in requests if request["opcode"] == 7) > 128,
+    require(max(len(request["data"]) - 16 for request in memory_requests if request["opcode"] == 7) > 128,
             "ROM regression lacks a >FIFO actual MEM_DATA payload")
-    require(all(command.get("reply") is not None for command in commands), "esptool did not observe every actual reply")
+    synced = False
+    for command in commands:
+        if command.get("reply") is not None:
+            synced |= command["opcode"] == 8
+        else:
+            require(not synced and command["opcode"] == 8 and command.get("error"),
+                    "esptool did not observe every actual protocol reply after initial SYNC acquisition")
+    require(synced, "esptool never acquired the real ROM")
     return dict(request_count=len(requests), response_count=len(responses), data_blocks=blocks,
                 payload_bytes=len(payload), responses=responses,
                 qualification="Real ROM checksum/status ACK traversal; no execution, flash write or RAM readback claim")
@@ -319,12 +338,14 @@ def run(args):
                 result["snapshots"].append(dict(phase="empty_external_graph_before_ROM", graph=qmp.snapshot()))
                 with CapturedROM(f"socket://127.0.0.1:{tool_listener.getsockname()[1]}", baud=115200) as rom:
                     qmp.call("cont")
-                    while b"waiting for download" not in relay.incoming().lower():
+                    while not relay.banner_ready.is_set():
                         require(relay.error is None, f"UART0 relay failed: {relay.error}")
                         require(process.poll() is None, "QEMU exited before real ROM download banner")
                         require(time.monotonic() < deadline, "No real ROM download banner before host watchdog")
                         time.sleep(.01)
-                    rom.sync()
+                    # Standard esptool SYNC acquisition, without resets or
+                    # chip-detection register/security commands.
+                    rom.connect(mode="no-reset", attempts=1, detecting=True, warnings=False)
                     require(not rom.sync_stub_detected and not rom.IS_STUB, "SYNC did not identify the actual ROM")
                     block_size = metadata["block_size"]
                     blocks = (len(payload) + block_size - 1) // block_size

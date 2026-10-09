@@ -1,8 +1,9 @@
-# ESP32-S3 initial native I2C master lane
+# ESP32-S3 native I2C software lane
 
 This lane adds two native S3 controllers at `0x60013000` and `0x60027000`.
-It does not modify the aggregate runtime profile, normal UART transport, Qt,
-physical-board workflows, or recovered I2C bridge sources. The recovered bridge
+Active consolidated profiles now use canonical controller/binding/service/test
+copies rather than memory-frozen master snapshots. Normal UART transport, Qt,
+physical-board workflows and recovered bridge sources are unchanged. The bridge
 is reference evidence only: cached RX maps, START-as-STOP, and stderr transport
 are not used.
 
@@ -119,7 +120,9 @@ source/gate/reset IDs are authoritative; no APB/PLL frequency alias is assumed.
 The native S3 master build entry replaces the unused S3 ESP32-controller entry
 without changing the original ESP32 controller.
 
-Prepare a **new** isolated checkout under WSL Ubuntu:
+The historical isolated bootstrap invocation below is not the current qualified
+aggregate recipe. Current guarded preparation and all127 input hashes are
+recorded under `build-runtime-state/uart-continuation/i2c-final/`:
 
 ```sh
 python3 qemu-extensions/prototypes/i2c/prepare.py
@@ -154,9 +157,11 @@ Modes are `connected`, `wrong`, `disconnected`, `no_pull`, `stuck_sda`,
 `stuck_scl`, `power_disconnected`, `power_undervoltage`, and
 `power_overvoltage`. Each run creates a fresh scoped evidence directory with
 UART, stderr, graph snapshots, QMP transcript, command, status and hashes. Its
-90-second host watchdog diagnoses a stalled run; it never injects a firmware
-bus timeout. Service GLib tests and `esp32s3-i2c-test` exercise genuine state,
-FIFO/error boundaries, cancellation, IRQs, time and actual graph routes.
+600-second host watchdog diagnoses an unfinished run; it never injects a firmware
+bus timeout. The runner uses single-thread TCG/icount virtual time and waits for
+a complete DONE/result line, not a partially flushed prefix. Service GLib tests
+and `esp32s3-i2c-test` exercise state, FIFO/error boundaries, cancellation, IRQs,
+time and actual graph routes.
 
 The changed service-only executable passed **18/18** cases in delegated
 verification (the original14 plus external register-bank dispatch boundaries):
@@ -166,21 +171,48 @@ Coverage includes every missing callback/NULL ops, actual register mutations,
 pointer wrap, START/restart/STOP, address/data/read failures, final NACK,
 cancel preservation, physical power reset and readiness deadlines.
 This is service-state evidence only, not native controller/electrical/camera evidence.
-Full native qualification remains blocked on the shared GPIO OEN/selector,
-electrical observer/power-tracker and ADC/radio single-owner provider freeze.
-Initial isolated configure/build found and reported missing frozen hostbus
-copies, then native math/GString API defects; those source prerequisites were
-repaired. The ordinary IDF build stopped at its host watchdog without a reported
-firmware/compiler failure. No native fixture, QTest or boot/control pass is
-claimed until the actual consolidated binary is exercised.
+Current consolidated candidate `1411f3a2d8676631`, executable SHA256
+`880b9dbe735f9c6258245b53f4b43929fd7abf5f2bc68410a29b025c2172c75a`,
+passes **18/18 native controller/edge cases** and **18/18 service cases**.
+All127 applied source hashes match its immutable preparation receipt.
+
+**Ten ordinary pinned-IDF scenarios PASS on both controllers**: connected
+device transfers at100000/400000Hz, wrong/disconnected routes, no pull-ups,
+stuck SDA/SCL, and disconnected/under-/over-voltage device rails. The pinned
+SDK's probe API always programs100000Hz; negative probes do not inherit the
+printed device-transfer frequency. Actual bytes, CRC/conversion timing,
+EEPROM page/STOP semantics and transfers beyond FIFO depth are checked.
+The same executable also passes UART64, UHCI17, GDMA18 and memory12 native cases
+and all five strict ordinary UART/UHCI profiles: **147 native +15 ordinary PASS**,
+zero native skips. Exact frozen inputs, reports and snapshots:
+`build-runtime-state/uart-continuation/i2c-final/qualification-receipt.json`.
+
+The new software vectors exercise routed controller0 slave writes, clocked
+read/relay bytes, served and unserved address stretching, one ten-bit write with
+seven-bit-alias rejection, general-call enable/disable,100ns SDA glitch rejection,
+and address-arbitration win/loss. Peers drive actual registered NativeNet
+terminals; no RX FIFO injection or controller/address response table is used.
+
+Corrections include route-OK enum handling (success is zero), physical
+SCL-before-SDA sequencing and real STOP edges, address-ACK/data-bit separation,
+matched final-NACK-to-STOP completion, initial glitch dispatch, observed-clock
+address synchronization and loser release without a STOP. START/END ownership
+and repeated START stay controller state. Malformed integer peer config now
+rejects Apply without a crash or loss of queued bytes; the regression fails
+against the preserved old executable and passes against the corrected one.
+
+Earlier paused-harness and9-case master proofs remain historical under
+`build-runtime-state/uart-continuation/i2c/`. These software subsets do not
+close every canonical gate below.
 
 ## Canonical gates not silently marked complete
 
-Native slave,10-bit/general-call addressing, multi-master arbitration, edge/fast
-path equivalence and replay, glitch filter waveform behavior, slow analog RC
-rise/recovery, inverted or direct IO_MUX routing, different input/output pads,
-non-FIFO RAM mode, asynchronous queued multi-batch transfers, EEPROM write
-protection/endurance, and external environmental or hostbus device services
-remain separate canonical gates. The initial timed
-transaction fast path does not generate or qualify every individual I2C bit
-edge. Timing, routing and edge-equivalence qualifications are distinct.
+Ordinary SDK slave-driver behavior on both controllers, broader slave/ten-bit
+read/restart boundaries, master ten-bit/general-call support, data-phase/full
+multi-master arbitration, master-data edge/fast-path equivalence and replay,
+SCL/SDA filter sweeps, slow analog RC rise/recovery, inverted/direct/split-pad
+routes, non-FIFO RAM mode, asynchronous queued transfers, EEPROM write
+protection/endurance, peer capacity/power-cycle replay and external environmental
+or hostbus services remain open. The timed master data fast path does not emit
+or qualify every individual data-bit edge. Software vectors are not independent
+silicon or hardware-reference proof.

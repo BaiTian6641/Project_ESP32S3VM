@@ -1,0 +1,29 @@
+--- a/hw/dma/esp_gdma.c
++++ b/hw/dma/esp_gdma.c
+@@ -1211,8 +1211,13 @@
+              * still sees the stored byte count.
+              */
+             break;
+         }
++        if (st->cur_buf_cap) {
++            /* IN_DONE reports a received descriptor, not completion of one
++             * peripheral pump call. Byte-wise callers can fill it gradually. */
++            esp_gdma_set_status(&st->int_state, R_GDMA_INTERRUPT_IN_DONE_MASK);
++        }
+         if (st->cur_next_addr == 0) {
+             /*
+              * No more inlink while the peripheral still has data: TRM 3.5
+              * GDMA_IN_DSCR_EMPTY ("receiving data is not completed").
+@@ -1235,12 +1240,8 @@
+         }
+         if (!esp_gdma_load_descriptor(s, chan, ESP_GDMA_IN_IDX, st->cur_next_addr)) {
+             break;
+         }
+-    }
+-
+-    if (consumed == size) {
+-        esp_gdma_set_status(&st->int_state, R_GDMA_INTERRUPT_IN_DONE_MASK);
+     }
+ 
+     return consumed == size;
+ }

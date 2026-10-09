@@ -7,7 +7,8 @@ It never writes guest MMIO, enables internal loopback, injects console RX into
 external circuits, or instantiates an ACK/sample/echo surrogate. Payloads for
 UART1 and UART2 are generated independently; each RX is checked against the
 other controller's actual transmitted bytes. Source creation is not runtime
-qualification. No firmware/native build or run was performed by this author.
+qualification. Current exercised results are recorded in the
+[UART source map](../../../qemu-extensions/prototypes/uart/source-map.json).
 
 ## Physical v3 project inputs
 
@@ -56,6 +57,11 @@ Firmware observes GPIO10, drives GPIO13 low, and checks all 513 received bytes.
 This case checks queued-state stop/resume plus CTS losslessness; it does not claim
 an independently paused mid-symbol frame. The gate has a ten-second guest
 failure timeout. Runner watchdogs are host diagnostics, never guest timeouts.
+The ordinary runner defaults to the existing 900-second host limit. Native
+electrical simulation resolves each physical UART transition; wall time can be
+much longer than guest time. This host diagnostic setting does not extend
+driver deadlines or turn a failed firmware result into PASS.
+
 
 Advanced cases use ordinary `uart_set_mode` for IrDA, RS485 half duplex,
 application control, and collision detection; `uart_detect_bitrate_start/stop`
@@ -87,10 +93,14 @@ The stop-mismatch case reports observed frame IRQ and byte count. It requires
 an error or changed stream; it does not manufacture an error when hardware
 accepts a stop sample. UART0 temporarily remaps to GPIO4/5 and performs a
 513-byte 57600-baud 8E2 physical loopback without printing onto that circuit.
+Before installing or reconfiguring UART0, the fixture drains its hardware TX
+FIFO with `uart_wait_tx_idle_polling`; `fflush(stdout)` alone only hands bytes
+to the FIFO. A second drain preserves the driver's install-time queue log.
+Without those drains, `uart_param_config` reset discarded queued PASS reports.
 Results are retained, console parameters and GPIO43/44 restored, then results
 are printed. The independent console chardev may mirror binary completed TX
 frames during this case; raw `uart.log` preserves them. It is not an external
-RX source.
+RX source, and the runner still requires every complete passing vector.
 
 Each API, vector and final result has an explicit PASS/FAIL log. Full-duplex
 RX data is printed as actual hex. The runner independently reconstructs both
@@ -243,23 +253,27 @@ TCP chardev. Both TCP endpoints are process-created localhost sockets; no COM
 port, hardware adapter or external device connection is accepted.
 
 The existing pinned esptool5.4.0/pyserial3.5 environment is required. The APIs
-are grounded in the already installed tool source: `ESP32S3ROM.sync`,
-`mem_begin`, `mem_block`, and `check_command`. No `connect()` detection,
-watchdog/register helper, SPI flash command, encryption/eFuse action or
-hardware reset is invoked. Freeze uses the installed official S3 stub text
+are grounded in installed tool source: `ESP32S3ROM.connect(mode="no-reset",
+attempts=1, detecting=True)`, `mem_begin`, `mem_block`, and `check_command`.
+The standard connection procedure sends up to five identical SYNC attempts;
+chip detection, register/security commands, flash/eFuse operations and hardware
+reset are disabled. Freeze uses the installed official S3 stub text
 metadata solely as an inert RAM payload and documented IRAM address. The
 stub text is never executed. It captures payload/source hashes and metadata
 before any VM launch; no package/source download or installation is performed.
 
-The runner waits for the actual ROM download banner, requires ordinary ROM
-SYNC replies (not stub synchronization), then performs MEM_BEGIN, all
+The runner waits for the complete CRLF-terminated actual ROM download banner.
+Raw banner bytes are retained as evidence but excluded from the tool stream,
+preventing a relay/input-flush race. It requires eight ordinary ROM SYNC replies
+(not stub synchronization), then performs MEM_BEGIN, all
 checksum-protected MEM_DATA blocks (>128-byte data is mandatory), and checked
 MEM_END with `(no_execute=1, entry=0)`. It uses ordinary `check_command` for
 MEM_END because the library's `mem_finish` suppresses missing ROM ACK errors;
 this regression requires the actual ACK instead of silently accepting it.
 
-A transparent TCP relay records and forwards only actual bytes, never creates
-an ACK or echo. Evidence contains both raw serial directions, all strict
+The TCP relay records actual bytes, never creates an ACK or echo. Only the
+initial captured banner is withheld; protocol bytes forward unmodified.
+Evidence contains both raw serial directions, all strict
 SLIP-decoded ROM status replies, sent payload/checksum records, QMP traffic,
 the command, source/executable hashes and snapshots. Unknown/malformed SLIP
 input fails rather than being converted into a successful response. A writable

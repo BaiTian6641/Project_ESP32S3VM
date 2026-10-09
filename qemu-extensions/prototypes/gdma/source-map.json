@@ -1,6 +1,6 @@
 {
   "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
-  "status": "prototype-unqualified",
+  "status": "software-verified descriptor and IRQ foundation; complete peripheral/hardware qualification remains separate",
   "license": "GPL-2.0-or-later",
   "copies": [],
   "integration_patch": null,
@@ -28,14 +28,14 @@
   },
   "memory_paths": {
     "internal_ram": "0x3FC88000-0x3FCFFFFF reachable (machine DRAM MR 0x3FC80000+0x170000)",
-    "external_ram": "TRM window passes descriptor check; bus unmapped in this machine -> DSCR_ERR (unsupported, no PSRAM model)",
+    "external_ram": "Mapped PSRAM is exercised by 12/12 native memory cases on consolidated candidate c35deea6f7043884; older bootstrap bus-unmapped evidence remains historical.",
     "descriptor_location": "internal RAM only (DW2 window enforced)"
   },
   "handshake_hooks": {
     "peri_sel": "6-bit GDMA_PERI_SEL, S3 valid set 0..9, invalid 10..63",
     "pump_api": "esp_gdma_read_channel / esp_gdma_write_channel (armed chains only, byte cursors persist across calls)",
     "channel_lookup": "esp_gdma_get_channel_periph matches peri_sel + armed direction, never crosses channels",
-    "peripheral_models": "none yet; no payload is fabricated"
+    "peripheral_models": "Real UART/UHCI pumps exercised by ordinary firmware; SPI/RMT/I2S/LCD-CAM consumers require their own qualification; no payload is fabricated."
   },
   "quantum_continuation": "main-loop bottom half per channel (qemu_bh_schedule); no zero-delay timer re-arm",
   "walk_bounds": "per quantum slice / per pump call / per RESTART; non-progress (16 zero-byte fetches) rejects cycles",
@@ -49,6 +49,14 @@
     "0001": "fc49f48a2a5c8c19656e077e87fe3645e86f50f39ec3474860db2a2d6d9ea288",
     "0002": "fd8be52c532c968ea21f85d10dabc905686b2239486e02bde80cadee5d5fd5d7",
     "0003": "d724b60f41b1bfc5582666712987a8a6f0fbb111f644f1773abf50d87fc8e91d"
+  },
+  "current_completion_patch": {
+    "source": "0006-hw-dma-in-done-on-descriptor-completion.patch",
+    "raw_sha256": "8f857217af69acacb6772d28465b327445e878b55cc87760ca6b12423d35c49c",
+    "order": "After the shared UART/GDMA API; active aggregate profiles include this patch explicitly.",
+    "contract": "IN_DONE follows completed nonempty inlink descriptors, not individual pump calls. Packet/segment EOF helpers retain their own actual completion signals.",
+    "verification": "Candidate c35deea6f7043884: native UART64/64, UHCI17/17, GDMA18/18, memory12/12, I2C9/9; ordinary UHCI/DMA and connected UART PASS.",
+    "evidence": "build-runtime-state/uart-continuation/dma-final/"
   },
   "runtime_prefix_note": "Authoritative combined runtime prefix (per parent ledger, UART-parent manifest): hostbus series + SIMD PIE series + coreclk 0001..0006 + gdma 0001..0003 + INTC 0001..0003 + radio 0001..0004 + coreclk 0008/0009 (+3 hostbus copies); coreclk 0007 BBPLL bridge EXCLUDED; common additive core 0010/0011 follow the frozen prefix. gdma 0004 applies after the frozen SPI finish_rx (d0a472c5) which applies after the prefix. My standalone verification checkout (coreclk 0001..0007 stack) is supporting evidence only, not the runtime prefix composition."
 }

@@ -1,16 +1,16 @@
 {
   "prefix_commit": "2b0e49021de6cb5e91dc1dc0b1a8804334a1c083",
-  "qualification": "Current working source snapshot, not a shared-provider freeze",
+  "qualification": "Current working-source identity snapshot; aggregate native18/controller and18/service qualification belongs to the separate1411f3a2d8676631 preparation/qualification receipts, not the historical bootstrap prefix",
   "sources": [
     {
       "source": "prototypes/i2c/copies/esp32s3_i2c.h",
       "destination": "include/hw/i2c/esp32s3_i2c.h",
-      "sha256": "ba5f9894c5b9d96b09710e44dda0f2dd0d8687b30475b2b74d664d91566df502"
+      "sha256": "63370ecd3259db4069268dfb7e267cac0d460033e543d66a4f07db074f068a39"
     },
     {
       "source": "prototypes/i2c/copies/esp32s3_i2c.c",
       "destination": "hw/i2c/esp32s3_i2c.c",
-      "sha256": "bb22585013b9c2e4a38f02b32d88b4571f5b6d84d7ac15e413517db7de6f9822"
+      "sha256": "3fbcd078d0d3f3d88d59fbd12243b3a990b724416328dc52bf1185ca4cae8a05"
     },
     {
       "source": "prototypes/i2c/copies/esp32s3_i2c_service.h",
@@ -30,12 +30,12 @@
     {
       "source": "prototypes/i2c/copies/esp32s3_i2c_binding.c",
       "destination": "hw/i2c/esp32s3_i2c_binding.c",
-      "sha256": "5116fe506d5597be9ad7b745d68ae22896bd56283dec449a5fa0671023e2382e"
+      "sha256": "5129664f7854a9da89e171f605fd4cf76deffefff55b56857dcd52e4f2561132"
     },
     {
       "source": "prototypes/i2c/copies/esp32s3-i2c-test.c",
       "destination": "tests/qtest/esp32s3-i2c-test.c",
-      "sha256": "bbb1bab5c276e8dcdfa41fc53df1fe972d4d333f3cd713d595a19c396ef0b12a"
+      "sha256": "451000df0026db1b56ef53656755afdb183982b5b8f6ac269bbc9c65ef57e23c"
     },
     {
       "source": "prototypes/i2c/copies/test-esp32s3-i2c-service.c",
@@ -45,27 +45,27 @@
     {
       "source": "prototypes/electrical-runtime/copies/esp32s3_electrical.h",
       "destination": "include/hw/misc/esp32s3_electrical.h",
-      "sha256": "fb0c24c2ced9a25d281969ad850f46bb817c3d688c8b97c6ece93ec356e59377"
+      "sha256": "1138a4d75ef38cc77308a16b836515e9e456bb6e56ee084f22a16f3020712fa7"
     },
     {
       "source": "prototypes/electrical-runtime/copies/esp32s3_electrical.c",
       "destination": "hw/adc/esp32s3_electrical.c",
-      "sha256": "4c7c31a982f5c3fbc75970fc60eb5fd9d633a9261663ea6bed996a799cb5b34f"
+      "sha256": "8cabd70810780a84cbeac8f2a75dfb09cfcc85a129ea1d4ab598e9d931cfc51d"
     },
     {
       "source": "prototypes/electrical-runtime/copies/esp32s3_project.h",
       "destination": "hw/adc/esp32s3_project.h",
-      "sha256": "7abba19689969dfffc58ac24550a9278d5f76098586e9dfd2d0251e1bf8b8662"
+      "sha256": "e2bb939783a9d86050089b6622a35f43376cc94e2e9097915ba46cb76fac4b88"
     },
     {
       "source": "prototypes/electrical-runtime/copies/esp32s3_project.c",
       "destination": "hw/adc/esp32s3_project.c",
-      "sha256": "e836281cac1a70f0682ec1af5b9fe29c12e109c92d9f3f8ee4213a41286786f4"
+      "sha256": "b290c386860a3722fdc681e3a2bde4c6bab2574def0c508f960c9cd0088b2563"
     },
     {
       "source": "prototypes/electrical-runtime/copies/esp32s3-electrical-test.c",
       "destination": "tests/qtest/esp32s3-electrical-test.c",
-      "sha256": "280dcf9abd4b5b624a41f801aa54d5b8b46b0ccae92e019c1ce1a80af7b90587"
+      "sha256": "7b8ccfeb18d746989473497420a1bb2d96aead7e643e5b374f7a6a2cb3e7591a"
     },
     {
       "source": "electrical/net-dc.c",
@@ -90,12 +90,12 @@
     {
       "source": "electrical/net-adapter.c",
       "destination": "hw/adc/net-adapter.c",
-      "sha256": "a872eadc5aecf1c2ff4b911e0e110cb2878072c5e43baa92a8d706a906341a7d"
+      "sha256": "00eea258dee763b4ae8ff064f32db1fcb5ee49cceacc60aa6261a3f533d7a8b1"
     },
     {
       "source": "electrical/net-adapter.h",
       "destination": "hw/adc/net-adapter.h",
-      "sha256": "3950a16a8ab189b3878933efc85fc69a790d69e22be7df1fec69f6485113489c"
+      "sha256": "fb2a949b71e8e17edad562c0d49e0ef42f7d028026c4362923f80c48910a96e1"
     },
     {
       "source": "prototypes/hostbus/hostbus-probe.c",

@@ -71,3 +71,27 @@ regenerated on top of the coreclk (H-CORE-01) series once that lands
 Verification: `meson test qtest-xtensa/esp32s3-gdma-test` 1/1 (16/16
 cases), BootSmokeTest 3/3 with the lane-built
 `qemu-system-xtensa` (sha256 f7d760793e8d1183a9002dac499081996460d9f1747c6c2482590e3941e5f6dd).
+
+## Descriptor-boundary completion correction
+
+The original bootstrap boundary above is historical. The consolidated
+`c35deea6f7043884` runtime contains real UART/UHCI handshakes and mapped PSRAM.
+`0006-hw-dma-in-done-on-descriptor-completion.patch` applies after the shared
+UART/GDMA API and fixes peripheral RX `IN_DONE`: target register documentation
+defines it as completion of one inlink descriptor, not one peripheral pump
+call. Raising it after every byte caused the ordinary UHCI driver to recycle
+unfinished buffers and report repeated partial data.
+
+The engine now asserts `IN_DONE` only after a nonempty full descriptor is
+written back. Explicit packet/segment EOF helpers still commit and signal
+their actual partial descriptors. Stored-byte counts remain valid across
+post-store NEXT-descriptor faults; no synthetic bytes or callbacks were added.
+The UART native RX packet regression checks that accepted early bytes do not
+raise descriptor completion or release ownership before the true boundary.
+
+On the fresh source-bound candidate: **64/64 UART, 17/17 UHCI, 18/18 GDMA,
+12/12 memory and 9/9 I2C native cases PASS**, zero skipped. The ordinary pinned
+ESP-IDF UHCI/DMA and connected UART fixtures also **PASS**. This does not imply
+qualified SPI/RMT/I2S/LCD/camera consumers or independent silicon timing.
+Evidence: `build-runtime-state/uart-continuation/dma-final/`.
+

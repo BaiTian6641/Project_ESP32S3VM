@@ -139,5 +139,48 @@
   "changes": [
    "run-rom-download.py Relay: ROM banner bytes are captured as evidence but not forwarded to esptool until the banner's CRLF-terminated marker completes; bytes after the marker end in the completing chunk forward. Fixes the SYNC head-byte corruption (0x45 -> 0x64 -> 0x0d -> clean)."
   ]
+ },
+ {
+  "date": "2026-10-08",
+  "packages": ["UART-01", "UART-02", "UART-03"],
+  "qualification": "Candidate 9feac24d8fa6b676: 64/64 UART and 17/17 UHCI native vectors, zero skips; strict absent/disconnected/wrong firmware runners PASS. Eight initial ordinary crossed UART1/2 transfers including normal_restore PASS with 513 bytes per direction. Connected/UHCI aggregate completion, Arduino runtime and ROM ACK traversal remain FAIL.",
+  "changes": [
+   "Recovered a fresh immutable checkout after the failed console worker reverted the old clock implementation; all 127 applied file hashes match the new preparation receipt. Damaged and historical checkouts were preserved.",
+   "Corrected prior console-pollution diagnosis: uart_param_config reset discarded 127 queued console report bytes. Fixture now polls UART0 TX idle before installation and again after the install-time queue log, before parameter reset. Strict per-vector parsing is retained; no binary payload filtering or fake reports.",
+   "Electrical solver now resolves documented UART IO_MUX output sources: U0TXD GPIO43/function0, U0RTS GPIO15/function2, U1TXD GPIO17/function2, U1RTS GPIO19/function2. They reuse real controller drive sources independently of GPIO_ENABLE/FUNC_OUT_SEL. UART2 has no direct IO_MUX outputs. Added a physical waveform/RX-byte mux-release/restore regression.",
+   "TX_DONE now latches the busy-to-final-idle completion transition and stays cleared after write-to-clear until another transfer finishes. FIFO/reset cancellation does not fabricate completion. Added per-controller clear/idle/config-update/next-completion IRQ regressions; IDF's RS485 assertion is not suppressed.",
+   "Arduino identity validator now accepts the pinned detached SDK's actual b774170f git description; full SDK/component commit and source manifests remain mandatory. HardwareSerial report drains bracket IDF begin-time log writes and the first report is line-delimited.",
+   "UHCI runner waits for the enclosing UART_NATIVE_DONE, not the earlier internal UHCI_NATIVE_DONE. ROM relay waits for a CRLF-complete banner and standard esptool no-reset acquisition, retaining strict SYNC/MEM-only wire/ACK checks.",
+   "Corrected ROM evidence interpretation: bytes previously called a second SYNC response were Guru Meditation LoadStoreError panic text, not SLIP ACKs. No ROM-download support is claimed.",
+   "Executed evidence and remaining failures: build-runtime-state/uart-continuation/final/qualification-receipt.json."
+  ]
+ },
+ {
+  "date": "2026-10-09",
+  "packages": ["UART-01", "UART-02", "UART-03", "H-CORE-03"],
+  "qualification": "Candidate c35deea6f7043884: all five strict ordinary connected/absent/disconnected/wrong/UHCI fixtures PASS on one executable. Native UART64/64, UHCI17/17, GDMA18/18, memory12/12, I2C9/9; zero skips. Arduino, ROM download and independent reference gates remain separate.",
+  "changes": [
+   "Ordinary qualification uses the existing maximum900-second host diagnostic deadline; guest driver/handshake deadlines are unchanged. A captured active UART0 shifter/full FIFO and194208 electrical factorizations explained the shorter reporting cutoff without suppressing firmware results.",
+   "The pinned IDF default UART interrupt mask omits framing errors. The malformed-width fixture now enables UART_FRM_ERR_INT_ENA_M through public uart_enable_intr_mask; the previously missing frame-error event and complete connected run PASS.",
+   "Central GDMA0006 fixes IN_DONE to signal a completed nonempty inlink descriptor, not every successful peripheral pump. Premature byte-wise completion caused UHCI to recycle unfinished buffers, over-count partial data and lose TX notifications. Existing packet/segment EOF and post-store fault served counts remain intact.",
+   "The native actual RX packet test asserts no descriptor interrupt/ownership release for early accepted bytes. Shared regressions and ordinary513-byte DMA idle/multibuffer/length/break packets PASS, including actual callbacks and concurrent physical UART0 traffic.",
+   "Active aggregate profiles include GDMA0006 and select the corrected canonical I2C test instead of the preserved memory-frozen test snapshot. Historical snapshots are not edited or silently accepted as current tests.",
+   "I2C harness now starts virtual timers after quiescent Apply and brackets later graph changes while preserving pause state. Initial seven-bit master9/9 and service18/18 cases PASS; ordinary pinned-IDF connected100kHz on both controllers PASS. Advanced I2C gates are explicitly not promoted.",
+   "Exact source/executable/frozen-input results: build-runtime-state/uart-continuation/dma-final/qualification-receipt.json and uart-continuation/i2c/qualification-receipt.json."
+  ]
+ },
+ {
+  "date": "2026-10-09",
+  "packages": ["UART-01", "UART-02", "UART-03", "I2C-01", "I2C-02", "I2C-03"],
+  "qualification": "Canonical-I2C aggregate1411f3a2d8676631:147 native cases and15 strict ordinary I2C/UART/UHCI scenarios PASS on one source-verified executable; zero native skips. Complete canonical I2C, Arduino/ROM and independent reference gates remain open.",
+  "changes": [
+   "Active aggregate profiles migrate all I2C controller/binding/service/test copies from preserved memory snapshots to the canonical lane sources.",
+   "Enabled existing routed slave, stretch, ten-bit matching, general-call, SDA-filter and address-arbitration vectors; added malformed integer-config rejection that preserves queued data. Native I2C count is18, with18 separate service cases.",
+   "Corrected enum-OK-as-false peer activation, ACK/data-bit separation, final-NACK STOP completion, physical STOP ordering and first-transaction glitch dispatch.",
+   "Address bits retain SDA during real SCL-high phases; observed SCL edges synchronize masters, simultaneous START requests use actually sampled idle lines, and arbitration losers release without a STOP. START/END ownership and repeated-START sequencing remain real controller state.",
+   "Both ordinary I2C controllers PASS connected100/400kHz and eight physical routing/pull/stuck-line/power negatives. The pinned SDK probe path is100kHz, not the printed device-transfer label.",
+   "UART64/64, UHCI17/17, GDMA18/18 and memory12/12 requalify; all five ordinary UART/UHCI profiles are strictly re-frozen from their actual original compiled roots and PASS on the same new executable.",
+   "Exact source/firmware/manifest/log results: build-runtime-state/uart-continuation/i2c-final/qualification-receipt.json."
+  ]
  }
 ]

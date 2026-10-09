@@ -5,6 +5,7 @@
 #include "sdkconfig.h"
 #include "driver/gpio.h"
 #include "driver/uart.h"
+#include "soc/uart_reg.h"
 #include "esp_timer.h"
 #include "esp_rom_sys.h"
 #include "freertos/FreeRTOS.h"
@@ -234,6 +235,10 @@ static void malformed(void)
     api("parity_restore1", uart_set_parity(UART_NUM_1, UART_PARITY_DISABLE));
     api("parity_restore2", uart_set_parity(UART_NUM_2, UART_PARITY_DISABLE));
     clean(UART_NUM_2);
+    /* The pinned driver's default mask excludes framing errors. Request
+     * that event explicitly through its public interrupt-control API. */
+    api("frame_error_irq_enable",
+        uart_enable_intr_mask(UART_NUM_2, UART_FRM_ERR_INT_ENA_M));
     api("wrong_width_tx", uart_set_word_length(UART_NUM_1, UART_DATA_8_BITS));
     api("wrong_width_rx", uart_set_word_length(UART_NUM_2, UART_DATA_5_BITS));
     uint8_t bad[64];
@@ -423,12 +428,18 @@ static void advanced_modes(void)
 
 static void uart0_physical(void)
 {
-    /* The console chardev is independent of physical TX/RX. Do not print
-     * while external GPIO4/5 are selected: logs would enter the test net.
-     * Report recorded results only after GPIO43/44 console routing returns. */
+    /* stdout flushes into the hardware FIFO, not onto the wire. Drain before
+     * installing/reconfiguring UART0: uart_param_config resets that FIFO.
+     * Keep reports out of the GPIO4/5 transfer and print after restoring the
+     * GPIO43/44 console route. The chardev still observes the binary TX bytes. */
     fflush(stdout);
+    esp_err_t console_drain = uart_wait_tx_idle_polling(UART_NUM_0);
     uart_config_t cfg = config(57600, UART_DATA_8_BITS, UART_PARITY_EVEN, UART_STOP_BITS_2);
     esp_err_t install = uart_driver_install(UART_NUM_0, 4096, 4096, 32, &events[0], 0);
+    /* Installation can log its queue state; drain that output before the
+     * parameter update too, without printing another message here. */
+    fflush(stdout);
+    esp_err_t install_drain = uart_wait_tx_idle_polling(UART_NUM_0);
     esp_err_t configure = uart_param_config(UART_NUM_0, &cfg);
     esp_err_t pins = uart_set_pin(UART_NUM_0, 4, 5, -1, -1);
     esp_err_t timeout = uart_set_rx_timeout(UART_NUM_0, 4);
@@ -442,8 +453,9 @@ static void uart0_physical(void)
     esp_err_t restore_pins = uart_set_pin(UART_NUM_0, 43, 44, -1, -1);
     esp_err_t deleted = uart_driver_delete(UART_NUM_0);
     printf("\n");
-    check("uart0_install", install == ESP_OK);
-    check("uart0_config", configure == ESP_OK && timeout == ESP_OK && pins == ESP_OK);
+    check("uart0_install", console_drain == ESP_OK && install == ESP_OK);
+    check("uart0_config", install_drain == ESP_OK && configure == ESP_OK &&
+          timeout == ESP_OK && pins == ESP_OK);
     check("uart0_physical_loopback513", sent == TRANSFER && exact && done == ESP_OK);
     check("uart0_console_restore", restore_config == ESP_OK && restore_pins == ESP_OK && deleted == ESP_OK);
     printf("UART_NATIVE_SCOPE uart0_external_tx=4 uart0_external_rx=5 console_tx=43 console_rx=44 console_rx_injection=never\n");

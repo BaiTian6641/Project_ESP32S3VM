@@ -2,10 +2,10 @@
   "schema_version": 1,
   "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
   "license": "GPL-2.0-or-later",
-  "status": "Native master source delivered; service14/14 qualified; electrical/native/boot qualification BLOCKED by provider freeze",
-  "work_package": "I2C-01 initial native7-bit master; timing/routing initial I2C-02 slice; I2C-03 canonical gates remain open",
+  "status": "18/18 native master/slave/routing/error vectors,18/18 service vectors and ten strict ordinary master scenarios PASS on canonical aggregate1411f3a2d8676631; complete canonical gates remain open",
+  "work_package": "I2C-01/02 plus tested slave, filter and address-arbitration I2C-03 subsets; not full canonical I2C support",
   "combined_v3_fingerprint": "105a156e5dec5fc63f347cc1d989c1d11ab402c63668d8426869462d6387b999",
-  "native_checkout": "/home/polar/.cache/esp32s3vm/qemu-i2c-40edccac4156",
+  "native_checkout": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-1411f3a2d8676631",
   "prefix_commit": "2b0e49021de6cb5e91dc1dc0b1a8804334a1c083",
   "copies": [
     {
@@ -97,19 +97,20 @@
     "tests/unit/meson.build"
   ],
   "firmware_fixture": "tests/firmware/i2c_native",
-  "evidence": "build-runtime-state/i2c-native-2026-10-07/",
+  "evidence": "build-runtime-state/uart-continuation/i2c-final/",
   "canonical_gates": [
-    "native slave",
-    "10-bit addressing/general call",
-    "multi-master/arbitration waveform qualification",
-    "edge/fast-path equivalence and replay",
-    "glitch filter waveform behavior",
+    "ordinary SDK slave-driver qualification on both controllers and broader native slave boundaries",
+    "master ten-bit/general-call and full ten-bit slave read/restart/boundary qualification",
+    "multi-master data-phase/full-transfer arbitration and replay beyond tested address win/loss",
+    "master-data edge/fast-path equivalence and replay",
+    "SCL/SDA filter threshold/sweep boundaries beyond tested100ns SDA rejection",
     "slow analog RC rise and recovery",
     "inverted/direct IO_MUX/split input-output pad routes",
     "non-FIFO memory mode",
     "EEPROM write-protection/endurance",
     "external environmental and hostbus device services",
-    "asynchronous queued multi-batch transfers"
+    "asynchronous queued multi-batch transfers",
+    "scripted-peer capacity and power-cycle replay beyond the tested single-peer scenarios"
   ],
   "layered_integration_patch": "integration-after-electrical.patch",
   "electrical_prerequisite_patch": "electrical-prerequisites.patch",
@@ -138,16 +139,35 @@
   },
   "service_verification": {
     "result": "18/18 PASS",
-    "runs": 1,
-    "evidence": "build-runtime-state/i2c-native-2026-10-07/external-service-20261007T090614Z-f87cb4fc/",
-    "scope": "Native service dispatch/state unit only; no controller/electrical/camera qualification"
+    "evidence": "Historical external-service proof retained; same-executable native/service/ordinary results: build-runtime-state/uart-continuation/i2c-final/qualification-receipt.json",
+    "scope": "18 stateful service/dispatch cases PASS; separate controller and ordinary-driver evidence recorded below, no camera promotion"
   },
-  "required_provider_freeze": [
-    "GPIO rawselector/OEN semantics",
-    "NativeNet post-solved multicast and actualpower_on_ns/power_epoch implementation",
-    "ADC/radio SENSsingle-owner cutover preservingfinalradio4"
+  "provider_freeze_verified": [
+    "Consolidated runtime1411f3a2d8676631 uses the recorded GPIO/raw-selector/OEN, multicast electrical/power, single-owner SENS/radio and canonical I2C sources.",
+    "Runtime executable SHA256 880b9dbe735f9c6258245b53f4b43929fd7abf5f2bc68410a29b025c2172c75a; all127 applied source hashes verified."
   ],
-  "native_checks_exercised": [],
+  "native_checks_exercised": [
+    "both-masters-timing-irq",
+    "eeprom-stop-restart-final-nack",
+    "end-refill-drain-over32",
+    "command-bounds-fifo-errors",
+    "address-data-nack-no-stale",
+    "clock-gate-reset-cancel",
+    "electrical-route-power-pulls",
+    "hold-stretch-timeout-cancel",
+    "hot-power-versus-wire-unplug",
+    "slave-script-write",
+    "slave-read-stretch",
+    "slave-relay",
+    "slave-ten-bit",
+    "slave-general-call",
+    "slave-glitch-filter",
+    "slave-wrong-address",
+    "master-arbitration",
+    "script-preflight-reject"
+  ],
+  "native_harness_build": "The aggregate now copies canonical I2C controller/binding/test inputs. Native18-case proof and source/build identities are recorded in build-runtime-state/uart-continuation/i2c-final/. Earlier isolated harness and frozen9-case records remain historical.",
+  "ordinary_verification": "Ten complete pinned-IDF6.1 scenarios PASS on both controllers on1411: connected device transfers at100/400kHz plus wrong/disconnected/no-pull/stuck-SDA/stuck-SCL and three invalid-power graphs. SDK probes run100kHz regardless of the device-transfer speed label. Exact frozen firmware/config hashes and raw reports: build-runtime-state/uart-continuation/i2c-final/qualification-receipt.json.",
   "external_service_api": {
     "header": "copies/esp32s3_i2c_service.h",
     "registration_header": "copies/esp32s3_i2c_binding.h",
@@ -161,12 +181,12 @@
     {
       "source": "copies/esp32s3_i2c.h",
       "destination": "include/hw/i2c/esp32s3_i2c.h",
-      "sha256": "ba5f9894c5b9d96b09710e44dda0f2dd0d8687b30475b2b74d664d91566df502"
+      "sha256": "63370ecd3259db4069268dfb7e267cac0d460033e543d66a4f07db074f068a39"
     },
     {
       "source": "copies/esp32s3_i2c.c",
       "destination": "hw/i2c/esp32s3_i2c.c",
-      "sha256": "bb22585013b9c2e4a38f02b32d88b4571f5b6d84d7ac15e413517db7de6f9822"
+      "sha256": "3fbcd078d0d3f3d88d59fbd12243b3a990b724416328dc52bf1185ca4cae8a05"
     },
     {
       "source": "copies/esp32s3_i2c_service.h",
@@ -186,12 +206,12 @@
     {
       "source": "copies/esp32s3_i2c_binding.c",
       "destination": "hw/i2c/esp32s3_i2c_binding.c",
-      "sha256": "5116fe506d5597be9ad7b745d68ae22896bd56283dec449a5fa0671023e2382e"
+      "sha256": "5129664f7854a9da89e171f605fd4cf76deffefff55b56857dcd52e4f2561132"
     },
     {
       "source": "copies/esp32s3-i2c-test.c",
       "destination": "tests/qtest/esp32s3-i2c-test.c",
-      "sha256": "bbb1bab5c276e8dcdfa41fc53df1fe972d4d333f3cd713d595a19c396ef0b12a"
+      "sha256": "451000df0026db1b56ef53656755afdb183982b5b8f6ac269bbc9c65ef57e23c"
     },
     {
       "source": "copies/test-esp32s3-i2c-service.c",

@@ -25,6 +25,7 @@ static void bytes(const char *name, const uint8_t *data, size_t size)
 
 static void duplex(const char *name, unsigned long baud, unsigned salt, uint32_t format, unsigned mask)
 {
+    Serial0.flush(true);
     Serial1.end();
     Serial2.end();
     check("rx_buffer1", Serial1.setRxBufferSize(4096) == 4096);
@@ -33,8 +34,13 @@ static void duplex(const char *name, unsigned long baud, unsigned salt, uint32_t
     check("tx_buffer2", Serial2.setTxBufferSize(4096) == 4096);
     check("clock1", Serial1.setClockSource(UART_CLK_SRC_XTAL));
     check("clock2", Serial2.setClockSource(UART_CLK_SRC_XTAL));
+    // HardwareSerial begin() can log through IDF's console. Drain our report
+    // stream before those writes, rather than interleaving two TX producers.
+    Serial0.flush(true);
     Serial1.begin(baud, format, 15, 17, false, 20000UL, 32);
+    Serial0.flush(true);
     Serial2.begin(baud, format, 16, 18, false, 20000UL, 32);
+    Serial0.flush(true);
     Serial1.setTimeout(2500);
     Serial2.setTimeout(2500);
     check("begin1", static_cast<bool>(Serial1));
@@ -59,6 +65,7 @@ static void duplex(const char *name, unsigned long baud, unsigned salt, uint32_t
     check(name, exact);
     if (got1 > 0) { bytes("rx1", rx1, got1); }
     if (got2 > 0) { bytes("rx2", rx2, got2); }
+    Serial0.flush(true);
 }
 
 static void uart0_loopbacks()
@@ -111,6 +118,9 @@ void setup()
     Serial0.setTxBufferSize(4096);
     Serial0.setClockSource(UART_CLK_SRC_XTAL);
     Serial0.begin(115200, SERIAL_8N1, 44, 43);
+    // UART0 installation may reset queued startup logs mid-line; delimit the
+    // first fixture record on the newly installed HardwareSerial stream.
+    Serial0.println();
     Serial0.printf("ARDUINO_UART_BOOT profile=arduino arduino=%s idf=%s\n", ESP_ARDUINO_VERSION_STR, ESP.getSdkVersion());
     Serial0.println("ARDUINO_UART_PINS tx1=17 rx1=15 tx2=18 rx2=16 uart0_tx=4 uart0_rx=5 console_tx=43 console_rx=44");
     duplex("duplex9600", 9600, 1, SERIAL_8N1, 255);

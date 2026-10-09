@@ -287,6 +287,46 @@ static void teardown(Fixture *f)
     g_free(f->log);
 }
 
+static void test_uart1_iomux_tx(void)
+{
+    Fixture f = setup(2);
+    const Period p = {1000, 1};
+    const uint8_t bytes[] = {0xa6, 0x3c};
+
+    route_rx(&f, 2);
+    qtest_writel(f.q, OUT(17), GPIO_FUNC_OUT_SEL_NONE);
+    qtest_writel(f.q, GPIO(A_GPIO_ENABLE_W1TC), BIT(17));
+    qtest_writel(f.q, PAD(17), 2U << R_IO_MUX_GPIOn_MCU_SEL_SHIFT);
+    step(&f, 1000);
+    sample(&f, 2, 16, true);
+
+    for (unsigned n = 0; n < G_N_ELEMENTS(bytes); ++n) {
+        uint64_t origin = f.now;
+        wr(&f, 1, FIFO, bytes[n]);
+        for (unsigned bit = 0; bit < 10; ++bit) {
+            at(&f, origin, p, bit * 2 + 1);
+            bool level = bit == 0 ? false : bit == 9 ? true :
+                         !!(bytes[n] & BIT(bit - 1));
+            sample(&f, 2, 16, level);
+        }
+        at(&f, origin, p, 20);
+        g_assert_cmpuint(rx_used(&f, 2), ==, 1);
+        g_assert_cmphex(rd(&f, 2, FIFO), ==, bytes[n]);
+        if (n == 0) {
+            /* A different mux function must release the native driver even
+             * while the UART keeps sending. GPIO OE remains disabled. */
+            qtest_writel(f.q, PAD(17), INPUT);
+            wr(&f, 1, FIFO, 0);
+            step(&f, 10000);
+            sample(&f, 2, 16, true);
+            g_assert_cmpuint(rx_used(&f, 2), ==, 0);
+            qtest_writel(f.q, PAD(17), 2U << R_IO_MUX_GPIOn_MCU_SEL_SHIFT);
+            step(&f, 1000);
+        }
+    }
+    teardown(&f);
+}
+
 static bool parity_bit(uint8_t byte, unsigned width, bool odd)
 {
     bool result = odd;
@@ -719,6 +759,32 @@ static void test_gate_reset(gconstpointer opaque)
     wr(&f, c, FIFO, 0x34);
     step(&f, 10000);
     g_assert_cmphex(rd(&f, c, RAW) & TX_DONE, ==, TX_DONE);
+    teardown(&f);
+}
+
+static void test_tx_done_clear(gconstpointer opaque)
+{
+    unsigned c = GPOINTER_TO_UINT(opaque);
+    Fixture f = setup(c);
+
+    wr(&f, c, CLR, TX_DONE);
+    wr(&f, c, ENA, TX_DONE);
+    g_assert_cmphex(rd(&f, c, RAW) & TX_DONE, ==, 0);
+    wr(&f, c, FIFO, 0xa5);
+    step(&f, 10000);
+    g_assert_true(qtest_get_irq(f.q, 0));
+    wr(&f, c, CLR, TX_DONE);
+    g_assert_cmphex(rd(&f, c, RAW) & TX_DONE, ==, 0);
+    g_assert_false(qtest_get_irq(f.q, 0));
+    /* Unrelated configuration writes and idle time cannot regenerate a
+     * completion; a second real transmission must assert it again. */
+    wr(&f, c, CONF1, rd(&f, c, CONF1));
+    step(&f, 2000);
+    g_assert_cmphex(rd(&f, c, RAW) & TX_DONE, ==, 0);
+    wr(&f, c, FIFO, 0x5a);
+    step(&f, 10000);
+    g_assert_cmphex(rd(&f, c, ST), ==, TX_DONE);
+    g_assert_true(qtest_get_irq(f.q, 0));
     teardown(&f);
 }
 
@@ -1282,6 +1348,12 @@ static void test_uhci_rx_length_packet(void)
     dma_arm(&f, 2, false, D_UART_PERI, D_DESC);
     for (unsigned i = 0; i < sizeof(expected); i++) {
         frame(&f, 1, expected[i], 8, -1, 1, false, false);
+        if (i + 1 < sizeof(expected)) {
+            /* A byte reached RAM, but neither the descriptor nor packet has
+             * completed: a DMA ISR must not recycle this buffer yet. */
+            g_assert_cmphex(qtest_readl(f.q, GDMA(2, false, D_RAW)) & BIT(0), ==, 0);
+            g_assert_cmphex(qtest_readl(f.q, D_DESC) & D_OWNER, ==, D_OWNER);
+        }
     }
     qtest_memread(f.q, D_BUFFER, stored, sizeof(stored));
     g_assert_cmpmem(stored, sizeof(stored), expected, sizeof(expected));
@@ -1355,6 +1427,7 @@ int main(int argc, char **argv)
         {"rts-physical-watermark", test_rts},
         {"system-gate-reset", test_gate_reset},
         {"tx-idle-quantum-gate-resume", test_tx_idle},
+        {"tx-done-clear-next-completion", test_tx_done_clear},
         {"local-clock-update-reset", test_local_clock_update},
         {"autobaud-physical-edges", test_autobaud},
         {"at-physical-guard-times", test_at_guards},
@@ -1387,5 +1460,6 @@ int main(int argc, char **argv)
                     test_uhci_rx_length_packet);
     qtest_add_func("/esp32s3/uart/uhci-actual-rx-next-owner-error",
                     test_uhci_rx_next_owner_error);
+    qtest_add_func("/esp32s3/uart1/iomux-tx-release-restore", test_uart1_iomux_tx);
     return g_test_run();
 }

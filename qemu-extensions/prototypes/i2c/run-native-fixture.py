@@ -271,8 +271,8 @@ def main():
     parser.add_argument("--sdkconfig", required=True, type=pathlib.Path)
     parser.add_argument("--mode", required=True, choices=PROFILES)
     parser.add_argument("--evidence", required=True, type=pathlib.Path)
-    parser.add_argument("--watchdog-seconds", type=float, default=90,
-                        help="Bounded host diagnostic only; never injected as firmware timeout")
+    parser.add_argument("--watchdog-seconds", type=float, default=600,
+                        help="Bounded host diagnostic only; native electrical simulation is slower than guest time")
     args = parser.parse_args()
     if not 1 <= args.watchdog_seconds <= 600:
         parser.error("--watchdog-seconds must be between 1 and 600")
@@ -301,6 +301,7 @@ def main():
         with tempfile.TemporaryDirectory(prefix="i2c-qmp-") as transport:
             qmp_path = pathlib.Path(transport) / "qmp.sock"
             command = [str(args.qemu), "-machine", "esp32s3", "-nographic", "-S",
+                       "-accel", "tcg,thread=single", "-icount", "shift=0,align=off,sleep=off",
                        "-monitor", "none", "-serial", f"file:{uart}",
                        "-drive", f"file={args.flash},if=mtd,format=raw,snapshot=on",
                        "-qmp", f"unix:{qmp_path},server=on,wait=off"]
@@ -322,7 +323,8 @@ def main():
                     qmp.call("cont")
                     while True:
                         text = uart.read_text(errors="replace") if uart.exists() else ""
-                        if re.search(r"^I2C_NATIVE_DONE .*$", text, re.MULTILINE):
+                        if re.search(r"^I2C_NATIVE_DONE profile=\w+ failures=\d+ result=(?:PASS|FAIL)$",
+                                     text, re.MULTILINE):
                             break
                         if proc.poll() is not None:
                             raise RuntimeError(f"QEMU exited {proc.returncode} before UART completion")

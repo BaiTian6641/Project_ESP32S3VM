@@ -49,6 +49,7 @@ enum {
     SCR_ACK_SAMPLE,
     SCR_STOP_SETUP,
     SCR_STOP_HIGH,
+    SCR_STOP_RELEASE,
     SCR_RSTART_SETUP,
     SCR_RSTART_HIGH,
     SCR_GLITCH_LOW,
@@ -58,7 +59,7 @@ enum {
 
 typedef struct ScriptSlot {
     char id[65];
-    bool used, started, active;
+    bool used, started, active, start_armed;
     I2cScript script;
     QEMUTimer *timer;
     DeviceState *electrical;
@@ -141,10 +142,10 @@ static void drive(void *opaque, unsigned controller, bool sda, bool scl)
         uint32_t ctr = s->reg[1], conf = s->reg[0x54 / 4];
         bool oe = s->gate && !s->reset_asserted && (conf & BIT(21)) &&
                   clock_get_hz((conf & BIT(20)) ? s->rc_fast : s->xtal);
-        esp32s3_electrical_set_matrix_drive(b->electrical, 90 + controller * 2,
-                                           oe, sda, !!(ctr & BIT(0)));
         esp32s3_electrical_set_matrix_drive(b->electrical, 89 + controller * 2,
                                            oe, scl, !!(ctr & BIT(1)));
+        esp32s3_electrical_set_matrix_drive(b->electrical, 90 + controller * 2,
+                                           oe, sda, !!(ctr & BIT(0)));
     }
 }
 
@@ -285,9 +286,9 @@ static void script_drive(ScriptSlot *slot, bool sda_low, bool scl_low)
     slot->sda_low = sda_low;
     slot->scl_low = scl_low;
     if (!esp32s3_electrical_terminal_drive(slot->electrical, slot->id,
-                                           "sda", sda_low, false) ||
+                                           "scl", scl_low, false) ||
         !esp32s3_electrical_terminal_drive(slot->electrical, slot->id,
-                                           "scl", scl_low, false)) {
+                                           "sda", sda_low, false)) {
         /* The committed component vanished: never drive an unregistered net. */
         slot->active = false;
         slot->phase = SCR_HALTED;
@@ -423,10 +424,20 @@ static void script_step(void *opaque)
 
     switch (slot->phase) {
     case SCR_DELAY:
+    case SCR_GAP: {
+        if (t->glitch) {
+            slot->phase = SCR_GLITCH_LOW;
+            script_arm(slot, q);
+            return;
+        }
+        bool sda = false, scl = false;
+        slot->start_armed = script_line(slot, false, &sda) &&
+                           script_line(slot, true, &scl) && sda && scl;
         slot->phase = SCR_BUS_WAIT;
         slot->polls = 0;
         script_arm(slot, 1);
         return;
+    }
     case SCR_BUS_WAIT: {
         bool sda, scl;
         if (!script_line(slot, false, &sda) || !script_line(slot, true, &scl)) {
@@ -435,7 +446,8 @@ static void script_step(void *opaque)
             slot->phase = SCR_HALTED;
             return;
         }
-        if (sda && scl) {
+        if (scl && (sda || slot->start_armed)) {
+            slot->start_armed = false;
             /* START: SDA falls while SCL stays high. */
             slot->byte = 0;
             slot->bit = 0;
@@ -488,7 +500,7 @@ static void script_step(void *opaque)
         if (slot->in_ack) {
             if (rx) {
                 /* Our own acknowledge of a received byte: continue. */
-                script_drive(slot, false, false);
+                script_drive(slot, false, true);
                 slot->byte++;
                 slot->bit = 0;
                 slot->in_ack = false;
@@ -521,8 +533,9 @@ static void script_step(void *opaque)
             bool bit = (value >> (7 - slot->bit)) & 1;
             if (bit && !sda) {
                 /* A released-high bit read low is a lost arbitration. */
-                slot->phase = SCR_STOP_SETUP;
-                script_arm(slot, q);
+                script_release(slot);
+                slot->active = false;
+                slot->phase = SCR_HALTED;
                 return;
             }
         }
@@ -583,6 +596,11 @@ static void script_step(void *opaque)
         script_arm(slot, q * 2);
         return;
     case SCR_STOP_HIGH:
+        script_drive(slot, true, false);
+        slot->phase = SCR_STOP_RELEASE;
+        script_arm(slot, q);
+        return;
+    case SCR_STOP_RELEASE:
         script_release(slot);
         script_txn_end(slot);
         return;
@@ -605,16 +623,6 @@ static void script_step(void *opaque)
         script_release(slot);
         script_txn_end(slot);
         return;
-    case SCR_GAP:
-        if (script->txns[slot->txn].glitch) {
-            slot->phase = SCR_GLITCH_LOW;
-            script_arm(slot, q);
-            return;
-        }
-        slot->phase = SCR_BUS_WAIT;
-        slot->polls = 0;
-        script_arm(slot, 1);
-        return;
     default:
         slot->active = false;
         slot->phase = SCR_HALTED;
@@ -629,7 +637,7 @@ static bool script_txn_parse(const QDict *txn, I2cScriptTxn *out, Error **errp)
 {
     memset(out, 0, sizeof(*out));
     if (qdict_haskey(txn, "glitch_ns")) {
-        int64_t glitch = qdict_get_int(txn, "glitch_ns");
+        int64_t glitch = qdict_get_try_int(txn, "glitch_ns", -1);
         if (glitch < 1 || glitch > 100000000) {
             error_setg(errp, "i2c-scripted-master: glitch_ns out of range");
             return false;
@@ -650,7 +658,7 @@ static bool script_txn_parse(const QDict *txn, I2cScriptTxn *out, Error **errp)
         return false;
     }
     if (qdict_haskey(txn, "relay")) {
-        int64_t relay = qdict_get_int(txn, "relay");
+        int64_t relay = qdict_get_try_int(txn, "relay", -1);
         if (relay < 1 || relay > SCRIPT_DATA_LIMIT || out->ten_bit ||
             qdict_haskey(txn, "read") || qdict_haskey(txn, "data")) {
             error_setg(errp, "i2c-scripted-master: invalid relay transaction");
@@ -711,7 +719,7 @@ static bool script_parse(const QDict *component, I2cScript *out,
         error_setg(errp, "i2c-scripted-master: bit_ns is required");
         return false;
     }
-    int64_t bit_ns = qdict_get_int(config, "bit_ns");
+    int64_t bit_ns = qdict_get_try_int(config, "bit_ns", -1);
     if (bit_ns < 1000 || bit_ns > 100000000) {
         error_setg(errp, "i2c-scripted-master: bit_ns out of range");
         return false;
@@ -763,17 +771,7 @@ static bool script_preflight(void *opaque, const QDict *component,
                              char **identity, Error **errp)
 {
     I2cScript script;
-    char *canonical = NULL;
-    if (!script_parse(component, &script, &canonical, errp)) {
-        return false;
-    }
-    g_free(canonical);
-    /* Re-parse with the identity retained: the committed activation must
-     * agree with the validated configuration byte for byte. */
-    if (!script_parse(component, &script, identity, errp)) {
-        return false;
-    }
-    return true;
+    return script_parse(component, &script, identity, errp);
 }
 
 static void script_activate(void *opaque, DeviceState *electrical)
@@ -825,9 +823,9 @@ static void script_frame(I2CBinding *b)
             continue;
         }
         ESP32S3ElectricalEndpoint endpoint = { 0 };
-        bool known = esp32s3_electrical_model_endpoint(
+        ESP32S3ElectricalRoute route = esp32s3_electrical_model_endpoint(
             b->electrical, slot->id, now, &endpoint);
-        if (!known || !endpoint.powered) {
+        if (route != ESP32S3_ELECTRICAL_ROUTE_OK || !endpoint.powered) {
             /* Unknown or unpowered graph peers never drive the bus. */
             if (slot->active) {
                 slot->active = false;
@@ -875,8 +873,8 @@ static void model_changed(void *opaque)
         }
     }
     for (unsigned i = 0; i < 2; i++) {
-        /* Slave-mode controllers advance from the published frame edges. */
-        esp32s3_i2c_slave_edge(b->controllers[i]);
+        /* Published edges synchronize master clocks and decode slave frames. */
+        esp32s3_i2c_frame(b->controllers[i]);
     }
     script_frame(b);
     b->notifying = false;

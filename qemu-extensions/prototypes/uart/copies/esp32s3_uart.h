@@ -50,6 +50,7 @@ typedef struct ESP32S3UARTState {
     bool tx_irda, rx_irda, irda_zero, break_sent;
     bool tx_post_delay;
     bool tx_idle_active;
+    bool tx_busy;
     bool sampling_idle, idle_waiting;
     bool fifo_shared;
     /* RX input routing signature; a change re-baselines edge detection. */

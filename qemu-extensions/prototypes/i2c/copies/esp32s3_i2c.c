@@ -79,6 +79,7 @@ static void cancel(ESP32S3I2CState *s)
     timer_del(s->timer);
     s->service = NULL;
     s->executing = s->protocol_open = s->waiting = false;
+    s->start_armed = false;
     s->need_address = true;
     s->bit_phase = 0;
     s->addr_bit = 0;
@@ -123,6 +124,12 @@ static int64_t bit_ns(ESP32S3I2CState *s)
     return cycles_ns(s, cycles);
 }
 
+static int64_t scl_high_ns(ESP32S3I2CState *s)
+{
+    uint32_t high = REG(s, 0x38);
+    return cycles_ns(s, (high & 511) + ((high >> 9) & 127));
+}
+
 static void schedule(ESP32S3I2CState *s, int64_t delay)
 {
     timer_mod(s->timer, qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) + MAX(1, delay));
@@ -136,7 +143,8 @@ static void fail(ESP32S3I2CState *s, uint32_t irq)
     i2c_irq(s);
 }
 
-static bool released_lines(ESP32S3I2CState *s, int64_t now)
+static bool ready_lines(ESP32S3I2CState *s, int64_t now, bool idle,
+                        bool *sampled_sda)
 {
     bool sda = false, scl = false;
     uint64_t generation = s->generation;
@@ -145,7 +153,10 @@ static bool released_lines(ESP32S3I2CState *s, int64_t now)
     if (s->generation != generation) {
         return false;
     }
-    if (valid && sda && scl) {
+    if (valid && scl && (!idle || sda)) {
+        if (sampled_sda) {
+            *sampled_sda = sda;
+        }
         s->waiting = false;
         return true;
     }
@@ -444,7 +455,8 @@ static void slave_fsm(ESP32S3I2CState *s, bool prev_sda, bool prev_scl)
     }
     if (!prev_sda && sda && scl) {
         /* STOP: SDA rises while SCL is high. */
-        if (s->slave_state != S3_I2C_SLV_IDLE || s->slave_stretch) {
+        if (s->slave_state != S3_I2C_SLV_IDLE || s->slave_stretch ||
+            s->slave_matched) {
             slave_end_transfer(s);
             slave_raise(s, COMPLETE);
         }
@@ -482,6 +494,10 @@ static void slave_fsm(ESP32S3I2CState *s, bool prev_sda, bool prev_scl)
                 /* End of the address-byte acknowledge bit. */
                 s->slave_sda_ack = false;
                 s->slave_sda_low = false;
+                if (s->slave_out_armed && s->slave_bit < 8) {
+                    s->slave_sda_low =
+                        !((s->slave_byte >> (7 - s->slave_bit)) & 1);
+                }
                 slave_drive_lines(s);
                 return;
             }
@@ -526,9 +542,12 @@ static void slave_fsm(ESP32S3I2CState *s, bool prev_sda, bool prev_scl)
             }
             break;
         case S3_I2C_SLV_OUT:
+            if (s->slave_sda_ack) {
+                break;
+            }
             if (s->slave_bit < 8) {
                 s->slave_bit++;
-            } else if (s->slave_bit == 9 && !s->slave_sda_ack) {
+            } else if (s->slave_bit == 9) {
                 /* Master acknowledge (low) continues the read; NACK ends it. */
                 s->slave_nacked = sda;
             }
@@ -612,9 +631,19 @@ static void slave_rearm(ESP32S3I2CState *s, int64_t now)
     }
 }
 
-void esp32s3_i2c_slave_edge(ESP32S3I2CState *s)
+void esp32s3_i2c_frame(ESP32S3I2CState *s)
 {
     if (s->executing) {
+        bool rising = s->bit_phase == ADDR_PHASE_RISE && s->waiting;
+        if (rising || s->bit_phase == ADDR_PHASE_NEXT) {
+            bool sda = false, scl = false;
+            if (s->provider.sample &&
+                s->provider.sample(s->provider.opaque, s->controller,
+                                   &sda, &scl) &&
+                (rising ? scl : !scl)) {
+                schedule(s, 1);
+            }
+        }
         return;
     }
     if (!slave_ready(s)) {
@@ -703,15 +732,29 @@ static void step(void *opaque)
         if (s->generation != generation) {
             return;
         }
-        if (!released_lines(s, now)) {
+        if (!ready_lines(s, now, true, NULL)) {
             return;
         }
         s->bit_phase = 2;
-    }
-    if (opcode == 6) {
-        if (!released_lines(s, now)) {
+        if (opcode == 6) {
+            schedule(s, cycles_ns(s, REG(s, 0x44) & 511));
             return;
         }
+    }
+    if (opcode == 6) {
+        if (s->protocol_open && !s->bit_phase) {
+            drive(s, true, false);
+            if (s->generation != generation) {
+                return;
+            }
+            s->bit_phase = 1;
+            schedule(s, cycles_ns(s, (REG(s, 0) & 511) + 1));
+            return;
+        }
+        if (!ready_lines(s, now, !s->start_armed, NULL)) {
+            return;
+        }
+        s->start_armed = false;
         s->restart = s->protocol_open;
         s->need_address = true;
         s->protocol_open = true;
@@ -720,16 +763,13 @@ static void step(void *opaque)
             return;
         }
         advance_command(s);
-        drive(s, true, true);
-        if (s->generation != generation) {
-            return;
-        }
         schedule(s, cycles_ns(s, (REG(s, 0x40) & 511) + 1 +
                                       (REG(s, 0x44) & 511)));
         return;
     }
     if (opcode == 2 || opcode == 4) {
-        if (!released_lines(s, now)) {
+        if (opcode == 2 && !s->protocol_open &&
+            !ready_lines(s, now, true, NULL)) {
             return;
         }
         if (opcode == 2 && !s->bit_phase) {
@@ -780,34 +820,30 @@ static void step(void *opaque)
         s->bit_phase <= ADDR_PHASE_ACK) {
         if (s->bit_phase == ADDR_PHASE_LOW) {
             bool bit = (s->addr_byte >> (7 - s->addr_bit)) & 1;
-            drive(s, !bit, false);
+            drive(s, bit, false);
             if (s->generation != generation) {
                 return;
             }
             s->bit_phase = ADDR_PHASE_RISE;
-            schedule(s, bit_ns(s) / 2);
+            schedule(s, cycles_ns(s, (REG(s, 0) & 511) + 1));
             return;
         }
         if (s->bit_phase == ADDR_PHASE_RISE) {
-            drive(s, true, true);
-            if (s->generation != generation) {
+            bool sda = false;
+            drive(s, s->sda, true);
+            if (s->generation != generation ||
+                !ready_lines(s, now, false, &sda)) {
+                return;
+            }
+            if ((REG(s, 4) & BIT(9)) && s->sda && !sda) {
+                fail(s, ARBITRATION);
                 return;
             }
             s->bit_phase = ADDR_PHASE_NEXT;
-            schedule(s, MAX(1, bit_ns(s) / 4));
+            schedule(s, scl_high_ns(s));
             return;
         }
         if (s->bit_phase == ADDR_PHASE_NEXT) {
-            if ((REG(s, 4) & BIT(9)) && !!(s->addr_byte >> (7 - s->addr_bit) & 1)) {
-                bool sda = false, scl = false;
-                if (s->provider.sample &&
-                    s->provider.sample(s->provider.opaque, s->controller,
-                                       &sda, &scl) &&
-                    s->generation == generation && !sda) {
-                    fail(s, ARBITRATION);
-                    return;
-                }
-            }
             s->addr_bit++;
             if (s->addr_bit < 8) {
                 drive(s, true, false);
@@ -815,7 +851,7 @@ static void step(void *opaque)
                     return;
                 }
                 s->bit_phase = ADDR_PHASE_LOW;
-                schedule(s, MAX(1, bit_ns(s) / 4));
+                schedule(s, 1);
                 return;
             }
             /* Ninth bit: the addressed endpoint acknowledge window. */
@@ -824,7 +860,7 @@ static void step(void *opaque)
                 return;
             }
             s->bit_phase = ADDR_PHASE_ACK;
-            schedule(s, bit_ns(s) / 2);
+            schedule(s, cycles_ns(s, (REG(s, 0) & 511) + 1));
             return;
         }
         /* ADDR_PHASE_ACK: the service-level acknowledge is modeled below;
@@ -834,11 +870,11 @@ static void step(void *opaque)
             return;
         }
         s->bit_phase = 2;
-        schedule(s, MAX(1, bit_ns(s) / 4));
+        schedule(s, scl_high_ns(s));
         return;
     }
     if (!s->bit_phase) {
-        if (!released_lines(s, now)) {
+        if (!s->protocol_open && !ready_lines(s, now, true, NULL)) {
             return;
         }
         if (opcode == 1 && fifo8_is_empty(&s->tx)) {
@@ -858,11 +894,7 @@ static void step(void *opaque)
             s->addr_byte = s->byte;
             s->addr_bit = 0;
             s->bit_phase = ADDR_PHASE_LOW;
-            drive(s, true, false);
-            if (s->generation != generation) {
-                return;
-            }
-            schedule(s, MAX(1, bit_ns(s) / 4));
+            schedule(s, 1);
             return;
         }
         /* Hold-master conversion stretches this byte in virtual time. */
@@ -1097,6 +1129,11 @@ static void write_reg(void *opaque, hwaddr addr, uint64_t value, unsigned size)
                 REG(s, 0x58 + i * 4) &= ~CMD_DONE;
             }
             s->executing = true;
+            bool sda = false, scl = false;
+            s->start_armed = ((s->active_cmd[0] >> 11) & 7) == 6 &&
+                s->provider.sample &&
+                s->provider.sample(s->provider.opaque, s->controller,
+                                   &sda, &scl) && sda && scl;
             s->command_index = s->remaining = s->bit_phase = 0;
             REG(s, 0x20) |= START_INT;
             schedule(s, 1);

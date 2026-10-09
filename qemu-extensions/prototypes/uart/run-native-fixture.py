@@ -209,7 +209,11 @@ class Qmp:
 
 
 def validate_arduino(text):
-    require(re.search(r"^ARDUINO_UART_BOOT profile=arduino arduino=3\.3\.12 idf=v?5\.5\.5(?:[-+].*)?$",
+    # esp_get_idf_version() reports git describe, which is the short commit
+    # for our detached canonical checkout, not necessarily a release tag.
+    # Freeze/run still require the full SDK commit and source-tree manifest.
+    sdk_description = rf"(?:v?5\.5\.5(?:[-+].*)?|{ARDUINO_IDF_COMMIT[:8]})"
+    require(re.search(rf"^ARDUINO_UART_BOOT profile=arduino arduino=3\.3\.12 idf={sdk_description}$",
                       text, re.MULTILINE), "Pinned Arduino3.3.12/IDF5.5.5 boot identity missing")
     require(re.search(r"^ARDUINO_UART_DONE profile=arduino failures=0 result=PASS$", text, re.MULTILINE),
             "Ordinary HardwareSerial fixture did not complete with zero failures")
@@ -415,8 +419,9 @@ def run(args):
                         result["snapshots"].append(dict(phase="physical_gate_released_vm_stopped", graph=qmp.snapshot()))
                         qmp.call("cont")
                         result["host_stop"] = True
-                    completion = {"arduino": "ARDUINO_UART_DONE",
-                                  "uhci": "UHCI_NATIVE_DONE"}.get(mode, "UART_NATIVE_DONE")
+                    # UHCI has an inner report, then more UART0 checks and
+                    # the aggregate UART_NATIVE_DONE; wait for the latter.
+                    completion = "ARDUINO_UART_DONE" if mode == "arduino" else "UART_NATIVE_DONE"
                     # Match only a complete line: the bare token followed by
                     # anything matches a partially flushed print and kills
                     # QEMU mid-line, so validation then never sees the result.
@@ -466,7 +471,8 @@ def main():
     running = sub.add_parser("run", help="Launch frozen image and physical v3 graph only")
     for name in ("qemu", "frozen", "evidence"):
         running.add_argument(f"--{name}", required=True, type=pathlib.Path)
-    running.add_argument("--watchdog-seconds", type=float, default=180)
+    running.add_argument("--watchdog-seconds", type=float, default=900,
+                         help="Host diagnostic deadline; electrical bit-by-bit qualification is much slower than guest time")
     args = parser.parse_args()
     if args.action == "run" and not 1 <= args.watchdog_seconds <= 900:
         parser.error("--watchdog-seconds must be within 1..900")

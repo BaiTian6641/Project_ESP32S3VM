@@ -114,6 +114,20 @@ static bool add_branch(EnRcCircuit *c, unsigned p, unsigned n, double resistance
     return true;
 }
 
+static unsigned uart_iomux_output(unsigned pad, unsigned function)
+{
+    /* ESP32-S3 uart_pins.h and io_mux_reg.h: these direct outputs select the
+     * same controller sources as the matrix, but do not use GPIO_ENABLE or
+     * FUNC_OUT_SEL. UART2 has no direct IO_MUX pins. */
+    switch (pad) {
+    case 15: return function == 2 ? 13 : 256; /* U0RTS */
+    case 17: return function == 2 ? 15 : 256; /* U1TXD */
+    case 19: return function == 2 ? 16 : 256; /* U1RTS */
+    case 43: return function == 0 ? 12 : 256; /* U0TXD */
+    default: return 256;
+    }
+}
+
 static bool build_drives(ESP32S3ElectricalState *s, Esp32S3Project *p,
                          EnRcCircuit *c, bool *owned, unsigned *pad_nodes,
                          Error **errp)
@@ -180,6 +194,13 @@ static bool build_drives(ESP32S3ElectricalState *s, Esp32S3Project *p,
                 } else if (digital.out_oe) {
                     error_setg(errp, "GPIO%u matrix signal %u has no native drive provider", pad, digital.out_sel);
                     return false;
+                }
+            } else {
+                unsigned signal = uart_iomux_output(pad, digital.mcu_sel);
+                if (signal < 256 && s->matrix[signal].present) {
+                    NativeMatrixDrive *source = &s->matrix[signal];
+                    oe = source->oe && (!source->open_drain || !source->level);
+                    level = source->level;
                 }
             }
             up = digital.pull_up;

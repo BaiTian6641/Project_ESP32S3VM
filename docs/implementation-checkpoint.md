@@ -5,6 +5,140 @@ parallel implementation in this session. Preserve the reviewed full scope; do no
 reduce completion to the foundation slices below. Historical heartbeat metadata
 is retained in the frozen packet; it is not an inventory of this session's jobs.
 
+## 2026-10-09 — canonical I2C cutover;147 native and15 ordinary PASS
+
+Current source-bound candidate is
+`qemu-uart-40edccac4156-1411f3a2d8676631`, executable SHA256
+`880b9dbe735f9c6258245b53f4b43929fd7abf5f2bc68410a29b025c2172c75a`.
+All **127 applied source-file hashes** match its immutable preparation receipt.
+The full simulator goal remains **active and incomplete**.
+
+* **147 native cases PASS, zero skipped**: UART64, UHCI17, GDMA18,
+  memory12, I2C controller/edge18 and I2C service18.
+* **All15 strict ordinary firmware scenarios PASS on this same executable**:
+  ten I2C runs on both controllers (connected100/400kHz and eight physical
+  routing/pull/stuck-line/power negatives), plus connected/absent/disconnected/
+  wrong/UHCI UART runs. The pinned SDK probe path uses100kHz regardless of
+  the device-transfer frequency printed by the fixture.
+* Active aggregate profiles now copy every canonical I2C controller, binding,
+  service and test source rather than the preserved memory-frozen master set.
+  Eight previously unregistered edge/slave/address-arbitration cases are active;
+  a new typed-config rejection case preserves real queued data across bad Apply.
+* Fixed zero-valued route-OK mistaken for false, actual SCL/SDA/STOP ordering,
+  slave address-ACK/data separation and final-NACK STOP completion, first-script
+  glitch dispatch, live-clock address arbitration and loser withdrawal without
+  STOP. START/END ownership and repeated START remain state-machine operations.
+  The malformed config regression proves old-executable crash / new rejection.
+* Strict UART re-freeze uses the actual original compiled-source/build roots;
+  their image/ELF/config hashes match the previously qualified snapshots.
+  The unconfigured UART test invocation's single skip is retained separately;
+  the required real-net driver then executes all64 cases.
+
+Exact receipts, frozen manifests, raw reports and graph/QMP snapshots:
+`build-runtime-state/uart-continuation/i2c-final/qualification-receipt.json`.
+Controller0 slave/filter/address-arbitration vectors are not complete I2C:
+SDK slave qualification on both controllers, broader ten-bit/master-data/full
+multi-master/filter/RC/replay and other canonical gates remain explicit in the
+I2C source map. Arduino/ROM, other peripherals, radio/SIMD and independent
+reference gates remain open. Verified refinement stages are committed and pushed
+individually; this147/15 checkpoint is the first publication boundary. Git keeps
+hash-pinned patch artifacts byte-exact rather than normalizing their line endings.
+No additional physical hardware operation occurred.
+
+## 2026-10-09 — complete ordinary UART/UHCI software runs; initial I2C proof
+
+This entry supersedes the later-timeout and UHCI-failure diagnoses in the
+previous continuation section. The full simulator goal remains incomplete.
+
+Fresh candidate `qemu-uart-40edccac4156-c35deea6f7043884`:
+executable SHA256
+`622935f7340d79a383dd5f72d0fec3f9489bf4e4ddddcc8cfbae7e26ef634643`;
+all **127 applied source files** verified against its immutable preparation
+receipt.
+
+* **All five strict ordinary connected/absent/disconnected/wrong/UHCI
+  firmware runners PASS** on this exact executable. Connected covers the
+  complete baud/format, threshold/timeout, recovery, flow-control, host
+  stop/resume, error, AT/autobaud, digital RS485 and receive-only IrDA suite.
+  UHCI covers actual513-byte idle/multibuffer/length/break DMA packets,
+  ownership/EOF/TX completion and concurrent physical UART0 activity.
+* A captured active UART0 shifter with127 queued bytes, plus194208 DC
+  factorizations at only2.9seconds guest virtual time, exposed the shorter
+  host reporting cutoff. The runner now defaults to the existing900-second
+  diagnostic limit; guest deadlines and failure checks are unchanged.
+* The one remaining connected framing-IRQ failure was a fixture contract:
+  pinned IDF's default mask omits frame errors. The fixture explicitly enables
+  that interrupt through the public API before the mismatched-width stimulus.
+* Central GDMA0006 corrects premature `IN_DONE`: the target defines a completed
+  inlink descriptor, not one peripheral pump call. Early per-byte interrupts
+  made UHCI recycle incomplete buffers and over-count callbacks. Completion
+  now follows successful nonempty descriptor writeback; true packet/segment
+  EOF and post-store fault accepted-byte counts retain their original contract.
+* **64/64 UART,17/17 UHCI,18/18 GDMA,12/12 memory,9/9 I2C native cases PASS**,
+  zero skipped. The native packet test checks no interrupt/ownership release
+  after early accepted bytes. Active aggregate profiles include GDMA0006 and
+  use the corrected canonical I2C test, not the preserved memory-frozen copy.
+* Initial I2C timed7-bit master proof: **9/9 native controller cases,
+ 18/18 service cases**, and **ordinary pinned-IDF connected100kHz on both
+  controllers PASS**. Its old paused harness never enabled timers; setup now
+  continues after quiescent Apply, and later graph changes preserve prior
+  run state. Advanced I2C/slave/10-bit/multimaster/edge gates remain open.
+
+Current records:
+`build-runtime-state/uart-continuation/dma-final/qualification-receipt.json`,
+`uart-continuation/i2c/qualification-receipt.json`, and the UART/I2C/GDMA
+source maps/readmes. Arduino/ROM/reference and other peripheral/radio/SIMD
+qualification remain separate. Changes from this continuation have not yet
+been committed or pushed. No additional physical hardware operation occurred.
+
+## Continuation — console drain and native UART IO_MUX qualification
+
+This section supersedes the earlier console-pollution and missing-Arduino-marker
+diagnoses. Full VM implementation remains active and incomplete.
+
+* A failed worker reverted the old cached `esp32s3_clk.c` to pristine. That
+  checkout was preserved, not rebuilt or silently trusted. Fresh candidate
+  `qemu-uart-40edccac4156-9feac24d8fa6b676` was reconstructed from hash-verified
+  prerequisites and tracked lane inputs. All **127 applied source files**
+  match its preparation receipt. Executable SHA256:
+  `df894a160aa7a0689545ad810ce72d93d01fe55f45a19aa20c6e58e101ba6440`.
+* Preserved trace proves `uart_param_config` reset discarded **127 queued
+  console report bytes**. The fixture now drains UART0's hardware FIFO before
+  installation and again after installation's queue log, before reconfiguration.
+  **Strict absent/disconnected/wrong runners PASS**; no parser relaxation or
+  binary-payload filtering was added.
+* The electrical solver previously ignored direct IO_MUX outputs. Ordinary
+  UART1 used GPIO17/function2, so its waveform never reached UART2 RX16. Native
+  U0/U1 TX/RTS routes now reuse the controller's actual drive sources. A new
+  waveform/byte regression verifies direct mux selection, release and restore
+  with GPIO output-enable and matrix routing disabled.
+* `TX_DONE` was incorrectly regenerated as an idle level after software clear.
+  It now latches a busy-to-final-idle completion and remains clear until the
+  next transfer completes; FIFO/reset cancellation does not fabricate a DONE.
+  Per-controller clear/re-arm regressions cover the IDF RS485 invariant.
+* **64/64 UART qtests + 17/17 UHCI vectors, zero skipped.** Eight initial
+  ordinary crossed baud/format transfers, including `normal_restore`, PASS
+  with 513 bytes received in each direction. Full connected and UHCI runs still
+  time out later; advanced cases are not promoted from these initial passes.
+* Arduino's actual SDK description is `b774170f`, emitted by the firmware.
+  The validator now accepts that pinned git description alongside `5.5.5`,
+  retaining full source/SDK commit checks. HardwareSerial report boundaries
+  are repaired; remaining failure is behavioral completion, not identity.
+* ROM relay waits for the complete CRLF-terminated banner and uses standard
+  esptool no-reset SYNC acquisition without chip-detection register/security
+  commands. No valid ACK traversal has been observed. A separate direct probe's
+  second-SYNC bytes were **LoadStoreError panic text, not a response**
+  (`EPC1=0x40044290`, `EXCVADDR=0x5ffd0000`).
+* Two parallel workers were requested; both failed before work because the
+  configured provider rejected requests. No model substitution occurred;
+  the changes above were implemented inline.
+
+Exact records: `qemu-extensions/prototypes/uart/source-map.json`,
+`changelog.json`, and
+`build-runtime-state/uart-continuation/final/qualification-receipt.json`.
+Historical cached executables and earlier qualification records are not the
+current executable's evidence. No additional hardware operation was performed.
+
 ## 2026-10-08 — takeover integration: UART finalized, hostbus enabled launch resolved
 
 Takeover coordinator session (branch `codex/simulator-foundation`, commits

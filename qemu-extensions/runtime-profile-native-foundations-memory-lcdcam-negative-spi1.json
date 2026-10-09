@@ -173,35 +173,35 @@
       "destination": "tests/qtest/esp32s3-lcd-cam-test.c"
     },
     {
-      "source": "prototypes/memory/copies-frozen-i2c/esp32s3_i2c.h",
+      "source": "prototypes/i2c/copies/esp32s3_i2c.h",
       "destination": "include/hw/i2c/esp32s3_i2c.h"
     },
     {
-      "source": "prototypes/memory/copies-frozen-i2c/esp32s3_i2c.c",
+      "source": "prototypes/i2c/copies/esp32s3_i2c.c",
       "destination": "hw/i2c/esp32s3_i2c.c"
     },
     {
-      "source": "prototypes/memory/copies-frozen-i2c/esp32s3_i2c_service.h",
+      "source": "prototypes/i2c/copies/esp32s3_i2c_service.h",
       "destination": "include/hw/i2c/esp32s3_i2c_service.h"
     },
     {
-      "source": "prototypes/memory/copies-frozen-i2c/esp32s3_i2c_service.c",
+      "source": "prototypes/i2c/copies/esp32s3_i2c_service.c",
       "destination": "hw/i2c/esp32s3_i2c_service.c"
     },
     {
-      "source": "prototypes/memory/copies-frozen-i2c/esp32s3_i2c_binding.h",
+      "source": "prototypes/i2c/copies/esp32s3_i2c_binding.h",
       "destination": "include/hw/i2c/esp32s3_i2c_binding.h"
     },
     {
-      "source": "prototypes/memory/copies-frozen-i2c/esp32s3_i2c_binding.c",
+      "source": "prototypes/i2c/copies/esp32s3_i2c_binding.c",
       "destination": "hw/i2c/esp32s3_i2c_binding.c"
     },
     {
-      "source": "prototypes/memory/copies-frozen-i2c/esp32s3-i2c-test.c",
+      "source": "prototypes/i2c/copies/esp32s3-i2c-test.c",
       "destination": "tests/qtest/esp32s3-i2c-test.c"
     },
     {
-      "source": "prototypes/memory/copies-frozen-i2c/test-esp32s3-i2c-service.c",
+      "source": "prototypes/i2c/copies/test-esp32s3-i2c-service.c",
       "destination": "tests/unit/test-esp32s3-i2c-service.c"
     }
   ],
@@ -596,6 +596,10 @@
         "hw/dma/esp_gdma.c",
         "include/hw/dma/esp_gdma.h"
       ]
+    },
+    {
+      "source": "prototypes/gdma/0006-hw-dma-in-done-on-descriptor-completion.patch",
+      "targets": ["hw/dma/esp_gdma.c"]
     },
     {
       "source": "prototypes/i2c/integration-after-electrical.patch",

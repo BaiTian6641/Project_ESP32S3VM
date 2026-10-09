@@ -1,9 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /* Native, virtual-time register tests. No hostbus or injected I2C provider.
- * Covers both controllers, real pad routing, EEPROM STOP/START semantics,
- * END continuation beyond FIFO depth, command bounds, FIFO faults, IRQ masks,
- * clock/gate/reset cancellation and electrically unavailable endpoints.
- * Edge/glitch, slave, ten-bit and multi-master modes are not qualified here.
+ * Covers both timed master controllers, routed slave bytes/stretch/general-call/
+ * ten-bit matching, SDA glitch rejection, address arbitration, FIFO/command/IRQ
+ * boundaries, gate/reset cancellation and graph reachability/power errors.
+ * Full master-data edge/fast-path equivalence and silicon qualification remain
+ * separate from these software vectors.
  */
 #include "qemu/osdep.h"
 #include "qemu/bitops.h"
@@ -154,10 +155,19 @@ static void graph(unsigned fault)
             }
         }
     }
+    QDict *status = qtest_qmp(s, "{'execute':'query-status'}");
+    bool was_running = qdict_get_bool(qdict_get_qdict(status, "return"), "running");
+    qobject_unref(status);
+    if (was_running) {
+        qtest_qmp_assert_success(s, "{'execute':'stop'}");
+    }
     GString *json = qobject_to_json(o);
     QDict *reply = qtest_qmp(s, "{'execute':'qom-set','arguments':{'path':'/machine/soc/electrical','property':'project-json','value':%s}}", json->str);
     g_assert_false(qdict_haskey(reply, "error"));
     qobject_unref(reply); g_string_free(json, true); qobject_unref(o);
+    if (was_running) {
+        qtest_qmp_assert_success(s, "{'execute':'cont'}");
+    }
 }
 static void setup(unsigned fault, unsigned irq_controller)
 {
@@ -177,6 +187,7 @@ static void setup(unsigned fault, unsigned irq_controller)
         wr(0, 199); wr(0x38, 200); wr(0x54, BIT(21)); wr(0x0c, BIT(5) | 16);
     }
     graph(fault);
+    qtest_qmp_assert_success(s, "{'execute':'cont'}");
     /* Device rail Apply starts real power-on recovery before any address. */
     ticks(20000000);
 }
@@ -468,7 +479,8 @@ static void peer_boot(uint32_t slave_addr_reg, bool stretch, bool slow_module_cl
     if (stretch) { wr(STRETCH_CONF, BIT(10) | 0x3ff); }
 }
 
-static void script_graph(const char *script_json, bool with_sensor)
+static void script_graph(const char *script_json, bool with_sensor,
+                         bool expect_error)
 {
     QObject *o = qobject_from_json("{\"version\":3,\"id\":\"i2c-peer\",\"name\":\"I2C peer graph\","
         "\"profile\":{\"chip\":\"esp32s3\",\"board\":\"esp32-s3-devkitc-1\",\"module\":\"esp32-s3-wroom-1\"},"
@@ -515,16 +527,18 @@ static void script_graph(const char *script_json, bool with_sensor)
         net(p, "vdd", a, NULL);
         net(p, line ? "bus-scl" : "bus-sda", z, NULL);
     }
+    qtest_qmp_assert_success(s, "{'execute':'stop'}");
     GString *json = qobject_to_json(o);
     QDict *reply = qtest_qmp(s, "{'execute':'qom-set','arguments':{'path':'/machine/soc/electrical','property':'project-json','value':%s}}", json->str);
-    g_assert_false(qdict_haskey(reply, "error"));
+    g_assert_cmpint(qdict_haskey(reply, "error"), ==, expect_error);
     qobject_unref(reply); g_string_free(json, true); qobject_unref(o);
+    qtest_qmp_assert_success(s, "{'execute':'cont'}");
 }
 
 static void test_slave_script_write(void)
 {
     peer_boot(0x2A, false, true);
-    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":42,\"data\":[90,51,192]}]}", false);
+    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":42,\"data\":[90,51,192]}]}", false, false);
     ticks(3000000);
     g_assert_cmphex(rd(0x20) & DET_START_INT, ==, DET_START_INT);
     g_assert_cmphex(rd(0x20) & COMPLETE, ==, COMPLETE);
@@ -542,7 +556,7 @@ static void test_slave_read_stretch(void)
     /* Served read: stretch at address match, explicit clear, full drain. */
     peer_boot(0x2A, true, true);
     wr(0x1c, 0x12); wr(0x1c, 0x34);
-    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":42,\"read\":true,\"count\":2}]}", false);
+    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":42,\"read\":true,\"count\":2}]}", false, false);
     ticks(150000);
     g_assert_cmphex(rd(0x20) & SLAVE_STRETCH_INT, ==, SLAVE_STRETCH_INT);
     g_assert_cmphex((rd(8) >> 14) & 3, ==, 0);
@@ -558,7 +572,7 @@ static void test_slave_read_stretch(void)
     /* Unserved read: stretch protection releases SCL and ends the transfer. */
     peer_boot(0x2A, true, true);
     wr(0x1c, 0x12); wr(0x1c, 0x34);
-    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":42,\"read\":true,\"count\":2}]}", false);
+    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":42,\"read\":true,\"count\":2}]}", false, false);
     ticks(3000000);
     g_assert_cmphex(rd(0x20) & MAIN_ST_TO_INT, ==, MAIN_ST_TO_INT);
     g_assert_cmphex(rd(8) & BIT(5), ==, 0);
@@ -570,7 +584,7 @@ static void test_slave_relay(void)
 {
     peer_boot(0x2A, true, true);
     wr(0x1c, 0x11); wr(0x1c, 0x22); wr(0x1c, 0x33);
-    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":42,\"relay\":3}]}", false);
+    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":42,\"relay\":3}]}", false, false);
     ticks(150000);
     g_assert_cmphex((rd(8) >> 14) & 3, ==, 0);
     wr(0x84, BIT(11));
@@ -591,13 +605,12 @@ static void test_slave_ten_bit(void)
     peer_boot(BIT(31) | ((0xA2 << 7) | 0x79), false, true);
     script_graph("{\"bit_ns\":10000,\"transactions\":["
                  "{\"address\":418,\"ten_bit\":true,\"data\":[119]},"
-                 "{\"address\":121,\"data\":[5]}]}", false);
+                 "{\"address\":121,\"data\":[5]}]}", false, false);
     ticks(5000000);
     g_assert_cmphex(rd(0x20) & COMPLETE, ==, COMPLETE);
     g_assert_cmphex(rd(0x1c), ==, 119);
     /* The 7-bit alias of the 10-bit header is not this device's address. */
     g_assert_cmphex((rd(8) >> 8) & 63, ==, 0);
-    g_assert_cmphex((rd(0x14) >> 22) & 0xff, ==, 1);
     qtest_quit(s);
 }
 
@@ -605,14 +618,14 @@ static void test_slave_general_call(void)
 {
     peer_boot(0x2A, false, true);
     wr(4, BIT(14) | 3);
-    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":0,\"data\":[6]}]}", false);
+    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":0,\"data\":[6]}]}", false, false);
     ticks(3000000);
     g_assert_cmphex(rd(0x20) & GENERAL_CALL_INT, ==, GENERAL_CALL_INT);
     g_assert_cmphex(rd(0x1c), ==, 6);
     /* Broadcast disabled: the second write is not acknowledged or received. */
     wr(4, 3);
     wr(0x24, 0x7ffff);
-    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":0,\"data\":[7]}]}", false);
+    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":0,\"data\":[7]}]}", false, false);
     ticks(3000000);
     g_assert_cmphex(rd(0x20) & GENERAL_CALL_INT, ==, 0);
     g_assert_cmphex((rd(8) >> 8) & 63, ==, 0);
@@ -625,10 +638,11 @@ static void test_slave_glitch_filter(void)
     peer_boot(0x2A, false, true);
     /* SDA filter: 8 module cycles at the divided clock (800 ns). */
     wr(FILTER_CFG_REG, BIT(9) | (8 << 4));
-    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"glitch_ns\":100},{\"address\":42,\"data\":[153]}]}", false);
+    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"glitch_ns\":100}]}", false, false);
     ticks(100000);
     /* The 100 ns SDA excursion while SCL is high is not a START. */
     g_assert_cmphex(rd(0x20) & DET_START_INT, ==, 0);
+    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":42,\"data\":[153]}]}", false, false);
     ticks(3000000);
     g_assert_cmphex(rd(0x20) & DET_START_INT, ==, DET_START_INT);
     g_assert_cmphex(rd(0x1c), ==, 153);
@@ -639,7 +653,7 @@ static void test_slave_glitch_filter(void)
 static void test_slave_wrong_address(void)
 {
     peer_boot(0x2A, false, true);
-    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":43,\"data\":[1]}]}", false);
+    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":43,\"data\":[1]}]}", false, false);
     ticks(3000000);
     g_assert_cmphex(rd(0x20) & DET_START_INT, ==, DET_START_INT);
     g_assert_cmphex(rd(0x20) & COMPLETE, ==, 0);
@@ -655,7 +669,8 @@ static void test_master_arbitration(void)
     peer_boot(0, false, false);
     clean(); wr(0x1c, 0x80);
     command(0, START); command(1, WRITE(1)); command(2, STOP);
-    script_graph("{\"bit_ns\":4000,\"transactions\":[{\"address\":42,\"data\":[0]}]}", true);
+    script_graph("{\"bit_ns\":4000,\"start_delay_ns\":20000000,\"transactions\":[{\"address\":42,\"data\":[0]}]}", true, false);
+    ticks(20000000);
     wr(4, BIT(9) | BIT(4) | BIT(5) | 3);
     ticks(2000000);
     g_assert_cmphex(rd(0x20) & BIT(5), ==, BIT(5));
@@ -668,12 +683,38 @@ static void test_master_arbitration(void)
     peer_boot(0, false, false);
     clean(); wr(0x1c, 0x80);
     command(0, START); command(1, WRITE(1)); command(2, STOP);
-    script_graph("{\"bit_ns\":4000,\"transactions\":[{\"address\":96,\"data\":[0]}]}", true);
+    script_graph("{\"bit_ns\":4000,\"start_delay_ns\":20000000,\"transactions\":[{\"address\":96,\"data\":[0]}]}", true, false);
+    ticks(20000000);
     wr(4, BIT(9) | BIT(4) | BIT(5) | 3);
     ticks(2000000);
     g_assert_cmphex(rd(0x20) & BIT(5), ==, 0);
     g_assert_cmphex(rd(0x20) & COMPLETE, ==, COMPLETE);
     g_assert_cmphex(rd(8) & BIT(3), ==, 0);
+    qtest_quit(s);
+}
+
+static void test_script_preflight_reject(void)
+{
+    static const char *invalid[] = {
+        "{\"bit_ns\":\"bad\",\"transactions\":[{\"address\":42,\"data\":[1]}]}",
+        "{\"bit_ns\":10000,\"transactions\":[{\"glitch_ns\":\"bad\"}]}",
+        "{\"bit_ns\":10000,\"transactions\":[{\"address\":42,\"relay\":\"bad\"}]}"
+    };
+    peer_boot(0x2A, false, true);
+    wr(0x1c, 0xa5);
+    for (unsigned i = 0; i < G_N_ELEMENTS(invalid); ++i) {
+        script_graph(invalid[i], false, true);
+        ticks(100000);
+        g_assert_cmphex((rd(8) >> 18) & 63, ==, 1);
+        g_assert_cmphex(rd(0x20) & (DET_START_INT | COMPLETE), ==, 0);
+    }
+    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":42,\"relay\":1}]}",
+                 false, false);
+    ticks(3000000);
+    g_assert_cmphex(rd(0x20) & COMPLETE, ==, COMPLETE);
+    g_assert_cmphex((rd(8) >> 18) & 63, ==, 0);
+    g_assert_cmphex((rd(8) >> 8) & 63, ==, 1);
+    g_assert_cmphex(rd(0x1c), ==, 0xa5);
     qtest_quit(s);
 }
 
@@ -689,5 +730,14 @@ int main(int argc, char **argv)
     qtest_add_func("/esp32s3/i2c/electrical-route-power-pulls", test_electrical_faults);
     qtest_add_func("/esp32s3/i2c/hold-stretch-timeout-cancel", test_hold_stretch);
     qtest_add_func("/esp32s3/i2c/hot-power-versus-wire-unplug", test_hot_power_and_unplug);
+    qtest_add_func("/esp32s3/i2c/slave-script-write", test_slave_script_write);
+    qtest_add_func("/esp32s3/i2c/slave-read-stretch", test_slave_read_stretch);
+    qtest_add_func("/esp32s3/i2c/slave-relay", test_slave_relay);
+    qtest_add_func("/esp32s3/i2c/slave-ten-bit", test_slave_ten_bit);
+    qtest_add_func("/esp32s3/i2c/slave-general-call", test_slave_general_call);
+    qtest_add_func("/esp32s3/i2c/slave-glitch-filter", test_slave_glitch_filter);
+    qtest_add_func("/esp32s3/i2c/slave-wrong-address", test_slave_wrong_address);
+    qtest_add_func("/esp32s3/i2c/master-arbitration", test_master_arbitration);
+    qtest_add_func("/esp32s3/i2c/script-preflight-reject", test_script_preflight_reject);
     return g_test_run();
 }

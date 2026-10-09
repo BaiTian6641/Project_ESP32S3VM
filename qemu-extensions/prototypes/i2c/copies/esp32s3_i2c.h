@@ -51,6 +51,8 @@ struct ESP32S3I2CState {
     uint64_t generation;
     bool gate, reset_asserted, executing, protocol_open, need_address, restart;
     bool reading, nack, waiting, sda, scl;
+    /* An idle bus was sampled when the pending START request was armed. */
+    bool start_armed;
     unsigned command_index, remaining, bit_phase;
     uint8_t byte, address;
     int64_t wait_start;
@@ -76,7 +78,7 @@ struct ESP32S3I2CState {
 };
 void esp32s3_i2c_bind(ESP32S3I2CState *s, const S3I2CProvider *provider);
 void esp32s3_i2c_invalidate(ESP32S3I2CState *s);
-/* One electrical frame was published: run the slave edge FSM from the actual
- * sampled SDA/SCL levels of this controller's routed pads. */
-void esp32s3_i2c_slave_edge(ESP32S3I2CState *s);
+/* A solved electrical frame advances master clock synchronization or the slave
+ * decoder through this controller's actual routed SDA/SCL levels. */
+void esp32s3_i2c_frame(ESP32S3I2CState *s);
 #endif

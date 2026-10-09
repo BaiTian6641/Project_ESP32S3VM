@@ -191,16 +191,22 @@ static void update(ESP32S3UARTState *s)
 {
     unsigned rx = fifo8_num_used(&s->parent.rx_fifo);
     unsigned tx = fifo8_num_used(&s->parent.tx_fifo);
-    uint32_t raw = REG(s, 4) & ~(IRQ_RX_FULL | IRQ_TX_EMPTY | IRQ_TX_DONE);
+    uint32_t raw = REG(s, 4) & ~(IRQ_RX_FULL | IRQ_TX_EMPTY);
     if (rx && rx >= (CORE(s, 0x24) & 1023)) {
         raw |= IRQ_RX_FULL;
     }
     if (tx <= ((CORE(s, 0x24) >> 10) & 1023)) {
         raw |= IRQ_TX_EMPTY;
     }
-    if (!tx && !s->tx_active && !s->break_active && !s->tx_idle_active) {
+    bool busy = tx || s->tx_active || s->break_active || s->tx_idle_active;
+    if (busy) {
+        raw &= ~IRQ_TX_DONE;
+    } else if (s->tx_busy) {
+        /* TX_DONE is a completion event, not an idle level. Once cleared,
+         * it stays cleared until another transfer reaches its final idle. */
         raw |= IRQ_TX_DONE;
     }
+    s->tx_busy = busy;
     REG(s, 4) = raw;
     REG(s, 8) = raw & REG(s, 12);
     qemu_set_irq(s->parent.irq, REG(s, 8) != 0);
@@ -948,6 +954,7 @@ static void fifo_reset(ESP32S3UARTState *s, bool tx)
         fifo8_reset(&s->parent.tx_fifo);
         s->tx_rptr = s->tx_wptr = 0;
         s->tx_active = s->break_active = s->tx_idle_active = false;
+        s->tx_busy = false;
         s->tx_wait_phase = UART_WAIT_NONE;
         s->tx_post_delay = false;
         timer_del(&s->tx_timer);
@@ -1170,6 +1177,7 @@ static void reset_hold(Object *obj, ResetType type)
     fifo8_reset(&s->console_rx);
     s->console_active = s->tx_active = s->rx_active = s->break_active = false;
     s->tx_idle_active = false;
+    s->tx_busy = false;
     s->tx_wait_phase = UART_WAIT_NONE;
     s->tx_post_delay = false;
     s->rx_valid = false;

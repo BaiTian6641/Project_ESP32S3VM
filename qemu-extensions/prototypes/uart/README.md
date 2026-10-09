@@ -173,6 +173,30 @@ The qtests assert actual GPIO samples and per-bit native trace timestamps. The
 per-UART `trace` property enables `tx-drive` and `rx-sample` events, uses virtual
 nanoseconds, and flushes QEMU logs for evidence barriers.
 
+The ordinary driver also selects UART1's direct IO_MUX TX function on GPIO17,
+not its GPIO-matrix output. The electrical solver resolves native U0/U1 TX/RTS
+pad functions from the same controller drive sources. The regression
+`iomux-tx-release-restore` checks actual GPIO16 waveforms and UART2 received
+bytes with GPIO17's matrix output and GPIO output-enable disabled, then verifies
+that changing the mux releases the wire before restoring it.
+
+`TX_DONE` is latched on final busy-to-idle completion. Clearing it while idle
+must not immediately regenerate it; `tx-done-clear-next-completion` checks that
+invariant and the next real transfer's IRQ on each UART. The current native
+suite is **64/64 UART + 17/17 UHCI**, zero skipped, on source-bound
+candidate `1411f3a2d8676631`. All five strict ordinary
+connected/absent/disconnected/wrong/UHCI firmware runners **PASS** on that same
+executable. This includes FIFO/error recovery, physical flow control and queued
+VM pause/resume, digital RS485, receive-only IrDA, and actual 513-byte UHCI DMA
+idle/multibuffer/length/break packets with partial callbacks and TX completion.
+The central GDMA `IN_DONE` descriptor-boundary correction prevents the ordinary
+driver from recycling buffers after each single-byte pump.
+
+Arduino, ROM download, undocumented packet fields and independent hardware
+timing remain separate gates. See `source-map.json` and
+`build-runtime-state/uart-continuation/i2c-final/qualification-receipt.json`.
+
+
 `tests/firmware/uart_native/README.md` contains ordinary pinned IDF build/freeze
 and runner commands, including actual UHCI and the separately pinned Arduino
 wrapper where available. Firmware images, ELF, source/config/graphs, runtime
