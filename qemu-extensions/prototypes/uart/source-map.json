@@ -180,14 +180,13 @@
     "uart_clkdiv_frag_cycle_jitter": "unqualified: rational-average baud model has no independently referenced16pulse phase/interleave fidelity; integer and average-rate behavior are separate",
     "uhci_break_delimiter_payload": "modelcontractexcludesonlyexplicitlyidentifiedactuallyqueuedphysicalNULLdelimiter; targetTRMdoesnotenumerateGDMApayloadinclusion, independenthardwareboundaryreference required",
     "fifo_size_zero": "unqualified: primary sources do not resolve zero encoding versus eight-block UART0 TX limit",
-    "rom_download_and_ordinary_boot": "Strict ordinary connected/absent/disconnected/wrong/uhci fixtures PASS on1e937cf0ad1822bb. ROM download remains separately unqualified.",
+    "rom_download_and_ordinary_boot": "All six ordinary IDF6.1/Arduino UART fixtures PASS on984f71fe6aadd031 with exact physical payloads and current frozen inputs. ROM checksum/status-ACK download remains separately unqualified.",
     "hardware_timing": "not independently qualified; no approved physical reference operation performed",
-    "arduino": "Pinned Arduino3.3.12/IDF5.5.5 builds/freezes and emits the actual SDK git description; ordinary HardwareSerial runtime exercised but remains FAIL."
+    "arduino": "PASS: pinned Arduino3.3.12/IDF5.5.5 normal setup/loop and HardwareSerial, all five exact513-byte duplex vectors, three physical UART0 loopbacks and per-vector released electrical idle on backend984f71fe6aadd031."
   },
   "firmware": "tests/firmware/uart_native; firmware/build-idf-fixture.sh freezes original images before run-native-fixture.py creates writable evidence disks",
-  "evidence": "build-runtime-state/uart-continuation/i2c-slave-final/",
+  "evidence": "build-runtime-state/uart-continuation/arduino-idle-stage/",
   "blocked_by": [
-    "Arduino: the pinned SDK really reports git description b774170f. The validator accepts that exact hash alongside 5.5.5; initial report boundaries are repaired. Remaining failure is ordinary HardwareSerial behavioral completion, not a missing emitted identity marker.",
     "ROM download: banner bytes are retained in raw evidence but excluded from the tool stream through a CRLF readiness barrier. Standard esptool no-reset SYNC acquisition is used without register/security commands. No valid ROM ACK traversal yet; a separate SYNC probe produced a LoadStoreError panic at EPC1=0x40044290, EXCVADDR=0x5ffd0000. The panic text is not a protocol reply."
   ],
   "primary_source_grounding": {
@@ -195,17 +194,18 @@
     "pdf_sha256": "4484bf8a69035ec42a731c58c64ada6fbd1f1618c5559409f134d9ea083f444f"
   },
   "ordinary_fixture_results": {
-    "binary": "qemu-uart-40edccac4156-1e937cf0ad1822bb/build-wsl/qemu-system-xtensa sha256 6e2c78411f0ef48215ad1c8be3f23fd0eef0ccfe4ea151c891a357ef8c49347f",
-    "qualification_receipt": "build-runtime-state/uart-continuation/i2c-slave-final/qualification-receipt.json",
-    "frozen": "build-runtime-state/uart-continuation/i2c-slave-final/uart-frozen/<mode>",
-    "runs": "build-runtime-state/uart-continuation/i2c-slave-final/uart-runs/<mode>",
+    "binary": "qemu-uart-40edccac4156-984f71fe6aadd031/build-wsl/qemu-system-xtensa sha256 03bb3bbcc2eb2b69ac4d2f376d7ab85f321b9a712c7da745c6f7ff703f9d00b6",
+    "qualification_receipt": "build-runtime-state/uart-continuation/arduino-idle-stage/qualification-receipt.json",
+    "frozen": "build-runtime-state/uart-continuation/arduino-idle-stage/idf61-frozen/<mode>; separate arduino-frozen/",
+    "runs": "build-runtime-state/uart-continuation/arduino-idle-stage/idf61-runs/<mode>; separate arduino-run/",
     "connected": "PASS: strict full-run validation, physical stop/resume, expected vectors and exact streams, zero firmware failures.",
     "absent": "PASS: strict complete-run validation, all expected vectors, zero firmware failures.",
     "disconnected": "PASS: strict complete-run validation, all expected vectors, zero firmware failures.",
     "wrong": "PASS: strict complete-run validation, all expected vectors, zero firmware failures.",
     "uhci": "PASS: exact ordinary513-byte full-duplex idle/multibuffer/length/break packets, real partial DMA callbacks, TX completion, EOF, and physical UART0 overlap.",
     "console_report_fix": "Preserved trace proved uart_param_config reset discarded 127 queued report bytes. Fixture now drains UART0 with uart_wait_tx_idle_polling before driver installation and again after installation logs, before configuration. No parser relaxation or payload suppression.",
-    "arduino_build": "PASS: pinned Arduino3.3.12/IDF5.5.5 image builds/freezes with esp_netif REQUIRES. Ordinary HardwareSerial runtime remains FAIL.",
+    "arduino_build": "PASS: pinned Arduino3.3.12/IDF5.5.5 native build/freeze and complete ordinary HardwareSerial runtime. Real pinMode(INPUT) releases both detached LOW TX pads before either peer RX starts; no model/SDK patch or received-byte filtering.",
+    "arduino_idle_evidence": "Both solved peer TX levels are HIGH before each of five vectors; actual digitalRead reports and exact independently checked RX bytes are mandatory. Older one-leadingNULL failures remain preserved.",
     "rom_download": "FAIL: standard no-reset acquisition does not establish real ROM ACK traversal; SYNC/MEM-only proof and no-execute/unchanged-flash assertions remain mandatory.",
     "crash_note": "The review-era console-retry prototype crashed QEMU at teardown (heap corruption); reverted, and the ordinary fixtures then ran cleanly. The console TX drop-on-busy-backend gap remains documented and unfixed (the original single-shot qemu_chr_fe_write stays)."
   },

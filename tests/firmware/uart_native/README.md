@@ -164,6 +164,17 @@ GPIO43/44 console restored, and only then are all checks and RX bytes logged.
 The independent console's binary mirror is preserved as raw evidence and is
 never used as external RX. No internal loopback or echo surrogate is used.
 
+After ending both peers, the fixture releases GPIO17/18 with ordinary
+`pinMode(INPUT)` **before** either receiver is installed again. The pinned
+Arduino `end()` implementation detaches TX to the GPIO output route but does
+not disable its output; a LOW GPIO latch would otherwise hold the peer RX
+LOW until that peer's next `begin()`. The existing physical10kΩ pull-ups
+establish idle on the released pads, and ordinary `digitalRead` observations
+are logged and required for every transfer. No GPIO-generated payload, RX
+flush, leading-byte removal or receiver-error suppression is used. All five
+exact513-byte duplex vectors and all three UART0 physical loopbacks now PASS
+on the current source-bound backend; this remains distinct IDF5.5.5 evidence.
+
 The runner separately checks Arduino3.3.12/IDF5.5.5 boot identity, the locked
 profile commits, all required zero-failure checks, actual full-duplex and
 UART0 loopback hex streams, framing durations and actual baud rates.

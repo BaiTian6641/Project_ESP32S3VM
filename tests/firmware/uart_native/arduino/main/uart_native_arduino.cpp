@@ -28,6 +28,17 @@ static void duplex(const char *name, unsigned long baud, unsigned salt, uint32_t
     Serial0.flush(true);
     Serial1.end();
     Serial2.end();
+    // end() detaches TX to the GPIO matrix but leaves its output enabled.
+    // Release both unused pads before either receiver is installed: the real
+    // project pull-ups, not a GPIO-driven substitute, establish UART idle.
+    pinMode(17, INPUT);
+    pinMode(18, INPUT);
+    bool idle1 = digitalRead(17) == HIGH;
+    bool idle2 = digitalRead(18) == HIGH;
+    Serial0.printf("ARDUINO_UART_IDLE name=%s tx1=%u tx2=%u\n", name,
+        static_cast<unsigned>(idle1), static_cast<unsigned>(idle2));
+    check("tx1_released_idle", idle1);
+    check("tx2_released_idle", idle2);
     check("rx_buffer1", Serial1.setRxBufferSize(4096) == 4096);
     check("tx_buffer1", Serial1.setTxBufferSize(4096) == 4096);
     check("rx_buffer2", Serial2.setRxBufferSize(4096) == 4096);

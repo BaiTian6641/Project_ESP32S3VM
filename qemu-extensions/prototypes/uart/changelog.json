@@ -195,5 +195,21 @@
    "GPIO dependency is declared unconditionally during both IDF component discovery and configured passes; only the fixture source selection is conditional.",
    "Ten ordinary master and five strict re-frozen UART/UHCI regressions remain PASS on the same new executable. Full identities and raw evidence: build-runtime-state/uart-continuation/i2c-slave-final/qualification-receipt.json."
   ]
+ },
+ {
+  "date": "2026-10-09",
+  "packages": [
+   "UART-01",
+   "UART-02",
+   "UART-03"
+  ],
+  "qualification": "Pinned Arduino3.3.12/IDF5.5.5 ordinary HardwareSerial plus five re-bound IDF6.1 UART/UHCI scenarios PASS on source-bound backend984f71fe6aadd031; simulator model unchanged and ROM download remains separately unqualified.",
+  "changes": [
+   "Latest preserved failure completed setup but four later duplex vectors had one real pre-payload NULL followed by512 actual peer bytes; RX2 and physicalUART0 already passed.",
+   "Ordinary pinMode(INPUT) releases detached LOW peer TX pads before either receiver is reinstalled; existing physical10k pull-ups establish idle and actual digitalRead reports are required per vector.",
+   "All five independent513-byte HardwareSerial payload comparisons, three physicalUART0 loopbacks, format/baud/duration gates and ordinary setup/loop APIs PASS. No SDK/model patch, injected byte, RX flush, prefix trim or receiver-error suppression.",
+   "Fresh native SDK source/image/ELF/config/Arduino identities are frozen. The five unchanged IDF6.1 firmware images are strictly re-frozen against the modified validator and all complete runs PASS.",
+   "Exact evidence: build-runtime-state/uart-continuation/arduino-idle-stage/qualification-receipt.json; older FAIL reports are preserved."
+  ]
  }
 ]

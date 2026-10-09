@@ -5,6 +5,34 @@ parallel implementation in this session. Preserve the reviewed full scope; do no
 reduce completion to the foundation slices below. Historical heartbeat metadata
 is retained in the frozen packet; it is not an inventory of this session's jobs.
 
+## 2026-10-09 — ordinary pinned Arduino HardwareSerial and five IDF regressions PASS
+
+The Arduino wrapper now completes ordinary `setup`/`loop`, all five exact
+513-byte crossed HardwareSerial vectors and all three physical UART0 loopbacks.
+Its per-vector `digitalRead` evidence requires both peer TX nets at real HIGH
+idle before either receiver is installed. Pinned Arduino3.3.12/IDF5.5.5 native
+source/build/image/ELF/configuration/driver identities are frozen.
+
+The root fixture defect was teardown ordering, not startup panic: Arduino
+detaches its directly owned TX pads to ordinary GPIO but does not disable their
+LOW latches, while IDF's separate pin bookkeeping cannot release those pads.
+The fixture uses ordinary `pinMode(INPUT)` after both peers end; existing real
+10kΩ pull-ups establish idle. No RX flush, leading-zero trim, payload injection,
+SDK/model patch or receiver-error suppression was added.
+
+All **six ordinary UART scenarios PASS** on current backend984f71fe6aadd031,
+SHA256 `03bb3bbcc2eb2b69ac4d2f376d7ab85f321b9a712c7da745c6f7ff703f9d00b6`.
+The five unchanged IDF6.1 images were strictly re-frozen from their actual
+compiled roots after the shared validator changed, then fully exercised.
+The current simulator model is unchanged; its205 native qualification remains
+the separate RMT publication proof. Arduino evidence does not imply IDF6.1 Arduino.
+
+Exact proof: `build-runtime-state/uart-continuation/arduino-idle-stage/qualification-receipt.json`.
+The RMT stage was pushed as **`3733ed7`**. ROM download remains separately
+unqualified: actual checksum/status ACK traversal and selected-port/interrupt
+debug evidence are still required. The full simulator goal is active and
+incomplete. No physical-board operation.
+
 ## 2026-10-09 — current-foundation RMT TX/RX and real peers;205 native plus both ordinary profiles PASS
 
 Current RMT candidate: `qemu-uart-40edccac4156-984f71fe6aadd031`,

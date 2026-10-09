@@ -220,10 +220,14 @@ def validate_arduino(text):
     require(not re.search(r"^ARDUINO_UART_CHECK .*result=FAIL$", text, re.MULTILINE), "HardwareSerial vector failed")
     checks = set(re.findall(r"^ARDUINO_UART_CHECK name=(\w+) result=PASS$", text, re.MULTILINE))
     expected = set(ARDUINO_TRANSFERS) | {"begin1", "begin2", "clock1", "clock2", "rx_buffer1", "rx_buffer2",
-                "tx_buffer1", "tx_buffer2", "end1", "end2", "uart0_console_restore",
-                "uart0_loop9600", "uart0_loop115200", "uart0_loop921600"}
+                "tx_buffer1", "tx_buffer2", "end1", "end2", "tx1_released_idle", "tx2_released_idle",
+                "uart0_console_restore", "uart0_loop9600", "uart0_loop115200", "uart0_loop921600"}
     require(expected <= checks, f"Missing HardwareSerial vectors: {sorted(expected - checks)}")
     for name, (baud, salt, mask, bits) in ARDUINO_TRANSFERS.items():
+        require(re.search(rf"^ARDUINO_UART_IDLE name={name} tx1=1 tx2=1\n"
+                          r"ARDUINO_UART_CHECK name=tx1_released_idle result=PASS\n"
+                          r"ARDUINO_UART_CHECK name=tx2_released_idle result=PASS$", text, re.MULTILINE),
+                f"HardwareSerial peer pads were not released to physical idle before begin: {name}")
         match = re.search(rf"^ARDUINO_UART_TRANSFER name={name} baud={baud} salt={salt} mask={mask} "
                           r"n1=513 n2=513 elapsed_us=(\d+) actual_baud1=(\d+) actual_baud2=(\d+)\n"
                           rf"ARDUINO_UART_CHECK name={name} result=PASS\n"
