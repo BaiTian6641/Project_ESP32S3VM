@@ -1,0 +1,8 @@
+TAP version 13
+# random seed: R02S4f738506edc2085840a53ef6012fe1e0
+# Start of xtensa tests
+# Start of esp32s3 tests
+# Start of i2c tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c7496bf321b41e12/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2161395.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2161395.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+not ok /xtensa/esp32s3/i2c/filter-partial-valid-reversal - ERROR:../tests/qtest/esp32s3-i2c-test.c:1347:test_filter_partial_valid_reversal: assertion failed (rd(0x20) & (DET_START_INT | COMPLETE) == 0): (0x00008000 == 0x00000000)
+Bail out!

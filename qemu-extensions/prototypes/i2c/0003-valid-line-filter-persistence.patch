@@ -1,0 +1,151 @@
+diff --git a/hw/i2c/esp32s3_i2c.c b/hw/i2c/esp32s3_i2c.c
+--- a/hw/i2c/esp32s3_i2c.c
++++ b/hw/i2c/esp32s3_i2c.c
+@@ -239,6 +239,25 @@
+     drive(s, true, true);
+ }
+ 
++/* Independently valid reversals still cancel/restart a candidate when the
++ * other wire is UNKNOWN. This never accepts a level or advances the decoder. */
++static bool filter_candidate(ESP32S3I2CState *s, bool scl_line, bool raw,
++                             int64_t now)
++{
++    bool accepted = scl_line ? s->sl_scl : s->sl_sda;
++    bool *candidate = scl_line ? &s->sl_scl_raw : &s->sl_sda_raw;
++    int64_t *since = scl_line ? &s->sl_scl_since : &s->sl_sda_since;
++    if (raw == accepted) {
++        *candidate = raw;
++        return false;
++    }
++    if (raw != *candidate) {
++        *candidate = raw;
++        *since = now;
++    }
++    return true;
++}
++
+ /* Glitch filter: a raw level change becomes an accepted edge only after it
+  * has persisted for the programmed module-clock cycles. Candidates that
+  * return to the accepted level first are glitches and are discarded. */
+@@ -256,14 +275,8 @@
+         *candidate = raw;
+         return raw;
+     }
+-    if (raw == *accepted) {
+-        /* The excursion ended before proving itself: reject the glitch. */
+-        *candidate = raw;
++    if (!filter_candidate(s, scl_line, raw, now)) {
+         return raw;
+-    }
+-    if (raw != *candidate) {
+-        *candidate = raw;
+-        *since = now;
+     }
+     /* Only a VALID physical sample can prove persistence. If the expiry
+      * sampled UNKNOWN, the next valid frame accepts the same candidate
+@@ -566,11 +579,15 @@
+      * an accepted edge advances the FSM exactly like a published frame. */
+     if (s->slave_filter_deadline && now >= s->slave_filter_deadline) {
+         s->slave_filter_deadline = 0;
+-        bool sda = false, scl = false;
+-        if (s->provider.sample &&
++        bool sda = false, scl = false, sv = false, cv = false;
++        S3I2CSample sampled = s->provider.sample ?
+             s->provider.sample(s->provider.opaque, s->controller,
+-                               &sda, &scl, NULL, NULL) ==
+-            S3_I2C_SAMPLE_VALID) {
++                               &sda, &scl, &sv, &cv) :
++            S3_I2C_SAMPLE_UNAVAILABLE;
++        if (sampled == S3_I2C_SAMPLE_UNRESOLVED) {
++            if (sv) filter_candidate(s, false, sda, now);
++            if (cv) filter_candidate(s, true, scl, now);
++        } else if (sampled == S3_I2C_SAMPLE_VALID) {
+             bool prev_sda = s->sl_sda, prev_scl = s->sl_scl;
+             s->sl_sda = filter_level(s, false, sda, now);
+             s->sl_scl = filter_level(s, true, scl, now);
+@@ -697,12 +714,18 @@
+         }
+         return;
+     }
+-    bool sda = false, scl = false;
++    bool sda = false, scl = false, sv = false, cv = false;
++    int64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+     S3I2CSample sampled = s->provider.sample ?
+         s->provider.sample(s->provider.opaque, s->controller, &sda, &scl,
+-                           NULL, NULL) :
++                           &sv, &cv) :
+         S3_I2C_SAMPLE_UNAVAILABLE;
+     if (sampled != S3_I2C_SAMPLE_VALID) {
++        if (sampled == S3_I2C_SAMPLE_UNRESOLVED) {
++            if (sv) filter_candidate(s, false, sda, now);
++            if (cv) filter_candidate(s, true, scl, now);
++            slave_rearm(s, now);
++        }
+         if (sampled == S3_I2C_SAMPLE_UNAVAILABLE &&
+             (s->slave_state != S3_I2C_SLV_IDLE || s->slave_stretch)) {
+             slave_reset_fsm(s);
+@@ -712,7 +735,6 @@
+          * existing deadlines continue to run and never invent an ACK. */
+         return;
+     }
+-    int64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+     bool prev_sda = s->sl_sda, prev_scl = s->sl_scl;
+     s->sl_sda = filter_level(s, false, sda, now);
+     s->sl_scl = filter_level(s, true, scl, now);
+diff --git a/tests/qtest/esp32s3-i2c-test.c b/tests/qtest/esp32s3-i2c-test.c
+--- a/tests/qtest/esp32s3-i2c-test.c
++++ b/tests/qtest/esp32s3-i2c-test.c
+@@ -1324,6 +1324,46 @@
+ static void test_filter_unknown_dc(void) { filter_unknown_persistence(false); }
+ static void test_filter_unknown_rc(void) { filter_unknown_persistence(true); }
+ 
++static void test_filter_partial_valid_reversal(void)
++{
++    for (unsigned rc = 0; rc < 2; rc++) {
++        filter_unknown_setup(rc);
++        /* The valid SDA HIGH is not a bit while SCL is indeterminate, but
++         * it must cancel the earlier LOW candidate and its old timestamp. */
++        filter_peer_level(10, true);
++        ticks(20000);
++        g_assert_true(physical_pad_level(8, "high"));
++        g_assert_true(physical_pad_level(12, "indeterminate"));
++        filter_peer_level(13, false);
++        g_assert_cmphex(rd(0x20) & (DET_START_INT | COMPLETE), ==, 0);
++
++        /* A distinct LOW has not met 200 ns persistence when SCL returns. */
++        filter_peer_level(10, false);
++        ticks(100);
++        g_assert_true(physical_pad_level(8, "low"));
++        qtest_writel(s, GPIO(GPIO_FUNC_IN_SEL_CFG_OFFSET(89)), BIT(7) | 9);
++        filter_peer_level(13, true);
++        g_assert_true(physical_pad_level(9, "high"));
++        g_assert_cmphex(rd(0x20) & (DET_START_INT | COMPLETE), ==, 0);
++        ticks(50);
++        g_assert_cmphex(rd(0x20) & (DET_START_INT | COMPLETE), ==, 0);
++
++        /* Genuine persistence subsequently starts a real byte transaction. */
++        ticks(200);
++        g_assert_cmphex(rd(0x20) & DET_START_INT, ==, DET_START_INT);
++        filter_peer_byte(0x84);
++        filter_peer_byte(0x5a);
++        filter_peer_level(10, false); ticks(10000);
++        filter_peer_level(11, true); ticks(10000);
++        filter_peer_level(10, true); ticks(10000);
++        g_assert_cmphex(rd(0x20) & (COMPLETE | BIT(13) | MAIN_ST_TO_INT | BIT(2)), ==, COMPLETE);
++        g_assert_cmphex((rd(8) >> 8) & 63, ==, 1);
++        g_assert_cmphex(rd(0x1c), ==, 0x5a);
++        g_assert_cmphex((rd(8) >> 8) & 63, ==, 0);
++        qtest_quit(s);
++    }
++}
++
+ 
+ int main(int argc, char **argv)
+ {
+@@ -1365,5 +1405,6 @@
+     qtest_add_func("/esp32s3/i2c/service-simultaneous-high-does-not-commit", test_service_simultaneous_high_not_stop);
+     qtest_add_func("/esp32s3/i2c/filter-unknown-powered-dc-matrix", test_filter_unknown_dc);
+     qtest_add_func("/esp32s3/i2c/filter-unknown-powered-rc-matrix", test_filter_unknown_rc);
++    qtest_add_func("/esp32s3/i2c/filter-partial-valid-reversal", test_filter_partial_valid_reversal);
+     return g_test_run();
+ }

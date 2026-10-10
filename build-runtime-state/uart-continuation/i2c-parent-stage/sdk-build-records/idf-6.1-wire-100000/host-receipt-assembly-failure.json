@@ -1,0 +1,7 @@
+{
+  "status": "HOST_RECEIPT_ASSEMBLY_FAILED_AFTER_SUCCESSFUL_BUILD_MERGE",
+  "missing_guessed_output": "i2c_native.elf",
+  "actual_app_elf": "esp32s3_i2c_native.elf",
+  "sdk": "idf-6.1",
+  "boundary": "Original failed host post-build attempt preserved; real compile+merge not rerun."
+}

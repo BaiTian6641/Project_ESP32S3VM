@@ -28,6 +28,8 @@ PROFILES = {
     "power_overvoltage": "POWER",
     "slave": "SLAVE",
     "slave_disconnected": "SLAVE_DISCONNECTED",
+    "wire": "WIRE",
+    "wire_defined": "WIRE_DEFINED",
 }
 
 
@@ -200,6 +202,22 @@ def slave_project(mode, pads, speed, phase=None):
         geometry=dict(components={}, nets={}))
 
 
+def wire_project(pads, speed):
+    graph = slave_project("slave", pads, speed)
+    graph["id"], graph["name"] = "i2c-native-wire", "Native master to native slave"
+    graph["components"] = [c for c in graph["components"]
+                           if c["id"] != "RGATE" and not c["id"].startswith("R1_")]
+    nets = {n["id"]: n for n in graph["nets"]}
+    for line in ("sda", "scl"):
+        nets[f"bus0_{line}"]["endpoints"].extend(
+            end for end in nets.pop(f"bus1_{line}")["endpoints"] if end.startswith("U1."))
+    nets.pop("host_gate")
+    for n in nets.values():
+        n["endpoints"] = [e for e in n["endpoints"] if not e.startswith(("RGATE.", "R1_"))]
+    graph["nets"] = list(nets.values())
+    return graph
+
+
 def slave_progress(text, config, mode, qmp, evidence, result, started, finished):
     phases = range(1 if mode == "slave_disconnected" else 3)
     for phase in phases:
@@ -358,6 +376,26 @@ def validate_uart(text, config):
     require(re.search(rf"^I2C_NATIVE_DONE profile={profile} failures=0 result=PASS$", text, re.MULTILINE),
             "Ordinary firmware did not complete with failures=0 result=PASS")
     require(not re.search(r"^I2C_NATIVE_CHECK .*result=FAIL$", text, re.MULTILINE), "Firmware reported failed check")
+    if profile in ("wire", "wire_defined"):
+        for master in range(2):
+            for ten in range(2):
+                checks = dict(re.findall(
+                    rf"^I2C_WIRE_CHECK master={master} ten={ten} name=(\w+) result=(\w+)$",
+                    text, re.MULTILINE))
+                expected = {"new_slave", "responder_task", "callbacks", "new_master",
+                            "add_device", "write65", "read65", "read65_bytes",
+                            "restart17", "restart17_bytes", "receive_bytes",
+                            "receive_ownership", "request_ownership", "remove_device",
+                            "delete_master", "delete_slave"}
+                if profile == "wire_defined":
+                    expected |= {"new_defined_device", "remove_defined_device"}
+                require(all(checks.get(n) == "PASS" for n in expected),
+                        f"Master{master} ten={ten} missing exact wire acceptance")
+                sent = bytes((i * 7 + master * 31 + ten * 19 + 3) & 255 for i in range(65))
+                require(re.search(
+                    rf"^I2C_WIRE_BYTES master={master} ten={ten} receive={(sent + sent[:17]).hex()}$",
+                    text, re.MULTILINE), "Native slave callback bytes differ")
+        return
     if profile.startswith("slave"):
         validate_slave_uart(text, config)
         return
@@ -424,7 +462,7 @@ def main():
     uart, stderr, stdout = (evidence / name for name in ("uart.log", "stderr.log", "stdout.log"))
     result = dict(status="FAIL", mode=args.mode, evidence=str(evidence),
                   host_watchdog_seconds=args.watchdog_seconds,
-                  qualification="Timed transaction fast path; no edge/glitch/slave/10-bit/multimaster qualification",
+                  qualification="Functional electrically clocked transactions; exact silicon phase/filter/RC metrology remains unqualified",
                   command=[], snapshots=[], qmp_transcript=[])
     proc = qmp = None
     started = time.monotonic()
@@ -432,7 +470,8 @@ def main():
         config = configuration(args.sdkconfig, args.mode)
         result["firmware_configuration"] = config
         slave_mode = args.mode.startswith("slave")
-        graph = (slave_project(args.mode, config["pads"], config["speed_hz"])
+        graph = (wire_project(config["pads"], config["speed_hz"]) if args.mode in ("wire", "wire_defined")
+                 else slave_project(args.mode, config["pads"], config["speed_hz"])
                  if slave_mode else project(args.mode, config["pads"]))
         if slave_mode:
             result["qualification"] = "Ordinary driver slave receive/request/TX-reset through physical peer clocks on both controllers; broader canonical gates remain separate"

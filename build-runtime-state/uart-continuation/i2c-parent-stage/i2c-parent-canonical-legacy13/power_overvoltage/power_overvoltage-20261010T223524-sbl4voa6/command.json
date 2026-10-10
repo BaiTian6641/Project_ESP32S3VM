@@ -1,0 +1,19 @@
+[
+  "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa",
+  "-machine",
+  "esp32s3",
+  "-nographic",
+  "-S",
+  "-accel",
+  "tcg,thread=single",
+  "-icount",
+  "shift=0,align=off,sleep=off",
+  "-monitor",
+  "none",
+  "-serial",
+  "file:/home/polar/.cache/esp32s3vm/i2c-parent-canonical-legacy13/power_overvoltage/power_overvoltage-20261010T223524-sbl4voa6/uart.log",
+  "-drive",
+  "file=/home/polar/.cache/esp32s3vm/i2c-firmware-8c5ce3c10b96d3e7/build/i2c-native.merged.bin,if=mtd,format=raw,snapshot=on",
+  "-qmp",
+  "unix:/tmp/i2c-qmp-zjgxdalh/qmp.sock,server=on,wait=off"
+]

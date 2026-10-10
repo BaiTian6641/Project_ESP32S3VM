@@ -1,0 +1,572 @@
+{
+  "version": 3,
+  "id": "i2c-native-slave",
+  "name": "Ordinary I2C slave peers",
+  "profile": {
+    "chip": "esp32s3",
+    "board": "esp32-s3-devkitc-1",
+    "module": "esp32-s3-wroom-1"
+  },
+  "firmware": {},
+  "runtime": {
+    "electrical": {
+      "driver_profile": "s3-explicit-finite-v1",
+      "mode": "dc"
+    }
+  },
+  "components": [
+    {
+      "id": "U1",
+      "name": "U1",
+      "kind": "mcu",
+      "type": "mcu",
+      "terminals": [
+        {
+          "id": "U1.vdd",
+          "name": "vdd",
+          "role": "vdd",
+          "domain": "power",
+          "direction": "input"
+        },
+        {
+          "id": "U1.gnd",
+          "name": "gnd",
+          "role": "gnd",
+          "domain": "ground",
+          "direction": "input"
+        },
+        {
+          "id": "U1.io8",
+          "name": "io8",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 8
+        },
+        {
+          "id": "U1.io9",
+          "name": "io9",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 9
+        },
+        {
+          "id": "U1.io10",
+          "name": "io10",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 10
+        },
+        {
+          "id": "U1.io11",
+          "name": "io11",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 11
+        },
+        {
+          "id": "U1.io12",
+          "name": "io12",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 12
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "G",
+      "name": "G",
+      "kind": "ground",
+      "type": "ground",
+      "terminals": [
+        {
+          "id": "G.ref",
+          "name": "ref",
+          "role": "ref",
+          "domain": "ground",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "V",
+      "name": "V",
+      "kind": "voltage-source",
+      "type": "voltage-source",
+      "terminals": [
+        {
+          "id": "V.p",
+          "name": "p",
+          "role": "p",
+          "domain": "power",
+          "direction": "output"
+        },
+        {
+          "id": "V.n",
+          "name": "n",
+          "role": "n",
+          "domain": "ground",
+          "direction": "input"
+        }
+      ],
+      "parameters": {
+        "voltage": {
+          "value": 3.3,
+          "unit": "V"
+        }
+      }
+    },
+    {
+      "id": "RGATE",
+      "name": "RGATE",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "RGATE.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "RGATE.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 4700,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "R0_sda",
+      "name": "R0_sda",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "R0_sda.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "R0_sda.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 4700,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "R0_scl",
+      "name": "R0_scl",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "R0_scl.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "R0_scl.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 4700,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "SM0",
+      "name": "SM0",
+      "kind": "device",
+      "type": "i2c-scripted-master",
+      "terminals": [
+        {
+          "id": "SM0.sda",
+          "name": "sda",
+          "role": "sda",
+          "domain": "digital",
+          "direction": "inout"
+        },
+        {
+          "id": "SM0.scl",
+          "name": "scl",
+          "role": "scl",
+          "domain": "digital",
+          "direction": "inout"
+        },
+        {
+          "id": "SM0.vdd",
+          "name": "vdd",
+          "role": "vdd",
+          "domain": "power",
+          "direction": "input"
+        },
+        {
+          "id": "SM0.gnd",
+          "name": "gnd",
+          "role": "gnd",
+          "domain": "ground",
+          "direction": "input"
+        }
+      ],
+      "parameters": {},
+      "attributes": {
+        "native_i2c_script": {
+          "bit_ns": 10000,
+          "start_delay_ns": 2000000,
+          "transactions": [
+            {
+              "address": 42,
+              "data": [
+                3,
+                10,
+                17,
+                24,
+                31,
+                38,
+                45,
+                52,
+                59,
+                66,
+                73,
+                80,
+                87,
+                94,
+                101,
+                108,
+                115,
+                122,
+                129,
+                136,
+                143,
+                150,
+                157,
+                164,
+                171,
+                178,
+                185,
+                192,
+                199,
+                206,
+                213,
+                220,
+                227,
+                234,
+                241,
+                248,
+                255,
+                6,
+                13,
+                20,
+                27,
+                34,
+                41,
+                48,
+                55,
+                62,
+                69,
+                76,
+                83,
+                90,
+                97,
+                104,
+                111,
+                118,
+                125,
+                132,
+                139,
+                146,
+                153,
+                160,
+                167,
+                174,
+                181,
+                188,
+                195
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "R1_sda",
+      "name": "R1_sda",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "R1_sda.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "R1_sda.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 4700,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "R1_scl",
+      "name": "R1_scl",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "R1_scl.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "R1_scl.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 4700,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "SM1",
+      "name": "SM1",
+      "kind": "device",
+      "type": "i2c-scripted-master",
+      "terminals": [
+        {
+          "id": "SM1.sda",
+          "name": "sda",
+          "role": "sda",
+          "domain": "digital",
+          "direction": "inout"
+        },
+        {
+          "id": "SM1.scl",
+          "name": "scl",
+          "role": "scl",
+          "domain": "digital",
+          "direction": "inout"
+        },
+        {
+          "id": "SM1.vdd",
+          "name": "vdd",
+          "role": "vdd",
+          "domain": "power",
+          "direction": "input"
+        },
+        {
+          "id": "SM1.gnd",
+          "name": "gnd",
+          "role": "gnd",
+          "domain": "ground",
+          "direction": "input"
+        }
+      ],
+      "parameters": {},
+      "attributes": {
+        "native_i2c_script": {
+          "bit_ns": 10000,
+          "start_delay_ns": 2000000,
+          "transactions": [
+            {
+              "address": 42,
+              "data": [
+                32,
+                39,
+                46,
+                53,
+                60,
+                67,
+                74,
+                81,
+                88,
+                95,
+                102,
+                109,
+                116,
+                123,
+                130,
+                137,
+                144,
+                151,
+                158,
+                165,
+                172,
+                179,
+                186,
+                193,
+                200,
+                207,
+                214,
+                221,
+                228,
+                235,
+                242,
+                249,
+                0,
+                7,
+                14,
+                21,
+                28,
+                35,
+                42,
+                49,
+                56,
+                63,
+                70,
+                77,
+                84,
+                91,
+                98,
+                105,
+                112,
+                119,
+                126,
+                133,
+                140,
+                147,
+                154,
+                161,
+                168,
+                175,
+                182,
+                189,
+                196,
+                203,
+                210,
+                217,
+                224
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "nets": [
+    {
+      "id": "gnd",
+      "name": "gnd",
+      "endpoints": [
+        "G.ref",
+        "V.n",
+        "U1.gnd",
+        "SM0.gnd",
+        "SM1.gnd"
+      ]
+    },
+    {
+      "id": "vdd",
+      "name": "vdd",
+      "endpoints": [
+        "V.p",
+        "U1.vdd",
+        "RGATE.b",
+        "R0_sda.b",
+        "R0_scl.b",
+        "SM0.vdd",
+        "R1_sda.b",
+        "R1_scl.b",
+        "SM1.vdd"
+      ]
+    },
+    {
+      "id": "host_gate",
+      "name": "host_gate",
+      "endpoints": [
+        "U1.io12",
+        "RGATE.a"
+      ]
+    },
+    {
+      "id": "bus0_sda",
+      "name": "bus0_sda",
+      "endpoints": [
+        "U1.io8",
+        "R0_sda.a",
+        "SM0.sda"
+      ]
+    },
+    {
+      "id": "bus0_scl",
+      "name": "bus0_scl",
+      "endpoints": [
+        "U1.io9",
+        "R0_scl.a",
+        "SM0.scl"
+      ]
+    },
+    {
+      "id": "bus1_sda",
+      "name": "bus1_sda",
+      "endpoints": [
+        "U1.io10",
+        "R1_sda.a",
+        "SM1.sda"
+      ]
+    },
+    {
+      "id": "bus1_scl",
+      "name": "bus1_scl",
+      "endpoints": [
+        "U1.io11",
+        "R1_scl.a",
+        "SM1.scl"
+      ]
+    }
+  ],
+  "geometry": {
+    "components": {},
+    "nets": {}
+  }
+}

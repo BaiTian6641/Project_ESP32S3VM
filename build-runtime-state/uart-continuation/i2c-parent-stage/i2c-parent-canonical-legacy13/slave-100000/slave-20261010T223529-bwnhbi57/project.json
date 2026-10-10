@@ -1,0 +1,334 @@
+{
+  "version": 3,
+  "id": "i2c-native-slave",
+  "name": "Ordinary I2C slave peers",
+  "profile": {
+    "chip": "esp32s3",
+    "board": "esp32-s3-devkitc-1",
+    "module": "esp32-s3-wroom-1"
+  },
+  "firmware": {},
+  "runtime": {
+    "electrical": {
+      "driver_profile": "s3-explicit-finite-v1",
+      "mode": "dc"
+    }
+  },
+  "components": [
+    {
+      "id": "U1",
+      "name": "U1",
+      "kind": "mcu",
+      "type": "mcu",
+      "terminals": [
+        {
+          "id": "U1.vdd",
+          "name": "vdd",
+          "role": "vdd",
+          "domain": "power",
+          "direction": "input"
+        },
+        {
+          "id": "U1.gnd",
+          "name": "gnd",
+          "role": "gnd",
+          "domain": "ground",
+          "direction": "input"
+        },
+        {
+          "id": "U1.io8",
+          "name": "io8",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 8
+        },
+        {
+          "id": "U1.io9",
+          "name": "io9",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 9
+        },
+        {
+          "id": "U1.io10",
+          "name": "io10",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 10
+        },
+        {
+          "id": "U1.io11",
+          "name": "io11",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 11
+        },
+        {
+          "id": "U1.io12",
+          "name": "io12",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 12
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "G",
+      "name": "G",
+      "kind": "ground",
+      "type": "ground",
+      "terminals": [
+        {
+          "id": "G.ref",
+          "name": "ref",
+          "role": "ref",
+          "domain": "ground",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "V",
+      "name": "V",
+      "kind": "voltage-source",
+      "type": "voltage-source",
+      "terminals": [
+        {
+          "id": "V.p",
+          "name": "p",
+          "role": "p",
+          "domain": "power",
+          "direction": "output"
+        },
+        {
+          "id": "V.n",
+          "name": "n",
+          "role": "n",
+          "domain": "ground",
+          "direction": "input"
+        }
+      ],
+      "parameters": {
+        "voltage": {
+          "value": 3.3,
+          "unit": "V"
+        }
+      }
+    },
+    {
+      "id": "RGATE",
+      "name": "RGATE",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "RGATE.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "RGATE.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 4700,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "R0_sda",
+      "name": "R0_sda",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "R0_sda.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "R0_sda.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 4700,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "R0_scl",
+      "name": "R0_scl",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "R0_scl.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "R0_scl.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 4700,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "R1_sda",
+      "name": "R1_sda",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "R1_sda.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "R1_sda.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 4700,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "R1_scl",
+      "name": "R1_scl",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "R1_scl.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "R1_scl.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 4700,
+          "unit": "ohm"
+        }
+      }
+    }
+  ],
+  "nets": [
+    {
+      "id": "gnd",
+      "name": "gnd",
+      "endpoints": [
+        "G.ref",
+        "V.n",
+        "U1.gnd",
+        "RGATE.b"
+      ]
+    },
+    {
+      "id": "vdd",
+      "name": "vdd",
+      "endpoints": [
+        "V.p",
+        "U1.vdd",
+        "R0_sda.b",
+        "R0_scl.b",
+        "R1_sda.b",
+        "R1_scl.b"
+      ]
+    },
+    {
+      "id": "host_gate",
+      "name": "host_gate",
+      "endpoints": [
+        "U1.io12",
+        "RGATE.a"
+      ]
+    },
+    {
+      "id": "bus0_sda",
+      "name": "bus0_sda",
+      "endpoints": [
+        "U1.io8",
+        "R0_sda.a"
+      ]
+    },
+    {
+      "id": "bus0_scl",
+      "name": "bus0_scl",
+      "endpoints": [
+        "U1.io9",
+        "R0_scl.a"
+      ]
+    },
+    {
+      "id": "bus1_sda",
+      "name": "bus1_sda",
+      "endpoints": [
+        "U1.io10",
+        "R1_sda.a"
+      ]
+    },
+    {
+      "id": "bus1_scl",
+      "name": "bus1_scl",
+      "endpoints": [
+        "U1.io11",
+        "R1_scl.a"
+      ]
+    }
+  ],
+  "geometry": {
+    "components": {},
+    "nets": {}
+  }
+}

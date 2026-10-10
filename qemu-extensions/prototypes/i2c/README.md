@@ -1,23 +1,23 @@
 # ESP32-S3 native I2C software lane
 
 This lane adds two native S3 controllers at `0x60013000` and `0x60027000`.
-Active consolidated profiles now use canonical controller/binding/service/test
-copies rather than memory-frozen master snapshots. Normal UART transport, Qt,
-physical-board workflows and recovered bridge sources are unchanged. The bridge
+Current I2C preparation preserves exact accepted controller/binding/service/test
+input copies and applies reviewed physical-source corrections after their copies.
+Normal UART transport, Qt, physical-board workflows and recovered bridge sources are unchanged. The bridge
 is reference evidence only: cached RX maps, START-as-STOP, and stderr transport
 are not used.
 
 ## Supported implementation range
 
-* Seven-bit master command execution: START/address/write/read/repeated START,
-  final read ACK/NACK, STOP, and END continuation. Eight command registers use
-  the pinned IDF 6.1 S3 opcode encoding and DONE bit31. Separate 32-byte RX/TX
-  FIFOs, refill/drain watermarks, counts/pointers, overflow/underflow, and
-  RAW/ENA/status/CLR interrupt side effects are native state, not init logs.
-* Virtual-time byte completion derives from live XTAL/RC_FAST clocks,
-  CLK_CONF integer/fractional divider, SCL low/high/wait periods, and START/STOP
-  timing. Both SYSTEM gate bits and held reset levels are wired. Gate/reset or
-  source/divider changes cancel outstanding work; canceled work cannot later
+* Seven/ten-bit master command execution and native slave byte/callback paths:
+  START/address/write/read/repeated START, final read ACK/NACK, STOP and END
+  continuation. Exactly eight command registers use the pinned S3 encoding and
+  DONE bit31. Separate32-byte RX/TX FIFOs, refill/drain watermarks, pointers,
+  overflow/underflow and RAW/ENA/status/CLR remain native state.
+* Virtual-time physical data/ACK progression derives from live XTAL/RC_FAST,
+  CLK_CONF integer/fractional divider, SCL low/high/wait and START/STOP periods.
+  Both SYSTEM gate bits and held reset levels are wired. Gate/reset or
+  source/divider changes cancel work; canceled work cannot later
   return bytes or completion IRQs. RC_FAST uses CoreClockWorker's nominal
   17.5MHz output with actual RTC_CNTL CK8M_FORCE_PD validity (0Hz when off),
   not an APB/PLL alias. The shared reset-level bundle is authoritative for
@@ -32,11 +32,11 @@ are not used.
   No controller/address metadata
   can substitute for a routed pad or wire.
 * The NativeNet electrical graph is the connectivity, power, and line-state
-  authority. Address decoding happens only after SDA and SCL share the actual
-  endpoint nets. Missing address, disconnected matching address, insufficient
-  power, duplicate address, missing pull, and stuck lines are not favorable
-  defaults. Each byte rechecks reachability/power. Electrical notifications
-  invalidate lost endpoints and release native SDA/SCL drivers.
+  authority. Address bytes are decoded through actual SDA/SCL wire progression
+  against the accepted normalized project-device address. Missing/disconnected
+  endpoints, insufficient/unknown power, duplicate addresses, missing pulls and
+  stuck lines are not favorable defaults. Actual rail/topology notifications
+  cancel lost peers and release native SDA/SCL drivers.
 * Stateful native SHT21 and M24C02-style EEPROM services are shared per stable
   component ID, not copied per controller. There is no external-service
   dependency for these two models, so no hostbus request or firmware barrier
@@ -102,36 +102,35 @@ callback on destruction, so subsequent peripheral lanes cannot replace it.
 
 ## Dependencies and source integration
 
-The official base is `40edccac415693c5130f91c01d84176ae6008566`. The frozen combined
-v3 prefix is fingerprint `105a156e5dec5fc6`; GPIO, ADC and NativeNet's actual
-project/DC/RC providers are additional required inputs. `prefix.json` records
-the isolated dependency checkpoint; `dependencies.json` records copied source
-hashes. `source-map.json` describes lane copies, provider copies, and affected
-QEMU paths. `dependencies-restack.patch` handles the three overlapping
-GPIO/ADC machine/meson hunks against that combined prefix. `integration.patch`
-is the reproducible isolated bootstrap, including shared prerequisites.
-`electrical-prerequisites.patch` records that bootstrap's common foundation;
-`integration-after-electrical.patch` is the **I2C consumer-only additive overlay**.
-The aggregate must use only that additive overlay after NativeNet's common
-electrical/kernel/meson freeze and CoreClockWorker's centralized named ports.
-It binds the existing electrical child and does not create another graph,
-compile another DC kernel, or add clock enum definitions. Published clock
-source/gate/reset IDs are authoritative; no APB/PLL frequency alias is assumed.
+The official base is `40edccac415693c5130f91c01d84176ae6008566`.
+`foundation-dependencies.json` is the current frozen common recipe; it preserves
+published NetIRQ/RMT/SPI-PSRAM inputs and applies the atomic I2C
+controller/header/binding/fixture plus partial-validity corrections explicitly
+after original copies, before the UART integration tail. Each shared clock,
+GPIO, electrical/kernel and memory dependency is applied once.
+`integration-after-electrical.patch` binds the existing electrical child; it
+does not create another graph, DC kernel or clock definitions.
+`prefix.json`, `dependencies.json`, `dependencies-restack.patch`,
+`electrical-prerequisites.patch` and `integration.patch` describe the historical
+isolated105a bootstrap, not the current default. Its retired stand-alone
+preparer must not replace the common foundation or its later reviewed fixes.
+Published clock source/gate/reset IDs remain authoritative; no APB/PLL alias.
 The native S3 master build entry replaces the unused S3 ESP32-controller entry
 without changing the original ESP32 controller.
 
-The historical isolated bootstrap invocation below is not the current qualified
-aggregate recipe. Current guarded preparation and all127 input hashes are
-recorded under `build-runtime-state/uart-continuation/i2c-final/`:
+Current guarded preparation uses the same native UART preparer and explicit
+ordered source identities as other qualified peripheral families:
 
 ```sh
-python3 qemu-extensions/prototypes/i2c/prepare.py
+python3 qemu-extensions/prototypes/uart/prepare.py --dependencies qemu-extensions/prototypes/i2c/foundation-dependencies.json
 ```
 
-Existing destinations are preserved. The default owned checkout is
-`~/.cache/esp32s3vm/qemu-i2c-40edccac4156`; configure/build in its `build-i2c`
-directory with BUILD_JOBS=4. The common DC kernel is compiled exactly once in
-hw/adc; the ADC provider and I2C bridge use the same NativeNet graph/solver.
+Existing destinations/source records remain preserved. Actual current source
+`3cc39bfdc7bd3515`/`19e0edb4` passes361 native with159 target hashes, I2C38/
+service18, three powered OV SCCB tests and all21 ordinary outcomes:17 PASS,
+four original ten-bit convenience failures. No partial/old-executable proof
+inheritance. The common DC kernel is compiled once and the ADC/I2C providers
+use that same NativeNet graph/solver.
 ADC clock connections must precede realization, as included in the machine
 integration patch. The electrical device has no invented MMIO.
 
@@ -226,12 +225,45 @@ close every canonical gate below.
 
 ## Canonical gates not silently marked complete
 
-Broader ordinary/native slave and ten-bit read/restart boundaries, master
-ten-bit/general-call support, data-phase/full
-multi-master arbitration, master-data edge/fast-path equivalence and replay,
-SCL/SDA filter sweeps, slow analog RC rise/recovery, inverted/direct/split-pad
-routes, non-FIFO RAM mode, asynchronous queued transfers, EEPROM write
-protection/endurance, peer capacity/power-cycle replay and external environmental
-or hostbus services remain open. The timed master data fast path does not emit
-or qualify every individual data-bit edge. Software vectors are not independent
-silicon or hardware-reference proof.
+Exact silicon phase/latch/filter/metastability/analog-reference timing remains
+unqualified. Four unmodified pinned-SDK convenience ten-bit17/17 programs
+retain their original FAIL criteria; public explicit-operation coverage does
+not replace them. Broader non-FIFO RAM, asynchronous queues, inverted/direct/
+split routes, EEPROM endurance/protection, peer capacity/power-cycle replay,
+environmental/hostbus and independent backend/replay equivalence remain open.
+Current source emits real data/ACK edges; no controller byte/address shortcut
+or invented ninth command masks those boundaries.
+
+## 2026-10-10 parent-compatible physical source refinement
+
+The final epoch10 candidate retains real wire/ACK ownership, normalized accepted
+project addresses, stable-known-high SCL START/STOP recognition and one-shot
+UNKNOWN filter expiry. Its private37 native/18 service/three OV SCCB and21
+ordinary results remain scoped:17 PASS, four original pinned-SDK convenience
+ten-bit17/17 failures. Public explicit-operation runs are additional coverage,
+not replacements for those failed original criteria; no SDK shim or ninth
+command slot.
+
+Parent review additionally found that a valid SDA reversal was discarded while
+SCL was UNKNOWN, retaining an old persistence age and accepting a new
+subthreshold LOW as START. The fresh post-copy
+`0003-valid-line-filter-persistence.patch` tracks independently valid candidates
+at both published-frame and filter-expiry sampling without accepting a bit,
+advancing the decoder or polling at1ns. Actual identical-fixture before/after
+controls fail before / pass after; DC/RC subthreshold rejection and subsequent
+real address/ACK/STOP/FIFO byte recovery pass. Affected native93 pass with zero
+skips: I2C38/service18/GPIO19/electrical8/interrupt-matrix10.
+
+Exact scoped proof:
+`build-runtime-state/uart-continuation/i2c-parent-stage/partial-validity-qualification.json`.
+Original accepted input copies and active camera authorities remain unchanged;
+the physical controller/header/binding/fixture are applied atomically through
+declared post-copy overlays. Canonical `wire`/`wire_defined` fixtures retain
+callback context, task and buffers until successful device teardown; unsafe
+cleanup reports failure and does not reuse them. Actual fresh SDK5.5.5/6.1
+images and canonical runners now complete all21 ordinary outcomes on this same
+source with17 PASS/four unchanged original FAIL; no host timeout is counted as
+completed. Full361 native and all159 target hashes pass. The separate generic
+SYSTIMER fractional-phase correction still requires its own fresh source/
+native/ordinary proofs; none are inherited. No exact-silicon timing, full I2C
+or simulator completion claim.

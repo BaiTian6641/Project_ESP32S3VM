@@ -1,0 +1,35 @@
+TAP version 13
+# random seed: R02S8f910c01f8c8b18c22bfe3c967c06141
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2169922.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2169922.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+1..19
+# Start of xtensa tests
+# Start of esp32s3-gpio tests
+ok 1 /xtensa/esp32s3-gpio/reset-defaults
+ok 2 /xtensa/esp32s3-gpio/w1ts-w1tc
+ok 3 /xtensa/esp32s3-gpio/input-readonly
+ok 4 /xtensa/esp32s3-gpio/external-input
+ok 5 /xtensa/esp32s3-gpio/simple-loopback
+ok 6 /xtensa/esp32s3-gpio/matrix-out
+ok 7 /xtensa/esp32s3-gpio/matrix-in
+ok 8 /xtensa/esp32s3-gpio/pin-interrupts
+ok 9 /xtensa/esp32s3-gpio/iomux-disconnect
+ok 10 /xtensa/esp32s3-gpio/negative
+ok 11 /xtensa/esp32s3-gpio/rtc-io
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2169922.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2169922.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -L pc-bios -global driver=esp32s3.gpio,property=strict-unknown,value=true -accel qtest
+ok 12 /xtensa/esp32s3-gpio/strict-unknown-floating-pause
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2169922.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2169922.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -L pc-bios -global driver=esp32s3.gpio,property=strict-unknown,value=true -accel qtest
+ok 13 /xtensa/esp32s3-gpio/strict-unknown-hole-pad
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2169922.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2169922.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -L pc-bios -accel qtest -global driver=esp32s3.gpio,property=strict-unknown,value=true -accel qtest
+ok 14 /xtensa/esp32s3-gpio/sleep-effective-config
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2169922.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2169922.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -L pc-bios -accel qtest -global driver=esp32s3.gpio,property=strict-unknown,value=true -accel qtest
+ok 15 /xtensa/esp32s3-gpio/sleep-hold-latch
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2169922.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2169922.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -L pc-bios -accel qtest -accel qtest
+ok 16 /xtensa/esp32s3-gpio/hold-open-drain-polarity
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2169922.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2169922.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -L pc-bios -accel qtest -accel qtest
+ok 17 /xtensa/esp32s3-gpio/hold-out-inversion
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2169922.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2169922.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 18 /xtensa/esp32s3-gpio/hold-solver-authority
+# slow test /xtensa/esp32s3-gpio/hold-solver-authority executed in 0.57 secs
+ok 19 /xtensa/esp32s3-gpio/matrix-irq-delivery
+# End of esp32s3-gpio tests
+# End of xtensa tests

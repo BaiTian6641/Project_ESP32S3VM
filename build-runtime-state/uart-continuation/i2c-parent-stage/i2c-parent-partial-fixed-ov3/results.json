@@ -1,0 +1,25 @@
+[
+  {
+    "case": "ov2640-normalized-address-ack",
+    "returncode": -5,
+    "command": [
+      "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/i2c-wire-stage/review8-ov/after-native-epoch10/esp32s3-i2c-test",
+      "-p",
+      "/xtensa/esp32s3/i2c/ov2640-normalized-address-ack"
+    ],
+    "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515",
+    "environment": {
+      "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa"
+    },
+    "fixture_sha256": "0b3a21f014d3e2e8d932464ea5c101cb940c1349c0fc7c3abcec0ef47d60da0d",
+    "qemu_sha256": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e",
+    "stdout": {
+      "path": "/home/polar/.cache/esp32s3vm/i2c-parent-partial-fixed-ov3/ov2640-normalized-address-ack-stdout.log",
+      "sha256": "035f67b64aed75ffe42b424d464db3c89c5833751e0cb27ce42b370017c13e81"
+    },
+    "stderr": {
+      "path": "/home/polar/.cache/esp32s3vm/i2c-parent-partial-fixed-ov3/ov2640-normalized-address-ack-stderr.log",
+      "sha256": "60af42cd6becb93c09bfefdf8103d8f2938d3a515b599c7bea931199231fbf87"
+    }
+  }
+]

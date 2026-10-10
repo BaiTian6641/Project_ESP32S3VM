@@ -1,0 +1,19 @@
+[
+  "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa",
+  "-machine",
+  "esp32s3",
+  "-nographic",
+  "-S",
+  "-accel",
+  "tcg,thread=single",
+  "-icount",
+  "shift=0,align=off,sleep=off",
+  "-monitor",
+  "none",
+  "-serial",
+  "file:/home/polar/.cache/esp32s3vm/i2c-parent-canonical-wire-idf-6.1/wire-400000/wire-20261010T221213-3o49sp1b/uart.log",
+  "-drive",
+  "file=/home/polar/.cache/esp32s3vm/i2c-parent-firmware-4721c7d3fe9311ef/build/merged-flash.bin,if=mtd,format=raw,snapshot=on",
+  "-qmp",
+  "unix:/tmp/i2c-qmp-nrben2ae/qmp.sock,server=on,wait=off"
+]

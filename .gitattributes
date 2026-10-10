@@ -20,3 +20,6 @@ build-runtime-state/uart-continuation/pulse-memory-foundation-stage/** -text
 build-runtime-state/uart-continuation/proven-net-irq-foundation-stage/** -text
 build-runtime-state/uart-continuation/peripheral-next-common-stage/** -text
 build-runtime-state/uart-continuation/camera-ordinary-stage/abort-smoke-4/** -text
+qemu-extensions/prototypes/i2c/foundation-dependencies.json text eol=lf
+tests/firmware/i2c_native/** text eol=lf
+build-runtime-state/uart-continuation/i2c-parent-stage/** -text

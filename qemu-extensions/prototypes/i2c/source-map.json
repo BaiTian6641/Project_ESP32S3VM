@@ -2,10 +2,10 @@
   "schema_version": 1,
   "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
   "license": "GPL-2.0-or-later",
-  "status": "18/18 native controller/error vectors,18/18 service vectors, ten ordinary master and three ordinary slave scenarios PASS on aggregate1e937cf0ad1822bb; complete canonical gates remain open",
-  "work_package": "I2C-01/02 plus both ordinary seven-bit slave drivers and tested filter/address-arbitration I2C-03 subsets; not full canonical I2C support",
+  "status": "Currentphysical361native/I2C38/service18/3OVSCCB plus21actualordinary17PASS4originalSDKFAIL; canonicalresiduals/exacttiming remainopen",
+  "work_package": "I2C-01/02 physicalmaster/slave and namedI2C-03 functional subsets; no fullcanonical orSDKconvenience17/17 acceptance",
   "combined_v3_fingerprint": "105a156e5dec5fc63f347cc1d989c1d11ab402c63668d8426869462d6387b999",
-  "native_checkout": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-1e937cf0ad1822bb",
+  "native_checkout": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515",
   "prefix_commit": "2b0e49021de6cb5e91dc1dc0b1a8804334a1c083",
   "copies": [
     {
@@ -87,8 +87,9 @@
       "destination": "hw/adc/net-adapter.h"
     }
   ],
-  "integration_patch": "integration.patch",
+  "integration_patch": "integration-after-electrical.patch",
   "prerequisite_restack_patch": "dependencies-restack.patch",
+  "historical_bootstrap_integration_patch": "integration.patch",
   "additional_core_paths": [
     "hw/i2c/meson.build",
     "hw/adc/meson.build",
@@ -97,25 +98,98 @@
     "tests/unit/meson.build"
   ],
   "firmware_fixture": "tests/firmware/i2c_native",
-  "evidence": "build-runtime-state/uart-continuation/i2c-slave-final/",
+  "evidence": "build-runtime-state/uart-continuation/i2c-parent-stage/",
   "canonical_gates": [
-    "broader ordinary/native slave boundaries beyond seven-bit receive/request/TX-reset and disconnected scenarios",
-    "master ten-bit/general-call and full ten-bit slave read/restart/boundary qualification",
-    "multi-master data-phase/full-transfer arbitration and replay beyond tested address win/loss",
-    "master-data edge/fast-path equivalence and replay",
-    "SCL/SDA filter threshold/sweep boundaries beyond tested100ns SDA rejection",
-    "slow analog RC rise and recovery",
-    "inverted/direct IO_MUX/split input-output pad routes",
-    "non-FIFO memory mode",
-    "EEPROM write-protection/endurance",
-    "external environmental and hostbus device services",
-    "asynchronous queued multi-batch transfers",
-    "scripted-peer capacity and power-cycle replay beyond the tested two-peer scenarios"
+    "OriginalunmodifiedpinnedSDK6.1/5.5.5 convenience tenbit17/17 fourprograms remainFAIL; publicdefinedoperations areadditionalnotreplacement",
+    "Exactsilicon phase/latch/filter/metastability/analogRC/reference timing unqualified",
+    "inverted/directIOmux/splitinput-output pad routes",
+    "non-FIFORAM andasynchronousqueued multi-batch paths",
+    "EEPROMwrite-protection/endurance, scriptedpeer capacity/power-cycle replay",
+    "externalenvironmental/hostbus andindependentbackend/replay equivalence"
   ],
   "layered_integration_patch": "integration-after-electrical.patch",
   "electrical_prerequisite_patch": "electrical-prerequisites.patch",
-  "layering_note": "Bootstrap integration.patch includes common clock/electrical prerequisites. Aggregate already carrying NativeNet and centralized clock ports must apply only integration-after-electrical.patch and lane-owned copies. The additive overlay binds the existing electrical child; it never creates a second graph or adds clock enum definitions.",
+  "layering_note": "Historicalbootstrap includesobsoletecombined105a prereqs. Currentcommonrecipe retainsitssoleNativeNet/kernel/clock/IRQ/memory owners andoriginalcopybytes; applyintegration-after-electrical once, thenexplicitpostcopyphysicalcontroller/header/binding/fixture andpartialvalidity overlays beforeUARTtail. No directbyteprovider, secondgraph orfrequencyalias.",
   "clock_owner": "CoreClockWorker; core1..6,8,9,10 production stack; temporary0007 expressly excluded",
+  "current_physical_source": {
+    "recipe": "foundation-dependencies.json",
+    "preparer": "../uart/prepare.py",
+    "operation_fingerprint": "3cc39bfdc7bd351579cc789b7da23c9fb8d63262cc3d49e1e1b869f91d87671e",
+    "native_source_record": "build-runtime-state/uart-continuation/i2c-parent-stage/preparation-partial-fixed/prepared-3cc39bfdc7bd3515-source.json",
+    "qualification_receipt": "build-runtime-state/uart-continuation/i2c-parent-stage/qualification-receipt.json",
+    "qemu_sha256": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e",
+    "applied_targets_verified": 159,
+    "native_passed": 361,
+    "i2c_native_passed": 38,
+    "service_passed": 18,
+    "real_ov_sccb_passed": 3,
+    "ordinary": {
+      "passed": 17,
+      "original_convenience_failed": 4,
+      "skipped": 0
+    },
+    "post_copy_overlays": [
+      {
+        "source": "0002-physical-wire-current-foundation.patch",
+        "sha256": "ad809e6e8c2939a426b407d58ee806bf3f08692fab6060d8e96c6761730ad86a",
+        "policy": "strict after_copies"
+      },
+      {
+        "source": "0003-valid-line-filter-persistence.patch",
+        "sha256": "ac3b226dcef74aeb0a50ea478a92c0b4dfe21f4b37c0559668e1519341b8e22b",
+        "policy": "strict after_copies"
+      }
+    ],
+    "current_applied_i2c": {
+      "hw/i2c/esp32s3_i2c.c": "96dc892037e3d13f577536c464c249342d1eedd035c1af4195d7f37bbc343972",
+      "include/hw/i2c/esp32s3_i2c.h": "698d86ba1578fe21bc3e38040f85ea50068bcf592b44412cb233cc2211c904a9",
+      "hw/i2c/esp32s3_i2c_binding.c": "900879ab7546231195a4443d3018f50eeadaeab28286d53083806d35a6a0dd86",
+      "include/hw/i2c/esp32s3_i2c_binding.h": "cb138d550fe767862e88068f57d96e325522be612966f73ddbc239b4a3d5f02f",
+      "tests/qtest/esp32s3-i2c-test.c": "21c6191a98f6e6b2010452960f4c6d3f88ac3302683ad700cb5afd2c25fde9fc"
+    },
+    "actual_i2c_native_cases": [
+      "both-masters-timing-irq",
+      "eeprom-stop-restart-persistent-commit",
+      "end-refill-drain-over32",
+      "command-bounds-fifo-errors",
+      "address-data-nack-no-stale",
+      "clock-gate-reset-cancel",
+      "electrical-route-power-pulls",
+      "hold-stretch-timeout-cancel",
+      "hot-power-versus-wire-unplug",
+      "slave-script-write",
+      "slave-read-stretch",
+      "slave-relay",
+      "slave-ten-bit",
+      "slave-general-call",
+      "slave-glitch-filter",
+      "slave-wrong-address",
+      "master-arbitration",
+      "script-preflight-reject",
+      "native-master-native-slave-wire",
+      "general-call-read-rejected",
+      "independent-filter-deadlines",
+      "scheduled-slave-low-watchdog",
+      "native-data-arbitration-replay",
+      "released-wire-after-final-nack",
+      "native-master-native-slave-rc",
+      "general-call-two-slaves-fanout",
+      "ten-bit-wrong-header-low-read",
+      "watchdog-zero-virtual-epoch",
+      "watchdog-exponent-zero-enabled",
+      "identical-native-masters",
+      "read-ack-native-arbitration",
+      "stop-held-sda-no-fake-completion",
+      "stop-held-clock-preserves-sda-low",
+      "stop-rc-sda-crossing-during-clock-low",
+      "service-simultaneous-high-does-not-commit",
+      "filter-unknown-powered-dc-matrix",
+      "filter-unknown-powered-rc-matrix",
+      "filter-partial-valid-reversal"
+    ],
+    "base_input_hashes": "owned_source_hashes describe immutable original copy inputs, not post-copy target bodies. Historical source records/checkouts unchanged.",
+    "clock_boundary": "GenericSYSTIMER fractionloss source unchanged. Futurecounter/RGB/camera/pulse/otherperipheral proof requires its own freshbinary; no differentexecutableinheritance."
+  },
   "clock_prerequisite_patches": [
     "prototypes/coreclk/0008-hw-timer-esp_timg-hardware-divider-field-encoding-and-exact.patch",
     "prototypes/coreclk/0009-hw-timer-esp_timg-exact-rational-tick-conversion.patch",

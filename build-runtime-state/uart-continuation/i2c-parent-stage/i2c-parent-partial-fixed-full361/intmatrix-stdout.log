@@ -1,0 +1,28 @@
+TAP version 13
+# random seed: R02S6b9412b62b1ec742fc31ba746dcfcce9
+1..10
+# Start of xtensa tests
+# Start of esp32s3-intmatrix tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2274420.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2274420.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -accel qtest
+ok 1 /xtensa/esp32s3-intmatrix/reset-defaults
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2274420.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2274420.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -accel qtest
+ok 2 /xtensa/esp32s3-intmatrix/single-source-route
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2274420.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2274420.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -accel qtest
+ok 3 /xtensa/esp32s3-intmatrix/shared-sources-or
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2274420.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2274420.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -accel qtest
+ok 4 /xtensa/esp32s3-intmatrix/remap-asserted-source
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2274420.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2274420.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -accel qtest
+ok 5 /xtensa/esp32s3-intmatrix/disabled-and-masked-map-writes
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2274420.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2274420.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -accel qtest
+ok 6 /xtensa/esp32s3-intmatrix/dual-cpu-files
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2274420.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2274420.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -accel qtest
+ok 7 /xtensa/esp32s3-intmatrix/status-boundary-sources
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2274420.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2274420.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -accel qtest
+ok 8 /xtensa/esp32s3-intmatrix/machine-reset
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2274420.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2274420.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -accel qtest
+ok 9 /xtensa/esp32s3-intmatrix/clock-gate-freeze
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2274420.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2274420.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -accel qtest
+ok 10 /xtensa/esp32s3-intmatrix/repeated-levels-map-gate-reassert
+# slow test /xtensa/esp32s3-intmatrix/repeated-levels-map-gate-reassert executed in 0.86 secs
+# End of esp32s3-intmatrix tests
+# End of xtensa tests

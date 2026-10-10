@@ -5,6 +5,43 @@ parallel implementation in this session. Preserve the reviewed full scope; do no
 reduce completion to the foundation slices below. Historical heartbeat metadata
 is retained in the frozen packet; it is not an inventory of this session's jobs.
 
+## 2026-10-10 — corrected physical I2C parent361 native and all21 ordinary outcomes
+
+Fresh immutable `3cc39bfdc7bd3515`, executable SHA256
+`19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e`,
+matches all159 target hashes. **361 native PASS, zero skips**, including I2C38/
+service18 and the complete prior341 closure with its I2C18 replaced by38.
+Three real powered OV2640 SCCB address/PID/bank/pointer/read-only/wrong-address
+tests also pass on this exact executable.
+
+Final private epoch10 review found an additional partial-validity defect:
+valid SDA HIGH→LOW reversals were ignored while SCL was UNKNOWN, retaining an
+old LOW timestamp and producing a spurious START for a new subthreshold pulse.
+The parent keeps per-line valid candidate bookkeeping at both frame/expiry
+sampling, but never accepts a bit/advances the FSM during partial UNKNOWN.
+Identical-fixture model-only control fails before / passes after in DC/RC;
+genuine persistence subsequently completes actual address/ACK/STOP/FIFO5A.
+Original normalized-project address, stable-known-high STOP and bounded
+one-shot UNKNOWN-expiry corrections remain intact.
+
+All **21 canonical ordinary outcomes actually complete on this new binary**:
+ten original master and three slave programs PASS, four additional public
+defined-operation programs PASS, and **four unchanged original convenience
+ten-bit17/17 criteria FAIL**. Each failed program reaches whole DONE with exactly
+both-role restart17/bytes errors, not a host timeout. No SDK shim, ninth command,
+fake ACK/STOP, replacement criterion or different-executable proof inheritance.
+Fresh SDK5.5.5/6.1 fixture images retain callback context/task/buffers until
+successful device teardown; every requested successful teardown is observed.
+
+The current I2C family recipe uses declared post-copy overlays and the sole
+UART preparer; the obsolete initial stand-alone preparer is retired. Original
+accepted input copies and active camera source authorities remain untouched.
+Exact scoped packet:
+`build-runtime-state/uart-continuation/i2c-parent-stage/qualification-receipt.json`.
+The generic SYSTIMER fractional-read starvation source is **not changed by
+this stage**; its fresh timer/RGB/I80/camera/pulse proofs remain separate.
+Full simulator, exact-silicon timing and broader I2C canonical gates remain open.
+
 ## 2026-10-10 — actual OV2640 producer diagnostic source gate PASS
 
 The native producer diagnostic smoke on the exact340 `02c`/`bf3fc` runtime

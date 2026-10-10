@@ -1,0 +1,56 @@
+TAP version 13
+# random seed: R02Sd3c5c974149e905bd41f7b724c3dbe59
+1..12
+# Start of xtensa tests
+# Start of esp32s3-memory tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253830.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253830.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -m 8M -S -accel qtest
+ok 1 /xtensa/esp32s3-memory/visibility
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253830.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253830.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -m 8M -S -accel qtest
+ok 2 /xtensa/esp32s3-memory/alias-remap
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253830.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253830.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -m 8M -S -accel qtest
+ok 3 /xtensa/esp32s3-memory/boundaries
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253830.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253830.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -m 0 -S -accel qtest
+ok 4 /xtensa/esp32s3-memory/absent
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253830.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253830.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -m 8M -S -accel qtest
+ok 5 /xtensa/esp32s3-memory/alignment
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253830.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253830.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -m 8M -S -accel qtest
+ok 6 /xtensa/esp32s3-memory/reset
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253830.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253830.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -m 8M -S -accel qtest
+ok 7 /xtensa/esp32s3-memory/spi1-ssi
+# slow test /xtensa/esp32s3-memory/spi1-ssi executed in 0.64 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253830.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253830.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -m 8M -S -accel qtest
+ok 8 /xtensa/esp32s3-memory/spi1-high-duplex
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253830.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253830.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -m 8M -S -accel qtest
+ok 9 /xtensa/esp32s3-memory/spi1-asymmetric
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253830.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253830.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -m 8M -S -accel qtest
+# SPI0 phase consumer: CS1-disabled
+# SPI0 phase consumer: CS0-instead-of-CS1
+# SPI0 phase consumer: serial-read-opcode
+# SPI0 phase consumer: serial-write-opcode
+# SPI0 phase consumer: read-command-seven-bits
+# SPI0 phase consumer: write-command-seven-bits
+# SPI0 phase consumer: address-twenty-three-bits
+# SPI0 phase consumer: read-dummy-disabled
+# SPI0 phase consumer: read-dummy-five-clocks
+# SPI0 phase consumer: write-dummy-enabled
+# SPI0 phase consumer: user-read-command-disabled
+# SPI0 phase consumer: user-write-command-disabled
+# SPI0 phase consumer: QPI-flag-cleared
+# SPI0 phase consumer: dual-mode-selected
+# SPI0 phase consumer: octal-mode-selected
+# SPI0 phase consumer: DDR-enabled
+# SPI0 phase consumer: wrong-clock-divider
+# SPI0 phase consumer: wrong-core-clock-selector
+ok 10 /xtensa/esp32s3-memory/spi0-phases
+# slow test /xtensa/esp32s3-memory/spi0-phases executed in 1.02 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253830.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253830.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -m 8M -S -accel qtest
+ok 11 /xtensa/esp32s3-memory/spi0-clock-reset
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253830.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253830.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -m 8M -S -accel qtest
+# DCache control=0x1, line=16
+# DCache control=0x9, line=32
+# DCache control=0x11, line=64
+# DCache control=0xd, line=32
+# DCache control=0x15, line=64
+ok 12 /xtensa/esp32s3-memory/cache-geometry
+# End of esp32s3-memory tests
+# End of xtensa tests

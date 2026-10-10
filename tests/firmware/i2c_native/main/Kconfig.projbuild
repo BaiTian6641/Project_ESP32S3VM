@@ -18,6 +18,10 @@ config I2C_NATIVE_PROFILE_SLAVE
     bool "Slave receive/request/reset through physical scripted masters"
 config I2C_NATIVE_PROFILE_SLAVE_DISCONNECTED
     bool "Slave callbacks remain silent with disconnected physical masters"
+config I2C_NATIVE_PROFILE_WIRE
+    bool "Native master/slave callbacks on one actual wired bus"
+config I2C_NATIVE_PROFILE_WIRE_DEFINED
+    bool "Public explicit-operation repeated-start alongside unchanged convenience API"
 endchoice
 config I2C_NATIVE_SPEED_HZ
     int "Master or external-peer SCL frequency (Hz)"

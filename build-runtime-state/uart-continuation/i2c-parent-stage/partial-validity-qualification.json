@@ -1,0 +1,193 @@
+{
+  "status": "PASS_NEW_PARTIAL_VALIDITY_BOUNDARY_AND_AFFECTED_NATIVE93_ONLY",
+  "source": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515",
+  "qemu_sha256": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e",
+  "prepared_source_record": {
+    "path": "build-runtime-state/uart-continuation/i2c-parent-stage/preparation-partial-fixed/prepared-3cc39bfdc7bd3515-source.json",
+    "sha256": "8336c595e019cb0d9cd0d8587fecb1fb70c70b50a3ed74da8f3ea64fe5c78e7a"
+  },
+  "only_control_model_difference": "hw/i2c/esp32s3_i2c.c",
+  "fixture_source_identical": true,
+  "actual_controls": [
+    {
+      "phase": "before",
+      "returncode": -6,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c7496bf321b41e12/build-wsl/tests/qtest/esp32s3-i2c-test",
+        "--tap",
+        "--verbose",
+        "-p",
+        "/xtensa/esp32s3/i2c/filter-partial-valid-reversal"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c7496bf321b41e12",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c7496bf321b41e12/build-wsl/qemu-system-xtensa"
+      },
+      "qemu": {
+        "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c7496bf321b41e12/build-wsl/qemu-system-xtensa",
+        "sha256": "aad98af7cfdef6a5cd49cb511086321e4b828167afcfb187aaa45b0382d0017a"
+      },
+      "fixture": {
+        "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c7496bf321b41e12/build-wsl/tests/qtest/esp32s3-i2c-test",
+        "sha256": "86dbf1d299db836523c743f8991fe05ba85f045f2f40f14eb2f8032c80ab63e8"
+      },
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/before-stdout.log",
+        "sha256": "651af4976182fa9f091c0656f371d3476b967dab58beaf7db6a1385d899e1d47"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/before-stderr.log",
+        "sha256": "3031aac79181e2d235deee28cc5e270ff24a2393adc750decb7ff6230632669b"
+      }
+    },
+    {
+      "phase": "after",
+      "returncode": 0,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/tests/qtest/esp32s3-i2c-test",
+        "--tap",
+        "--verbose",
+        "-p",
+        "/xtensa/esp32s3/i2c/filter-partial-valid-reversal"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa"
+      },
+      "qemu": {
+        "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa",
+        "sha256": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e"
+      },
+      "fixture": {
+        "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/tests/qtest/esp32s3-i2c-test",
+        "sha256": "9684c64fe6958e3a6cf35ca5a508dd275e88af0bd5752b9a5f7241be13f3af2c"
+      },
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/after-stdout.log",
+        "sha256": "90e89bd49745444ed4654b53a28aff809cad0474aa86a78745a1666de826bedc"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/after-stderr.log",
+        "sha256": "03d6cf70687c4feefc2d9f0bc812490efa063531e3b35f0d4a572fe686ae143f"
+      }
+    }
+  ],
+  "native": {
+    "i2c": {
+      "returncode": 0,
+      "passed": 38,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 38,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/tests/qtest/esp32s3-i2c-test",
+        "--tap",
+        "--verbose"
+      ],
+      "qemu_sha256": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e",
+      "test_binary_sha256": "9684c64fe6958e3a6cf35ca5a508dd275e88af0bd5752b9a5f7241be13f3af2c",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/i2c-stdout.log",
+        "sha256": "f07780bb10a1276b5b2839359981d2ca6a5768ed1610e4297772d81a228715cf"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/i2c-stderr.log",
+        "sha256": "b37a8d2cae7825d5224c5a0857bfe77fea887a17ab658ec626f69f4f856ace9d"
+      }
+    },
+    "i2c-service": {
+      "returncode": 0,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 18,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/tests/unit/test-esp32s3-i2c-service",
+        "--tap",
+        "--verbose"
+      ],
+      "qemu_sha256": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e",
+      "test_binary_sha256": "625f2053aa1262ded7139b22ddff546a65ed3f13a4db0dff225832fb7bd62a56",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/i2c-service-stdout.log",
+        "sha256": "4791e5a372d579a26aa6f95b1790b8afa3c47bf43057e03616ec53ee0ad835e2"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/i2c-service-stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "gpio": {
+      "returncode": 0,
+      "passed": 19,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 19,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/tests/qtest/esp32s3-gpio-test",
+        "--tap",
+        "--verbose"
+      ],
+      "qemu_sha256": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e",
+      "test_binary_sha256": "badddc68bc980f3447b57b900456ab68746bbeb552c3231b2272e7875ff64ddc",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/gpio-stdout.log",
+        "sha256": "309e1df273757a80cd71c22b65649c8e68babef0e1b7ae6941dc8f56c5e23574"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/gpio-stderr.log",
+        "sha256": "e466577f9bd4f7cc04bf71fa62dc716dda5a42accb5557f1bbfa594239260f28"
+      }
+    },
+    "electrical": {
+      "returncode": 0,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 8,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/tests/qtest/esp32s3-electrical-test",
+        "--tap",
+        "--verbose"
+      ],
+      "qemu_sha256": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e",
+      "test_binary_sha256": "678067550f6916a1634c6174f94ca524fce7bea3c07325099ba0378f4d6e6880",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/electrical-stdout.log",
+        "sha256": "0e5d5eabed531c13982364360e4e1bcedf4c839b0572b1e49d8d24155c0e310b"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/electrical-stderr.log",
+        "sha256": "e5c3e5c1569995b7619dd7ea9c6769f68dfbc97521d41648246b61f55d2d2d25"
+      }
+    },
+    "intmatrix": {
+      "returncode": 0,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 10,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/tests/qtest/esp32s3-intmatrix-test",
+        "--tap",
+        "--verbose"
+      ],
+      "qemu_sha256": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e",
+      "test_binary_sha256": "d563f1c139399302509f8150a974bd7553a6811e6444083fa2752101e730f0f1",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/intmatrix-stdout.log",
+        "sha256": "f1e28e20865cc9d2600888efbdc0d6e969d114623e162c425dd38b2a43ff8fe9"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/intmatrix-stderr.log",
+        "sha256": "222f5a7a4a387aacf02f673b162399b3e7e7a2f3db22397216e8028e5089bbaf"
+      }
+    }
+  },
+  "consumer_boundary": "Independent validSDA HIGH cancels earlierLOW whileSCLisUNKNOWN; a freshLOW<200ns cannotproduceDET_START. Aftergenuinepersistence normaladdress/byteACK/STOP/FIFO5A succeeds inDCandRC. Candidate-onlyupdatesuseper-linevalidflags atbothpublishedframes/filterexpiry, no acceptedlevel/FSM/ACK onpartialUNKNOWN andno1ns polling.",
+  "overlay": {
+    "path": "qemu-extensions/prototypes/i2c/0003-valid-line-filter-persistence.patch",
+    "sha256": "ac3b226dcef74aeb0a50ea478a92c0b4dfe21f4b37c0559668e1519341b8e22b"
+  },
+  "boundary": "Not finalfullaggregate/native361 or21ordinary/SDKbugfix/metrology. GenericSYSTIMER fractionalphase successor andfresh canonicalfixtureimages stillpending; original10 proofs not inherited."
+}

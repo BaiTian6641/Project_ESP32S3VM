@@ -1,0 +1,1975 @@
+diff --git a/hw/i2c/esp32s3_i2c.c b/hw/i2c/esp32s3_i2c.c
+--- a/hw/i2c/esp32s3_i2c.c
++++ b/hw/i2c/esp32s3_i2c.c
+@@ -31,13 +31,13 @@
+ #define CMD_DONE BIT(31)
+ #define INT_MASK 0x7ffff
+ 
+-/* Master fast-path sub-phases for the per-bit address byte. The address is
+- * transmitted bit by bit against the shared net so a competing master can
+- * win arbitration; data bytes keep the timed byte-level fast path. */
++/* Master phases clock every data and ACK bit on the resolved wire. */
+ #define ADDR_PHASE_LOW  5
+ #define ADDR_PHASE_RISE 6
+ #define ADDR_PHASE_NEXT 7
+ #define ADDR_PHASE_ACK  8
++#define BYTE_PHASE_ACK_RISE 9
++#define BYTE_PHASE_ACK_END 10
+ 
+ static void i2c_irq(ESP32S3I2CState *s)
+ {
+@@ -65,30 +65,15 @@
+     }
+ }
+ 
+-static void release_slave(ESP32S3I2CState *s)
+-{
+-    if (s->service && s->provider.slave_drive) {
+-        s->provider.slave_drive(s->provider.opaque, s->service, true, true);
+-    }
+-}
+-
+ static void cancel(ESP32S3I2CState *s)
+ {
+-    S3I2CService *service = s->service;
+     s->generation++;
+     timer_del(s->timer);
+-    s->service = NULL;
+     s->executing = s->protocol_open = s->waiting = false;
+     s->start_armed = false;
+     s->need_address = true;
+     s->bit_phase = 0;
+     s->addr_bit = 0;
+-    if (service) {
+-        s3_i2c_service_cancel(service);
+-        if (s->provider.slave_drive) {
+-            s->provider.slave_drive(s->provider.opaque, service, true, true);
+-        }
+-    }
+     drive(s, true, true);
+ }
+ 
+@@ -143,23 +128,8 @@
+     i2c_irq(s);
+ }
+ 
+-static bool ready_lines(ESP32S3I2CState *s, int64_t now, bool idle,
+-                        bool *sampled_sda)
+-{
+-    bool sda = false, scl = false;
+-    uint64_t generation = s->generation;
+-    bool valid = s->provider.sample &&
+-                 s->provider.sample(s->provider.opaque, s->controller, &sda, &scl);
+-    if (s->generation != generation) {
+-        return false;
+-    }
+-    if (valid && scl && (!idle || sda)) {
+-        if (sampled_sda) {
+-            *sampled_sda = sda;
+-        }
+-        s->waiting = false;
+-        return true;
+-    }
++static bool wait_for_lines(ESP32S3I2CState *s, int64_t now)
++{
+     if (!s->waiting) {
+         s->waiting = true;
+         s->wait_start = now;
+@@ -172,6 +142,28 @@
+         schedule(s, bit_ns(s));
+     }
+     return false;
++}
++
++/* wanted_sda: -1 samples either data value; 0/1 requires that physical level. */
++static bool ready_lines(ESP32S3I2CState *s, int64_t now, int wanted_sda,
++                        bool *sampled_sda)
++{
++    bool sda = false, scl = false;
++    uint64_t generation = s->generation;
++    bool valid = s->provider.sample &&
++                 s->provider.sample(s->provider.opaque, s->controller,
++                                    &sda, &scl, NULL, NULL) == S3_I2C_SAMPLE_VALID;
++    if (s->generation != generation) {
++        return false;
++    }
++    if (valid && scl && (wanted_sda < 0 || sda == !!wanted_sda)) {
++        if (sampled_sda) {
++            *sampled_sda = sda;
++        }
++        s->waiting = false;
++        return true;
++    }
++    return wait_for_lines(s, now);
+ }
+ 
+ static void advance_command(ESP32S3I2CState *s)
+@@ -223,7 +215,9 @@
+     s->slave_rw_point = 0;
+     s->slave_filter_deadline = 0;
+     s->slave_protect_deadline = 0;
+-    s->slave_low_since = 0;
++    s->slave_low_since = -1;
++    s->sl_sda_raw = s->sl_sda;
++    s->sl_scl_raw = s->sl_scl;
+     drive(s, true, true);
+ }
+ 
+@@ -259,6 +253,7 @@
+     int64_t *since = scl_line ? &s->sl_scl_since : &s->sl_sda_since;
+     if (!en || !thres) {
+         *accepted = raw;
++        *candidate = raw;
+         return raw;
+     }
+     if (raw == *accepted) {
+@@ -269,18 +264,13 @@
+     if (raw != *candidate) {
+         *candidate = raw;
+         *since = now;
+-        int64_t threshold = cycles_ns(s, thres);
+-        if (threshold <= 0) {
+-            *accepted = raw;
+-            return raw;
+-        }
+-        if (s->slave_filter_deadline < now + threshold) {
+-            s->slave_filter_deadline = now + threshold;
+-        }
+-        return *accepted;
+-    }
+-    /* The deadline timer is the acceptance authority for persisting
+-     * candidates; until then the accepted level is unchanged. */
++    }
++    /* Only a VALID physical sample can prove persistence. If the expiry
++     * sampled UNKNOWN, the next valid frame accepts the same candidate
++     * without restarting its independent line timestamp or polling. */
++    if (now - *since >= cycles_ns(s, thres)) {
++        *accepted = raw;
++    }
+     return *accepted;
+ }
+ 
+@@ -343,7 +333,12 @@
+     bool rw = s->slave_byte & 1;
+ 
+     if (!addr7 && (ctr & BIT(14))) {
+-        /* General call: write-only broadcast with the enable bit set. */
++        /* The enabled broadcast namespace is write-only, including when
++         * the separately configured own address is zero. */
++        if (rw) {
++            s->slave_state = S3_I2C_SLV_IDLE;
++            return;
++        }
+         s->slave_matched = true;
+         s->slave_rw = false;
+         slave_raise(s, GENERAL_CALL);
+@@ -573,13 +568,14 @@
+         s->slave_filter_deadline = 0;
+         bool sda = false, scl = false;
+         if (s->provider.sample &&
+-            s->provider.sample(s->provider.opaque, s->controller, &sda, &scl)) {
++            s->provider.sample(s->provider.opaque, s->controller,
++                               &sda, &scl, NULL, NULL) ==
++            S3_I2C_SAMPLE_VALID) {
+             bool prev_sda = s->sl_sda, prev_scl = s->sl_scl;
+-            if (sda != s->sl_sda && sda == s->sl_sda_raw) {
+-                s->sl_sda = sda;
+-            }
+-            if (scl != s->sl_scl && scl == s->sl_scl_raw) {
+-                s->sl_scl = scl;
++            s->sl_sda = filter_level(s, false, sda, now);
++            s->sl_scl = filter_level(s, true, scl, now);
++            if (prev_scl && !s->sl_scl) {
++                s->slave_low_since = now;
+             }
+             if (prev_sda != s->sl_sda || prev_scl != s->sl_scl) {
+                 slave_fsm(s, prev_sda, prev_scl);
+@@ -597,24 +593,40 @@
+     }
+     /* SCL stuck low by the far side beyond SCL_ST_TIME_OUT. */
+     if (s->slave_state != S3_I2C_SLV_IDLE && !s->sl_scl &&
+-        !s->slave_stretch && s->slave_low_since) {
++        !s->slave_stretch && s->slave_low_since >= 0) {
+         unsigned st = REG(s, 0x78) & 0x1f;
+-        if (st) {
+-            int64_t limit = cycles_ns(s, 1ULL << st);
+-            if (limit > 0 && now - s->slave_low_since >= limit) {
+-                slave_end_transfer(s);
+-                slave_raise(s, SCL_ST_TO);
+-            }
++        int64_t limit = cycles_ns(s, 1ULL << st);
++        if (limit > 0 && now - s->slave_low_since >= limit) {
++            slave_end_transfer(s);
++            slave_raise(s, SCL_ST_TO);
+         }
+     }
+ }
+ 
+ static void slave_rearm(ESP32S3I2CState *s, int64_t now)
+ {
++    if (!slave_ready(s)) {
++        return;
++    }
+     int64_t when = 0;
+-    if (s->slave_filter_deadline > now) {
+-        when = s->slave_filter_deadline;
+-    }
++    uint32_t cfg = REG(s, 0x50);
++    /* Expiry is a one-shot opportunity to sample, not a reason to poll.
++     * Keep unresolved candidates/timestamps, but schedule only future
++     * persistence deadlines; published valid crossings resume acceptance. */
++    s->slave_filter_deadline = 0;
++    if (s->sl_sda_raw != s->sl_sda && (cfg & BIT(9)) && ((cfg >> 4) & 15)) {
++        int64_t due = s->sl_sda_since + cycles_ns(s, (cfg >> 4) & 15);
++        if (due > now) {
++            when = due;
++        }
++    }
++    if (s->sl_scl_raw != s->sl_scl && (cfg & BIT(8)) && (cfg & 15)) {
++        int64_t due = s->sl_scl_since + cycles_ns(s, cfg & 15);
++        if (due > now) {
++            when = when ? MIN(when, due) : due;
++        }
++    }
++    s->slave_filter_deadline = when;
+     if (s->slave_stretch) {
+         if (!s->slave_protect_deadline) {
+             unsigned protect = REG(s, 0x84) & 0x3ff;
+@@ -630,21 +642,50 @@
+                         : s->slave_protect_deadline;
+         }
+     }
++    if (s->slave_state != S3_I2C_SLV_IDLE && !s->sl_scl &&
++        !s->slave_stretch && s->slave_low_since >= 0) {
++        int64_t due = s->slave_low_since +
++                      cycles_ns(s, 1ULL << (REG(s, 0x78) & 31));
++        due = MAX(now + 1, due);
++        when = when ? MIN(when, due) : due;
++    }
+     if (when > now) {
+         timer_mod(s->timer, when);
++    } else {
++        timer_del(s->timer);
+     }
+ }
+ 
+ void esp32s3_i2c_frame(ESP32S3I2CState *s)
+ {
+     if (s->executing) {
+-        bool rising = s->bit_phase == ADDR_PHASE_RISE && s->waiting;
+-        if (rising || s->bit_phase == ADDR_PHASE_NEXT) {
++        if (s->bit_phase == 3 && s->command_index < 8 &&
++            ((s->active_cmd[s->command_index] >> 11) & 7) == 2) {
++            bool sda = false, scl = false, sv = false, cv = false;
++            if (s->provider.sample) {
++                s->provider.sample(s->provider.opaque, s->controller,
++                                   &sda, &scl, &sv, &cv);
++            }
++            if (sv && sda && !s->stop_last_sda &&
++                cv && scl && s->stop_last_scl) {
++                s->stop_seen = true;
++            }
++            if (sv) s->stop_last_sda = sda;
++            s->stop_last_scl = cv && scl;
++            if (s->waiting && s->stop_seen) schedule(s, 1);
++            return;
++        }
++        bool rising = (s->bit_phase == ADDR_PHASE_RISE ||
++                       s->bit_phase == BYTE_PHASE_ACK_RISE) && s->waiting;
++        bool stop_wait = s->waiting && s->command_index < 8 &&
++                         ((s->active_cmd[s->command_index] >> 11) & 7) == 2;
++        if (stop_wait || rising || s->bit_phase == ADDR_PHASE_NEXT ||
++            s->bit_phase == BYTE_PHASE_ACK_END) {
+             bool sda = false, scl = false;
+             if (s->provider.sample &&
+                 s->provider.sample(s->provider.opaque, s->controller,
+-                                   &sda, &scl) &&
+-                (rising ? scl : !scl)) {
++                                   &sda, &scl, NULL, NULL) == S3_I2C_SAMPLE_VALID &&
++                (stop_wait ? !sda && scl : rising ? scl : !scl)) {
+                 schedule(s, 1);
+             }
+         }
+@@ -657,12 +698,18 @@
+         return;
+     }
+     bool sda = false, scl = false;
+-    if (!s->provider.sample ||
+-        !s->provider.sample(s->provider.opaque, s->controller, &sda, &scl)) {
+-        if (s->slave_state != S3_I2C_SLV_IDLE || s->slave_stretch) {
+-            /* Unknown routing or power cannot continue a live transfer. */
++    S3I2CSample sampled = s->provider.sample ?
++        s->provider.sample(s->provider.opaque, s->controller, &sda, &scl,
++                           NULL, NULL) :
++        S3_I2C_SAMPLE_UNAVAILABLE;
++    if (sampled != S3_I2C_SAMPLE_VALID) {
++        if (sampled == S3_I2C_SAMPLE_UNAVAILABLE &&
++            (s->slave_state != S3_I2C_SLV_IDLE || s->slave_stretch)) {
+             slave_reset_fsm(s);
+         }
++        /* A solved but indeterminate/floating line is not a bit. Preserve
++         * protocol state while waiting for a valid physical crossing; the
++         * existing deadlines continue to run and never invent an ACK. */
+         return;
+     }
+     int64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+@@ -710,9 +757,7 @@
+ }
+ 
+ /* --------------------------------------------------------------------- */
+-/* Timed transaction fast path: every byte samples the same resolved pads and
+- * endpoint graph as routing, never a controller/address response cache. This
+- * path is not an edge/fast-equivalence or glitch-filter qualification. */
++/* Command engine: byte completion is downstream of all nine wire clocks. */
+ static void step(void *opaque)
+ {
+     ESP32S3I2CState *s = opaque;
+@@ -720,6 +765,7 @@
+     uint64_t generation = s->generation;
+     if (!s->executing) {
+         slave_timer(s, now);
++        slave_rearm(s, now);
+         return;
+     }
+     if (!source_hz(s)) {
+@@ -731,19 +777,15 @@
+     }
+     uint32_t cmd = s->active_cmd[s->command_index];
+     unsigned opcode = (cmd >> 11) & 7;
+-    if (s->bit_phase == 1) {
+-        drive(s, true, true);
+-        if (s->generation != generation) {
+-            return;
+-        }
+-        if (!ready_lines(s, now, true, NULL)) {
++    if (s->bit_phase == 1 && (opcode == 2 || opcode == 6)) {
++        drive(s, opcode == 6, true);
++        if (s->generation != generation ||
++            !ready_lines(s, now, opcode == 6 ? 1 : 0, NULL)) {
+             return;
+         }
+         s->bit_phase = 2;
+-        if (opcode == 6) {
+-            schedule(s, cycles_ns(s, REG(s, 0x44) & 511));
+-            return;
+-        }
++        schedule(s, cycles_ns(s, REG(s, opcode == 6 ? 0x44 : 0x48) & 511));
++        return;
+     }
+     if (opcode == 6) {
+         if (s->protocol_open && !s->bit_phase) {
+@@ -755,11 +797,10 @@
+             schedule(s, cycles_ns(s, (REG(s, 0) & 511) + 1));
+             return;
+         }
+-        if (!ready_lines(s, now, !s->start_armed, NULL)) {
++        if (!ready_lines(s, now, s->start_armed ? -1 : 1, NULL)) {
+             return;
+         }
+         s->start_armed = false;
+-        s->restart = s->protocol_open;
+         s->need_address = true;
+         s->protocol_open = true;
+         drive(s, false, true);
+@@ -773,7 +814,7 @@
+     }
+     if (opcode == 2 || opcode == 4) {
+         if (opcode == 2 && !s->protocol_open &&
+-            !ready_lines(s, now, true, NULL)) {
++            !ready_lines(s, now, 1, NULL)) {
+             return;
+         }
+         if (opcode == 2 && !s->bit_phase) {
+@@ -786,17 +827,27 @@
+                                       (REG(s, 0x4c) & 511)));
+             return;
+         }
++        if (opcode == 2) {
++            if (s->bit_phase == 2) {
++                /* Keep SDA physically LOW until SCL is actually HIGH,
++                 * including any interference during the setup interval. */
++                if (!ready_lines(s, now, 0, NULL)) return;
++                s->stop_seen = false;
++                s->stop_last_sda = false;
++                s->stop_last_scl = true;
++                s->bit_phase = 3;
++                drive(s, true, true);
++                if (s->generation != generation) return;
++            }
++            if (!s->stop_seen) {
++                wait_for_lines(s, now);
++                return;
++            }
++            s->waiting = false;
++        }
+         advance_command(s);
+         s->executing = false;
+         if (opcode == 2) {
+-            if (s->service) {
+-                s3_i2c_service_stop(s->service, now);
+-            }
+-            release_slave(s);
+-            if (s->generation != generation) {
+-                return;
+-            }
+-            s->service = NULL;
+             s->protocol_open = false;
+             s->need_address = true;
+             REG(s, 0x20) |= COMPLETE;
+@@ -818,69 +869,7 @@
+             return;
+         }
+     }
+-    /* Per-bit address phase: a released-high SDA read low on the shared net
+-     * is a lost arbitration against a competing master. */
+-    if (opcode == 1 && s->need_address && s->bit_phase >= ADDR_PHASE_LOW &&
+-        s->bit_phase <= ADDR_PHASE_ACK) {
+-        if (s->bit_phase == ADDR_PHASE_LOW) {
+-            bool bit = (s->addr_byte >> (7 - s->addr_bit)) & 1;
+-            drive(s, bit, false);
+-            if (s->generation != generation) {
+-                return;
+-            }
+-            s->bit_phase = ADDR_PHASE_RISE;
+-            schedule(s, cycles_ns(s, (REG(s, 0) & 511) + 1));
+-            return;
+-        }
+-        if (s->bit_phase == ADDR_PHASE_RISE) {
+-            bool sda = false;
+-            drive(s, s->sda, true);
+-            if (s->generation != generation ||
+-                !ready_lines(s, now, false, &sda)) {
+-                return;
+-            }
+-            if ((REG(s, 4) & BIT(9)) && s->sda && !sda) {
+-                fail(s, ARBITRATION);
+-                return;
+-            }
+-            s->bit_phase = ADDR_PHASE_NEXT;
+-            schedule(s, scl_high_ns(s));
+-            return;
+-        }
+-        if (s->bit_phase == ADDR_PHASE_NEXT) {
+-            s->addr_bit++;
+-            if (s->addr_bit < 8) {
+-                drive(s, true, false);
+-                if (s->generation != generation) {
+-                    return;
+-                }
+-                s->bit_phase = ADDR_PHASE_LOW;
+-                schedule(s, 1);
+-                return;
+-            }
+-            /* Ninth bit: the addressed endpoint acknowledge window. */
+-            drive(s, true, false);
+-            if (s->generation != generation) {
+-                return;
+-            }
+-            s->bit_phase = ADDR_PHASE_ACK;
+-            schedule(s, cycles_ns(s, (REG(s, 0) & 511) + 1));
+-            return;
+-        }
+-        /* ADDR_PHASE_ACK: the service-level acknowledge is modeled below;
+-         * the line stays released for the ninth clock. */
+-        drive(s, true, true);
+-        if (s->generation != generation) {
+-            return;
+-        }
+-        s->bit_phase = 2;
+-        schedule(s, scl_high_ns(s));
+-        return;
+-    }
+     if (!s->bit_phase) {
+-        if (!s->protocol_open && !ready_lines(s, now, true, NULL)) {
+-            return;
+-        }
+         if (opcode == 1 && fifo8_is_empty(&s->tx)) {
+             fail(s, TX_UDF);
+             return;
+@@ -889,120 +878,89 @@
+             fail(s, RX_OVF);
+             return;
+         }
+-        if (opcode == 1 && s->need_address) {
+-            /* The address byte is transmitted bit by bit (see above). */
+-            s->byte = fifo8_pop(&s->tx);
+-            if (REG(s, 4) & BIT(6)) {
+-                s->byte = revbit8(s->byte);
+-            }
+-            s->addr_byte = s->byte;
+-            s->addr_bit = 0;
+-            s->bit_phase = ADDR_PHASE_LOW;
+-            schedule(s, 1);
+-            return;
+-        }
+-        /* Hold-master conversion stretches this byte in virtual time. */
+-        if (opcode == 3 && s->service) {
+-            int64_t ready = s3_i2c_service_ready_ns(s->service);
+-            if (ready > now) {
+-                uint64_t limit = 1ULL << (REG(s, 0x0c) & 31);
+-                int64_t timeout = cycles_ns(s, limit);
+-                if ((REG(s, 0x0c) & BIT(5)) && ready - now > timeout) {
+-                    s->waiting = true;
+-                    s->wait_start = now;
+-                    s->bit_phase = 3;
+-                    schedule(s, timeout);
+-                } else {
+-                    s->bit_phase = 4;
+-                    schedule(s, ready - now);
+-                }
+-                if (s->provider.slave_drive) {
+-                    s->provider.slave_drive(s->provider.opaque, s->service, true, false);
+-                }
++        s->byte = opcode == 1 ? fifo8_pop(&s->tx) : 0;
++        if (opcode == 1 && (REG(s, 4) & BIT(6))) {
++            s->byte = revbit8(s->byte);
++        }
++        s->addr_bit = 0;
++        s->bit_phase = ADDR_PHASE_LOW;
++    }
++    if (s->bit_phase == ADDR_PHASE_LOW) {
++        bool bit = opcode == 3 || ((s->byte >> (7 - s->addr_bit)) & 1);
++        drive(s, bit, false);
++        if (s->generation != generation) {
++            return;
++        }
++        s->bit_phase = ADDR_PHASE_RISE;
++        schedule(s, cycles_ns(s, (REG(s, 0) & 511) + 1));
++        return;
++    }
++    if (s->bit_phase == ADDR_PHASE_RISE) {
++        bool sda = false;
++        drive(s, s->sda, true);
++        if (s->generation != generation ||
++            !ready_lines(s, now, -1, &sda)) {
++            return;
++        }
++        if (opcode == 1 && (REG(s, 4) & BIT(9)) && s->sda && !sda) {
++            fail(s, ARBITRATION);
++            return;
++        }
++        if (opcode == 3) {
++            s->byte = (s->byte << 1) | sda;
++        }
++        s->bit_phase = ADDR_PHASE_NEXT;
++        schedule(s, scl_high_ns(s));
++        return;
++    }
++    if (s->bit_phase == ADDR_PHASE_NEXT) {
++        drive(s, s->sda, false);
++        if (s->generation != generation) {
++            return;
++        }
++        s->bit_phase = ++s->addr_bit < 8 ? ADDR_PHASE_LOW : ADDR_PHASE_ACK;
++        schedule(s, 1);
++        return;
++    }
++    if (s->bit_phase == ADDR_PHASE_ACK) {
++        drive(s, opcode == 1 || !!(cmd & BIT(10)), false);
++        if (s->generation != generation) {
++            return;
++        }
++        s->bit_phase = BYTE_PHASE_ACK_RISE;
++        schedule(s, cycles_ns(s, (REG(s, 0) & 511) + 1));
++        return;
++    }
++    if (s->bit_phase == BYTE_PHASE_ACK_RISE) {
++        bool sda = false;
++        drive(s, s->sda, true);
++        if (s->generation != generation ||
++            !ready_lines(s, now, -1, &sda)) {
++            return;
++        }
++        if (opcode == 1) {
++            s->nack = sda;
++            if ((cmd & BIT(8)) && s->nack != !!(cmd & BIT(9))) {
++                fail(s, NACK_INT);
+                 return;
+             }
+-        }
+-        drive(s, true, false);
+-        if (s->generation != generation) {
+-            return;
+-        }
+-        s->bit_phase = 1;
+-        schedule(s, bit_ns(s) * 9);
+-        return;
+-    }
+-    if (s->bit_phase == 3) {
+-        fail(s, TIMEOUT);
+-        return;
+-    }
+-    if (s->bit_phase == 4) {
+-        release_slave(s);
+-        if (s->generation != generation) {
+-            return;
+-        }
+-        s->bit_phase = 0;
+-        schedule(s, 1);
+-        return;
+-    }
+-    bool ack = false;
+-    if (!s->need_address && s->service) {
+-        bool collision = false;
+-        S3I2CService *reachable = s->provider.resolve ?
+-            s->provider.resolve(s->provider.opaque, s->controller, s->address,
+-                                &collision) : NULL;
+-        if (s->generation != generation) {
+-            return;
+-        }
+-        if (collision || reachable != s->service) {
+-            fail(s, collision ? ARBITRATION : NACK_INT);
+-            return;
+-        }
+-    }
+-    if (opcode == 1) {
+-        if (s->need_address) {
+-            /* The address byte was already consumed bit by bit. */
+-            s->byte = s->addr_byte;
+-            bool collision = false;
+-            release_slave(s);
+-            if (s->generation != generation) {
+-                return;
+-            }
+-            s->address = s->byte >> 1;
+-            S3I2CService *candidate = s->provider.resolve ?
+-                s->provider.resolve(s->provider.opaque, s->controller, s->byte >> 1,
+-                                    &collision) : NULL;
+-            if (s->generation != generation) {
+-                return;
+-            }
+-            s->service = candidate;
+-            if (collision) {
+-                fail(s, ARBITRATION);
+-                return;
+-            }
+-            s->reading = s->byte & 1;
+-            ack = s->service && s3_i2c_service_address(s->service, s->reading,
+-                                                       s->restart, now);
+-            s->need_address = false;
+-        } else {
+-            s->byte = fifo8_pop(&s->tx);
+-            if (REG(s, 4) & BIT(6)) {
+-                s->byte = revbit8(s->byte);
+-            }
+-            ack = s->service && !s->reading &&
+-                  s3_i2c_service_write(s->service, s->byte, now);
+-        }
+-        s->nack = !ack;
+-        if ((cmd & BIT(8)) && s->nack != !!(cmd & BIT(9))) {
+-            fail(s, NACK_INT);
+-            return;
+-        }
+-    } else {
+-        if (!s->service || !s->reading ||
+-            !s3_i2c_service_read(s->service, &s->byte, now)) {
+-            fail(s, NACK_INT);
+-            return;
+-        }
++        } else if ((REG(s, 4) & BIT(9)) && s->sda && !sda) {
++            fail(s, ARBITRATION);
++            return;
++        }
++        s->bit_phase = BYTE_PHASE_ACK_END;
++        schedule(s, scl_high_ns(s));
++        return;
++    }
++    drive(s, s->sda, false);
++    if (s->generation != generation) {
++        return;
++    }
++    if (opcode == 3) {
+         fifo8_push(&s->rx, (REG(s, 4) & BIT(7)) ? revbit8(s->byte) : s->byte);
+-        s3_i2c_service_read_ack(s->service, !!(cmd & BIT(10)));
++    } else if (s->need_address) {
++        s->reading = s->byte & 1;
++        s->need_address = false;
+     }
+     REG(s, 0x20) |= BYTE_DONE;
+     if (!--s->remaining) {
+@@ -1137,7 +1095,7 @@
+             s->start_armed = ((s->active_cmd[0] >> 11) & 7) == 6 &&
+                 s->provider.sample &&
+                 s->provider.sample(s->provider.opaque, s->controller,
+-                                   &sda, &scl) && sda && scl;
++                                   &sda, &scl, NULL, NULL) == S3_I2C_SAMPLE_VALID && sda && scl;
+             s->command_index = s->remaining = s->bit_phase = 0;
+             REG(s, 0x20) |= START_INT;
+             schedule(s, 1);
+@@ -1252,10 +1210,6 @@
+     }
+ }
+ 
+-void esp32s3_i2c_invalidate(ESP32S3I2CState *s)
+-{
+-    fail(s, NACK_INT);
+-}
+ 
+ void esp32s3_i2c_bind(ESP32S3I2CState *s, const S3I2CProvider *provider)
+ {
+diff --git a/include/hw/i2c/esp32s3_i2c.h b/include/hw/i2c/esp32s3_i2c.h
+--- a/include/hw/i2c/esp32s3_i2c.h
++++ b/include/hw/i2c/esp32s3_i2c.h
+@@ -5,18 +5,19 @@
+ #include "hw/clock.h"
+ #include "qemu/fifo8.h"
+ #include "qemu/timer.h"
+-#include "hw/i2c/esp32s3_i2c_service.h"
+ #define TYPE_ESP32S3_I2C "esp32s3-i2c"
+ OBJECT_DECLARE_SIMPLE_TYPE(ESP32S3I2CState, ESP32S3_I2C)
++typedef enum S3I2CSample {
++    S3_I2C_SAMPLE_UNAVAILABLE,
++    S3_I2C_SAMPLE_VALID,
++    S3_I2C_SAMPLE_UNRESOLVED,
++} S3I2CSample;
+ /* No provider => no reachable device and unresolved lines, never ACK. */
+ typedef struct S3I2CProvider {
+     void *opaque;
+-    bool (*sample)(void *opaque, unsigned controller, bool *sda, bool *scl);
++    S3I2CSample (*sample)(void *opaque, unsigned controller, bool *sda, bool *scl,
++                          bool *sda_valid, bool *scl_valid);
+     void (*drive)(void *opaque, unsigned controller, bool sda_release, bool scl_release);
+-    S3I2CService *(*resolve)(void *opaque, unsigned controller, uint8_t address,
+-                             bool *collision);
+-    void (*slave_drive)(void *opaque, S3I2CService *service, bool sda_release,
+-                         bool scl_release);
+ } S3I2CProvider;
+ 
+ /* Native slave edge FSM states. Only electrically published frames advance
+@@ -49,19 +50,17 @@
+     uint32_t active_cmd[8];
+     uint32_t controller;
+     uint64_t generation;
+-    bool gate, reset_asserted, executing, protocol_open, need_address, restart;
++    bool gate, reset_asserted, executing, protocol_open, need_address;
+     bool reading, nack, waiting, sda, scl;
+     /* An idle bus was sampled when the pending START request was armed. */
+     bool start_armed;
++    bool stop_seen, stop_last_sda, stop_last_scl;
+     unsigned command_index, remaining, bit_phase;
+-    uint8_t byte, address;
++    uint8_t byte;
+     int64_t wait_start;
+-    S3I2CService *service;
+     S3I2CProvider provider;
+-    /* Multi-master arbitration: the address byte is transmitted bit by bit
+-     * against the shared net; a released high read low is a lost arbitration. */
++    /* Shared-wire bit index, including data-phase arbitration. */
+     unsigned addr_bit;
+-    uint8_t addr_byte;
+     /* Slave-mode edge FSM state. */
+     unsigned slave_state, slave_bit;
+     uint8_t slave_byte;
+@@ -73,11 +72,11 @@
+     int64_t slave_low_since;
+     bool sl_sda, sl_scl;         /* accepted (glitch-filtered) line levels */
+     bool sl_sda_raw, sl_scl_raw; /* pending raw candidates */
++    /* Independent persistence survives UNKNOWN expiry until a valid frame. */
+     int64_t sl_sda_since, sl_scl_since;
+     int64_t slave_filter_deadline, slave_protect_deadline;
+ };
+ void esp32s3_i2c_bind(ESP32S3I2CState *s, const S3I2CProvider *provider);
+-void esp32s3_i2c_invalidate(ESP32S3I2CState *s);
+ /* A solved electrical frame advances master clock synchronization or the slave
+  * decoder through this controller's actual routed SDA/SCL levels. */
+ void esp32s3_i2c_frame(ESP32S3I2CState *s);
+diff --git a/hw/i2c/esp32s3_i2c_binding.c b/hw/i2c/esp32s3_i2c_binding.c
+--- a/hw/i2c/esp32s3_i2c_binding.c
++++ b/hw/i2c/esp32s3_i2c_binding.c
+@@ -2,6 +2,7 @@
+ #include "qemu/osdep.h"
+ #include "hw/i2c/esp32s3_i2c_binding.h"
+ #include "hw/misc/esp32s3_electrical.h"
++#include "hw/adc/esp32s3_electrical_internal.h"
+ #include "hw/qdev-properties.h"
+ #include "qemu/module.h"
+ #include "qemu/cutils.h"
+@@ -76,6 +77,12 @@
+     bool powered;
+     uint64_t power_epoch;
+     ESP32S3ElectricalModel model;
++    DeviceState *electrical;
++    QEMUTimer *timer;
++    unsigned phase, bit;
++    uint8_t byte;
++    bool sda, scl, ack, restart, reading, open, selected;
++    bool scl_known_high;
+ } ServiceSlot;
+ typedef struct I2CBinding {
+     DeviceState parent;
+@@ -86,6 +93,7 @@
+     unsigned service_count;
+     ScriptSlot scripts[SCRIPT_LIMIT];
+     QEMUTimer *script_pool[SCRIPT_LIMIT];
++    uint64_t services_generation;
+     bool notifying, subscribed;
+ } I2CBinding;
+ 
+@@ -116,23 +124,33 @@
+            pin(b, 89 + controller * 2, scl) && *sda != *scl;
+ }
+ 
+-static bool sample(void *opaque, unsigned controller, bool *sda, bool *scl)
++static S3I2CSample sample_physical(void *opaque, unsigned controller,
++                                  bool *sda, bool *scl,
++                                  bool *sda_known, bool *scl_known)
+ {
+     I2CBinding *b = opaque;
+     unsigned sda_pad, scl_pad;
+     double voltage;
+     bool sda_valid = false, scl_valid = false;
+     *sda = *scl = false;
++    if (sda_known) *sda_known = false;
++    if (scl_known) *scl_known = false;
+     if (!pins(b, controller, &sda_pad, &scl_pad)) {
+-        return false;
++        return S3_I2C_SAMPLE_UNAVAILABLE;
+     }
+     uint64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+-    return esp32s3_electrical_line(b->electrical, sda_pad, now,
+-                                  &voltage, &sda_valid, sda) &&
+-           esp32s3_electrical_line(b->electrical, scl_pad, now,
+-                                  &voltage, &scl_valid, scl) &&
+-           sda_valid && scl_valid;
+-}
++    if (!esp32s3_electrical_line(b->electrical, sda_pad, now,
++                                &voltage, &sda_valid, sda) ||
++        !esp32s3_electrical_line(b->electrical, scl_pad, now,
++                                &voltage, &scl_valid, scl)) {
++        return S3_I2C_SAMPLE_UNAVAILABLE;
++    }
++    if (sda_known) *sda_known = sda_valid;
++    if (scl_known) *scl_known = scl_valid;
++    return sda_valid && scl_valid ? S3_I2C_SAMPLE_VALID :
++                                   S3_I2C_SAMPLE_UNRESOLVED;
++}
++
+ 
+ static void drive(void *opaque, unsigned controller, bool sda, bool scl)
+ {
+@@ -164,59 +182,6 @@
+         &binding->services[binding->service_count++];
+ }
+ 
+-static S3I2CService *resolve(void *opaque, unsigned controller, uint8_t address,
+-                             bool *collision)
+-{
+-    I2CBinding *b = opaque;
+-    ESP32S3ElectricalI2CEndpoint endpoint;
+-    unsigned sda, scl;
+-    *collision = false;
+-    if (!pins(b, controller, &sda, &scl)) {
+-        return NULL;
+-    }
+-    ESP32S3ElectricalRoute route = esp32s3_electrical_i2c_resolve(
+-        b->electrical, sda, scl, address, qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL), &endpoint);
+-    *collision = route == ESP32S3_ELECTRICAL_ROUTE_COLLISION;
+-    if (route != ESP32S3_ELECTRICAL_ROUTE_OK || !endpoint.power_known ||
+-        !endpoint.powered) {
+-        return NULL;
+-    }
+-    S3I2CServiceKind kind = endpoint.model == ESP32S3_ELECTRICAL_SHT21 ?
+-                          S3_I2C_SHT21 : S3_I2C_EEPROM;
+-    for (unsigned i = 0; i < b->service_count; i++) {
+-        ServiceSlot *slot = &b->services[i];
+-        if (!strcmp(slot->id, endpoint.component_id)) {
+-            if (slot->state.kind == S3_I2C_EXTERNAL) {
+-                if (!slot->state.ops || slot->model != endpoint.model) {
+-                    return NULL;
+-                }
+-                refresh_power(b, slot, &endpoint, true);
+-                return &slot->state;
+-            }
+-            if (endpoint.model != ESP32S3_ELECTRICAL_SHT21 &&
+-                endpoint.model != ESP32S3_ELECTRICAL_24C02) {
+-                return NULL;
+-            }
+-            refresh_power(b, slot, &endpoint, true);
+-            return slot->state.kind == kind ? &slot->state : NULL;
+-        }
+-    }
+-    if (endpoint.model != ESP32S3_ELECTRICAL_SHT21 &&
+-        endpoint.model != ESP32S3_ELECTRICAL_24C02) {
+-        return NULL;
+-    }
+-    ServiceSlot *slot = allocate_slot(b);
+-    if (!slot) {
+-        return NULL;
+-    }
+-    pstrcpy(slot->id, sizeof(slot->id), endpoint.component_id);
+-    slot->model = endpoint.model;
+-    s3_i2c_service_init(&slot->state, kind);
+-    s3_i2c_service_power_reset(&slot->state, endpoint.power_on_ns);
+-    slot->powered = true;
+-    slot->power_epoch = endpoint.power_epoch;
+-    return &slot->state;
+-}
+ 
+ static void slave_drive(void *opaque, S3I2CService *service, bool sda, bool scl)
+ {
+@@ -245,11 +210,15 @@
+         (endpoint->power_epoch != slot->power_epoch ||
+          endpoint->powered != slot->powered || kind != slot->state.kind);
+     if (!known || !endpoint->powered || changed) {
+-        for (unsigned controller = 0; controller < 2; controller++) {
+-            ESP32S3I2CState *s = b->controllers[controller];
+-            if (s->service == &slot->state) {
+-                esp32s3_i2c_invalidate(s);
+-            }
++        if (slot->state.addressed) {
++            s3_i2c_service_cancel(&slot->state);
++        }
++        slot->selected = false;
++        slot->phase = 0;
++        slot->open = false;
++        slot->scl_known_high = false;
++        if (slot->timer) {
++            timer_del(slot->timer);
+         }
+         slave_drive(b, &slot->state, true, true);
+     }
+@@ -845,6 +814,218 @@
+     }
+ }
+ 
++enum { WIRE_IDLE, WIRE_ADDRESS, WIRE_WRITE, WIRE_READ };
++
++static void service_wire_drive(ServiceSlot *slot, bool sda, bool scl)
++{
++    esp32s3_electrical_i2c_drive(slot->electrical, slot->id, !sda, !scl);
++}
++
++static void service_wire_read_ready(void *opaque)
++{
++    ServiceSlot *slot = opaque;
++    int64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
++    if (!slot->powered || slot->phase != WIRE_READ) {
++        service_wire_drive(slot, true, true);
++        return;
++    }
++    int64_t ready = s3_i2c_service_ready_ns(&slot->state);
++    if (ready > now) {
++        service_wire_drive(slot, true, false);
++        timer_mod(slot->timer, ready);
++        return;
++    }
++    if (!s3_i2c_service_read(&slot->state, &slot->byte, now)) {
++        slot->phase = WIRE_IDLE;
++        service_wire_drive(slot, true, true);
++        return;
++    }
++    slot->bit = 0;
++    /* Present the first data bit while SCL is still held low. Releasing
++     * both lines together would electrically resemble START for a zero. */
++    service_wire_drive(slot, !!(slot->byte & 0x80), false);
++    service_wire_drive(slot, !!(slot->byte & 0x80), true);
++}
++
++/* The accepted projection's device address is the same normalized authority
++ * used by electrical_i2c_resolve. Borrow it only within this frame; Apply may
++ * replace the graph. Raw parameters and model-specific defaults are not an
++ * address authority, and no fallback address can grant an acknowledge. */
++static bool service_wire_matches_address(ServiceSlot *slot, uint8_t byte)
++{
++    const Esp32S3Project *project = esp32s3_electrical_project(slot->electrical);
++    if (!project) {
++        return false;
++    }
++    for (size_t i = 0; i < project->device_count; i++) {
++        const Esp32S3ProjectDevice *model = &project->devices[i];
++        if (!strcmp(slot->id, project->components[model->component_index].id.text)) {
++            return model->address == (byte >> 1);
++        }
++    }
++    return false;
++}
++
++static void service_wire_frame(ServiceSlot *slot, int64_t now)
++{
++    bool sda = false, scl = false, vd = false, vc = false;
++    double voltage;
++    if (!slot->timer || !slot->powered) {
++        slot->scl_known_high = false;
++        return;
++    }
++    bool sda_sample = esp32s3_electrical_terminal_sample(
++        slot->electrical, slot->id, "sda", now, &voltage, &vd, &sda);
++    bool scl_sample = esp32s3_electrical_terminal_sample(
++        slot->electrical, slot->id, "scl", now, &voltage, &vc, &scl);
++    bool scl_was_high = slot->scl_known_high;
++    slot->scl_known_high = scl_sample && vc && scl;
++    if (!sda_sample || !vd || !scl_sample || !vc) {
++        return;
++    }
++    bool psda = slot->sda, pscl = slot->scl;
++    slot->sda = sda;
++    slot->scl = scl;
++    if (psda && !sda && scl_was_high && scl) {
++        slot->restart = slot->open;
++        slot->open = true;
++        slot->phase = WIRE_ADDRESS;
++        slot->byte = 0;
++        slot->bit = 0;
++        slot->ack = false;
++        timer_del(slot->timer);
++        service_wire_drive(slot, true, true);
++        return;
++    }
++    if (!psda && sda && scl_was_high && scl) {
++        if (slot->selected) {
++            s3_i2c_service_stop(&slot->state, now);
++        }
++        slot->phase = WIRE_IDLE;
++        slot->open = false;
++        slot->selected = false;
++        timer_del(slot->timer);
++        service_wire_drive(slot, true, true);
++        return;
++    }
++    if (!pscl && scl) {
++        if (slot->bit < 8) {
++            if (slot->phase == WIRE_ADDRESS || slot->phase == WIRE_WRITE) {
++                slot->byte = (slot->byte << 1) | sda;
++            }
++            slot->bit++;
++        } else if (slot->phase == WIRE_READ && slot->bit == 9) {
++            s3_i2c_service_read_ack(&slot->state, sda);
++            slot->ack = !sda;
++        }
++        return;
++    }
++    if (!pscl || scl) {
++        return;
++    }
++    if (slot->phase == WIRE_ADDRESS || slot->phase == WIRE_WRITE) {
++        if (slot->bit == 8) {
++            if (slot->phase == WIRE_ADDRESS) {
++                /* Address matching consumes the byte observed on this
++                 * component's own SDA/SCL terminals, not a master command. */
++                slot->reading = slot->byte & 1;
++                slot->ack = service_wire_matches_address(slot, slot->byte) &&
++                    s3_i2c_service_address(&slot->state, slot->reading,
++                                           slot->restart, now);
++                slot->selected |= slot->ack;
++            } else {
++                slot->ack = s3_i2c_service_write(&slot->state, slot->byte, now);
++            }
++            slot->bit = 9;
++            service_wire_drive(slot, !slot->ack, true);
++        } else if (slot->bit == 9) {
++            bool address = slot->phase == WIRE_ADDRESS;
++            slot->phase = !slot->ack ? WIRE_IDLE :
++                (address && slot->reading ? WIRE_READ : WIRE_WRITE);
++            slot->bit = 0;
++            slot->byte = 0;
++            service_wire_drive(slot, true, true);
++            if (slot->phase == WIRE_READ) {
++                service_wire_read_ready(slot);
++            }
++        }
++    } else if (slot->phase == WIRE_READ) {
++        if (slot->bit == 8) {
++            slot->bit = 9;
++            service_wire_drive(slot, true, true);
++        } else if (slot->bit == 9) {
++            if (slot->ack) {
++                service_wire_read_ready(slot);
++            } else {
++                slot->phase = WIRE_IDLE;
++            }
++        } else {
++            service_wire_drive(slot,
++                !!(slot->byte & (0x80 >> slot->bit)), true);
++        }
++    }
++}
++
++static void service_wire_attach(ServiceSlot *slot, DeviceState *electrical)
++{
++    slot->electrical = electrical;
++    if (!slot->timer) {
++        slot->timer = timer_new_ns(QEMU_CLOCK_VIRTUAL,
++                                   service_wire_read_ready, slot);
++    } else {
++        timer_del(slot->timer);
++    }
++    slot->phase = WIRE_IDLE;
++    slot->bit = 0;
++    slot->open = false;
++    slot->selected = false;
++    slot->sda = slot->scl = true;
++    slot->scl_known_high = false;
++}
++
++/* Discover actual native graph components once per graph revision. Each
++ * service then observes its own physical terminals, even with no native
++ * master routed to that bus or with multiple devices sharing an address. */
++static void discover_services(I2CBinding *b, int64_t now)
++{
++    const ESP32S3ElectricalModel models[] = {
++        ESP32S3_ELECTRICAL_SHT21, ESP32S3_ELECTRICAL_24C02,
++    };
++    for (unsigned m = 0; m < G_N_ELEMENTS(models); m++) {
++        for (unsigned index = 0; index < SERVICE_LIMIT; index++) {
++            ESP32S3ElectricalEndpoint endpoint = { 0 };
++            ESP32S3ElectricalRoute route = esp32s3_electrical_model_endpoint_at(
++                b->electrical, models[m], index, now, &endpoint);
++            if (route == ESP32S3_ELECTRICAL_ROUTE_NONE) {
++                break;
++            }
++            ServiceSlot *slot = NULL;
++            for (unsigned i = 0; i < b->service_count; i++) {
++                if (!strcmp(b->services[i].id, endpoint.component_id)) {
++                    slot = &b->services[i];
++                    break;
++                }
++            }
++            if (slot) {
++                continue;
++            }
++            slot = allocate_slot(b);
++            if (!slot) {
++                return;
++            }
++            pstrcpy(slot->id, sizeof(slot->id), endpoint.component_id);
++            slot->model = models[m];
++            s3_i2c_service_init(&slot->state,
++                models[m] == ESP32S3_ELECTRICAL_SHT21 ? S3_I2C_SHT21 : S3_I2C_EEPROM);
++            service_wire_attach(slot, b->electrical);
++            ESP32S3ElectricalI2CEndpoint power = { 0 };
++            bool known = esp32s3_electrical_i2c_endpoint(
++                b->electrical, slot->id, now, &power);
++            refresh_power(b, slot, &power, known);
++        }
++    }
++}
++
+ static void model_changed(void *opaque)
+ {
+     I2CBinding *b = opaque;
+@@ -853,6 +1034,7 @@
+     }
+     b->notifying = true;
+     uint64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
++    uint64_t generation = 0;
+     for (unsigned i = 0; i < b->service_count; i++) {
+         ServiceSlot *slot = &b->services[i];
+         if (!slot->id[0]) {
+@@ -861,15 +1043,22 @@
+         ESP32S3ElectricalI2CEndpoint endpoint = { 0 };
+         bool known = esp32s3_electrical_i2c_endpoint(
+             b->electrical, slot->id, now, &endpoint);
++        generation = endpoint.generation;
+         refresh_power(b, slot, &endpoint, known);
+     }
+-    for (unsigned i = 0; i < 2; i++) {
+-        ESP32S3I2CState *s = b->controllers[i];
+-        if (s->service) {
+-            bool collision = false;
+-            if (resolve(b, i, s->address, &collision) != s->service || collision) {
+-                esp32s3_i2c_invalidate(s);
+-            }
++    if (!generation) {
++        ESP32S3ElectricalEndpoint endpoint = { 0 };
++        esp32s3_electrical_model_endpoint_at(b->electrical,
++            ESP32S3_ELECTRICAL_SHT21, 0, now, &endpoint);
++        generation = endpoint.generation;
++    }
++    if (generation != b->services_generation) {
++        b->services_generation = generation;
++        discover_services(b, now);
++    }
++    for (unsigned i = 0; i < b->service_count; i++) {
++        if (b->services[i].id[0]) {
++            service_wire_frame(&b->services[i], now);
+         }
+     }
+     for (unsigned i = 0; i < 2; i++) {
+@@ -892,8 +1081,7 @@
+     object_property_add_child(OBJECT(electrical), "i2c-services", OBJECT(dev));
+     qdev_realize(dev, NULL, &error_fatal);
+     S3I2CProvider provider = {
+-        .opaque = binding, .sample = sample, .drive = drive,
+-        .resolve = resolve, .slave_drive = slave_drive,
++        .opaque = binding, .sample = sample_physical, .drive = drive,
+     };
+     esp32s3_i2c_bind(a, &provider);
+     esp32s3_i2c_bind(b, &provider);
+@@ -965,6 +1153,7 @@
+     if (slot->powered) {
+         s3_i2c_service_power_reset(&slot->state, endpoint.power_on_ns);
+     }
++    service_wire_attach(slot, binding->electrical);
+     return true;
+ }
+ 
+@@ -985,14 +1174,13 @@
+             !slot->state.ops || slot->state.opaque != opaque) {
+             continue;
+         }
+-        for (unsigned controller = 0; controller < 2; controller++) {
+-            ESP32S3I2CState *s = binding->controllers[controller];
+-            if (s->service == &slot->state) {
+-                esp32s3_i2c_invalidate(s);
+-            }
+-        }
+         slave_drive(binding, &slot->state, true, true);
+         s3_i2c_service_cancel(&slot->state);
++        if (slot->timer) {
++            timer_del(slot->timer);
++        }
++        slot->phase = WIRE_IDLE;
++        slot->open = slot->selected = false;
+         slot->state.ops = NULL;
+         slot->state.opaque = NULL;
+         slot->id[0] = 0;
+@@ -1020,6 +1208,11 @@
+     for (unsigned i = 0; i < SCRIPT_LIMIT; i++) {
+         if (b->script_pool[i]) {
+             timer_free(b->script_pool[i]);
++        }
++    }
++    for (unsigned i = 0; i < b->service_count; i++) {
++        if (b->services[i].timer) {
++            timer_free(b->services[i].timer);
+         }
+     }
+ }
+diff --git a/tests/qtest/esp32s3-i2c-test.c b/tests/qtest/esp32s3-i2c-test.c
+--- a/tests/qtest/esp32s3-i2c-test.c
++++ b/tests/qtest/esp32s3-i2c-test.c
+@@ -1,10 +1,10 @@
+ /* SPDX-License-Identifier: GPL-2.0-or-later */
+ /* Native, virtual-time register tests. No hostbus or injected I2C provider.
+- * Covers both timed master controllers, routed slave bytes/stretch/general-call/
+- * ten-bit matching, SDA glitch rejection, address arbitration, FIFO/command/IRQ
+- * boundaries, gate/reset cancellation and graph reachability/power errors.
+- * Full master-data edge/fast-path equivalence and silicon qualification remain
+- * separate from these software vectors.
++ * Covers both per-bit masters, routed native peers, ten-bit read/restart,
++ * general-call direction/fan-out, data arbitration and END/refill replay,
++ * independent filters, scheduled watchdog/recovery, FIFO/command/IRQ
++ * boundaries and graph reachability/power errors. The finite DC/RC profile
++ * is functional software evidence, not independent silicon metrology.
+  */
+ #include "qemu/osdep.h"
+ #include "qemu/bitops.h"
+@@ -106,10 +106,19 @@
+         "\"firmware\":{},\"runtime\":{\"electrical\":{\"driver_profile\":\"s3-explicit-finite-v1\",\"mode\":\"dc\"}},"
+         "\"geometry\":{\"components\":{},\"nets\":{}},\"components\":[],\"nets\":[]}", &error_abort);
+     QDict *p = qobject_to(QDict, o), *c = component(p, "U", "mcu");
++    if (fault == 10) {
++        QDict *e = qdict_get_qdict(qdict_get_qdict(p, "runtime"), "electrical");
++        qdict_put_str(e, "mode", "rc");
++        qdict_put_str(e, "edit_charge", "reset");
++    }
+     terminal(c, "vdd", "power", "input", -1); terminal(c, "gnd", "ground", "input", -1);
+     for (unsigned i = 8; i <= 11; i++) {
+         char role[16]; snprintf(role, sizeof(role), "io%u", i);
+         terminal(c, role, "digital", "inout", i);
++    }
++    if (fault == 10) {
++        terminal(c, "io12", "digital", "inout", 12);
++        net(p, "bus0-1", "U.io12", NULL);
+     }
+     c = component(p, "G", "ground"); terminal(c, "ref", "ground", "unspecified", -1);
+     c = component(p, "V", "voltage-source");
+@@ -133,10 +142,19 @@
+         snprintf(endpoint, sizeof(endpoint), "%s.vdd", dev); net(p, fault == 6 ? "gnd" : "device-vdd", endpoint, NULL);
+         for (unsigned line = 0; line < 2; line++) {
+             char name[32], pad[32], device[32], r[32], a[40], z[40];
+-            snprintf(name, sizeof(name), "bus%u-%u", b, line);
++            snprintf(name, sizeof(name), "bus%u-%u", fault >= 9 ? 0 : b, line);
+             snprintf(pad, sizeof(pad), "U.io%u", 8 + b * 2 + line);
+             snprintf(device, sizeof(device), "%s.%s", dev, line ? "scl" : "sda");
+             net(p, name, pad, fault == 4 ? NULL : device);
++            if (fault == 10 && !b) {
++                snprintf(r, sizeof(r), "C%u", line); c = component(p, r, "capacitor");
++                terminal(c, "p", "passive", "unspecified", -1);
++                terminal(c, "n", "passive", "unspecified", -1);
++                quantity(c, "capacitance", 1, "nF");
++                quantity(c, "initial_voltage", 0, "V");
++                snprintf(a, sizeof(a), "%s.p", r); snprintf(z, sizeof(z), "%s.n", r);
++                net(p, name, a, NULL); net(p, "gnd", z, NULL);
++            }
+             if (fault != 1) {
+                 snprintf(r, sizeof(r), "R%u%u", b, line); c = component(p, r, "resistor");
+                 terminal(c, "a", "passive", "unspecified", -1); terminal(c, "b", "passive", "unspecified", -1);
+@@ -169,7 +187,7 @@
+         qtest_qmp_assert_success(s, "{'execute':'cont'}");
+     }
+ }
+-static void setup(unsigned fault, unsigned irq_controller)
++static void setup_time(unsigned fault, unsigned irq_controller, int64_t settle_ns)
+ {
+     s = qtest_initf("-machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00");
+     qtest_irq_intercept_out_named(s, irq_controller ? "/machine/soc/i2c1" :
+@@ -189,7 +207,11 @@
+     graph(fault);
+     qtest_qmp_assert_success(s, "{'execute':'cont'}");
+     /* Device rail Apply starts real power-on recovery before any address. */
+-    ticks(20000000);
++    if (settle_ns) ticks(settle_ns);
++}
++static void setup(unsigned fault, unsigned irq_controller)
++{
++    setup_time(fault, irq_controller, 20000000);
+ }
+ static void write_stop(const uint8_t *data, unsigned count)
+ {
+@@ -236,10 +258,6 @@
+     clean(); wr(0x1c, 0xa1); command(0, START); command(1, WRITE(1)); command(2, STOP); launch();
+     ticks(500000); g_assert_cmphex(rd(0x20) & NACK, ==, NACK);
+     ticks(6000000); pointer(0x20); read_eeprom(1, true); complete(); g_assert_cmphex(rd(0x1c), ==, 0x55);
+-    pointer(0x20);
+-    clean(); wr(0x1c, 0xa1); command(0, START); command(1, WRITE(1));
+-    command(2, LAST(1)); command(3, READ(1)); command(4, STOP); launch(); ticks(2000000);
+-    g_assert_cmphex(rd(0x20) & NACK, ==, NACK); g_assert_cmphex((rd(8) >> 8) & 63, ==, 0);
+     qtest_quit(s);
+ }
+ static void test_end_and_large_transfer(void)
+@@ -488,7 +506,7 @@
+         "\"geometry\":{\"components\":{},\"nets\":{}},\"components\":[],\"nets\":[]}", &error_abort);
+     QDict *p = qobject_to(QDict, o), *c = component(p, "U", "mcu");
+     terminal(c, "vdd", "power", "input", -1); terminal(c, "gnd", "ground", "input", -1);
+-    for (unsigned i = 8; i <= 9; i++) {
++    for (unsigned i = 8; i <= 11; i++) {
+         char role[16]; snprintf(role, sizeof(role), "io%u", i);
+         terminal(c, role, "digital", "inout", i);
+     }
+@@ -508,6 +526,7 @@
+               qobject_from_json(script_json, &error_abort));
+     qdict_put(c, "attributes", attributes);
+     net(p, "bus-sda", "U.io8", "SM.sda"); net(p, "bus-scl", "U.io9", "SM.scl");
++    net(p, "bus-sda", "U.io10", NULL); net(p, "bus-scl", "U.io11", NULL);
+     net(p, "vdd", "SM.vdd", NULL); net(p, "gnd", "SM.gnd", NULL);
+     if (with_sensor) {
+         c = component(p, "D", "device"); qdict_put_str(c, "type", "sht21");
+@@ -727,11 +746,590 @@
+     qtest_quit(s);
+ }
+ 
++static void native_wire(unsigned fault)
++{
++    for (unsigned ten = 0; ten < 2; ten++) {
++    for (unsigned master = 0; master < 2; master++) {
++        setup(fault, master);
++        bus = 1 - master;
++        wr(4, BIT(13) | 3);
++        wr(0x10, ten ? BIT(31) | (0xa2 << 7) | 0x79 : 0x42);
++        wr(0x50, 0);
++        wr(0x1c, 0x12); wr(0x1c, 0x34);
++        bus = master;
++        const uint8_t seven[] = {0x84, 0x5a, 0xc3, 0x85};
++        const uint8_t tenbit[] = {0xf2, 0xa2, 0x5a, 0xc3, 0xf3};
++        tx(ten ? tenbit : seven, ten ? sizeof(tenbit) : sizeof(seven));
++        command(0, START); command(1, WRITE(ten ? 4 : 3));
++        command(2, START); command(3, WRITE(1));
++        command(4, READ(1)); command(5, LAST(1)); command(6, STOP);
++        launch(); complete();
++        g_assert_cmphex(rd(0x1c), ==, 0x12);
++        g_assert_cmphex(rd(0x1c), ==, 0x34);
++        bus = 1 - master;
++        g_assert_cmphex(rd(0x1c), ==, 0x5a);
++        g_assert_cmphex(rd(0x1c), ==, 0xc3);
++        g_assert_cmphex(rd(0x20) & COMPLETE, ==, COMPLETE);
++        qtest_quit(s);
++    }
++    }
++}
++static void test_native_wire(void) { native_wire(9); }
++static void test_native_wire_rc(void) { native_wire(10); }
++
++static void test_general_call_read_rejected(void)
++{
++    for (unsigned own = 0; own < 2; own++) {
++    peer_boot(own ? 0x2a : 0, false, true);
++    wr(4, BIT(14) | 3);
++    wr(0x1c, 0x12);
++    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":0,\"read\":true,\"count\":1}]}", false, false);
++    ticks(3000000);
++    g_assert_cmphex(rd(0x20) & (GENERAL_CALL_INT | COMPLETE), ==, 0);
++    g_assert_cmphex(rd(8) & BIT(5), ==, 0);
++    g_assert_cmphex((rd(8) >> 18) & 63, ==, 1);
++    g_assert_cmphex((rd(8) >> 8) & 63, ==, 0);
++    qtest_quit(s);
++    }
++}
++
++static void wire_gpio_peer_time(bool settle)
++{
++    setup_time(9, 0, settle ? 20000000 : 0);
++    bus = 0;
++    wr(4, 3); wr(0x10, 0x42);
++    wr(0x54, BIT(21) | 3);
++    for (unsigned pad = 10; pad <= 11; pad++) {
++        qtest_writel(s, GPIO(GPIO_FUNC_OUT_SEL_CFG_OFFSET(pad)), GPIO_FUNC_OUT_SEL_NONE);
++    }
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TS), BIT(10) | BIT(11));
++    qtest_writel(s, GPIO(A_GPIO_ENABLE_W1TS), BIT(10) | BIT(11));
++}
++static void wire_gpio_peer(void) { wire_gpio_peer_time(true); }
++
++static void test_watchdog_zero_epoch(void)
++{
++    wire_gpio_peer_time(false);
++    wr(0x50, 0); wr(0x78, 8);
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(10));
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(11));
++    ticks(30000);
++    g_assert_cmphex(rd(0x20) & BIT(13), ==, BIT(13));
++    qtest_quit(s);
++}
++
++static void test_watchdog_zero_exponent(void)
++{
++    wire_gpio_peer();
++    wr(0x50, 0); wr(0x78, 0);
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(10));
++    ticks(10000);
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(11));
++    ticks(200);
++    g_assert_cmphex(rd(0x20) & BIT(13), ==, BIT(13));
++    qtest_quit(s);
++}
++
++static void test_independent_filter_deadlines(void)
++{
++    wire_gpio_peer();
++    wr(0x50, BIT(8) | BIT(9) | 8 | (2 << 4));
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(10));
++    ticks(100);
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(11));
++    ticks(150);
++    g_assert_cmphex(rd(0x20) & DET_START_INT, ==, DET_START_INT);
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TS), BIT(10));
++    ticks(250);
++    g_assert_cmphex(rd(0x20) & COMPLETE, ==, COMPLETE);
++    qtest_quit(s);
++}
++
++static void test_scheduled_low_watchdog(void)
++{
++    for (unsigned filter = 0; filter < 2; filter++) {
++        wire_gpio_peer();
++        wr(0x50, filter ? BIT(8) | BIT(9) | 2 | (2 << 4) : 0);
++        wr(0x78, 8);
++        qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(10));
++        ticks(10000);
++        qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(11));
++        ticks(30000);
++        g_assert_cmphex(rd(0x20) & BIT(13), ==, BIT(13));
++        g_assert_cmphex(rd(8) & BIT(4), ==, 0);
++        qtest_writel(s, GPIO(A_GPIO_OUT_W1TS), BIT(10) | BIT(11));
++        ticks(10000);
++        for (unsigned pad = 10; pad <= 11; pad++) {
++            qtest_writel(s, GPIO(GPIO_FUNC_OUT_SEL_CFG_OFFSET(pad)), pad == 10 ? 92 : 91);
++        }
++        bus = 1; clean();
++        const uint8_t data[] = {0x84, 0x55};
++        tx(data, sizeof(data));
++        command(0, START); command(1, WRITE(2)); command(2, STOP);
++        launch(); complete();
++        bus = 0; g_assert_cmphex(rd(0x1c), ==, 0x55);
++        qtest_quit(s);
++    }
++}
++
++static void test_data_arbitration(void)
++{
++    for (unsigned unequal = 0; unequal < 2; unequal++) {
++    for (unsigned refill = 0; refill < 2; refill++) {
++    for (unsigned winner = 0; winner < 2; winner++) {
++        setup(9, winner);
++        if (unequal) {
++            bus = 1; wr(0, 49); wr(0x38, 50);
++        }
++        for (bus = 0; bus < 2; bus++) {
++            uint8_t data[32] = {0xa0, 0x80};
++            memset(data + 2, 0x11, 30);
++            if (!refill) data[2] = bus == winner ? 0x55 : 0xaa;
++            clean(); tx(data, refill ? 32 : 3);
++            command(0, START); command(1, WRITE(refill ? 32 : 3));
++            command(2, refill ? FINISH : STOP);
++            wr(4, BIT(9) | BIT(4) | 3);
++        }
++        bus = 0; wr(4, BIT(9) | BIT(4) | BIT(5) | 3);
++        bus = 1; wr(4, BIT(9) | BIT(4) | BIT(5) | 3);
++        if (refill) {
++            ticks(4000000);
++            for (bus = 0; bus < 2; bus++) {
++                g_assert_cmphex(rd(0x20) & (END | BIT(5) | COMPLETE | NACK), ==, END);
++                wr(0x1c, bus == winner ? 0x55 : 0xaa);
++                command(0, WRITE(1)); command(1, STOP); wr(0x24, 0x7ffff);
++            }
++            bus = 0; wr(4, BIT(9) | BIT(4) | BIT(5) | 3);
++            bus = 1; wr(4, BIT(9) | BIT(4) | BIT(5) | 3);
++        }
++        ticks(2000000);
++        bus = 1 - winner;
++        g_assert_cmphex(rd(0x20) & (BIT(5) | COMPLETE), ==, BIT(5));
++        bus = winner;
++        g_assert_cmphex(rd(0x20) & (BIT(5) | COMPLETE | NACK), ==, COMPLETE);
++        ticks(6000000);
++        clean();
++        uint8_t address[] = {0xa0, refill ? 0x8e : 0x80, 0xa1};
++        tx(address, sizeof(address));
++        command(0, START); command(1, WRITE(2)); command(2, START);
++        command(3, WRITE(1)); command(4, LAST(1)); command(5, STOP);
++        launch(); complete();
++        g_assert_cmphex(rd(0x1c), ==, 0x55);
++        /* A losing controller replays freshly after bus idle. */
++        bus = 1 - winner; clean();
++        tx(address, sizeof(address));
++        command(0, START); command(1, WRITE(2)); command(2, START);
++        command(3, WRITE(1)); command(4, LAST(1)); command(5, STOP);
++        launch(); complete(); g_assert_cmphex(rd(0x1c), ==, 0x55);
++        qtest_quit(s);
++    }
++    }
++    }
++}
++
++static void test_read_after_final_nack_wire(void)
++{
++    setup(9, 0);
++    bus = 1; wr(4, 3); wr(0x10, 0x42); wr(0x50, 0);
++    wr(0x1c, 0x12); wr(0x1c, 0x34);
++    bus = 0; wr(0x1c, 0x85);
++    command(0, START); command(1, WRITE(1));
++    command(2, LAST(1)); command(3, READ(1)); command(4, STOP);
++    launch(); complete();
++    g_assert_cmphex(rd(0x1c), ==, 0x12);
++    g_assert_cmphex(rd(0x1c), ==, 0xff);
++    bus = 1;
++    g_assert_cmphex((rd(8) >> 18) & 63, ==, 1);
++    g_assert_cmphex(rd(0x20) & COMPLETE, ==, COMPLETE);
++    qtest_quit(s);
++}
++
++static void test_general_call_fanout(void)
++{
++    setup(9, 0);
++    for (bus = 0; bus < 2; bus++) {
++        wr(4, BIT(14) | 3); wr(0x10, 0x42 + bus);
++    }
++    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":0,\"data\":[6]}]}", false, false);
++    ticks(3000000);
++    for (bus = 0; bus < 2; bus++) {
++        g_assert_cmphex(rd(0x20) & GENERAL_CALL_INT, ==, GENERAL_CALL_INT);
++        g_assert_cmphex(rd(0x1c), ==, 6);
++        wr(0x24, 0x7ffff);
++    }
++    bus = 1; wr(4, 3);
++    script_graph("{\"bit_ns\":10000,\"transactions\":[{\"address\":0,\"data\":[7]}]}", false, false);
++    ticks(3000000);
++    bus = 0; g_assert_cmphex(rd(0x1c), ==, 7);
++    bus = 1;
++    g_assert_cmphex((rd(8) >> 8) & 63, ==, 0);
++    g_assert_cmphex(rd(0x20) & (GENERAL_CALL_INT | COMPLETE), ==, 0);
++    qtest_quit(s);
++}
++
++static void test_ten_bit_reject_boundaries(void)
++{
++    static const uint8_t invalid[][2] = {
++        {0xf3, 0}, {0xf2, 0xa3}, {0xf4, 0xa2}, {0xf2, 0},
++    };
++    for (unsigned vector = 0; vector < G_N_ELEMENTS(invalid); vector++) {
++        setup(9, 0);
++        bus = 1;
++        wr(4, BIT(13) | 3); wr(0x10, BIT(31) | (0xa2 << 7) | 0x79);
++        wr(0x1c, 0x12);
++        bus = 0; tx(invalid[vector], vector == 0 ? 1 : 2);
++        command(0, START); command(1, WRITE(vector == 0 ? 1 : 2)); command(2, STOP);
++        launch(); ticks(2000000);
++        g_assert_cmphex(rd(0x20) & (NACK | COMPLETE), ==, NACK);
++        g_assert_cmphex((rd(8) >> 8) & 63, ==, 0);
++        bus = 1;
++        g_assert_cmphex((rd(8) >> 8) & 63, ==, 0);
++        g_assert_cmphex((rd(8) >> 18) & 63, ==, 1);
++        qtest_quit(s);
++    }
++}
++
++static void test_identical_masters(void)
++{
++    setup(9, 0);
++    for (bus = 0; bus < 2; bus++) {
++        const uint8_t bytes[] = {0xa0, 0x90, 0x37};
++        clean(); tx(bytes, sizeof(bytes));
++        command(0, START); command(1, WRITE(3)); command(2, STOP);
++        wr(4, BIT(9) | BIT(4) | 3);
++    }
++    bus = 0; wr(4, BIT(9) | BIT(4) | BIT(5) | 3);
++    bus = 1; wr(4, BIT(9) | BIT(4) | BIT(5) | 3);
++    ticks(2000000);
++    for (bus = 0; bus < 2; bus++) {
++        g_assert_cmphex(rd(0x20) & (BIT(5) | COMPLETE | NACK), ==, COMPLETE);
++    }
++    ticks(6000000);
++    bus = 1; pointer(0x90); read_eeprom(1, true); complete();
++    g_assert_cmphex(rd(0x1c), ==, 0x37);
++    qtest_quit(s);
++}
++
++static void test_read_ack_arbitration(void)
++{
++    for (unsigned winner = 0; winner < 2; winner++) {
++        setup(9, winner);
++        for (bus = 0; bus < 2; bus++) {
++            clean(); wr(0x1c, 0xa1);
++            command(0, START); command(1, WRITE(1));
++            command(2, bus == winner ? READ(1) : LAST(2));
++            command(3, bus == winner ? LAST(1) : STOP);
++            command(4, STOP); wr(4, BIT(9) | BIT(4) | 3);
++        }
++        bus = 0; wr(4, BIT(9) | BIT(4) | BIT(5) | 3);
++        bus = 1; wr(4, BIT(9) | BIT(4) | BIT(5) | 3);
++        ticks(2000000);
++        bus = 1 - winner;
++        g_assert_cmphex(rd(0x20) & (BIT(5) | COMPLETE), ==, BIT(5));
++        g_assert_cmphex((rd(8) >> 8) & 63, ==, 0);
++        bus = winner;
++        g_assert_cmphex(rd(0x20) & (BIT(5) | COMPLETE | NACK), ==, COMPLETE);
++        g_assert_cmphex(rd(0x1c), ==, 0xff);
++        g_assert_cmphex(rd(0x1c), ==, 0xff);
++        qtest_quit(s);
++    }
++}
++
++static void test_stop_held_sda(void)
++{
++    setup(9, 0); bus = 0;
++    qtest_writel(s, GPIO(GPIO_FUNC_OUT_SEL_CFG_OFFSET(10)), GPIO_FUNC_OUT_SEL_NONE);
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TS), BIT(10));
++    qtest_writel(s, GPIO(A_GPIO_ENABLE_W1TS), BIT(10));
++    const uint8_t bytes[] = {0xa0, 0x90, 0x37};
++    clean(); tx(bytes, sizeof(bytes));
++    command(0, START); command(1, WRITE(3)); command(2, FINISH);
++    launch(); ticks(2000000);
++    g_assert_cmphex(rd(0x20) & END, ==, END);
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(10));
++    command(0, STOP); wr(0x24, 0x7ffff); launch(); ticks(4000000);
++    g_assert_cmphex(rd(0x20) & (COMPLETE | TIMEOUT), ==, TIMEOUT);
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TS), BIT(10)); ticks(6000000);
++    g_assert_cmphex(rd(0x20) & COMPLETE, ==, 0);
++    clean(); tx((uint8_t[]){0xa0, 0x90, 0xa1}, 3);
++    command(0, START); command(1, WRITE(2)); command(2, START);
++    command(3, WRITE(1)); command(4, LAST(1)); command(5, STOP);
++    launch(); complete(); g_assert_cmphex(rd(0x1c), ==, 0x37);
++    qtest_quit(s);
++}
++
++static void test_stop_clock_hold_order(void)
++{
++    setup(9, 0); bus = 0;
++    qtest_writel(s, GPIO(GPIO_FUNC_OUT_SEL_CFG_OFFSET(11)), GPIO_FUNC_OUT_SEL_NONE);
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TS), BIT(11));
++    qtest_writel(s, GPIO(A_GPIO_ENABLE_W1TS), BIT(11));
++    clean(); tx((uint8_t[]){0xa0, 0x90, 0x37}, 3);
++    command(0, START); command(1, WRITE(3)); command(2, FINISH);
++    launch(); ticks(2000000);
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(11));
++    command(0, STOP); wr(0x24, 0x7ffff); launch(); ticks(10000);
++    g_assert_cmphex(rd(0x20) & COMPLETE, ==, 0);
++    g_assert_cmphex(qtest_readl(s, GPIO(A_GPIO_IN)) & BIT(8), ==, 0);
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TS), BIT(11));
++    complete();
++    qtest_quit(s);
++}
++
++static bool physical_pad_level(unsigned pad, const char *level)
++{
++    QDict *reply = qtest_qmp(s, "{'execute':'qom-get','arguments':{'path':'/machine/soc/electrical','property':'snapshot-json'}}");
++    QObject *snapshot = qobject_from_json(qdict_get_str(reply, "return"), &error_abort);
++    const QListEntry *entry;
++    bool found = false;
++    QLIST_FOREACH_ENTRY(qdict_get_qlist(qobject_to(QDict, snapshot), "physical_pads"), entry) {
++        QDict *p = qobject_to(QDict, qlist_entry_obj(entry));
++        if (qdict_get_int(p, "gpio") == pad) {
++            found = !strcmp(qdict_get_str(p, "diagnostic"), level);
++            break;
++        }
++    }
++    qobject_unref(snapshot); qobject_unref(reply);
++    return found;
++}
++
++static void test_stop_rc_clock_interference(void)
++{
++    setup(10, 0);
++    bus = 1; wr(4, 3); wr(0x10, 0x42); wr(0x50, 0);
++    qtest_writel(s, PAD(12), INPUT & ~R_IO_MUX_GPIOn_FUN_IE_MASK);
++    qtest_writel(s, GPIO(GPIO_PINn_REG_OFFSET(12)), R_GPIO_PINn_PAD_DRIVER_MASK);
++    qtest_writel(s, GPIO(GPIO_FUNC_OUT_SEL_CFG_OFFSET(12)), GPIO_FUNC_OUT_SEL_NONE);
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TS), BIT(12));
++    qtest_writel(s, GPIO(A_GPIO_ENABLE_W1TS), BIT(12));
++    bus = 0; clean(); tx((uint8_t[]){0x84, 0x55}, 2);
++    command(0, START); command(1, WRITE(2)); command(2, FINISH);
++    launch(); ticks(2000000);
++    g_assert_cmphex(rd(0x20) & (END | TIMEOUT | NACK), ==, END);
++    command(0, STOP); wr(0x24, 0x7ffff); launch();
++    bool scl_high = false;
++    for (unsigned i = 0; i < 100; i++) {
++        ticks(100);
++        if (physical_pad_level(9, "high")) {
++            scl_high = true;
++            break;
++        }
++    }
++    g_assert_true(scl_high);
++    bool sda_transition = false;
++    for (unsigned i = 0; i < 200; i++) {
++        ticks(100);
++        if (physical_pad_level(8, "indeterminate")) {
++            sda_transition = true;
++            break;
++        }
++    }
++    g_assert_true(sda_transition);
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(12));
++    ticks(10000);
++    g_assert_true(physical_pad_level(8, "high"));
++    g_assert_true(physical_pad_level(9, "low"));
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TS), BIT(12));
++    ticks(10000);
++    g_assert_cmphex(rd(0x20) & COMPLETE, ==, 0);
++    ticks(4000000);
++    g_assert_cmphex(rd(0x20) & (COMPLETE | TIMEOUT), ==, TIMEOUT);
++    qtest_quit(s);
++}
++
++static void test_service_simultaneous_high_not_stop(void)
++{
++    setup(9, 0); bus = 0;
++    for (unsigned pad = 10; pad <= 11; pad++) {
++        qtest_writel(s, GPIO(GPIO_FUNC_OUT_SEL_CFG_OFFSET(pad)), GPIO_FUNC_OUT_SEL_NONE);
++    }
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TS), BIT(10) | BIT(11));
++    qtest_writel(s, GPIO(A_GPIO_ENABLE_W1TS), BIT(10) | BIT(11));
++    uint8_t bytes[18] = {0xa0, 0x90};
++    for (unsigned i = 0; i < 16; i++) bytes[2 + i] = 0x37 + i;
++    clean(); tx(bytes, sizeof(bytes));
++    command(0, START); command(1, WRITE(sizeof(bytes))); command(2, FINISH);
++    launch(); ticks(2000000);
++    g_assert_cmphex(rd(0x20) & (END | COMPLETE | NACK | TIMEOUT), ==, END);
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TC), BIT(10) | BIT(11));
++    wr(4, BIT(10) | BIT(4) | 3);
++    /* One actual GPIO update raises both lines from LOW together.
++     * There was no SDA rising edge with SCL already HIGH. */
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TS), BIT(10) | BIT(11));
++    ticks(6000000);
++    clean(); wr(0x1c, 0xa1);
++    command(0, START); command(1, WRITE(1)); command(2, LAST(1));
++    command(3, FINISH); launch(); ticks(2000000);
++    g_assert_cmphex(rd(0x20) & (END | NACK | TIMEOUT), ==, END);
++    /* The physical EEPROM pointer wrapped back to0x90. Only a real
++     * STOP can commit its staged page, so current committed data is erased. */
++    g_assert_cmphex(rd(0x1c), ==, 0xff);
++    command(0, STOP); wr(0x24, 0x7ffff); launch(); complete();
++    ticks(6000000);
++    pointer(0x90); read_eeprom(1, true); complete();
++    g_assert_cmphex(rd(0x1c), ==, 0x37);
++    qtest_quit(s);
++}
++
++/* A powered divider is deliberately indeterminate, not an invented GPIO
++ * input bit. The slave sees it only through its real SCL matrix route. */
++static void filter_unknown_graph(bool rc)
++{
++    QObject *o = qobject_from_json("{\"version\":3,\"id\":\"filter-unknown\",\"name\":\"Filter unknown\","
++        "\"profile\":{\"chip\":\"esp32s3\",\"board\":\"esp32-s3-devkitc-1\",\"module\":\"esp32-s3-wroom-1\"},"
++        "\"firmware\":{},\"runtime\":{\"electrical\":{\"driver_profile\":\"s3-explicit-finite-v1\",\"mode\":\"dc\"}},"
++        "\"geometry\":{\"components\":{},\"nets\":{}},\"components\":[],\"nets\":[]}", &error_abort);
++    QDict *p = qobject_to(QDict, o), *c = component(p, "U", "mcu");
++    if (rc) {
++        QDict *e = qdict_get_qdict(qdict_get_qdict(p, "runtime"), "electrical");
++        qdict_put_str(e, "mode", "rc");
++        qdict_put_str(e, "edit_charge", "reset");
++    }
++    terminal(c, "vdd", "power", "input", -1);
++    terminal(c, "gnd", "ground", "input", -1);
++    for (unsigned pad = 8; pad <= 13; pad++) {
++        char role[16]; snprintf(role, sizeof(role), "io%u", pad);
++        terminal(c, role, "digital", "inout", pad);
++    }
++    c = component(p, "G", "ground");
++    terminal(c, "ref", "ground", "unspecified", -1);
++    c = component(p, "V", "voltage-source");
++    terminal(c, "p", "power", "unspecified", -1);
++    terminal(c, "n", "ground", "unspecified", -1);
++    quantity(c, "voltage", 3.3, "V");
++    net(p, "vdd", "V.p", "U.vdd");
++    net(p, "gnd", "G.ref", "V.n");
++    net(p, "gnd", "U.gnd", NULL);
++    net(p, "sda", "U.io8", "U.io10");
++    net(p, "scl", "U.io9", "U.io11");
++    net(p, "mid", "U.io12", NULL);
++    net(p, "publication", "U.io13", NULL);
++    for (unsigned i = 0; i < 5; i++) {
++        char id[16], a[20], b[20];
++        snprintf(id, sizeof(id), "R%u", i);
++        c = component(p, id, "resistor");
++        terminal(c, "a", "passive", "unspecified", -1);
++        terminal(c, "b", "passive", "unspecified", -1);
++        quantity(c, "resistance", 4700, "ohm");
++        snprintf(a, sizeof(a), "%s.a", id);
++        snprintf(b, sizeof(b), "%s.b", id);
++        net(p, i == 3 ? "gnd" : "vdd", a, NULL);
++        net(p, i == 0 ? "sda" : i == 1 ? "scl" : i == 4 ? "publication" : "mid", b, NULL);
++    }
++    if (rc) {
++        for (unsigned i = 0; i < 2; i++) {
++            char id[16], a[20], b[20];
++            snprintf(id, sizeof(id), "C%u", i);
++            c = component(p, id, "capacitor");
++            terminal(c, "p", "passive", "unspecified", -1);
++            terminal(c, "n", "passive", "unspecified", -1);
++            quantity(c, "capacitance", 1, "nF");
++            quantity(c, "initial_voltage", 0, "V");
++            snprintf(a, sizeof(a), "%s.p", id);
++            snprintf(b, sizeof(b), "%s.n", id);
++            net(p, i ? "scl" : "sda", a, NULL);
++            net(p, "gnd", b, NULL);
++        }
++    }
++    GString *json = qobject_to_json(o);
++    qtest_qmp_assert_success(s, "{'execute':'qom-set','arguments':{'path':'/machine/soc/electrical','property':'project-json','value':%s}}", json->str);
++    g_string_free(json, true); qobject_unref(o);
++    qtest_qmp_assert_success(s, "{'execute':'cont'}");
++    ticks(100000);
++}
++
++static void filter_peer_level(unsigned pad, bool high)
++{
++    qtest_writel(s, GPIO(high ? A_GPIO_OUT_W1TS : A_GPIO_OUT_W1TC), BIT(pad));
++}
++
++static void filter_peer_byte(uint8_t byte)
++{
++    for (unsigned bit = 0; bit < 8; bit++) {
++        filter_peer_level(11, false); ticks(10000);
++        filter_peer_level(10, !!(byte & (0x80 >> bit))); ticks(10000);
++        filter_peer_level(11, true); ticks(10000);
++    }
++    filter_peer_level(11, false); ticks(10000);
++    filter_peer_level(10, true); ticks(10000);
++    filter_peer_level(11, true); ticks(10000);
++    g_assert_true(physical_pad_level(8, "low"));
++    filter_peer_level(11, false); ticks(10000);
++}
++
++static void filter_unknown_setup(bool rc)
++{
++    peer_boot(0x42, false, true);
++    for (unsigned pad = 10; pad <= 13; pad++) {
++        if (pad == 12) {
++            continue;
++        }
++        qtest_writel(s, PAD(pad), INPUT);
++        qtest_writel(s, GPIO(GPIO_PINn_REG_OFFSET(pad)), R_GPIO_PINn_PAD_DRIVER_MASK);
++        qtest_writel(s, GPIO(GPIO_FUNC_OUT_SEL_CFG_OFFSET(pad)), GPIO_FUNC_OUT_SEL_NONE);
++    }
++    /* Supported same-pad SCL route: IE + native signal89 output + real OD
++     * peripheral OE. Released output leaves the powered divider UNKNOWN.
++     * Never read raw GPIO inputs; strict UNKNOWN remains enabled. */
++    qtest_writel(s, PAD(12), INPUT);
++    qtest_writel(s, GPIO(GPIO_PINn_REG_OFFSET(12)), R_GPIO_PINn_PAD_DRIVER_MASK);
++    qtest_writel(s, GPIO(GPIO_FUNC_OUT_SEL_CFG_OFFSET(12)), 89);
++    qtest_writel(s, GPIO(A_GPIO_OUT_W1TS), BIT(10) | BIT(11) | BIT(13));
++    qtest_writel(s, GPIO(A_GPIO_ENABLE_W1TS), BIT(10) | BIT(11) | BIT(13));
++    filter_unknown_graph(rc);
++    g_assert_true(physical_pad_level(8, "high"));
++    g_assert_true(physical_pad_level(9, "high"));
++    g_assert_true(physical_pad_level(12, "indeterminate"));
++    g_assert_true(physical_pad_level(13, "high"));
++    /* Separate 200 ns SDA and 800 ns SCL persistence at the real 10 MHz
++     * module clock. The SDA candidate expires while routed SCL is UNKNOWN. */
++    wr(0x50, BIT(8) | BIT(9) | 8 | (2 << 4));
++    filter_peer_level(10, false);
++    ticks(100);
++    g_assert_true(physical_pad_level(8, "low"));
++    qtest_writel(s, GPIO(GPIO_FUNC_IN_SEL_CFG_OFFSET(89)), BIT(7) | 12);
++    g_assert_true(physical_pad_level(12, "indeterminate"));
++    ticks(1000);
++    g_assert_cmphex(rd(0x20) & (DET_START_INT | COMPLETE), ==, 0);
++    g_assert_cmphex((rd(8) >> 8) & 63, ==, 0);
++}
++
++static void filter_unknown_persistence(bool rc)
++{
++    /* Bounded expiry; only actual GPIO13 publication resumes the candidate. */
++    filter_unknown_setup(rc);
++    qtest_writel(s, GPIO(GPIO_FUNC_IN_SEL_CFG_OFFSET(89)), BIT(7) | 9);
++    filter_peer_level(13, false);
++    g_assert_true(physical_pad_level(13, "low"));
++    g_assert_true(physical_pad_level(8, "low"));
++    g_assert_true(physical_pad_level(9, "high"));
++    ticks(1000);
++    g_assert_cmphex(rd(0x20) & DET_START_INT, ==, DET_START_INT);
++    g_assert_cmphex(rd(0x20) & COMPLETE, ==, 0);
++    filter_peer_byte(0x84);
++    filter_peer_byte(0x5a);
++    filter_peer_level(10, false); ticks(10000);
++    filter_peer_level(11, true); ticks(10000);
++    filter_peer_level(10, true); ticks(10000);
++    g_assert_true(physical_pad_level(8, "high"));
++    g_assert_true(physical_pad_level(9, "high"));
++    g_assert_cmphex(rd(0x20) & (COMPLETE | BIT(13) | MAIN_ST_TO_INT | BIT(2)), ==, COMPLETE);
++    g_assert_cmphex((rd(8) >> 8) & 63, ==, 1);
++    g_assert_cmphex((rd(0x14) >> 22) & 0xff, ==, 1);
++    g_assert_cmphex(rd(0x1c), ==, 0x5a);
++    g_assert_cmphex((rd(8) >> 8) & 63, ==, 0);
++    qtest_quit(s);
++}
++
++static void test_filter_unknown_dc(void) { filter_unknown_persistence(false); }
++static void test_filter_unknown_rc(void) { filter_unknown_persistence(true); }
++
++
+ int main(int argc, char **argv)
+ {
+     g_test_init(&argc, &argv, NULL);
+     qtest_add_func("/esp32s3/i2c/both-masters-timing-irq", test_masters_irq);
+-    qtest_add_func("/esp32s3/i2c/eeprom-stop-restart-final-nack", test_eeprom_commit);
++    qtest_add_func("/esp32s3/i2c/eeprom-stop-restart-persistent-commit", test_eeprom_commit);
+     qtest_add_func("/esp32s3/i2c/end-refill-drain-over32", test_end_and_large_transfer);
+     qtest_add_func("/esp32s3/i2c/command-bounds-fifo-errors", test_command_bounds_fifo);
+     qtest_add_func("/esp32s3/i2c/address-data-nack-no-stale", test_nack_no_stale);
+@@ -748,5 +1346,24 @@
+     qtest_add_func("/esp32s3/i2c/slave-wrong-address", test_slave_wrong_address);
+     qtest_add_func("/esp32s3/i2c/master-arbitration", test_master_arbitration);
+     qtest_add_func("/esp32s3/i2c/script-preflight-reject", test_script_preflight_reject);
++    qtest_add_func("/esp32s3/i2c/native-master-native-slave-wire", test_native_wire);
++    qtest_add_func("/esp32s3/i2c/general-call-read-rejected", test_general_call_read_rejected);
++    qtest_add_func("/esp32s3/i2c/independent-filter-deadlines", test_independent_filter_deadlines);
++    qtest_add_func("/esp32s3/i2c/scheduled-slave-low-watchdog", test_scheduled_low_watchdog);
++    qtest_add_func("/esp32s3/i2c/native-data-arbitration-replay", test_data_arbitration);
++    qtest_add_func("/esp32s3/i2c/released-wire-after-final-nack", test_read_after_final_nack_wire);
++    qtest_add_func("/esp32s3/i2c/native-master-native-slave-rc", test_native_wire_rc);
++    qtest_add_func("/esp32s3/i2c/general-call-two-slaves-fanout", test_general_call_fanout);
++    qtest_add_func("/esp32s3/i2c/ten-bit-wrong-header-low-read", test_ten_bit_reject_boundaries);
++    qtest_add_func("/esp32s3/i2c/watchdog-zero-virtual-epoch", test_watchdog_zero_epoch);
++    qtest_add_func("/esp32s3/i2c/watchdog-exponent-zero-enabled", test_watchdog_zero_exponent);
++    qtest_add_func("/esp32s3/i2c/identical-native-masters", test_identical_masters);
++    qtest_add_func("/esp32s3/i2c/read-ack-native-arbitration", test_read_ack_arbitration);
++    qtest_add_func("/esp32s3/i2c/stop-held-sda-no-fake-completion", test_stop_held_sda);
++    qtest_add_func("/esp32s3/i2c/stop-held-clock-preserves-sda-low", test_stop_clock_hold_order);
++    qtest_add_func("/esp32s3/i2c/stop-rc-sda-crossing-during-clock-low", test_stop_rc_clock_interference);
++    qtest_add_func("/esp32s3/i2c/service-simultaneous-high-does-not-commit", test_service_simultaneous_high_not_stop);
++    qtest_add_func("/esp32s3/i2c/filter-unknown-powered-dc-matrix", test_filter_unknown_dc);
++    qtest_add_func("/esp32s3/i2c/filter-unknown-powered-rc-matrix", test_filter_unknown_rc);
+     return g_test_run();
+ }
+diff --git a/include/hw/i2c/esp32s3_i2c_binding.h b/include/hw/i2c/esp32s3_i2c_binding.h
+--- a/include/hw/i2c/esp32s3_i2c_binding.h
++++ b/include/hw/i2c/esp32s3_i2c_binding.h
+@@ -2,6 +2,7 @@
+ #ifndef HW_I2C_ESP32S3_I2C_BINDING_H
+ #define HW_I2C_ESP32S3_I2C_BINDING_H
+ #include "hw/i2c/esp32s3_i2c.h"
++#include "hw/i2c/esp32s3_i2c_service.h"
+ #include "hw/gpio/esp32s3_gpio.h"
+ void esp32s3_i2c_bind_electrical(ESP32S3I2CState *a, ESP32S3I2CState *b,
+                                 ESP32S3GPIOState *gpio, DeviceState *electrical);

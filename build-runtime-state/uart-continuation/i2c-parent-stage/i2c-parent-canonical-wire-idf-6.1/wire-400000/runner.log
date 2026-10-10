@@ -1,0 +1,1 @@
+{"status": "FAIL", "evidence": "/home/polar/.cache/esp32s3vm/i2c-parent-canonical-wire-idf-6.1/wire-400000/wire-20261010T221213-3o49sp1b", "error": "AssertionError: Ordinary firmware did not complete with failures=0 result=PASS"}

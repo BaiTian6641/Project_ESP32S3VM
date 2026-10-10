@@ -1,0 +1,2472 @@
+{
+  "status": "PASS",
+  "mode": "power_overvoltage",
+  "evidence": "/home/polar/.cache/esp32s3vm/i2c-parent-canonical-legacy13/power_overvoltage/power_overvoltage-20261010T223524-sbl4voa6",
+  "host_watchdog_seconds": 600.0,
+  "qualification": "Functional electrically clocked transactions; exact silicon phase/filter/RC metrology remains unqualified",
+  "command": [
+    "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa",
+    "-machine",
+    "esp32s3",
+    "-nographic",
+    "-S",
+    "-accel",
+    "tcg,thread=single",
+    "-icount",
+    "shift=0,align=off,sleep=off",
+    "-monitor",
+    "none",
+    "-serial",
+    "file:/home/polar/.cache/esp32s3vm/i2c-parent-canonical-legacy13/power_overvoltage/power_overvoltage-20261010T223524-sbl4voa6/uart.log",
+    "-drive",
+    "file=/home/polar/.cache/esp32s3vm/i2c-firmware-8c5ce3c10b96d3e7/build/i2c-native.merged.bin,if=mtd,format=raw,snapshot=on",
+    "-qmp",
+    "unix:/tmp/i2c-qmp-zjgxdalh/qmp.sock,server=on,wait=off"
+  ],
+  "snapshots": [
+    {
+      "phase": "applied-before-boot",
+      "graph": {
+        "source_generation": "1",
+        "support": {
+          "awake_sleep_configuration": true,
+          "rc": true,
+          "dc": true,
+          "adc": true,
+          "profile": "s3-explicit-finite-v1",
+          "hold": false,
+          "active_sleep": false
+        },
+        "currents": [
+          {
+            "current_a": 0,
+            "primitive": 0,
+            "component_id": "R0_scl_0"
+          },
+          {
+            "current_a": 0,
+            "primitive": 1,
+            "component_id": "R0_sda_0"
+          },
+          {
+            "current_a": 0,
+            "primitive": 2,
+            "component_id": "R1_scl_0"
+          },
+          {
+            "current_a": 0,
+            "primitive": 3,
+            "component_id": "R1_sda_0"
+          },
+          {
+            "current_a": 0,
+            "primitive": 4,
+            "component_id": "V"
+          },
+          {
+            "current_a": 0,
+            "primitive": 5,
+            "component_id": "VD"
+          },
+          {
+            "current_a": 0,
+            "primitive": 6,
+            "component_id": "native-firmware-drive/pull"
+          }
+        ],
+        "dc_factorizations": 1,
+        "status": "settled",
+        "diagnostic": "Linear DC solution satisfies original equations",
+        "timestamp_ns": "0",
+        "pads": [
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "terminal_id": "U1.io8",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 8
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "terminal_id": "U1.io9",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 9
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "terminal_id": "U1.io10",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 10
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "terminal_id": "U1.io11",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 11
+          }
+        ],
+        "max_source_residual_v": 0,
+        "max_kcl_residual_a": 0,
+        "physical_pads": [
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 0
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 1
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 2
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 3
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 4
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 5
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 6
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 7
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "terminal_id": "U1.io8",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 8
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "terminal_id": "U1.io9",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 9
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "terminal_id": "U1.io10",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 10
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "terminal_id": "U1.io11",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 11
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 12
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 13
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 14
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 15
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 16
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 17
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 18
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 19
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 20
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 21
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 26
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 27
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 28
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 29
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 30
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 31
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 32
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 33
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 34
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 35
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 36
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 37
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 38
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 39
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 40
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 41
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 42
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 43
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 44
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 45
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 46
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 47
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 48
+          }
+        ],
+        "nets": [
+          {
+            "floating": false,
+            "voltage_v": 3.3,
+            "valid": true,
+            "id": "bus0_scl"
+          },
+          {
+            "floating": false,
+            "voltage_v": 3.3,
+            "valid": true,
+            "id": "bus0_sda"
+          },
+          {
+            "floating": false,
+            "voltage_v": 3.3,
+            "valid": true,
+            "id": "bus1_scl"
+          },
+          {
+            "floating": false,
+            "voltage_v": 3.3,
+            "valid": true,
+            "id": "bus1_sda"
+          },
+          {
+            "floating": false,
+            "voltage_v": 6,
+            "valid": true,
+            "id": "device_vdd"
+          },
+          {
+            "floating": false,
+            "voltage_v": 0,
+            "valid": true,
+            "id": "gnd"
+          },
+          {
+            "floating": false,
+            "voltage_v": 3.3,
+            "valid": true,
+            "id": "vdd"
+          }
+        ],
+        "generation": "1",
+        "abi": 1
+      }
+    },
+    {
+      "phase": "firmware-completed",
+      "graph": {
+        "source_generation": "26046",
+        "support": {
+          "awake_sleep_configuration": true,
+          "rc": true,
+          "dc": true,
+          "adc": true,
+          "profile": "s3-explicit-finite-v1",
+          "hold": false,
+          "active_sleep": false
+        },
+        "currents": [
+          {
+            "current_a": 0,
+            "primitive": 0,
+            "component_id": "R0_scl_0"
+          },
+          {
+            "current_a": 0,
+            "primitive": 1,
+            "component_id": "R0_sda_0"
+          },
+          {
+            "current_a": 0,
+            "primitive": 2,
+            "component_id": "R1_scl_0"
+          },
+          {
+            "current_a": 0,
+            "primitive": 3,
+            "component_id": "R1_sda_0"
+          },
+          {
+            "current_a": -7.326820603907682e-05,
+            "primitive": 4,
+            "component_id": "V"
+          },
+          {
+            "current_a": 0,
+            "primitive": 5,
+            "component_id": "VD"
+          },
+          {
+            "current_a": 0,
+            "primitive": 6,
+            "component_id": "native-firmware-drive/pull"
+          },
+          {
+            "current_a": 0,
+            "primitive": 7,
+            "component_id": "native-firmware-drive/pull"
+          },
+          {
+            "current_a": 0,
+            "primitive": 8,
+            "component_id": "native-firmware-drive/pull"
+          },
+          {
+            "current_a": 0,
+            "primitive": 9,
+            "component_id": "native-firmware-drive/pull"
+          },
+          {
+            "current_a": 0,
+            "primitive": 10,
+            "component_id": "native-firmware-drive/pull"
+          },
+          {
+            "current_a": 0,
+            "primitive": 11,
+            "component_id": "native-firmware-drive/pull"
+          },
+          {
+            "current_a": 7.326820603907637e-05,
+            "primitive": 12,
+            "component_id": "native-firmware-drive/pull"
+          },
+          {
+            "current_a": -7.326820603907637e-05,
+            "primitive": 13,
+            "component_id": "native-firmware-drive/pull"
+          },
+          {
+            "current_a": 0,
+            "primitive": 14,
+            "component_id": "native-firmware-drive/pull"
+          }
+        ],
+        "dc_factorizations": 101,
+        "status": "settled",
+        "diagnostic": "Linear DC solution satisfies original equations",
+        "timestamp_ns": "415305054",
+        "pads": [
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 1,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": true,
+              "out_sel": 90
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "terminal_id": "U1.io8",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 8
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 1,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": true,
+              "out_sel": 89
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "terminal_id": "U1.io9",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 9
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 1,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": true,
+              "out_sel": 92
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "terminal_id": "U1.io10",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 10
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 1,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": true,
+              "out_sel": 91
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "terminal_id": "U1.io11",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 11
+          }
+        ],
+        "max_source_residual_v": 0,
+        "max_kcl_residual_a": 0,
+        "physical_pads": [
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 0
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 1
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 2
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 3
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 4
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 5
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 6
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 7
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 1,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": true,
+              "out_sel": 90
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "terminal_id": "U1.io8",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 8
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 1,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": true,
+              "out_sel": 89
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "terminal_id": "U1.io9",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 9
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 1,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": true,
+              "out_sel": 92
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "terminal_id": "U1.io10",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 10
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 1,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": true,
+              "out_sel": 91
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "terminal_id": "U1.io11",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 11
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 12
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 13
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 14
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 15
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 16
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 17
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 18
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 19
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 20
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 21
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 26
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 1,
+              "gpio_output_enable": false,
+              "pull_up": true,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 27
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 1,
+              "gpio_output_enable": false,
+              "pull_up": true,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 28
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": true,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 29
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": true,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 30
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": true,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": true,
+              "out_sel": 256
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 31
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": true,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": true,
+              "out_sel": 256
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 32
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 33
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 34
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 35
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 36
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 37
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 38
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 39
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 40
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 41
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 42
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": true,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "low",
+            "voltage_v": 0.0029307282415630548,
+            "valid": true,
+            "gpio": 43
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": true,
+              "rtc_output_enable": false,
+              "sleep_configured": false,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": true,
+            "floating": false,
+            "diagnostic": "high",
+            "voltage_v": 3.3,
+            "valid": true,
+            "gpio": 44
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 45
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 46
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 47
+          },
+          {
+            "native_controls": {
+              "pull_down": false,
+              "rtc_mux": false,
+              "mcu_sel": 0,
+              "gpio_output_enable": false,
+              "pull_up": false,
+              "rtc_output_enable": false,
+              "sleep_configured": true,
+              "sleep_requested": false,
+              "receiver_enabled": false,
+              "out_sel": 256
+            },
+            "digital_valid": false,
+            "floating": true,
+            "diagnostic": "floating",
+            "voltage_v": null,
+            "valid": false,
+            "gpio": 48
+          }
+        ],
+        "nets": [
+          {
+            "floating": false,
+            "voltage_v": 3.3,
+            "valid": true,
+            "id": "bus0_scl"
+          },
+          {
+            "floating": false,
+            "voltage_v": 3.3,
+            "valid": true,
+            "id": "bus0_sda"
+          },
+          {
+            "floating": false,
+            "voltage_v": 3.3,
+            "valid": true,
+            "id": "bus1_scl"
+          },
+          {
+            "floating": false,
+            "voltage_v": 3.3,
+            "valid": true,
+            "id": "bus1_sda"
+          },
+          {
+            "floating": false,
+            "voltage_v": 6,
+            "valid": true,
+            "id": "device_vdd"
+          },
+          {
+            "floating": false,
+            "voltage_v": 0,
+            "valid": true,
+            "id": "gnd"
+          },
+          {
+            "floating": false,
+            "voltage_v": 3.3,
+            "valid": true,
+            "id": "vdd"
+          }
+        ],
+        "generation": "1",
+        "abi": 1
+      }
+    }
+  ],
+  "qmp_transcript": [
+    {
+      "direction": "receive",
+      "message": {
+        "QMP": {
+          "version": {
+            "qemu": {
+              "micro": 2,
+              "minor": 2,
+              "major": 9
+            },
+            "package": ""
+          },
+          "capabilities": [
+            "oob"
+          ]
+        }
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "execute": "qmp_capabilities",
+        "arguments": {},
+        "id": 1
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "return": {},
+        "id": 1
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "execute": "stop",
+        "arguments": {},
+        "id": 2
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "return": {},
+        "id": 2
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "execute": "qom-set",
+        "arguments": {
+          "path": "/machine/soc/electrical",
+          "property": "project-json",
+          "value": "{\"version\": 3, \"id\": \"i2c-native-power_overvoltage\", \"name\": \"Ordinary native I2C power_overvoltage\", \"profile\": {\"chip\": \"esp32s3\", \"board\": \"esp32-s3-devkitc-1\", \"module\": \"esp32-s3-wroom-1\"}, \"firmware\": {}, \"runtime\": {\"electrical\": {\"driver_profile\": \"s3-explicit-finite-v1\", \"mode\": \"dc\"}}, \"components\": [{\"id\": \"U1\", \"name\": \"U1\", \"kind\": \"mcu\", \"type\": \"mcu\", \"terminals\": [{\"id\": \"U1.vdd\", \"name\": \"vdd\", \"role\": \"vdd\", \"domain\": \"power\", \"direction\": \"input\"}, {\"id\": \"U1.gnd\", \"name\": \"gnd\", \"role\": \"gnd\", \"domain\": \"ground\", \"direction\": \"input\"}, {\"id\": \"U1.io8\", \"name\": \"io8\", \"role\": \"gpio\", \"domain\": \"digital\", \"direction\": \"inout\", \"gpio\": 8}, {\"id\": \"U1.io9\", \"name\": \"io9\", \"role\": \"gpio\", \"domain\": \"digital\", \"direction\": \"inout\", \"gpio\": 9}, {\"id\": \"U1.io10\", \"name\": \"io10\", \"role\": \"gpio\", \"domain\": \"digital\", \"direction\": \"inout\", \"gpio\": 10}, {\"id\": \"U1.io11\", \"name\": \"io11\", \"role\": \"gpio\", \"domain\": \"digital\", \"direction\": \"inout\", \"gpio\": 11}], \"parameters\": {}}, {\"id\": \"G\", \"name\": \"G\", \"kind\": \"ground\", \"type\": \"ground\", \"terminals\": [{\"id\": \"G.ref\", \"name\": \"ref\", \"role\": \"ref\", \"domain\": \"ground\", \"direction\": \"passive\"}], \"parameters\": {}}, {\"id\": \"V\", \"name\": \"V\", \"kind\": \"voltage-source\", \"type\": \"voltage-source\", \"terminals\": [{\"id\": \"V.p\", \"name\": \"p\", \"role\": \"p\", \"domain\": \"power\", \"direction\": \"output\"}, {\"id\": \"V.n\", \"name\": \"n\", \"role\": \"n\", \"domain\": \"ground\", \"direction\": \"input\"}], \"parameters\": {\"voltage\": {\"value\": 3.3, \"unit\": \"V\"}}}, {\"id\": \"VD\", \"name\": \"VD\", \"kind\": \"voltage-source\", \"type\": \"voltage-source\", \"terminals\": [{\"id\": \"VD.p\", \"name\": \"p\", \"role\": \"p\", \"domain\": \"power\", \"direction\": \"output\"}, {\"id\": \"VD.n\", \"name\": \"n\", \"role\": \"n\", \"domain\": \"ground\", \"direction\": \"input\"}], \"parameters\": {\"voltage\": {\"value\": 6.0, \"unit\": \"V\"}}}, {\"id\": \"SHT0\", \"name\": \"SHT0\", \"kind\": \"device\", \"type\": \"sht21\", \"terminals\": [{\"id\": \"SHT0.sda\", \"name\": \"sda\", \"role\": \"sda\", \"domain\": \"digital\", \"direction\": \"inout\"}, {\"id\": \"SHT0.scl\", \"name\": \"scl\", \"role\": \"scl\", \"domain\": \"digital\", \"direction\": \"inout\"}, {\"id\": \"SHT0.vdd\", \"name\": \"vdd\", \"role\": \"vdd\", \"domain\": \"power\", \"direction\": \"input\"}, {\"id\": \"SHT0.gnd\", \"name\": \"gnd\", \"role\": \"gnd\", \"domain\": \"ground\", \"direction\": \"input\"}], \"parameters\": {\"address\": {\"value\": 64, \"unit\": \"count\"}}}, {\"id\": \"EE0\", \"name\": \"EE0\", \"kind\": \"device\", \"type\": \"24c02\", \"terminals\": [{\"id\": \"EE0.sda\", \"name\": \"sda\", \"role\": \"sda\", \"domain\": \"digital\", \"direction\": \"inout\"}, {\"id\": \"EE0.scl\", \"name\": \"scl\", \"role\": \"scl\", \"domain\": \"digital\", \"direction\": \"inout\"}, {\"id\": \"EE0.vdd\", \"name\": \"vdd\", \"role\": \"vdd\", \"domain\": \"power\", \"direction\": \"input\"}, {\"id\": \"EE0.gnd\", \"name\": \"gnd\", \"role\": \"gnd\", \"domain\": \"ground\", \"direction\": \"input\"}], \"parameters\": {\"address\": {\"value\": 80, \"unit\": \"count\"}}}, {\"id\": \"R0_sda_0\", \"name\": \"R0_sda_0\", \"kind\": \"resistor\", \"type\": \"resistor\", \"terminals\": [{\"id\": \"R0_sda_0.a\", \"name\": \"a\", \"role\": \"a\", \"domain\": \"passive\", \"direction\": \"passive\"}, {\"id\": \"R0_sda_0.b\", \"name\": \"b\", \"role\": \"b\", \"domain\": \"passive\", \"direction\": \"passive\"}], \"parameters\": {\"resistance\": {\"value\": 4700, \"unit\": \"ohm\"}}}, {\"id\": \"R0_scl_0\", \"name\": \"R0_scl_0\", \"kind\": \"resistor\", \"type\": \"resistor\", \"terminals\": [{\"id\": \"R0_scl_0.a\", \"name\": \"a\", \"role\": \"a\", \"domain\": \"passive\", \"direction\": \"passive\"}, {\"id\": \"R0_scl_0.b\", \"name\": \"b\", \"role\": \"b\", \"domain\": \"passive\", \"direction\": \"passive\"}], \"parameters\": {\"resistance\": {\"value\": 4700, \"unit\": \"ohm\"}}}, {\"id\": \"SHT1\", \"name\": \"SHT1\", \"kind\": \"device\", \"type\": \"sht21\", \"terminals\": [{\"id\": \"SHT1.sda\", \"name\": \"sda\", \"role\": \"sda\", \"domain\": \"digital\", \"direction\": \"inout\"}, {\"id\": \"SHT1.scl\", \"name\": \"scl\", \"role\": \"scl\", \"domain\": \"digital\", \"direction\": \"inout\"}, {\"id\": \"SHT1.vdd\", \"name\": \"vdd\", \"role\": \"vdd\", \"domain\": \"power\", \"direction\": \"input\"}, {\"id\": \"SHT1.gnd\", \"name\": \"gnd\", \"role\": \"gnd\", \"domain\": \"ground\", \"direction\": \"input\"}], \"parameters\": {\"address\": {\"value\": 64, \"unit\": \"count\"}}}, {\"id\": \"EE1\", \"name\": \"EE1\", \"kind\": \"device\", \"type\": \"24c02\", \"terminals\": [{\"id\": \"EE1.sda\", \"name\": \"sda\", \"role\": \"sda\", \"domain\": \"digital\", \"direction\": \"inout\"}, {\"id\": \"EE1.scl\", \"name\": \"scl\", \"role\": \"scl\", \"domain\": \"digital\", \"direction\": \"inout\"}, {\"id\": \"EE1.vdd\", \"name\": \"vdd\", \"role\": \"vdd\", \"domain\": \"power\", \"direction\": \"input\"}, {\"id\": \"EE1.gnd\", \"name\": \"gnd\", \"role\": \"gnd\", \"domain\": \"ground\", \"direction\": \"input\"}], \"parameters\": {\"address\": {\"value\": 80, \"unit\": \"count\"}}}, {\"id\": \"R1_sda_0\", \"name\": \"R1_sda_0\", \"kind\": \"resistor\", \"type\": \"resistor\", \"terminals\": [{\"id\": \"R1_sda_0.a\", \"name\": \"a\", \"role\": \"a\", \"domain\": \"passive\", \"direction\": \"passive\"}, {\"id\": \"R1_sda_0.b\", \"name\": \"b\", \"role\": \"b\", \"domain\": \"passive\", \"direction\": \"passive\"}], \"parameters\": {\"resistance\": {\"value\": 4700, \"unit\": \"ohm\"}}}, {\"id\": \"R1_scl_0\", \"name\": \"R1_scl_0\", \"kind\": \"resistor\", \"type\": \"resistor\", \"terminals\": [{\"id\": \"R1_scl_0.a\", \"name\": \"a\", \"role\": \"a\", \"domain\": \"passive\", \"direction\": \"passive\"}, {\"id\": \"R1_scl_0.b\", \"name\": \"b\", \"role\": \"b\", \"domain\": \"passive\", \"direction\": \"passive\"}], \"parameters\": {\"resistance\": {\"value\": 4700, \"unit\": \"ohm\"}}}], \"nets\": [{\"id\": \"gnd\", \"name\": \"gnd\", \"endpoints\": [\"G.ref\", \"V.n\", \"U1.gnd\", \"VD.n\", \"SHT0.gnd\", \"EE0.gnd\", \"SHT1.gnd\", \"EE1.gnd\"]}, {\"id\": \"vdd\", \"name\": \"vdd\", \"endpoints\": [\"V.p\", \"U1.vdd\", \"R0_sda_0.b\", \"R0_scl_0.b\", \"R1_sda_0.b\", \"R1_scl_0.b\"]}, {\"id\": \"device_vdd\", \"name\": \"device_vdd\", \"endpoints\": [\"VD.p\", \"SHT0.vdd\", \"EE0.vdd\", \"SHT1.vdd\", \"EE1.vdd\"]}, {\"id\": \"bus0_sda\", \"name\": \"bus0_sda\", \"endpoints\": [\"U1.io8\", \"SHT0.sda\", \"EE0.sda\", \"R0_sda_0.a\"]}, {\"id\": \"bus0_scl\", \"name\": \"bus0_scl\", \"endpoints\": [\"U1.io9\", \"SHT0.scl\", \"EE0.scl\", \"R0_scl_0.a\"]}, {\"id\": \"bus1_sda\", \"name\": \"bus1_sda\", \"endpoints\": [\"U1.io10\", \"SHT1.sda\", \"EE1.sda\", \"R1_sda_0.a\"]}, {\"id\": \"bus1_scl\", \"name\": \"bus1_scl\", \"endpoints\": [\"U1.io11\", \"SHT1.scl\", \"EE1.scl\", \"R1_scl_0.a\"]}], \"geometry\": {\"components\": {}, \"nets\": {}}}"
+        },
+        "id": 3
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "return": {},
+        "id": 3
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "execute": "qom-get",
+        "arguments": {
+          "path": "/machine/soc/electrical",
+          "property": "snapshot-json"
+        },
+        "id": 4
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "return": "{\"source_generation\": \"1\", \"support\": {\"awake_sleep_configuration\": true, \"rc\": true, \"dc\": true, \"adc\": true, \"profile\": \"s3-explicit-finite-v1\", \"hold\": false, \"active_sleep\": false}, \"currents\": [{\"current_a\": 0, \"primitive\": 0, \"component_id\": \"R0_scl_0\"}, {\"current_a\": 0, \"primitive\": 1, \"component_id\": \"R0_sda_0\"}, {\"current_a\": 0, \"primitive\": 2, \"component_id\": \"R1_scl_0\"}, {\"current_a\": 0, \"primitive\": 3, \"component_id\": \"R1_sda_0\"}, {\"current_a\": 0, \"primitive\": 4, \"component_id\": \"V\"}, {\"current_a\": 0, \"primitive\": 5, \"component_id\": \"VD\"}, {\"current_a\": 0, \"primitive\": 6, \"component_id\": \"native-firmware-drive/pull\"}], \"dc_factorizations\": 1, \"status\": \"settled\", \"diagnostic\": \"Linear DC solution satisfies original equations\", \"timestamp_ns\": \"0\", \"pads\": [{\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"terminal_id\": \"U1.io8\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 8}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"terminal_id\": \"U1.io9\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 9}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"terminal_id\": \"U1.io10\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 10}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"terminal_id\": \"U1.io11\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 11}], \"max_source_residual_v\": 0, \"max_kcl_residual_a\": 0, \"physical_pads\": [{\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 0}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 1}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 2}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 3}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 4}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 5}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 6}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 7}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"terminal_id\": \"U1.io8\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 8}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"terminal_id\": \"U1.io9\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 9}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"terminal_id\": \"U1.io10\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 10}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"terminal_id\": \"U1.io11\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 11}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 12}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 13}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 14}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 15}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 16}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 17}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 18}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 19}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 20}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 21}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 26}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 27}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 28}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 29}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 30}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 31}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 32}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 33}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 34}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 35}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 36}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 37}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 38}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 39}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 40}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 41}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 42}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 43}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 44}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 45}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 46}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 47}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 48}], \"nets\": [{\"floating\": false, \"voltage_v\": 3.2999999999999998, \"valid\": true, \"id\": \"bus0_scl\"}, {\"floating\": false, \"voltage_v\": 3.2999999999999998, \"valid\": true, \"id\": \"bus0_sda\"}, {\"floating\": false, \"voltage_v\": 3.2999999999999998, \"valid\": true, \"id\": \"bus1_scl\"}, {\"floating\": false, \"voltage_v\": 3.2999999999999998, \"valid\": true, \"id\": \"bus1_sda\"}, {\"floating\": false, \"voltage_v\": 6, \"valid\": true, \"id\": \"device_vdd\"}, {\"floating\": false, \"voltage_v\": 0, \"valid\": true, \"id\": \"gnd\"}, {\"floating\": false, \"voltage_v\": 3.2999999999999998, \"valid\": true, \"id\": \"vdd\"}], \"generation\": \"1\", \"abi\": 1}",
+        "id": 4
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "execute": "cont",
+        "arguments": {},
+        "id": 5
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "timestamp": {
+          "seconds": 1791642925,
+          "microseconds": 79027
+        },
+        "event": "RESUME"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "return": {},
+        "id": 5
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "execute": "stop",
+        "arguments": {},
+        "id": 6
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "timestamp": {
+          "seconds": 1791643007,
+          "microseconds": 209067
+        },
+        "event": "STOP"
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "return": {},
+        "id": 6
+      }
+    },
+    {
+      "direction": "send",
+      "message": {
+        "execute": "qom-get",
+        "arguments": {
+          "path": "/machine/soc/electrical",
+          "property": "snapshot-json"
+        },
+        "id": 7
+      }
+    },
+    {
+      "direction": "receive",
+      "message": {
+        "return": "{\"source_generation\": \"26046\", \"support\": {\"awake_sleep_configuration\": true, \"rc\": true, \"dc\": true, \"adc\": true, \"profile\": \"s3-explicit-finite-v1\", \"hold\": false, \"active_sleep\": false}, \"currents\": [{\"current_a\": 0, \"primitive\": 0, \"component_id\": \"R0_scl_0\"}, {\"current_a\": 0, \"primitive\": 1, \"component_id\": \"R0_sda_0\"}, {\"current_a\": 0, \"primitive\": 2, \"component_id\": \"R1_scl_0\"}, {\"current_a\": 0, \"primitive\": 3, \"component_id\": \"R1_sda_0\"}, {\"current_a\": -7.3268206039076822e-05, \"primitive\": 4, \"component_id\": \"V\"}, {\"current_a\": 0, \"primitive\": 5, \"component_id\": \"VD\"}, {\"current_a\": 0, \"primitive\": 6, \"component_id\": \"native-firmware-drive/pull\"}, {\"current_a\": 0, \"primitive\": 7, \"component_id\": \"native-firmware-drive/pull\"}, {\"current_a\": 0, \"primitive\": 8, \"component_id\": \"native-firmware-drive/pull\"}, {\"current_a\": 0, \"primitive\": 9, \"component_id\": \"native-firmware-drive/pull\"}, {\"current_a\": 0, \"primitive\": 10, \"component_id\": \"native-firmware-drive/pull\"}, {\"current_a\": 0, \"primitive\": 11, \"component_id\": \"native-firmware-drive/pull\"}, {\"current_a\": 7.3268206039076375e-05, \"primitive\": 12, \"component_id\": \"native-firmware-drive/pull\"}, {\"current_a\": -7.3268206039076375e-05, \"primitive\": 13, \"component_id\": \"native-firmware-drive/pull\"}, {\"current_a\": 0, \"primitive\": 14, \"component_id\": \"native-firmware-drive/pull\"}], \"dc_factorizations\": 101, \"status\": \"settled\", \"diagnostic\": \"Linear DC solution satisfies original equations\", \"timestamp_ns\": \"415305054\", \"pads\": [{\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 1, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": true, \"out_sel\": 90}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"terminal_id\": \"U1.io8\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 8}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 1, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": true, \"out_sel\": 89}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"terminal_id\": \"U1.io9\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 9}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 1, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": true, \"out_sel\": 92}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"terminal_id\": \"U1.io10\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 10}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 1, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": true, \"out_sel\": 91}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"terminal_id\": \"U1.io11\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 11}], \"max_source_residual_v\": 0, \"max_kcl_residual_a\": 0, \"physical_pads\": [{\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 0}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 1}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 2}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 3}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 4}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 5}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 6}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 7}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 1, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": true, \"out_sel\": 90}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"terminal_id\": \"U1.io8\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 8}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 1, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": true, \"out_sel\": 89}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"terminal_id\": \"U1.io9\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 9}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 1, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": true, \"out_sel\": 92}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"terminal_id\": \"U1.io10\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 10}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 1, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": true, \"out_sel\": 91}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"terminal_id\": \"U1.io11\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 11}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 12}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 13}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 14}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 15}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 16}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 17}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 18}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 19}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 20}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 21}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 26}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 1, \"gpio_output_enable\": false, \"pull_up\": true, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 27}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 1, \"gpio_output_enable\": false, \"pull_up\": true, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 28}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": true, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 29}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": true, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 30}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": true, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": true, \"out_sel\": 256}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 31}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": true, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": true, \"out_sel\": 256}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 32}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 33}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 34}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 35}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 36}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 37}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 38}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 39}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 40}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 41}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 42}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": true, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"low\", \"voltage_v\": 0.0029307282415630548, \"valid\": true, \"gpio\": 43}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": true, \"rtc_output_enable\": false, \"sleep_configured\": false, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": true, \"floating\": false, \"diagnostic\": \"high\", \"voltage_v\": 3.2999999999999998, \"valid\": true, \"gpio\": 44}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 45}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 46}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 47}, {\"native_controls\": {\"pull_down\": false, \"rtc_mux\": false, \"mcu_sel\": 0, \"gpio_output_enable\": false, \"pull_up\": false, \"rtc_output_enable\": false, \"sleep_configured\": true, \"sleep_requested\": false, \"receiver_enabled\": false, \"out_sel\": 256}, \"digital_valid\": false, \"floating\": true, \"diagnostic\": \"floating\", \"voltage_v\": null, \"valid\": false, \"gpio\": 48}], \"nets\": [{\"floating\": false, \"voltage_v\": 3.2999999999999998, \"valid\": true, \"id\": \"bus0_scl\"}, {\"floating\": false, \"voltage_v\": 3.2999999999999998, \"valid\": true, \"id\": \"bus0_sda\"}, {\"floating\": false, \"voltage_v\": 3.2999999999999998, \"valid\": true, \"id\": \"bus1_scl\"}, {\"floating\": false, \"voltage_v\": 3.2999999999999998, \"valid\": true, \"id\": \"bus1_sda\"}, {\"floating\": false, \"voltage_v\": 6, \"valid\": true, \"id\": \"device_vdd\"}, {\"floating\": false, \"voltage_v\": 0, \"valid\": true, \"id\": \"gnd\"}, {\"floating\": false, \"voltage_v\": 3.2999999999999998, \"valid\": true, \"id\": \"vdd\"}], \"generation\": \"1\", \"abi\": 1}",
+        "id": 7
+      }
+    }
+  ],
+  "firmware_configuration": {
+    "profile": "power",
+    "speed_hz": 400000,
+    "pads": [
+      8,
+      9,
+      10,
+      11
+    ]
+  },
+  "qemu_returncode_after_cleanup": 0,
+  "host_elapsed_seconds": 77.68431249400601,
+  "uart": {
+    "boot": [
+      "I2C_NATIVE_BOOT profile=power"
+    ],
+    "phases": [
+      "I2C_NATIVE_PHASE port=0 profile=power sda=8 scl=9 speed_hz=400000 pullup=external",
+      "I2C_NATIVE_PHASE port=1 profile=power sda=10 scl=11 speed_hz=400000 pullup=external"
+    ],
+    "checks": [
+      "I2C_NATIVE_CHECK port=0 name=new_bus result=PASS",
+      "I2C_NATIVE_CHECK port=0 name=graph_sensor_unreachable result=PASS",
+      "I2C_NATIVE_CHECK port=0 name=graph_eeprom_unreachable result=PASS",
+      "I2C_NATIVE_CHECK port=0 name=delete_bus result=PASS",
+      "I2C_NATIVE_CHECK port=1 name=new_bus result=PASS",
+      "I2C_NATIVE_CHECK port=1 name=graph_sensor_unreachable result=PASS",
+      "I2C_NATIVE_CHECK port=1 name=graph_eeprom_unreachable result=PASS",
+      "I2C_NATIVE_CHECK port=1 name=delete_bus result=PASS"
+    ],
+    "statuses": [
+      "I2C_NATIVE_STATUS port=0 name=new_bus actual=ESP_OK expected=ESP_OK",
+      "I2C_NATIVE_STATUS port=0 name=graph_sensor_unreachable actual=ESP_ERR_NOT_FOUND expected=ESP_ERR_NOT_FOUND",
+      "I2C_NATIVE_STATUS port=0 name=graph_eeprom_unreachable actual=ESP_ERR_NOT_FOUND expected=ESP_ERR_NOT_FOUND",
+      "I2C_NATIVE_STATUS port=0 name=delete_bus actual=ESP_OK expected=ESP_OK",
+      "I2C_NATIVE_STATUS port=1 name=new_bus actual=ESP_OK expected=ESP_OK",
+      "I2C_NATIVE_STATUS port=1 name=graph_sensor_unreachable actual=ESP_ERR_NOT_FOUND expected=ESP_ERR_NOT_FOUND",
+      "I2C_NATIVE_STATUS port=1 name=graph_eeprom_unreachable actual=ESP_ERR_NOT_FOUND expected=ESP_ERR_NOT_FOUND",
+      "I2C_NATIVE_STATUS port=1 name=delete_bus actual=ESP_OK expected=ESP_OK"
+    ],
+    "bytes": [],
+    "times": [],
+    "completion": [
+      "I2C_NATIVE_DONE profile=power failures=0 result=PASS"
+    ]
+  },
+  "hashes": {
+    "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e",
+    "/home/polar/.cache/esp32s3vm/i2c-firmware-8c5ce3c10b96d3e7/build/i2c-native.merged.bin": "f1d2564c008318f3201a1a90a55d424559aba695e2ce08e00a6c75f2f9dfdf84",
+    "/home/polar/.cache/esp32s3vm/i2c-firmware-8c5ce3c10b96d3e7/sdkconfig": "69023a37a0f31bff40066807c9e8aa95d9ba438844bd8d4d4050d0d9afd9a4fa",
+    "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/i2c/run-native-fixture.py": "5202cf337427ae0ab5337cd1da6e32131627c7d17b045797beef67002dc79dfa",
+    "/home/polar/.cache/esp32s3vm/i2c-parent-canonical-legacy13/power_overvoltage/power_overvoltage-20261010T223524-sbl4voa6/project.json": "bef59649dfff3820a0028050cd05efab87cc61724f1b20c43b7d2fff201eaba0",
+    "/home/polar/.cache/esp32s3vm/i2c-parent-canonical-legacy13/power_overvoltage/power_overvoltage-20261010T223524-sbl4voa6/command.json": "175e9218acad26851a9159a4479794869abe7c6840c5d022b0fb13685bc99773",
+    "/home/polar/.cache/esp32s3vm/i2c-parent-canonical-legacy13/power_overvoltage/power_overvoltage-20261010T223524-sbl4voa6/uart.log": "4becd0ddf407225f6342dc93ac146b1c2b536190c1be179dc2eb74d54380f509",
+    "/home/polar/.cache/esp32s3vm/i2c-parent-canonical-legacy13/power_overvoltage/power_overvoltage-20261010T223524-sbl4voa6/stderr.log": "36474e0b475e8d8e9821170e8f417cce26af1a15d4aa67668b950e754f1332d4",
+    "/home/polar/.cache/esp32s3vm/i2c-parent-canonical-legacy13/power_overvoltage/power_overvoltage-20261010T223524-sbl4voa6/stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

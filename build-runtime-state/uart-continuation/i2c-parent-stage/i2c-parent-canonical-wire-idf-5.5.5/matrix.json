@@ -1,0 +1,166 @@
+[
+  {
+    "sdk": "idf-5.5.5",
+    "mode": "wire",
+    "speed": 100000,
+    "status": "FAIL",
+    "returncode": 1,
+    "command": [
+      "python3",
+      "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/i2c/run-native-fixture.py",
+      "--qemu",
+      "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa",
+      "--flash",
+      "/home/polar/.cache/esp32s3vm/i2c-parent-firmware-7c9adab07ae7b68c/build/merged-flash.bin",
+      "--sdkconfig",
+      "/home/polar/.cache/esp32s3vm/i2c-parent-firmware-7c9adab07ae7b68c/build/sdkconfig",
+      "--mode",
+      "wire",
+      "--evidence",
+      "/home/polar/.cache/esp32s3vm/i2c-parent-canonical-wire-idf-5.5.5/wire-100000",
+      "--watchdog-seconds",
+      "600"
+    ],
+    "result": {
+      "path": "/home/polar/.cache/esp32s3vm/i2c-parent-canonical-wire-idf-5.5.5/wire-100000/wire-20261010T220947-gngoyxkd/result.json",
+      "sha256": "324ce359debdf0ad6f267f12f623ad6c326901413cfee30f6dea43468e7fcc7a"
+    },
+    "firmware_build": {
+      "mode": "wire",
+      "speed": 100000,
+      "status": "COMPILED_MERGED",
+      "receipt": "/home/polar/.cache/esp32s3vm/i2c-parent-firmware-7c9adab07ae7b68c/result.json",
+      "sha256": "cc138cc3b57d2275dcc6a771ed9d007c596049c39d6825171a66f92800e13754"
+    },
+    "qemu_sha256": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e",
+    "prepared_source": {
+      "path": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/i2c-parent-stage/preparation-partial-fixed/prepared-3cc39bfdc7bd3515-source.json",
+      "sha256": "8336c595e019cb0d9cd0d8587fecb1fb70c70b50a3ed74da8f3ea64fe5c78e7a"
+    },
+    "canonical_runner_sha256": "5202cf337427ae0ab5337cd1da6e32131627c7d17b045797beef67002dc79dfa",
+    "original_flash_unchanged": true
+  },
+  {
+    "sdk": "idf-5.5.5",
+    "mode": "wire",
+    "speed": 400000,
+    "status": "FAIL",
+    "returncode": 1,
+    "command": [
+      "python3",
+      "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/i2c/run-native-fixture.py",
+      "--qemu",
+      "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa",
+      "--flash",
+      "/home/polar/.cache/esp32s3vm/i2c-parent-firmware-28ecb728cebed694/build/merged-flash.bin",
+      "--sdkconfig",
+      "/home/polar/.cache/esp32s3vm/i2c-parent-firmware-28ecb728cebed694/build/sdkconfig",
+      "--mode",
+      "wire",
+      "--evidence",
+      "/home/polar/.cache/esp32s3vm/i2c-parent-canonical-wire-idf-5.5.5/wire-400000",
+      "--watchdog-seconds",
+      "600"
+    ],
+    "result": {
+      "path": "/home/polar/.cache/esp32s3vm/i2c-parent-canonical-wire-idf-5.5.5/wire-400000/wire-20261010T221226-f0v14bot/result.json",
+      "sha256": "1eac3e6f3edf1e9fb5113894fd27a3003c2b86311cef6381c948215334820855"
+    },
+    "firmware_build": {
+      "mode": "wire",
+      "speed": 400000,
+      "status": "COMPILED_MERGED",
+      "receipt": "/home/polar/.cache/esp32s3vm/i2c-parent-firmware-28ecb728cebed694/result.json",
+      "sha256": "c677ba0a3818601876a56c787aa5fe50ba883110e0123aca85296bb7ad11c8df"
+    },
+    "qemu_sha256": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e",
+    "prepared_source": {
+      "path": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/i2c-parent-stage/preparation-partial-fixed/prepared-3cc39bfdc7bd3515-source.json",
+      "sha256": "8336c595e019cb0d9cd0d8587fecb1fb70c70b50a3ed74da8f3ea64fe5c78e7a"
+    },
+    "canonical_runner_sha256": "5202cf337427ae0ab5337cd1da6e32131627c7d17b045797beef67002dc79dfa",
+    "original_flash_unchanged": true
+  },
+  {
+    "sdk": "idf-5.5.5",
+    "mode": "wire_defined",
+    "speed": 100000,
+    "status": "PASS",
+    "returncode": 0,
+    "command": [
+      "python3",
+      "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/i2c/run-native-fixture.py",
+      "--qemu",
+      "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa",
+      "--flash",
+      "/home/polar/.cache/esp32s3vm/i2c-parent-firmware-cdefe0290cda0195/build/merged-flash.bin",
+      "--sdkconfig",
+      "/home/polar/.cache/esp32s3vm/i2c-parent-firmware-cdefe0290cda0195/build/sdkconfig",
+      "--mode",
+      "wire_defined",
+      "--evidence",
+      "/home/polar/.cache/esp32s3vm/i2c-parent-canonical-wire-idf-5.5.5/wire_defined-100000",
+      "--watchdog-seconds",
+      "600"
+    ],
+    "result": {
+      "path": "/home/polar/.cache/esp32s3vm/i2c-parent-canonical-wire-idf-5.5.5/wire_defined-100000/wire_defined-20261010T221512-8ebl2bma/result.json",
+      "sha256": "fb8cfabba02fcd3ea4a0242f2ab30e15fc43b454570b5268266c3620234ee839"
+    },
+    "firmware_build": {
+      "mode": "wire_defined",
+      "speed": 100000,
+      "status": "COMPILED_MERGED",
+      "receipt": "/home/polar/.cache/esp32s3vm/i2c-parent-firmware-cdefe0290cda0195/result.json",
+      "sha256": "ded8b98d56ed43354039121d13da74fde9e265890922635119c2ef2ad8e775fd"
+    },
+    "qemu_sha256": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e",
+    "prepared_source": {
+      "path": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/i2c-parent-stage/preparation-partial-fixed/prepared-3cc39bfdc7bd3515-source.json",
+      "sha256": "8336c595e019cb0d9cd0d8587fecb1fb70c70b50a3ed74da8f3ea64fe5c78e7a"
+    },
+    "canonical_runner_sha256": "5202cf337427ae0ab5337cd1da6e32131627c7d17b045797beef67002dc79dfa",
+    "original_flash_unchanged": true
+  },
+  {
+    "sdk": "idf-5.5.5",
+    "mode": "wire_defined",
+    "speed": 400000,
+    "status": "PASS",
+    "returncode": 0,
+    "command": [
+      "python3",
+      "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/i2c/run-native-fixture.py",
+      "--qemu",
+      "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa",
+      "--flash",
+      "/home/polar/.cache/esp32s3vm/i2c-parent-firmware-40d54ec6f798e27e/build/merged-flash.bin",
+      "--sdkconfig",
+      "/home/polar/.cache/esp32s3vm/i2c-parent-firmware-40d54ec6f798e27e/build/sdkconfig",
+      "--mode",
+      "wire_defined",
+      "--evidence",
+      "/home/polar/.cache/esp32s3vm/i2c-parent-canonical-wire-idf-5.5.5/wire_defined-400000",
+      "--watchdog-seconds",
+      "600"
+    ],
+    "result": {
+      "path": "/home/polar/.cache/esp32s3vm/i2c-parent-canonical-wire-idf-5.5.5/wire_defined-400000/wire_defined-20261010T221735-9eydqe9g/result.json",
+      "sha256": "d99835d46972a3fee7c6f70c0224989ebff9a5176820a5494f404e740fed2e74"
+    },
+    "firmware_build": {
+      "mode": "wire_defined",
+      "speed": 400000,
+      "status": "COMPILED_MERGED",
+      "receipt": "/home/polar/.cache/esp32s3vm/i2c-parent-firmware-40d54ec6f798e27e/result.json",
+      "sha256": "01716dd67716c17d5936990a5df36acf3181faaf05d388f1f0953af911d9b6c6"
+    },
+    "qemu_sha256": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e",
+    "prepared_source": {
+      "path": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/i2c-parent-stage/preparation-partial-fixed/prepared-3cc39bfdc7bd3515-source.json",
+      "sha256": "8336c595e019cb0d9cd0d8587fecb1fb70c70b50a3ed74da8f3ea64fe5c78e7a"
+    },
+    "canonical_runner_sha256": "5202cf337427ae0ab5337cd1da6e32131627c7d17b045797beef67002dc79dfa",
+    "original_flash_unchanged": true
+  }
+]

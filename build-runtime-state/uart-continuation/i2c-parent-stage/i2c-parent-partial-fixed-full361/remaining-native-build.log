@@ -1,0 +1,51 @@
+[1/28] Generating qemu-version.h with a custom command (wrapped by meson to capture output)
+[2/26] Compiling C object tests/unit/test-esp32s3-spi-service.p/.._.._hw_ssi_esp32s3_spi_service.c.o
+[3/26] Compiling C object tests/unit/test-esp32s3-spi-service.p/test-esp32s3-spi-service.c.o
+[4/26] Compiling C object test-esp32s3-uhci.p/tests_unit_test-esp32s3-uhci.c.o
+../tests/unit/test-esp32s3-uhci.c: In function ‘main’:
+../tests/unit/test-esp32s3-uhci.c:505:36: warning: initialization discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  505 |     char *qemu_argv[] = { argv[0], "-machine", "none", "-accel", "qtest",
+      |                                    ^~~~~~~~~~
+../tests/unit/test-esp32s3-uhci.c:505:48: warning: initialization discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  505 |     char *qemu_argv[] = { argv[0], "-machine", "none", "-accel", "qtest",
+      |                                                ^~~~~~
+../tests/unit/test-esp32s3-uhci.c:505:56: warning: initialization discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  505 |     char *qemu_argv[] = { argv[0], "-machine", "none", "-accel", "qtest",
+      |                                                        ^~~~~~~~
+../tests/unit/test-esp32s3-uhci.c:505:66: warning: initialization discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  505 |     char *qemu_argv[] = { argv[0], "-machine", "none", "-accel", "qtest",
+      |                                                                  ^~~~~~~
+../tests/unit/test-esp32s3-uhci.c:506:26: warning: initialization discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  506 |                          "-display", "none", "-nodefaults", "-S", NULL };
+      |                          ^~~~~~~~~~
+../tests/unit/test-esp32s3-uhci.c:506:38: warning: initialization discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  506 |                          "-display", "none", "-nodefaults", "-S", NULL };
+      |                                      ^~~~~~
+../tests/unit/test-esp32s3-uhci.c:506:46: warning: initialization discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  506 |                          "-display", "none", "-nodefaults", "-S", NULL };
+      |                                              ^~~~~~~~~~~~~
+../tests/unit/test-esp32s3-uhci.c:506:61: warning: initialization discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  506 |                          "-display", "none", "-nodefaults", "-S", NULL };
+      |                                                             ^~~~
+[5/26] Compiling C object tests/qtest/esp32s3-gdma-test.p/esp32s3-gdma-test.c.o
+[6/26] Compiling C object tests/qtest/esp32s3-spi-test.p/esp32s3-spi-test.c.o
+[7/26] Linking target tests/unit/test-esp32s3-spi-service
+[8/26] Linking target tests/qtest/esp32s3-gdma-test
+[9/26] Linking target tests/qtest/esp32s3-spi-test
+[10/26] Compiling C object tests/qtest/esp32s3-ledc-test.p/esp32s3-ledc-test.c.o
+[11/26] Linking target tests/qtest/esp32s3-ledc-test
+[12/26] Compiling C object tests/qtest/esp32s3-pcnt-test.p/esp32s3-pcnt-test.c.o
+[13/26] Linking target tests/qtest/esp32s3-pcnt-test
+[14/26] Compiling C object tests/qtest/esp32s3-rmt-test.p/esp32s3-rmt-test.c.o
+[15/26] Compiling C object tests/qtest/esp32s3-mcpwm-test.p/esp32s3-mcpwm-test.c.o
+[16/26] Linking target tests/qtest/esp32s3-mcpwm-test
+[17/26] Compiling C object tests/qtest/esp32s3-sdm-test.p/esp32s3-sdm-test.c.o
+[18/26] Linking target tests/qtest/esp32s3-rmt-test
+[19/26] Linking target tests/qtest/esp32s3-sdm-test
+[20/26] Compiling C object tests/qtest/esp32s3-memory-test.p/esp32s3-memory-test.c.o
+[21/26] Linking target tests/qtest/esp32s3-memory-test
+[22/26] Compiling C object tests/qtest/esp32s3-lcd-cam-test.p/esp32s3-lcd-cam-test.c.o
+[23/26] Linking target test-esp32s3-uhci
+[24/26] Linking target tests/qtest/esp32s3-lcd-cam-test
+[25/26] Compiling C object tests/qtest/esp32s3-uart-test.p/esp32s3-uart-test.c.o
+[26/26] Linking target tests/qtest/esp32s3-uart-test

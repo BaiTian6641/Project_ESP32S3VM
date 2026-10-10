@@ -1,0 +1,8 @@
+TAP version 13
+# random seed: R02Sa3111efcb8349a8967c1e4621d5d26ba
+# Start of xtensa tests
+# Start of esp32s3 tests
+# Start of i2c tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2225728.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2225728.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+not ok /xtensa/esp32s3/i2c/ov2640-normalized-address-ack - GLib-FATAL-CRITICAL: g_file_get_contents: assertion 'filename != NULL' failed
+Bail out!

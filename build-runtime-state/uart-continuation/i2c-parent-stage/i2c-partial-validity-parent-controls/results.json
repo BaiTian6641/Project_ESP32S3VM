@@ -1,0 +1,64 @@
+[
+  {
+    "phase": "before",
+    "returncode": -6,
+    "command": [
+      "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c7496bf321b41e12/build-wsl/tests/qtest/esp32s3-i2c-test",
+      "--tap",
+      "--verbose",
+      "-p",
+      "/xtensa/esp32s3/i2c/filter-partial-valid-reversal"
+    ],
+    "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c7496bf321b41e12",
+    "environment": {
+      "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c7496bf321b41e12/build-wsl/qemu-system-xtensa"
+    },
+    "qemu": {
+      "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c7496bf321b41e12/build-wsl/qemu-system-xtensa",
+      "sha256": "aad98af7cfdef6a5cd49cb511086321e4b828167afcfb187aaa45b0382d0017a"
+    },
+    "fixture": {
+      "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c7496bf321b41e12/build-wsl/tests/qtest/esp32s3-i2c-test",
+      "sha256": "86dbf1d299db836523c743f8991fe05ba85f045f2f40f14eb2f8032c80ab63e8"
+    },
+    "stdout": {
+      "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/before-stdout.log",
+      "sha256": "651af4976182fa9f091c0656f371d3476b967dab58beaf7db6a1385d899e1d47"
+    },
+    "stderr": {
+      "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/before-stderr.log",
+      "sha256": "3031aac79181e2d235deee28cc5e270ff24a2393adc750decb7ff6230632669b"
+    }
+  },
+  {
+    "phase": "after",
+    "returncode": 0,
+    "command": [
+      "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/tests/qtest/esp32s3-i2c-test",
+      "--tap",
+      "--verbose",
+      "-p",
+      "/xtensa/esp32s3/i2c/filter-partial-valid-reversal"
+    ],
+    "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515",
+    "environment": {
+      "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa"
+    },
+    "qemu": {
+      "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa",
+      "sha256": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e"
+    },
+    "fixture": {
+      "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/tests/qtest/esp32s3-i2c-test",
+      "sha256": "9684c64fe6958e3a6cf35ca5a508dd275e88af0bd5752b9a5f7241be13f3af2c"
+    },
+    "stdout": {
+      "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/after-stdout.log",
+      "sha256": "90e89bd49745444ed4654b53a28aff809cad0474aa86a78745a1666de826bedc"
+    },
+    "stderr": {
+      "path": "/home/polar/.cache/esp32s3vm/i2c-partial-validity-parent-controls/after-stderr.log",
+      "sha256": "03d6cf70687c4feefc2d9f0bc812490efa063531e3b35f0d4a572fe686ae143f"
+    }
+  }
+]

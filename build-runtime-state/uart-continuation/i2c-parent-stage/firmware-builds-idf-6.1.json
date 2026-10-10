@@ -1,0 +1,30 @@
+[
+  {
+    "mode": "wire",
+    "speed": 100000,
+    "status": "COMPILED_MERGED",
+    "receipt": "/home/polar/.cache/esp32s3vm/i2c-parent-firmware-9892f0e8f970a14f/result.json",
+    "sha256": "616978663eb915fc636fcddde2f7553b9a606ff324745f32aeb17fbd5ec392fc"
+  },
+  {
+    "mode": "wire",
+    "speed": 400000,
+    "status": "COMPILED_MERGED",
+    "receipt": "/home/polar/.cache/esp32s3vm/i2c-parent-firmware-4721c7d3fe9311ef/result.json",
+    "sha256": "aa1da17496b62aea4d7fec39915485d503d44ed8ec78ad123c6c8fc8846ee00c"
+  },
+  {
+    "mode": "wire_defined",
+    "speed": 100000,
+    "status": "COMPILED_MERGED",
+    "receipt": "/home/polar/.cache/esp32s3vm/i2c-parent-firmware-72b1d977fdbc9966/result.json",
+    "sha256": "e6f1ad8f60a3d6266fffc7bc5b44934a0f04fe52bd178251917a408522b1758a"
+  },
+  {
+    "mode": "wire_defined",
+    "speed": 400000,
+    "status": "COMPILED_MERGED",
+    "receipt": "/home/polar/.cache/esp32s3vm/i2c-parent-firmware-62b546eea4d0619b/result.json",
+    "sha256": "c857db3d1e204a71167ee70d8bf4ecb58d1a9131a4f49912c20353c86a6acb2c"
+  }
+]

@@ -1,0 +1,77 @@
+[
+  {
+    "case": "ov2640-normalized-address-ack",
+    "returncode": 0,
+    "command": [
+      "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/i2c-wire-stage/review8-ov/after-native-epoch10/esp32s3-i2c-test",
+      "-p",
+      "/xtensa/esp32s3/i2c/ov2640-normalized-address-ack"
+    ],
+    "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515",
+    "environment": {
+      "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa",
+      "OV_SCCB_GRAPH": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/i2c-wire-stage/review8-ov/ov2640-ordinary-powered.json"
+    },
+    "graph_sha256": "6e0017d6d5997282441930903a226e8e91a1c88ef4f29c5e97c4e7553ba201b5",
+    "fixture_sha256": "0b3a21f014d3e2e8d932464ea5c101cb940c1349c0fc7c3abcec0ef47d60da0d",
+    "qemu_sha256": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e",
+    "stdout": {
+      "path": "/home/polar/.cache/esp32s3vm/i2c-parent-partial-fixed-ov3-graph-bound/ov2640-normalized-address-ack-stdout.log",
+      "sha256": "4028b20f8daea375162baff73764020f34317dcb39ff668c41f300bed4eac514"
+    },
+    "stderr": {
+      "path": "/home/polar/.cache/esp32s3vm/i2c-parent-partial-fixed-ov3-graph-bound/ov2640-normalized-address-ack-stderr.log",
+      "sha256": "60af42cd6becb93c09bfefdf8103d8f2938d3a515b599c7bea931199231fbf87"
+    }
+  },
+  {
+    "case": "ov2640-normalized-pid-read",
+    "returncode": 0,
+    "command": [
+      "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/i2c-wire-stage/review8-ov/after-native-epoch10/esp32s3-i2c-test",
+      "-p",
+      "/xtensa/esp32s3/i2c/ov2640-normalized-pid-read"
+    ],
+    "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515",
+    "environment": {
+      "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa",
+      "OV_SCCB_GRAPH": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/i2c-wire-stage/review8-ov/ov2640-ordinary-powered.json"
+    },
+    "graph_sha256": "6e0017d6d5997282441930903a226e8e91a1c88ef4f29c5e97c4e7553ba201b5",
+    "fixture_sha256": "0b3a21f014d3e2e8d932464ea5c101cb940c1349c0fc7c3abcec0ef47d60da0d",
+    "qemu_sha256": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e",
+    "stdout": {
+      "path": "/home/polar/.cache/esp32s3vm/i2c-parent-partial-fixed-ov3-graph-bound/ov2640-normalized-pid-read-stdout.log",
+      "sha256": "dbfa6c4d0188c9621d7abdff47533a41aff519444338495cda0859bde7e4105b"
+    },
+    "stderr": {
+      "path": "/home/polar/.cache/esp32s3vm/i2c-parent-partial-fixed-ov3-graph-bound/ov2640-normalized-pid-read-stderr.log",
+      "sha256": "60af42cd6becb93c09bfefdf8103d8f2938d3a515b599c7bea931199231fbf87"
+    }
+  },
+  {
+    "case": "ov2640-bank-pointer-register-state",
+    "returncode": 0,
+    "command": [
+      "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/i2c-wire-stage/review8-ov/after-native-epoch10/esp32s3-i2c-test",
+      "-p",
+      "/xtensa/esp32s3/i2c/ov2640-bank-pointer-register-state"
+    ],
+    "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515",
+    "environment": {
+      "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa",
+      "OV_SCCB_GRAPH": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/i2c-wire-stage/review8-ov/ov2640-ordinary-powered.json"
+    },
+    "graph_sha256": "6e0017d6d5997282441930903a226e8e91a1c88ef4f29c5e97c4e7553ba201b5",
+    "fixture_sha256": "0b3a21f014d3e2e8d932464ea5c101cb940c1349c0fc7c3abcec0ef47d60da0d",
+    "qemu_sha256": "19e0edb45afe623eb9a83b3483bac2b70f22f37effefe96268b2d2ccab9be38e",
+    "stdout": {
+      "path": "/home/polar/.cache/esp32s3vm/i2c-parent-partial-fixed-ov3-graph-bound/ov2640-bank-pointer-register-state-stdout.log",
+      "sha256": "41e4db6109bb6333fdacdc723373f303aac7a90e1dc99c4a77a121768f1ad61d"
+    },
+    "stderr": {
+      "path": "/home/polar/.cache/esp32s3vm/i2c-parent-partial-fixed-ov3-graph-bound/ov2640-bank-pointer-register-state-stderr.log",
+      "sha256": "60af42cd6becb93c09bfefdf8103d8f2938d3a515b599c7bea931199231fbf87"
+    }
+  }
+]

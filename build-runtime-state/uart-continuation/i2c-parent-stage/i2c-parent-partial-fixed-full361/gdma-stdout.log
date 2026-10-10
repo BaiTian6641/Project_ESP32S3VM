@@ -1,0 +1,46 @@
+TAP version 13
+# random seed: R02S6e8f34ae5959ccf0fa4124b954402031
+1..18
+# Start of xtensa tests
+# Start of esp32s3-gdma tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -S -accel qtest
+ok 1 /xtensa/esp32s3-gdma/m2m-chain-owner
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -S -accel qtest
+ok 2 /xtensa/esp32s3-gdma/error-owner-mid-chain
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -S -accel qtest
+ok 3 /xtensa/esp32s3-gdma/error-bad-addresses
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -S -accel qtest
+ok 4 /xtensa/esp32s3-gdma/error-inlink-burst-alignment
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -S -accel qtest
+ok 5 /xtensa/esp32s3-gdma/ring-restart-cursor
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -S -accel qtest
+ok 6 /xtensa/esp32s3-gdma/ring-streaming-quantum
+# slow test /xtensa/esp32s3-gdma/ring-streaming-quantum executed in 0.53 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -S -accel qtest
+ok 7 /xtensa/esp32s3-gdma/malicious-self-loop
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -S -accel qtest
+ok 8 /xtensa/esp32s3-gdma/dual-channel-independent
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -S -accel qtest
+ok 9 /xtensa/esp32s3-gdma/peri-sel-register
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -S -accel qtest
+ok 10 /xtensa/esp32s3-gdma/link-park-stop
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -S -accel qtest
+ok 11 /xtensa/esp32s3-gdma/partial-descriptor-boundary
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -S -accel qtest
+ok 12 /xtensa/esp32s3-gdma/inlink-internal-word-alignment
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -accel tcg -accel qtest
+ok 13 /xtensa/esp32s3-gdma/streaming-qmp-responsive
+# slow test /xtensa/esp32s3-gdma/streaming-qmp-responsive executed in 0.50 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -S -accel qtest
+ok 14 /xtensa/esp32s3-gdma/streaming-walk-bound-not-cumulative
+# slow test /xtensa/esp32s3-gdma/streaming-walk-bound-not-cumulative executed in 1.00 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -S -accel qtest
+ok 15 /xtensa/esp32s3-gdma/restart-stream-repeated
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -S -accel qtest
+ok 16 /xtensa/esp32s3-gdma/pump-fulfilled-survives-next-fault
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -S -accel qtest
+ok 17 /xtensa/esp32s3-gdma/pump-rx-fulfilled-survives-next-fault
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-3cc39bfdc7bd3515/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-2253720.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-2253720.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -S -accel qtest
+ok 18 /xtensa/esp32s3-gdma/system-reset
+# End of esp32s3-gdma tests
+# End of xtensa tests
