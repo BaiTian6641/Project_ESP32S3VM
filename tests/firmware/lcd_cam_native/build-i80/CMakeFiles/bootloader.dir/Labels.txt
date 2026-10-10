@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native/build-i80/CMakeFiles/bootloader
+/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native/build-i80/CMakeFiles/bootloader.rule
+/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native/build-i80/CMakeFiles/bootloader-complete.rule
+/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native/build-i80/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native/build-i80/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native/build-i80/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native/build-i80/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native/build-i80/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native/build-i80/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native/build-i80/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule

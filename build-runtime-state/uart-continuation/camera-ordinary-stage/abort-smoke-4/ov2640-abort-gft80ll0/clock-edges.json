@@ -1,0 +1,6402 @@
+[
+  {
+    "ns": 10000000,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000000"
+  },
+  {
+    "ns": 10000025,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000025"
+  },
+  {
+    "ns": 10000050,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000050"
+  },
+  {
+    "ns": 10000075,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000075"
+  },
+  {
+    "ns": 10000100,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000100"
+  },
+  {
+    "ns": 10000125,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000125"
+  },
+  {
+    "ns": 10000150,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000150"
+  },
+  {
+    "ns": 10000175,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000175"
+  },
+  {
+    "ns": 10000200,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000200"
+  },
+  {
+    "ns": 10000225,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000225"
+  },
+  {
+    "ns": 10000250,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000250"
+  },
+  {
+    "ns": 10000275,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000275"
+  },
+  {
+    "ns": 10000300,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000300"
+  },
+  {
+    "ns": 10000325,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000325"
+  },
+  {
+    "ns": 10000350,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000350"
+  },
+  {
+    "ns": 10000375,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000375"
+  },
+  {
+    "ns": 10000400,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000400"
+  },
+  {
+    "ns": 10000425,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000425"
+  },
+  {
+    "ns": 10000450,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000450"
+  },
+  {
+    "ns": 10000475,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000475"
+  },
+  {
+    "ns": 10000500,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000500"
+  },
+  {
+    "ns": 10000525,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000525"
+  },
+  {
+    "ns": 10000550,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000550"
+  },
+  {
+    "ns": 10000575,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000575"
+  },
+  {
+    "ns": 10000600,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000600"
+  },
+  {
+    "ns": 10000625,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000625"
+  },
+  {
+    "ns": 10000650,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000650"
+  },
+  {
+    "ns": 10000675,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000675"
+  },
+  {
+    "ns": 10000700,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000700"
+  },
+  {
+    "ns": 10000725,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000725"
+  },
+  {
+    "ns": 10000750,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000750"
+  },
+  {
+    "ns": 10000775,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000775"
+  },
+  {
+    "ns": 10000800,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000800"
+  },
+  {
+    "ns": 10000825,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000825"
+  },
+  {
+    "ns": 10000850,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000850"
+  },
+  {
+    "ns": 10000875,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000875"
+  },
+  {
+    "ns": 10000900,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000900"
+  },
+  {
+    "ns": 10000925,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000925"
+  },
+  {
+    "ns": 10000950,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000950"
+  },
+  {
+    "ns": 10000975,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10000975"
+  },
+  {
+    "ns": 10001000,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001000"
+  },
+  {
+    "ns": 10001025,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001025"
+  },
+  {
+    "ns": 10001050,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001050"
+  },
+  {
+    "ns": 10001075,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001075"
+  },
+  {
+    "ns": 10001100,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001100"
+  },
+  {
+    "ns": 10001125,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001125"
+  },
+  {
+    "ns": 10001150,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001150"
+  },
+  {
+    "ns": 10001175,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001175"
+  },
+  {
+    "ns": 10001200,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001200"
+  },
+  {
+    "ns": 10001225,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001225"
+  },
+  {
+    "ns": 10001250,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001250"
+  },
+  {
+    "ns": 10001275,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001275"
+  },
+  {
+    "ns": 10001300,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001300"
+  },
+  {
+    "ns": 10001325,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001325"
+  },
+  {
+    "ns": 10001350,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001350"
+  },
+  {
+    "ns": 10001375,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001375"
+  },
+  {
+    "ns": 10001400,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001400"
+  },
+  {
+    "ns": 10001425,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001425"
+  },
+  {
+    "ns": 10001450,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001450"
+  },
+  {
+    "ns": 10001475,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001475"
+  },
+  {
+    "ns": 10001500,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001500"
+  },
+  {
+    "ns": 10001525,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001525"
+  },
+  {
+    "ns": 10001550,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001550"
+  },
+  {
+    "ns": 10001575,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001575"
+  },
+  {
+    "ns": 10001600,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001600"
+  },
+  {
+    "ns": 10001625,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001625"
+  },
+  {
+    "ns": 10001650,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001650"
+  },
+  {
+    "ns": 10001675,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001675"
+  },
+  {
+    "ns": 10001700,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001700"
+  },
+  {
+    "ns": 10001725,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001725"
+  },
+  {
+    "ns": 10001750,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001750"
+  },
+  {
+    "ns": 10001775,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001775"
+  },
+  {
+    "ns": 10001800,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001800"
+  },
+  {
+    "ns": 10001825,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001825"
+  },
+  {
+    "ns": 10001850,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001850"
+  },
+  {
+    "ns": 10001875,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001875"
+  },
+  {
+    "ns": 10001900,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001900"
+  },
+  {
+    "ns": 10001925,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001925"
+  },
+  {
+    "ns": 10001950,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001950"
+  },
+  {
+    "ns": 10001975,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10001975"
+  },
+  {
+    "ns": 10002000,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002000"
+  },
+  {
+    "ns": 10002025,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002025"
+  },
+  {
+    "ns": 10002050,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002050"
+  },
+  {
+    "ns": 10002075,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002075"
+  },
+  {
+    "ns": 10002100,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002100"
+  },
+  {
+    "ns": 10002125,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002125"
+  },
+  {
+    "ns": 10002150,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002150"
+  },
+  {
+    "ns": 10002175,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002175"
+  },
+  {
+    "ns": 10002200,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002200"
+  },
+  {
+    "ns": 10002225,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002225"
+  },
+  {
+    "ns": 10002250,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002250"
+  },
+  {
+    "ns": 10002275,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002275"
+  },
+  {
+    "ns": 10002300,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002300"
+  },
+  {
+    "ns": 10002325,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002325"
+  },
+  {
+    "ns": 10002350,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002350"
+  },
+  {
+    "ns": 10002375,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002375"
+  },
+  {
+    "ns": 10002400,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002400"
+  },
+  {
+    "ns": 10002425,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002425"
+  },
+  {
+    "ns": 10002450,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002450"
+  },
+  {
+    "ns": 10002475,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002475"
+  },
+  {
+    "ns": 10002500,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002500"
+  },
+  {
+    "ns": 10002525,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002525"
+  },
+  {
+    "ns": 10002550,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002550"
+  },
+  {
+    "ns": 10002575,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002575"
+  },
+  {
+    "ns": 10002600,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002600"
+  },
+  {
+    "ns": 10002625,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002625"
+  },
+  {
+    "ns": 10002650,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002650"
+  },
+  {
+    "ns": 10002675,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002675"
+  },
+  {
+    "ns": 10002700,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002700"
+  },
+  {
+    "ns": 10002725,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002725"
+  },
+  {
+    "ns": 10002750,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002750"
+  },
+  {
+    "ns": 10002775,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002775"
+  },
+  {
+    "ns": 10002800,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002800"
+  },
+  {
+    "ns": 10002825,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002825"
+  },
+  {
+    "ns": 10002850,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002850"
+  },
+  {
+    "ns": 10002875,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002875"
+  },
+  {
+    "ns": 10002900,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002900"
+  },
+  {
+    "ns": 10002925,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002925"
+  },
+  {
+    "ns": 10002950,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002950"
+  },
+  {
+    "ns": 10002975,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10002975"
+  },
+  {
+    "ns": 10003000,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003000"
+  },
+  {
+    "ns": 10003025,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003025"
+  },
+  {
+    "ns": 10003050,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003050"
+  },
+  {
+    "ns": 10003075,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003075"
+  },
+  {
+    "ns": 10003100,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003100"
+  },
+  {
+    "ns": 10003125,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003125"
+  },
+  {
+    "ns": 10003150,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003150"
+  },
+  {
+    "ns": 10003175,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003175"
+  },
+  {
+    "ns": 10003200,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003200"
+  },
+  {
+    "ns": 10003225,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003225"
+  },
+  {
+    "ns": 10003250,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003250"
+  },
+  {
+    "ns": 10003275,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003275"
+  },
+  {
+    "ns": 10003300,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003300"
+  },
+  {
+    "ns": 10003325,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003325"
+  },
+  {
+    "ns": 10003350,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003350"
+  },
+  {
+    "ns": 10003375,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003375"
+  },
+  {
+    "ns": 10003400,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003400"
+  },
+  {
+    "ns": 10003425,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003425"
+  },
+  {
+    "ns": 10003450,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003450"
+  },
+  {
+    "ns": 10003475,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003475"
+  },
+  {
+    "ns": 10003500,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003500"
+  },
+  {
+    "ns": 10003525,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003525"
+  },
+  {
+    "ns": 10003550,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003550"
+  },
+  {
+    "ns": 10003575,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003575"
+  },
+  {
+    "ns": 10003600,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003600"
+  },
+  {
+    "ns": 10003625,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003625"
+  },
+  {
+    "ns": 10003650,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003650"
+  },
+  {
+    "ns": 10003675,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003675"
+  },
+  {
+    "ns": 10003700,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003700"
+  },
+  {
+    "ns": 10003725,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003725"
+  },
+  {
+    "ns": 10003750,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003750"
+  },
+  {
+    "ns": 10003775,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003775"
+  },
+  {
+    "ns": 10003800,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003800"
+  },
+  {
+    "ns": 10003825,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003825"
+  },
+  {
+    "ns": 10003850,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003850"
+  },
+  {
+    "ns": 10003875,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003875"
+  },
+  {
+    "ns": 10003900,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003900"
+  },
+  {
+    "ns": 10003925,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003925"
+  },
+  {
+    "ns": 10003950,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003950"
+  },
+  {
+    "ns": 10003975,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10003975"
+  },
+  {
+    "ns": 10004000,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004000"
+  },
+  {
+    "ns": 10004025,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004025"
+  },
+  {
+    "ns": 10004050,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004050"
+  },
+  {
+    "ns": 10004075,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004075"
+  },
+  {
+    "ns": 10004100,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004100"
+  },
+  {
+    "ns": 10004125,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004125"
+  },
+  {
+    "ns": 10004150,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004150"
+  },
+  {
+    "ns": 10004175,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004175"
+  },
+  {
+    "ns": 10004200,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004200"
+  },
+  {
+    "ns": 10004225,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004225"
+  },
+  {
+    "ns": 10004250,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004250"
+  },
+  {
+    "ns": 10004275,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004275"
+  },
+  {
+    "ns": 10004300,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004300"
+  },
+  {
+    "ns": 10004325,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004325"
+  },
+  {
+    "ns": 10004350,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004350"
+  },
+  {
+    "ns": 10004375,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004375"
+  },
+  {
+    "ns": 10004400,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004400"
+  },
+  {
+    "ns": 10004425,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004425"
+  },
+  {
+    "ns": 10004450,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004450"
+  },
+  {
+    "ns": 10004475,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004475"
+  },
+  {
+    "ns": 10004500,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004500"
+  },
+  {
+    "ns": 10004525,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004525"
+  },
+  {
+    "ns": 10004550,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004550"
+  },
+  {
+    "ns": 10004575,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004575"
+  },
+  {
+    "ns": 10004600,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004600"
+  },
+  {
+    "ns": 10004625,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004625"
+  },
+  {
+    "ns": 10004650,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004650"
+  },
+  {
+    "ns": 10004675,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004675"
+  },
+  {
+    "ns": 10004700,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004700"
+  },
+  {
+    "ns": 10004725,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004725"
+  },
+  {
+    "ns": 10004750,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004750"
+  },
+  {
+    "ns": 10004775,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004775"
+  },
+  {
+    "ns": 10004800,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004800"
+  },
+  {
+    "ns": 10004825,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004825"
+  },
+  {
+    "ns": 10004850,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004850"
+  },
+  {
+    "ns": 10004875,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004875"
+  },
+  {
+    "ns": 10004900,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004900"
+  },
+  {
+    "ns": 10004925,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004925"
+  },
+  {
+    "ns": 10004950,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004950"
+  },
+  {
+    "ns": 10004975,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10004975"
+  },
+  {
+    "ns": 10005000,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005000"
+  },
+  {
+    "ns": 10005025,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005025"
+  },
+  {
+    "ns": 10005050,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005050"
+  },
+  {
+    "ns": 10005075,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005075"
+  },
+  {
+    "ns": 10005100,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005100"
+  },
+  {
+    "ns": 10005125,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005125"
+  },
+  {
+    "ns": 10005150,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005150"
+  },
+  {
+    "ns": 10005175,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005175"
+  },
+  {
+    "ns": 10005200,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005200"
+  },
+  {
+    "ns": 10005225,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005225"
+  },
+  {
+    "ns": 10005250,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005250"
+  },
+  {
+    "ns": 10005275,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005275"
+  },
+  {
+    "ns": 10005300,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005300"
+  },
+  {
+    "ns": 10005325,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005325"
+  },
+  {
+    "ns": 10005350,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005350"
+  },
+  {
+    "ns": 10005375,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005375"
+  },
+  {
+    "ns": 10005400,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005400"
+  },
+  {
+    "ns": 10005425,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005425"
+  },
+  {
+    "ns": 10005450,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005450"
+  },
+  {
+    "ns": 10005475,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005475"
+  },
+  {
+    "ns": 10005500,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005500"
+  },
+  {
+    "ns": 10005525,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005525"
+  },
+  {
+    "ns": 10005550,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005550"
+  },
+  {
+    "ns": 10005575,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005575"
+  },
+  {
+    "ns": 10005600,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005600"
+  },
+  {
+    "ns": 10005625,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005625"
+  },
+  {
+    "ns": 10005650,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005650"
+  },
+  {
+    "ns": 10005675,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005675"
+  },
+  {
+    "ns": 10005700,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005700"
+  },
+  {
+    "ns": 10005725,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005725"
+  },
+  {
+    "ns": 10005750,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005750"
+  },
+  {
+    "ns": 10005775,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005775"
+  },
+  {
+    "ns": 10005800,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005800"
+  },
+  {
+    "ns": 10005825,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005825"
+  },
+  {
+    "ns": 10005850,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005850"
+  },
+  {
+    "ns": 10005875,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005875"
+  },
+  {
+    "ns": 10005900,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005900"
+  },
+  {
+    "ns": 10005925,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005925"
+  },
+  {
+    "ns": 10005950,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005950"
+  },
+  {
+    "ns": 10005975,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10005975"
+  },
+  {
+    "ns": 10006000,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10006000"
+  },
+  {
+    "ns": 10006025,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10006025"
+  },
+  {
+    "ns": 10006050,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10006050"
+  },
+  {
+    "ns": 10006075,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10006075"
+  },
+  {
+    "ns": 10006100,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10006100"
+  },
+  {
+    "ns": 10006125,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10006125"
+  },
+  {
+    "ns": 10006150,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10006150"
+  },
+  {
+    "ns": 10006175,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10006175"
+  },
+  {
+    "ns": 10006200,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10006200"
+  },
+  {
+    "ns": 10006225,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10006225"
+  },
+  {
+    "ns": 10006250,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10006250"
+  },
+  {
+    "ns": 10006275,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10006275"
+  },
+  {
+    "ns": 10006300,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10006300"
+  },
+  {
+    "ns": 10006325,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10006325"
+  },
+  {
+    "ns": 10006350,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "high",
+      "terminal_id": "U1.io15",
+      "voltage_v": 3.2868525896414345,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10006350"
+  },
+  {
+    "ns": 10006375,
+    "gpio15": {
+      "native_controls": {
+        "pull_down": false,
+        "rtc_mux": false,
+        "mcu_sel": 1,
+        "gpio_output_enable": false,
+        "pull_up": false,
+        "rtc_output_enable": false,
+        "sleep_configured": false,
+        "sleep_requested": false,
+        "receiver_enabled": true,
+        "out_sel": 73
+      },
+      "digital_valid": true,
+      "floating": false,
+      "diagnostic": "low",
+      "terminal_id": "U1.io15",
+      "voltage_v": 0,
+      "valid": true,
+      "gpio": 15
+    },
+    "solver_ns": "10006375"
+  }
+]

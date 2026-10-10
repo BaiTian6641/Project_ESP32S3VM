@@ -1,0 +1,64 @@
+[
+  {
+    "phase": "before",
+    "returncode": -6,
+    "command": [
+      "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-7bec59fa997831f6/build-wsl/tests/qtest/esp32s3-rmt-test",
+      "--tap",
+      "--verbose",
+      "-p",
+      "/xtensa/esp32s3/rmt/rx-live-demod-commit"
+    ],
+    "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-7bec59fa997831f6",
+    "environment": {
+      "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-7bec59fa997831f6/build-wsl/qemu-system-xtensa"
+    },
+    "qemu": {
+      "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-7bec59fa997831f6/build-wsl/qemu-system-xtensa",
+      "sha256": "3801f291003457a01037a4405382141284e78acee1bd8f168c5ff66dac69aeab"
+    },
+    "fixture": {
+      "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-7bec59fa997831f6/build-wsl/tests/qtest/esp32s3-rmt-test",
+      "sha256": "375698faf490a097abe190c1a76314176575cb9a438e267fd690c16800d218d6"
+    },
+    "stdout": {
+      "path": "/home/polar/.cache/esp32s3vm/rmt-next-common-048e00bbbc580d38-live-guard-controls/before-stdout.log",
+      "sha256": "5517d396e4510294092dd026f9fe5dec751b451c556572f83965194ccfd06c8e"
+    },
+    "stderr": {
+      "path": "/home/polar/.cache/esp32s3vm/rmt-next-common-048e00bbbc580d38-live-guard-controls/before-stderr.log",
+      "sha256": "853bbbc61f9ab7417a2617fd211a6dda3c3a096cf1407ced521d4841cc881b56"
+    }
+  },
+  {
+    "phase": "after",
+    "returncode": 0,
+    "command": [
+      "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/tests/qtest/esp32s3-rmt-test",
+      "--tap",
+      "--verbose",
+      "-p",
+      "/xtensa/esp32s3/rmt/rx-live-demod-commit"
+    ],
+    "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38",
+    "environment": {
+      "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa"
+    },
+    "qemu": {
+      "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+      "sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a"
+    },
+    "fixture": {
+      "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/tests/qtest/esp32s3-rmt-test",
+      "sha256": "572c2fd588a517a39e1ddca379c90d2946031d0e9d3ceccd91ce4b528efc3a2a"
+    },
+    "stdout": {
+      "path": "/home/polar/.cache/esp32s3vm/rmt-next-common-048e00bbbc580d38-live-guard-controls/after-stdout.log",
+      "sha256": "ba7d4e63c0775be2f08e9e0aaf25777ab45a8e52a8918d5858fd035687108982"
+    },
+    "stderr": {
+      "path": "/home/polar/.cache/esp32s3vm/rmt-next-common-048e00bbbc580d38-live-guard-controls/after-stderr.log",
+      "sha256": "bcfc31f249704a009f98cca467abbbfd757a57b8ce7a51dcd6897b7a3fe22c2c"
+    }
+  }
+]

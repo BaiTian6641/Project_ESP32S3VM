@@ -403,7 +403,11 @@ static unsigned process_outputs(ESP32S3McpwmState *s)
                        BIT(2 * o + g) : 0;
             p->brake_level[g] = value;
         }
-        R(s, OREG(o, 0x34)) = p->cbc | (p->ost << 1);
+        /* OST status describes a still-active qualified fault, not the
+         * retained output override. Keep that override until FH_CLR_OST:
+         * the documented public recovery first tests OST_ON after exit. */
+        R(s, OREG(o, 0x34)) = p->cbc |
+                             ((p->ost && fault_brake(s, o, true)) << 1);
     }
     return changed;
 }
@@ -743,7 +747,7 @@ static uint32_t mask(unsigned a)
     case CAPPHASE: return UINT32_MAX;
     case 0xf0: case 0xf4: case 0xf8: return 0x1fff;
     case UPDATE: return 0xff;
-    case ENA: case CLR: return 0x3fffffff;
+    case ENA: case RAW: case CLR: return 0x3fffffff;
     case 0x120: return 1;
     case 0x124: return 0xfffffff;
     default: return 0;
@@ -988,7 +992,12 @@ static void gate(void *opaque, int n, int level)
     ESP32S3McpwmState *s = opaque;
     advance(s, qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL));
     s->enabled = level;
-    if (level) {
+    if (!level) {
+        /* External pads may change while the consumer clock is stopped.
+         * Resume establishes input baselines, never replays those changes
+         * as a capture/sync edge. Enabled faults still sample their level. */
+        memset(s->input_valid, 0, sizeof(s->input_valid));
+    } else {
         inputs(s);
     }
     publish(s);
@@ -1011,7 +1020,7 @@ static void reset_input(void *opaque, int n, int level)
         reset_device(DEVICE(opaque));
     }
 }
-static void clock_update(void *opaque, ClockEvent ev)
+static void mcpwm_clock_update(void *opaque, ClockEvent ev)
 {
     ESP32S3McpwmState *s = opaque;
     if (ev == ClockPreUpdate) {
@@ -1063,9 +1072,9 @@ static void init(Object *obj)
     sysbus_init_mmio(SYS_BUS_DEVICE(obj), &s->iomem);
     sysbus_init_irq(SYS_BUS_DEVICE(obj), &s->irq);
     s->event = timer_new_ns(QEMU_CLOCK_VIRTUAL, event, s);
-    s->apb_clk = qdev_init_clock_in(DEVICE(obj), "apb-clk", clock_update, s,
+    s->apb_clk = qdev_init_clock_in(DEVICE(obj), "apb-clk", mcpwm_clock_update, s,
                                    ClockPreUpdate | ClockUpdate);
-    s->pll_clk = qdev_init_clock_in(DEVICE(obj), "pll-f160m-clk", clock_update, s,
+    s->pll_clk = qdev_init_clock_in(DEVICE(obj), "pll-f160m-clk", mcpwm_clock_update, s,
                                    ClockPreUpdate | ClockUpdate);
     qdev_init_gpio_in_named(DEVICE(obj), gate, "clock-enable", 1);
     qdev_init_gpio_in_named(DEVICE(obj), held, "reset-held", 1);

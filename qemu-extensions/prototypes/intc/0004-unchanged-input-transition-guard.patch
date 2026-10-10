@@ -1,0 +1,20 @@
+diff --git a/hw/xtensa/esp32s3_intc.c b/hw/xtensa/esp32s3_intc.c
+--- a/hw/xtensa/esp32s3_intc.c
++++ b/hw/xtensa/esp32s3_intc.c
+@@ -115,7 +115,15 @@
+     Esp32s3IntMatrixState *s = ESP32S3_INTMATRIX(opaque);
+ 
+     g_assert(n >= 0 && n < ESP32S3_INT_MATRIX_INPUTS);
+-    s->input_level[n] = (level != 0);
++    bool asserted = level != 0;
++    /* The matrix propagates input transitions, not repeated publications of
++     * the same wire level. MAP, clock-gate and reset paths update separately;
++     * CPU edge latches/acknowledgement remain owned by the Xtensa interrupt
++     * inputs, which already receive only changes of the matrix's output OR. */
++    if (s->input_level[n] == asserted) {
++        return;
++    }
++    s->input_level[n] = asserted;
+     esp32s3_intmatrix_update(s);
+ }
+ 

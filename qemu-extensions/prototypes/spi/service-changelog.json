@@ -64,6 +64,19 @@
     "status": "Current source-bound candidate eb6707129054f40a:8 native NOR service cases and27 SPI controller cases PASS. Both complete ordinary IDF SPI2/3 NOR/loopback fixtures and5 expected strict-negative profiles PASS; full backend182 and ordinary25 outcomes share one executable.",
     "evidence": "build-runtime-state/uart-continuation/spi-stage/qualification-receipt.json"
   },
+  "psram_transport_stage": {
+    "status": "PASS_SPI_DIRECT_PSRAM_NATIVE_WIRE_AND_BOTH_SDK_PROGRAMS; operative family recipe migrated; actual publication separate",
+    "recipe": "qemu-extensions/prototypes/spi/foundation-dependencies.json",
+    "overlay": "0009-psram-dma-transport.patch",
+    "ordering": "Explicit after_copies overlay; original accepted copies and historical source recipes preserved",
+    "qualification_receipt": "build-runtime-state/uart-continuation/peripheral-next-common-stage/spi-psram-qualification-receipt.json",
+    "binary_sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a",
+    "actual": "341 native, zero skip; both-controller isolated cache/wire fail-before/pass-after; both complete SDK5.5.5/6.1 programs PASS with16 public-API384-byte direct-PSRAM transactions and all existing loopback gates",
+    "change": "Delete only obsolete six-line internal-only transport refusal after genuine MMU/SSI/GDMA/cache/wire proof; no bounce, fallback, invented alias, source clock change or SDK shim",
+    "canonical_source_guard": "Native source-record identity retains exact canonical base-copy input hashes and separately verifies qualified raw overlay bytes, strict after_copies ordering, exact targets and resulting model hashes; old copied-target-only guard fails on genuine17517a runtime, new guard accepts and real both-controller cache/wire probes PASS. Recomputed wrong-phase provenance is rejected.",
+    "canonical_source_guard_receipt": "build-runtime-state/uart-continuation/peripheral-next-common-stage/canonical-source-guard-qualification.json",
+    "boundary": "Broader slave/multiline/DDR/direct-IO-mux and independent metrology/fast-edge/replay gates remain separate."
+  },
   "current_foundation_refinement": [
     "Consolidated SPI2/3 controller/live-clock/gate/reset/IRQ integration leaves SPI0/1 flash/PSRAM paths unchanged.",
     "Canonical binding registers released FSPIQ_OUT authority; actual MISO still comes only from NativeNet wires/devices.",

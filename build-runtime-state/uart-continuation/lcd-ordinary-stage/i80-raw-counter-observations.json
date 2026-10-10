@@ -1,0 +1,80 @@
+[
+  {
+    "sdk": "idf-5.5.5",
+    "frame": 0,
+    "callback_ticks": 7025719,
+    "tick_ns_numerator": 878214875,
+    "tick_ns_denominator": 2,
+    "actual_physical_end_ns": 439106278,
+    "measured_lower_boundary_margin_ns_numerator": 2319,
+    "margin_denominator": 2,
+    "uart_sha256": "f42fa7e39727669459eb531a9384dab86c0c3e43aca6edb048e1db9de9c55442",
+    "bundle_sha256": "7978bd1efa0262532b29ecddf26f97cd804880eba37fd62ccfd6bd0709515639",
+    "scope": "Measured rational inequality only; absolute counter-origin qualification is separately required. Original collector FAIL/QUALIFIED_LIMITED remains unchanged."
+  },
+  {
+    "sdk": "idf-5.5.5",
+    "frame": 1,
+    "callback_ticks": 7426671,
+    "tick_ns_numerator": 928333875,
+    "tick_ns_denominator": 2,
+    "actual_physical_end_ns": 464165913,
+    "measured_lower_boundary_margin_ns_numerator": 2049,
+    "margin_denominator": 2,
+    "uart_sha256": "f42fa7e39727669459eb531a9384dab86c0c3e43aca6edb048e1db9de9c55442",
+    "bundle_sha256": "4db1c4f322b6ccd1e47970bf36e58c7c70e98b3146028dc19fb65c90c06afe87",
+    "scope": "Measured rational inequality only; absolute counter-origin qualification is separately required. Original collector FAIL/QUALIFIED_LIMITED remains unchanged."
+  },
+  {
+    "sdk": "idf-5.5.5",
+    "frame": 2,
+    "callback_ticks": 7829422,
+    "tick_ns_numerator": 978677750,
+    "tick_ns_denominator": 2,
+    "actual_physical_end_ns": 489338027,
+    "measured_lower_boundary_margin_ns_numerator": 1696,
+    "margin_denominator": 2,
+    "uart_sha256": "f42fa7e39727669459eb531a9384dab86c0c3e43aca6edb048e1db9de9c55442",
+    "bundle_sha256": "365e398383cd259d8bd3913271e99dbd006d396d3b7d90aa2c0a305c9733fcb1",
+    "scope": "Measured rational inequality only; absolute counter-origin qualification is separately required. Original collector FAIL/QUALIFIED_LIMITED remains unchanged."
+  },
+  {
+    "sdk": "idf-6.1",
+    "frame": 0,
+    "callback_ticks": 7025747,
+    "tick_ns_numerator": 878218375,
+    "tick_ns_denominator": 2,
+    "actual_physical_end_ns": 439107983,
+    "measured_lower_boundary_margin_ns_numerator": 2409,
+    "margin_denominator": 2,
+    "uart_sha256": "12de1d9cdb661065c1a4a2c1cacf15cc5994ad7dd9f86b033a8a516c7ccb8640",
+    "bundle_sha256": "d8e6613199bd3766cc8e84d597a5a38dc86ccaf89119df156d2f7c78b0b609dc",
+    "scope": "Measured rational inequality only; absolute counter-origin qualification is separately required. Original collector FAIL/QUALIFIED_LIMITED remains unchanged."
+  },
+  {
+    "sdk": "idf-6.1",
+    "frame": 1,
+    "callback_ticks": 7426698,
+    "tick_ns_numerator": 928337250,
+    "tick_ns_denominator": 2,
+    "actual_physical_end_ns": 464167584,
+    "measured_lower_boundary_margin_ns_numerator": 2082,
+    "margin_denominator": 2,
+    "uart_sha256": "12de1d9cdb661065c1a4a2c1cacf15cc5994ad7dd9f86b033a8a516c7ccb8640",
+    "bundle_sha256": "92eee4e7ae9da7fc6f6596a53d0f6de2ba2e9f7c7096d06242a37939848ccec4",
+    "scope": "Measured rational inequality only; absolute counter-origin qualification is separately required. Original collector FAIL/QUALIFIED_LIMITED remains unchanged."
+  },
+  {
+    "sdk": "idf-6.1",
+    "frame": 2,
+    "callback_ticks": 7829440,
+    "tick_ns_numerator": 978680000,
+    "tick_ns_denominator": 2,
+    "actual_physical_end_ns": 489339105,
+    "measured_lower_boundary_margin_ns_numerator": 1790,
+    "margin_denominator": 2,
+    "uart_sha256": "12de1d9cdb661065c1a4a2c1cacf15cc5994ad7dd9f86b033a8a516c7ccb8640",
+    "bundle_sha256": "e9ba21bf42b273e61161768706f535ff0fec6ce1115838017b3304d324429184",
+    "scope": "Measured rational inequality only; absolute counter-origin qualification is separately required. Original collector FAIL/QUALIFIED_LIMITED remains unchanged."
+  }
+]

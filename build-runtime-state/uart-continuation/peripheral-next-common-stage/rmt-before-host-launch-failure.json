@@ -1,0 +1,7 @@
+{
+  "status": "HOST_LAUNCH_FAILED",
+  "returncode": 255,
+  "service_error": "Wsl/Service/0x8007274c",
+  "command": "wsl -d Ubuntu -- python3 /mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/uart/prepare.py --dependencies /mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/peripheral-next-common-stage/dependencies-net-rmt-before-spi-psram.json --evidence /mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/peripheral-next-common-stage/preparation-rmt-before",
+  "boundary": "Host WSL service error; no source preparation, binary, native test or RMT runtime qualification claimed. Any partial checkout is preserved."
+}

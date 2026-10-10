@@ -23,7 +23,10 @@ static const char *TAG = "sccb-ng";
 
 #define LITTLETOBIG(x) ((x << 8) | (x >> 8))
 
+#if (ESP_IDF_VERSION_MAJOR <= 5)
 #include "esp_private/i2c_platform.h"
+#endif
+
 #include "driver/i2c_master.h"
 #include "driver/i2c_types.h"
 
@@ -44,8 +47,8 @@ const int SCCB_I2C_PORT_DEFAULT = 0;
 
 /*
  The legacy I2C driver used addresses to differentiate between devices, whereas the new driver uses
- i2c_master_dev_handle_t structs which are registed to the bus.
- To avoid re-writing all camera dependant code, we simply translate the devices address to the corresponding
+ i2c_master_dev_handle_t structs which are registered to the bus.
+ To avoid re-writing all camera dependent code, we simply translate the devices address to the corresponding
  device_handle. This keeps all interfaces to the drivers identical.
  To perform this conversion the following local struct is used.
 */
@@ -152,7 +155,7 @@ int SCCB_Use_Port(int i2c_num)
         return ESP_ERR_INVALID_ARG;
     }
     sccb_i2c_port = i2c_num;
-
+    sccb_owns_i2c_port = false; // in this case, camera doesn't own the i2c port
     return ESP_OK;
 }
 
@@ -222,18 +225,46 @@ int SCCB_Probe(uint8_t slv_addr)
 
 uint8_t SCCB_Read(uint8_t slv_addr, uint8_t reg)
 {
-    i2c_master_dev_handle_t dev_handle = *(get_handle_from_address(slv_addr));
+    i2c_master_dev_handle_t *dev_handle_ptr = get_handle_from_address(slv_addr);
+    if (dev_handle_ptr == NULL)
+    {
+        return 0;
+    }
+    i2c_master_dev_handle_t dev_handle = *dev_handle_ptr;
 
-    uint8_t tx_buffer[1];
-    uint8_t rx_buffer[1];
+    uint8_t tx_buffer[1] = { reg };
+    uint8_t rx_buffer[1] = { 0 };
 
-    tx_buffer[0] = reg;
+    esp_err_t ret = i2c_master_transmit_receive(dev_handle, tx_buffer, sizeof(tx_buffer),
+                                                rx_buffer, sizeof(rx_buffer), TIMEOUT_MS);
+    if (ret == ESP_OK)
+    {
+        return rx_buffer[0];
+    }
 
-    esp_err_t ret = i2c_master_transmit_receive(dev_handle, tx_buffer, 1, rx_buffer, 1, TIMEOUT_MS);
+    /*
+     * Most SCCB sensors expect an 8-bit register read to use a repeated-start
+     * write/read transaction. Some devices reject that sequence with the new
+     * IDF I2C master driver, so only fall back to a stop/start read after the
+     * repeated-start transaction fails.
+     */
+    ESP_LOGD(TAG, "SCCB_Read repeated-start failed addr:0x%02x, reg:0x%02x, ret:%d; retrying",
+             slv_addr, reg, ret);
 
+    ret = i2c_master_transmit(dev_handle, tx_buffer, sizeof(tx_buffer), TIMEOUT_MS);
     if (ret != ESP_OK)
     {
-        ESP_LOGE(TAG, "SCCB_Read Failed addr:0x%02x, reg:0x%02x, data:0x%02x, ret:%d", slv_addr, reg, rx_buffer[0], ret);
+        ESP_LOGE(TAG, "SCCB_Read addr phase failed addr:0x%02x, reg:0x%02x, ret:%d",
+                 slv_addr, reg, ret);
+        return 0;
+    }
+
+    ret = i2c_master_receive(dev_handle, rx_buffer, sizeof(rx_buffer), TIMEOUT_MS);
+    if (ret != ESP_OK)
+    {
+        ESP_LOGE(TAG, "SCCB_Read data phase failed addr:0x%02x, reg:0x%02x, ret:%d",
+                 slv_addr, reg, ret);
+        return 0;
     }
 
     return rx_buffer[0];
@@ -241,7 +272,12 @@ uint8_t SCCB_Read(uint8_t slv_addr, uint8_t reg)
 
 int SCCB_Write(uint8_t slv_addr, uint8_t reg, uint8_t data)
 {
-    i2c_master_dev_handle_t dev_handle = *(get_handle_from_address(slv_addr));
+    i2c_master_dev_handle_t *dev_handle_ptr = get_handle_from_address(slv_addr);
+    if (dev_handle_ptr == NULL)
+    {
+        return -1;
+    }
+    i2c_master_dev_handle_t dev_handle = *dev_handle_ptr;
 
     uint8_t tx_buffer[2];
     tx_buffer[0] = reg;
@@ -259,7 +295,12 @@ int SCCB_Write(uint8_t slv_addr, uint8_t reg, uint8_t data)
 
 uint8_t SCCB_Read16(uint8_t slv_addr, uint16_t reg)
 {
-    i2c_master_dev_handle_t dev_handle = *(get_handle_from_address(slv_addr));
+    i2c_master_dev_handle_t *dev_handle_ptr = get_handle_from_address(slv_addr);
+    if (dev_handle_ptr == NULL)
+    {
+        return 0;
+    }
+    i2c_master_dev_handle_t dev_handle = *dev_handle_ptr;
 
     uint8_t rx_buffer[1];
 
@@ -278,7 +319,12 @@ uint8_t SCCB_Read16(uint8_t slv_addr, uint16_t reg)
 
 int SCCB_Write16(uint8_t slv_addr, uint16_t reg, uint8_t data)
 {
-    i2c_master_dev_handle_t dev_handle = *(get_handle_from_address(slv_addr));
+    i2c_master_dev_handle_t *dev_handle_ptr = get_handle_from_address(slv_addr);
+    if (dev_handle_ptr == NULL)
+    {
+        return -1;
+    }
+    i2c_master_dev_handle_t dev_handle = *dev_handle_ptr;
 
     uint8_t tx_buffer[3];
     tx_buffer[0] = reg >> 8;
@@ -296,7 +342,12 @@ int SCCB_Write16(uint8_t slv_addr, uint16_t reg, uint8_t data)
 
 uint16_t SCCB_Read_Addr16_Val16(uint8_t slv_addr, uint16_t reg)
 {
-    i2c_master_dev_handle_t dev_handle = *(get_handle_from_address(slv_addr));
+    i2c_master_dev_handle_t *dev_handle_ptr = get_handle_from_address(slv_addr);
+    if (dev_handle_ptr == NULL)
+    {
+        return 0;
+    }
+    i2c_master_dev_handle_t dev_handle = *dev_handle_ptr;
 
     uint8_t rx_buffer[2];
 
@@ -316,7 +367,12 @@ uint16_t SCCB_Read_Addr16_Val16(uint8_t slv_addr, uint16_t reg)
 
 int SCCB_Write_Addr16_Val16(uint8_t slv_addr, uint16_t reg, uint16_t data)
 {
-    i2c_master_dev_handle_t dev_handle = *(get_handle_from_address(slv_addr));
+    i2c_master_dev_handle_t *dev_handle_ptr = get_handle_from_address(slv_addr);
+    if (dev_handle_ptr == NULL)
+    {
+        return -1;
+    }
+    i2c_master_dev_handle_t dev_handle = *dev_handle_ptr;
 
     uint8_t tx_buffer[4];
     tx_buffer[0] = reg >> 8;

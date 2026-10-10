@@ -218,8 +218,6 @@ def validate_uart(text, config):
     require(re.search(rf'^SPI_NATIVE_DONE profile={mode} failures=0 result=PASS virtual_us=\d+$', text, re.MULTILINE),
             'Ordinary driver fixture did not complete successfully')
     require(not re.search(r'^SPI_NATIVE_CHECK .*result=FAIL$', text, re.MULTILINE), 'Firmware reported a failed check')
-    require('SPI_NATIVE_GATE advanced=UNSUPPORTED slave=UNSUPPORTED psram_dma=UNSUPPORTED spi01=UNTOUCHED' in text,
-            'Missing explicit unsupported qualification gates')
     for host, row in PINS.items():
         for engine in ('PIO', 'GDMA'):
             require(re.search(rf'^SPI_NATIVE_PHASE host={host} engine={engine} sclk={row[0]} mosi={row[1]} miso={row[2]} cs0={row[3]} cs1={row[4]} speed_hz={config["speed_hz"]} route=matrix virtual_us=\d+$', text, re.MULTILINE),
@@ -445,11 +443,28 @@ def runtime_pin(args):
         require(actual.is_file() and sha256(actual) == expected,
                 f'Recorded runtime source changed: {relative}')
     mapping = json.loads((pathlib.Path(__file__).parent / 'source-map.json').read_text())
+    overlay_targets = {}
+    for overlay in mapping.get('post_copy_overlays', []):
+        name = 'prototypes/spi/' + overlay['source']
+        require(sha256(pathlib.Path(__file__).parent / overlay['source']) == overlay['sha256']
+                and record['inputs'].get(name) == overlay['sha256'],
+                f'Runtime SPI overlay differs from its qualified input: {name}')
+        operations = [item for item in record['patches'] if item['source'] == name]
+        require(len(operations) == 1 and operations[0].get('after_copies') is True
+                and operations[0].get('patch_context') == 'strict'
+                and set(operations[0]['targets']) == set(overlay['targets'])
+                and set(overlay['applied_sha256']) == set(overlay['targets']),
+                f'Runtime SPI overlay ordering/scope differs: {name}')
+        for target, expected in overlay['applied_sha256'].items():
+            require(target not in overlay_targets, f'Duplicate SPI overlay target: {target}')
+            overlay_targets[target] = expected
     for item in mapping['copies'] + mapping['graph_copies']:
         canonical = pathlib.Path(__file__).parent / item['source']
         expected = hashlib.sha256(canonical.read_bytes().replace(b'\r\n', b'\n')).hexdigest()
-        require(applied.get(item['destination']) == expected,
-                f'Runtime does not contain canonical SPI source: {item["destination"]}')
+        require(record['inputs'].get('prototypes/spi/' + item['source']) == expected,
+                f'Runtime SPI copied input differs from canonical source: {item["source"]}')
+        require(applied.get(item['destination']) == overlay_targets.get(item['destination'], expected),
+                f'Runtime does not contain qualified SPI source: {item["destination"]}')
     return dict(source=str(source), fingerprint=fingerprint,
                 source_record=str(record_path), source_record_sha256=sha256(record_path),
                 binary_sha256=sha256(args.qemu), verified_applied_files=len(applied))

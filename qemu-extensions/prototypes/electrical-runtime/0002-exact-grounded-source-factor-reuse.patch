@@ -1,0 +1,277 @@
+diff --git a/hw/adc/net-dc.c b/hw/adc/net-dc.c
+--- a/hw/adc/net-dc.c
++++ b/hw/adc/net-dc.c
+@@ -78,6 +78,9 @@
+     EnDcCircuit matrix_key;
+     int factored;
+     size_t dimension;
++    size_t full_dimension;
++    size_t order[EN_DC_MAX_DIM];
++    double reduced_key[EN_DC_MAX_DIM * EN_DC_MAX_DIM];
+     unsigned long long factorizations;
+     double storage[2 * EN_DC_MAX_DIM * EN_DC_MAX_DIM + 4 * EN_DC_MAX_DIM];
+     double row_scale[EN_DC_MAX_DIM];
+@@ -218,6 +221,11 @@
+     unsigned parent[EN_DC_MAX_NODES];
+     int source_index[EN_DC_MAX_ELEMENTS];
+     size_t source_count = 0;
++    int previous_factored = workspace ? workspace->factored : 0;
++    if (workspace) {
++        /* Failed validation must not retain an apparently live factor cache. */
++        workspace->factored = 0;
++    }
+     if (!result) {
+         return EN_DC_INVALID;
+     }
+@@ -303,29 +311,68 @@
+         snprintf(result->diagnostic, sizeof(result->diagnostic), "Explicit reference only");
+         return result->status;
+     }
+-    /* Fixed workspace; factors survive source-only changes. */
++    workspace->factored = previous_factored;
++    /* Preserve every physical MNA equation. Direct ideal sources to node 0
++     * prescribe an exact node voltage; eliminate that node and its source
++     * current from the factorization, then recover the source current by KCL.
++     * A second source prescribing the same node stays in the system, so
++     * redundant/conflicting constraints still produce the original rank
++     * failure instead of an invented distribution of source currents. */
++    unsigned char removed[EN_DC_MAX_DIM] = {0};
++    size_t known_node[EN_DC_MAX_NODES], known_source[EN_DC_MAX_NODES];
++    int known_sign[EN_DC_MAX_NODES];
++    double known_value[EN_DC_MAX_NODES];
++    size_t known_count = 0, order[EN_DC_MAX_DIM], reduced_dim = 0;
++    for (size_t i = 0; i < circuit->element_count; ++i) {
++        const EnDcElement *element = &circuit->elements[i];
++        if (element->kind != EN_DC_VOLTAGE_SOURCE ||
++            (element->p && element->n)) {
++            continue;
++        }
++        unsigned node = element->p ? element->p : element->n;
++        if (removed[node - 1]) {
++            continue;
++        }
++        size_t source = nodes + (size_t)source_index[i];
++        removed[node - 1] = removed[source] = 1;
++        known_node[known_count] = node - 1;
++        known_source[known_count] = source;
++        known_sign[known_count] = element->p ? 1 : -1;
++        known_value[known_count] = known_sign[known_count] * element->value;
++        ++known_count;
++    }
++    for (size_t i = 0; i < dim; ++i) {
++        if (!removed[i]) {
++            order[reduced_dim++] = i;
++        }
++    }
++
+     double *original = workspace->storage;
+     double *a = original + dim * dim;
+     double *rhs = a + dim * dim;
+     double *b = rhs + dim;
+     double *x = b + dim;
+-    int reuse = workspace->factored && workspace->dimension == dim &&
+-                same_matrix(&workspace->matrix_key, circuit);
+-    if (!reuse) {
++    double *reduced_x = x + dim;
++    int same_original = workspace->full_dimension == dim &&
++                        same_matrix(&workspace->matrix_key, circuit);
++    if (workspace->full_dimension != dim) {
++        workspace->factored = 0;
++    }
++    if (!same_original) {
+         memset(original, 0, dim * dim * sizeof(double));
+     }
+-    memset(rhs, 0, 3 * dim * sizeof(double));
++    memset(rhs, 0, 4 * dim * sizeof(double));
+     for (size_t i = 0; i < circuit->element_count; ++i) {
+         const EnDcElement *element = &circuit->elements[i];
+         unsigned p = element->p, n = element->n;
+         switch (element->kind) {
+         case EN_DC_RESISTOR:
+-            if (!reuse) {
++            if (!same_original) {
+                 stamp_conductance(original, dim, p, n, 1 / element->value);
+             }
+             break;
+         case EN_DC_DRIVER:
+-            if (!reuse) {
++            if (!same_original) {
+                 stamp_conductance(original, dim, p, n, 1 / element->resistance);
+             }
+             stamp_rhs(rhs, p, n, element->value / element->resistance);
+@@ -335,11 +382,11 @@
+             break;
+         case EN_DC_VOLTAGE_SOURCE: {
+             size_t row = nodes + (size_t)source_index[i];
+-            if (!reuse && p) {
++            if (!same_original && p) {
+                 original[(p - 1) * dim + row] += 1;
+                 original[row * dim + p - 1] += 1;
+             }
+-            if (!reuse && n) {
++            if (!same_original && n) {
+                 original[(n - 1) * dim + row] -= 1;
+                 original[row * dim + n - 1] -= 1;
+             }
+@@ -348,36 +395,99 @@
+         }
+         }
+     }
+-    if (!reuse) {
+-        memcpy(a, original, dim * dim * sizeof(double));
+-    }
+-    memcpy(b, rhs, dim * sizeof(double));
+-    /* One internal gauge per floating conductive island. Preserve ORIGINAL
+-     * equations for the post-solve current-balance check (no fabricated ground). */
+-    for (size_t i = 1; i < circuit->node_count; ++i) {
+-        if (result->floating[i] && root(parent, (unsigned)i) == i) {
+-            if (!reuse) {
+-                memset(a + (i - 1) * dim, 0, dim * sizeof(double));
+-                a[(i - 1) * dim + i - 1] = 1;
+-            }
+-            b[i - 1] = 0;
++    if (!same_original) {
++        workspace->matrix_key.node_count = circuit->node_count;
++        workspace->matrix_key.element_count = circuit->element_count;
++        memcpy(workspace->matrix_key.elements, circuit->elements,
++               circuit->element_count * sizeof(EnDcElement));
++        workspace->full_dimension = dim;
++    }
++    for (size_t i = 0; i < known_count; ++i) {
++        x[known_node[i]] = known_value[i];
++    }
++
++    /* A cache hit requires the CURRENT fully stamped reduced equations,
++     * including the floating-island gauges, to match byte for byte in the
++     * same order/dimension. No topology assumption, voltage cache, tolerance
++     * or hash is used to decide factor reuse. RHS and all outputs are fresh. */
++    unsigned char gauge[EN_DC_MAX_DIM] = {0};
++    int reuse = workspace->factored && workspace->dimension == reduced_dim &&
++                memcmp(workspace->order, order,
++                       reduced_dim * sizeof(*order)) == 0;
++    for (size_t row = 0; row < reduced_dim; ++row) {
++        size_t full_row = order[row];
++        if (full_row < nodes) {
++            unsigned node = (unsigned)full_row + 1;
++            gauge[row] = result->floating[node] && root(parent, node) == node;
++        }
++        b[row] = gauge[row] ? 0 : rhs[full_row];
++        if (!gauge[row]) {
++            for (size_t i = 0; i < known_count; ++i) {
++                b[row] -= original[full_row * dim + known_node[i]] * known_value[i];
++            }
++        }
++        if (reuse) {
++            for (size_t col = 0; col < reduced_dim; ++col) {
++                double coefficient = gauge[row] ? (row == col ? 1 : 0) :
++                    original[full_row * dim + order[col]];
++                if (memcmp(&coefficient,
++                           &workspace->reduced_key[row * reduced_dim + col],
++                           sizeof(coefficient)) != 0) {
++                    reuse = 0;
++                    break;
++                }
++            }
+         }
+     }
+     EnDcStatus status = EN_DC_OK;
+     if (!reuse) {
+-        status = factor_matrix(workspace, a, dim);
++        workspace->factored = 0;
++        for (size_t row = 0; row < reduced_dim; ++row) {
++            for (size_t col = 0; col < reduced_dim; ++col) {
++                double coefficient = gauge[row] ? (row == col ? 1 : 0) :
++                    original[order[row] * dim + order[col]];
++                a[row * reduced_dim + col] = coefficient;
++                workspace->reduced_key[row * reduced_dim + col] = coefficient;
++            }
++        }
++        if (reduced_dim) {
++            status = factor_matrix(workspace, a, reduced_dim);
++        } else {
++            /* All voltages are prescribed and all source currents follow
++             * directly from KCL. No fictitious factorization is counted. */
++            workspace->factored = 1;
++        }
+         if (status == EN_DC_OK) {
+-            workspace->matrix_key = *circuit;
+-            workspace->dimension = dim;
+-        }
+-    }
+-    if (status == EN_DC_OK) {
+-        status = solve_factored(workspace, a, b, x, dim);
++            memcpy(workspace->order, order, reduced_dim * sizeof(*order));
++            workspace->dimension = reduced_dim;
++        }
++    }
++    if (status == EN_DC_OK && reduced_dim) {
++        status = solve_factored(workspace, a, b, reduced_x, reduced_dim);
+     }
+     if (status != EN_DC_OK) {
++        workspace->factored = 0;
+         return fail(result, status, SIZE_MAX,
+                     status == EN_DC_SINGULAR ? "Singular or ill-conditioned ideal-source/topology system" :
+                                              "Nonfinite matrix or numerical solution");
++    }
++    for (size_t i = 0; i < reduced_dim; ++i) {
++        x[order[i]] = reduced_x[i];
++    }
++    for (size_t i = 0; i < known_count; ++i) {
++        size_t row = known_node[i], source = known_source[i];
++        double sum = 0;
++        for (size_t col = 0; col < dim; ++col) {
++            if (col != source) {
++                sum += original[row * dim + col] * x[col];
++            }
++        }
++        x[source] = known_sign[i] * (rhs[row] - sum);
++        if (!isfinite(x[source])) {
++            workspace->factored = 0;
++            return fail(result, EN_DC_NUMERICAL, SIZE_MAX,
++                        "Nonfinite recovered ideal-source current");
++        }
+     }
+     for (size_t row = 0; row < dim; ++row) {
+         double value = 0, scale = fabs(rhs[row]);
+@@ -396,6 +506,7 @@
+         if (!isfinite(residual) || !isfinite(scale) || residual > absolute + EN_REL_TOL * scale) {
+             /* Physical island-current balance passed independently already.
+              * Overflow/convergence must not be mislabeled as a missing return. */
++            workspace->factored = 0;
+             return fail(result, EN_DC_NUMERICAL, SIZE_MAX,
+                         "Original equation residual was nonfinite or exceeded tolerance");
+         }
+@@ -419,6 +530,7 @@
+             break;
+         }
+         if (!isfinite(result->current[i])) {
++            workspace->factored = 0;
+             return fail(result, EN_DC_NUMERICAL, i, "Nonfinite branch current");
+         }
+     }
+diff --git a/hw/adc/net-dc.h b/hw/adc/net-dc.h
+--- a/hw/adc/net-dc.h
++++ b/hw/adc/net-dc.h
+@@ -53,14 +53,17 @@
+     char diagnostic[160];
+ } EnDcResult;
+ 
+-/* Row-equilibrated dense MNA, deterministic partial pivoting. Limits and default
+- * tolerances are part of docs/contracts/electrical-dc.md. Floating nodes never
++/* Row-equilibrated dense MNA with exact elimination of directly reference-tied
++ * ideal-voltage constraints and deterministic partial pivoting. Limits and
++ * tolerances remain in docs/contracts/electrical-dc.md. Floating nodes never
+  * become zero-voltage outputs merely because an internal gauge was selected. */
+ EnDcStatus en_dc_solve(const EnDcCircuit *circuit, EnDcResult *result);
+ 
+-/* Reusable bounded matrix workspace. Source-only changes reuse the existing
+- * row-equilibrated LU factors; every call still checks floating-island current
+- * balance and every original KCL/source equation. No allocations on solve. */
++/* Reusable bounded matrix workspace. LU reuse requires byte-identical current
++ * reduced equations in the same order/dimension; known voltages always use
++ * current ideal-source values and source currents are recovered from KCL.
++ * Every call still checks floating-island current balance and every original
++ * KCL/source equation. No allocations or cached voltage outputs on solve. */
+ typedef struct EnDcWorkspace EnDcWorkspace;
+ EnDcWorkspace *en_dc_workspace_create(void);
+ void en_dc_workspace_destroy(EnDcWorkspace *workspace);

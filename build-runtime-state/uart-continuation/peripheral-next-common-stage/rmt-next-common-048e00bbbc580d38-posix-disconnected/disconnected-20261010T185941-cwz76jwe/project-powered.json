@@ -1,0 +1,439 @@
+{
+  "version": 3,
+  "id": "rmt-native-disconnected",
+  "name": "Ordinary native RMT disconnected",
+  "profile": {
+    "chip": "esp32s3",
+    "board": "esp32-s3-devkitc-1",
+    "module": "esp32-s3-wroom-1"
+  },
+  "firmware": {},
+  "runtime": {
+    "electrical": {
+      "driver_profile": "s3-explicit-finite-v1",
+      "mode": "dc"
+    }
+  },
+  "components": [
+    {
+      "id": "U1",
+      "name": "U1",
+      "kind": "mcu",
+      "type": "mcu",
+      "terminals": [
+        {
+          "id": "U1.vdd",
+          "name": "vdd",
+          "role": "vdd",
+          "domain": "power",
+          "direction": "input"
+        },
+        {
+          "id": "U1.gnd",
+          "name": "gnd",
+          "role": "gnd",
+          "domain": "ground",
+          "direction": "input"
+        },
+        {
+          "id": "U1.io4",
+          "name": "io4",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 4
+        },
+        {
+          "id": "U1.io5",
+          "name": "io5",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 5
+        },
+        {
+          "id": "U1.io6",
+          "name": "io6",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 6
+        },
+        {
+          "id": "U1.io7",
+          "name": "io7",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 7
+        },
+        {
+          "id": "U1.io8",
+          "name": "io8",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 8
+        },
+        {
+          "id": "U1.io9",
+          "name": "NEC VDD rail monitor",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 9
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "G",
+      "name": "G",
+      "kind": "ground",
+      "type": "ground",
+      "terminals": [
+        {
+          "id": "G.ref",
+          "name": "ref",
+          "role": "ref",
+          "domain": "ground",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "V",
+      "name": "V",
+      "kind": "voltage-source",
+      "type": "voltage-source",
+      "terminals": [
+        {
+          "id": "V.p",
+          "name": "p",
+          "role": "p",
+          "domain": "power",
+          "direction": "output"
+        },
+        {
+          "id": "V.n",
+          "name": "n",
+          "role": "n",
+          "domain": "ground",
+          "direction": "input"
+        }
+      ],
+      "parameters": {
+        "voltage": {
+          "value": 3.3,
+          "unit": "V"
+        }
+      }
+    },
+    {
+      "id": "WS",
+      "name": "WS",
+      "kind": "device",
+      "type": "ws2812-functional-3v3",
+      "terminals": [
+        {
+          "id": "WS.vdd",
+          "name": "vdd",
+          "role": "vdd",
+          "domain": "power",
+          "direction": "input"
+        },
+        {
+          "id": "WS.gnd",
+          "name": "gnd",
+          "role": "gnd",
+          "domain": "ground",
+          "direction": "input"
+        },
+        {
+          "id": "WS.din",
+          "name": "din",
+          "role": "din",
+          "domain": "digital",
+          "direction": "input"
+        }
+      ],
+      "parameters": {
+        "led_count": {
+          "value": 3,
+          "unit": "count"
+        }
+      }
+    },
+    {
+      "id": "IR",
+      "name": "IR",
+      "kind": "device",
+      "type": "nec-envelope-source",
+      "terminals": [
+        {
+          "id": "IR.vdd",
+          "name": "vdd",
+          "role": "vdd",
+          "domain": "power",
+          "direction": "input"
+        },
+        {
+          "id": "IR.gnd",
+          "name": "gnd",
+          "role": "gnd",
+          "domain": "ground",
+          "direction": "input"
+        },
+        {
+          "id": "IR.out",
+          "name": "out",
+          "role": "out",
+          "domain": "digital",
+          "direction": "output"
+        }
+      ],
+      "parameters": {
+        "address": {
+          "value": 52,
+          "unit": "count"
+        },
+        "command": {
+          "value": 167,
+          "unit": "count"
+        },
+        "period_ms": {
+          "value": 1000,
+          "unit": "count"
+        }
+      }
+    },
+    {
+      "id": "PullIR",
+      "name": "PullIR",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "PullIR.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "PullIR.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 45000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "PullIRSource",
+      "name": "PullIRSource",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "PullIRSource.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "PullIRSource.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 45000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Pull0",
+      "name": "Pull0",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "Pull0.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "Pull0.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Pull1",
+      "name": "Pull1",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "Pull1.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "Pull1.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "PullWS",
+      "name": "PullWS",
+      "kind": "resistor",
+      "type": "resistor",
+      "terminals": [
+        {
+          "id": "PullWS.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "PullWS.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    }
+  ],
+  "nets": [
+    {
+      "id": "gnd",
+      "name": "gnd",
+      "endpoints": [
+        "G.ref",
+        "V.n",
+        "U1.gnd",
+        "WS.gnd",
+        "IR.gnd",
+        "Pull0.b",
+        "Pull1.b",
+        "PullWS.b"
+      ]
+    },
+    {
+      "id": "vdd",
+      "name": "vdd",
+      "endpoints": [
+        "V.p",
+        "U1.vdd",
+        "WS.vdd",
+        "PullIR.b",
+        "PullIRSource.b",
+        "IR.vdd",
+        "U1.io9"
+      ]
+    },
+    {
+      "id": "ir_rx",
+      "name": "ir_rx",
+      "endpoints": [
+        "U1.io8",
+        "PullIR.a"
+      ]
+    },
+    {
+      "id": "rx0",
+      "name": "rx0",
+      "endpoints": [
+        "U1.io5",
+        "Pull0.a"
+      ]
+    },
+    {
+      "id": "tx0",
+      "name": "tx0",
+      "endpoints": [
+        "U1.io4"
+      ]
+    },
+    {
+      "id": "rx1",
+      "name": "rx1",
+      "endpoints": [
+        "U1.io7",
+        "Pull1.a"
+      ]
+    },
+    {
+      "id": "tx1",
+      "name": "tx1",
+      "endpoints": [
+        "U1.io6"
+      ]
+    },
+    {
+      "id": "ws_input",
+      "name": "ws_input",
+      "endpoints": [
+        "WS.din",
+        "PullWS.a"
+      ]
+    },
+    {
+      "id": "ir_source",
+      "name": "ir_source",
+      "endpoints": [
+        "IR.out",
+        "PullIRSource.a"
+      ]
+    }
+  ],
+  "geometry": {
+    "components": {},
+    "nets": {}
+  }
+}

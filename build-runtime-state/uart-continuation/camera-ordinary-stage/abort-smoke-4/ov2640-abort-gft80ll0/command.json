@@ -1,0 +1,19 @@
+[
+  "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/qemu-system-xtensa",
+  "-machine",
+  "esp32s3",
+  "-S",
+  "-nographic",
+  "-monitor",
+  "none",
+  "-serial",
+  "none",
+  "-accel",
+  "qtest",
+  "-qmp",
+  "unix:/home/polar/.cache/esp32s3vm/lcd-cam-ordinary-live/ov2640-abort-gft80ll0/qmp.sock,server=on,wait=off",
+  "-qtest",
+  "unix:/home/polar/.cache/esp32s3vm/lcd-cam-ordinary-live/ov2640-abort-gft80ll0/qtest.sock,server=on,wait=off",
+  "-qtest-log",
+  "/dev/null"
+]

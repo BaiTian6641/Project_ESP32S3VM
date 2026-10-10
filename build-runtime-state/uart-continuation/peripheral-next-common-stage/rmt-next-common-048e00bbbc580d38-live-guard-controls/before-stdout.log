@@ -1,0 +1,8 @@
+TAP version 13
+# random seed: R02S4ad0bea26e9c55e86365e973a944f025
+# Start of xtensa tests
+# Start of esp32s3 tests
+# Start of rmt tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-7bec59fa997831f6/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1917474.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1917474.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+not ok /xtensa/esp32s3/rmt/rx-live-demod-commit - ERROR:../tests/qtest/esp32s3-rmt-test.c:118:irq: assertion failed (rd(RAW) == raw): (0x00000000 == 0x00100000)
+Bail out!

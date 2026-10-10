@@ -1,0 +1,3 @@
+Not initializing SPI Flash
+SPI2 strict dependency: PSRAM DMA path is unsupported/unqualified at 0 ns
+qemu-system-xtensa: GLib: g_timer_elapsed: assertion 'timer != NULL' failed

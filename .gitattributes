@@ -13,3 +13,10 @@ qemu-extensions/prototypes/rmt/foundation-dependencies.json text eol=lf
 tests/firmware/uart_native/arduino/** text eol=lf
 build-runtime-state/uart-continuation/rom-stage/**/*.json text eol=lf
 build-runtime-state/uart-continuation/lcd-stage/**/*.json text eol=lf
+qemu-extensions/prototypes/lcd-cam/foundation-dependencies.json text eol=lf
+tests/firmware/lcd_cam_native/** text eol=lf
+# Closed runtime evidence is SHA-bound byte-for-byte, including UART CRLF.
+build-runtime-state/uart-continuation/pulse-memory-foundation-stage/** -text
+build-runtime-state/uart-continuation/proven-net-irq-foundation-stage/** -text
+build-runtime-state/uart-continuation/peripheral-next-common-stage/** -text
+build-runtime-state/uart-continuation/camera-ordinary-stage/abort-smoke-4/** -text

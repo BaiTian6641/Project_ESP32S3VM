@@ -1,0 +1,86 @@
+{
+  "before_error": "Runtime does not contain canonical SPI source: hw/misc/esp32s3_gpspi.c",
+  "after_provenance": {
+    "source": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38",
+    "fingerprint": "048e00bbbc580d383ab3686ff6474f6f3d041ba34316c8bb9d013ef60e30109a",
+    "source_record": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/peripheral-next-common-stage/preparation/prepared-048e00bbbc580d38-source.json",
+    "source_record_sha256": "4f89adaf49721d2188933df7974b4b67e8f01370ad9cbccb72546fe46de624d7",
+    "binary_sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a",
+    "verified_applied_files": 159
+  },
+  "wrong_phase_error": "Runtime SPI overlay ordering/scope differs: prototypes/spi/0009-psram-dma-transport.patch",
+  "host2": {
+    "status": "PASS",
+    "qemu": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+    "qemu_sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a",
+    "host": 2,
+    "observed": {
+      "dirty-old": {
+        "running": true,
+        "spi_cmd": 0,
+        "spi_raw": 4096,
+        "rx_raw": 3,
+        "tx_raw": 11,
+        "rx_descriptor": [
+          1074004032,
+          1006633088,
+          0
+        ],
+        "received_hex": "8394a5b6c7d8e9fa0b1c2d3e4f60718293a4b5c6d7e8f90a1b2c3d4e5f708192a3b4c5d6e7f8091a2b3c4d5e6f8091a2b3c4d5e6f708192a3b4c5d6e7f90a1b2"
+      },
+      "writeback-new": {
+        "running": true,
+        "spi_cmd": 0,
+        "spi_raw": 4096,
+        "rx_raw": 3,
+        "tx_raw": 11,
+        "rx_descriptor": [
+          1074004032,
+          1006633088,
+          0
+        ],
+        "received_hex": "577491aecbe805223f5c7996b3d0ed0a2744617e9bb8d5f20f2c496683a0bddaf714314e6b88a5c2dffc193653708daac7e4011e3b587592afcce90623405d7a"
+      }
+    },
+    "boundary": "Actual powered GPIO MOSI-to-MISO wire plus genuine CPU cache/committed SSI/GDMA data; no payload or input injection, no hardware/metrology claim."
+  },
+  "host3": {
+    "status": "PASS",
+    "qemu": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+    "qemu_sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a",
+    "host": 3,
+    "observed": {
+      "dirty-old": {
+        "running": true,
+        "spi_cmd": 0,
+        "spi_raw": 4096,
+        "rx_raw": 3,
+        "tx_raw": 11,
+        "rx_descriptor": [
+          1074004032,
+          1006633088,
+          0
+        ],
+        "received_hex": "8394a5b6c7d8e9fa0b1c2d3e4f60718293a4b5c6d7e8f90a1b2c3d4e5f708192a3b4c5d6e7f8091a2b3c4d5e6f8091a2b3c4d5e6f708192a3b4c5d6e7f90a1b2"
+      },
+      "writeback-new": {
+        "running": true,
+        "spi_cmd": 0,
+        "spi_raw": 4096,
+        "rx_raw": 3,
+        "tx_raw": 11,
+        "rx_descriptor": [
+          1074004032,
+          1006633088,
+          0
+        ],
+        "received_hex": "577491aecbe805223f5c7996b3d0ed0a2744617e9bb8d5f20f2c496683a0bddaf714314e6b88a5c2dffc193653708daac7e4011e3b587592afcce90623405d7a"
+      }
+    },
+    "boundary": "Actual powered GPIO MOSI-to-MISO wire plus genuine CPU cache/committed SSI/GDMA data; no payload or input injection, no hardware/metrology claim."
+  },
+  "status": "PASS_CANONICAL_SOURCE_GUARD_AND_REAL_SPI_CACHE_WIRE",
+  "current_guard_sha256": "c63b70583d30b77f264da6671eb211247a319d880d3878018756072cf42d7656",
+  "before_guard_sha256": "d44dad3132a07854008c0cccf7c9621669570b9902d459c3a044d1265556b3b1",
+  "boundary": "Actual canonical provenance cutover plus real powered GPIO/cache/GDMA transfers; no new ordinary SPI/frame/metrology or old-program proof inheritance."
+}

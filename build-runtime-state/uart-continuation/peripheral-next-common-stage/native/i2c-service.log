@@ -1,0 +1,31 @@
+TAP version 13
+# random seed: R02S1059b72ec5f1c948bc17c0b999b08f26
+1..18
+# Start of esp32s3 tests
+# Start of i2c-service tests
+ok 1 /esp32s3/i2c-service/instances-guards
+ok 2 /esp32s3/i2c-service/deadline-saturation
+# Start of external tests
+ok 3 /esp32s3/i2c-service/external/mandatory-callbacks
+ok 4 /esp32s3/i2c-service/external/register-transactions
+ok 5 /esp32s3/i2c-service/external/nacks
+ok 6 /esp32s3/i2c-service/external/cancel-power-deadline
+# End of external tests
+# Start of sht21 tests
+ok 7 /esp32s3/i2c-service/sht21/power-reset
+ok 8 /esp32s3/i2c-service/sht21/no-hold
+ok 9 /esp32s3/i2c-service/sht21/hold-cancel
+ok 10 /esp32s3/i2c-service/sht21/resolution
+ok 11 /esp32s3/i2c-service/sht21/otp-reset
+ok 12 /esp32s3/i2c-service/sht21/invalid-writes
+ok 13 /esp32s3/i2c-service/sht21/final-nack-frame-end
+# End of sht21 tests
+# Start of eeprom tests
+ok 14 /esp32s3/i2c-service/eeprom/power-reset
+ok 15 /esp32s3/i2c-service/eeprom/pointer-final-nack
+ok 16 /esp32s3/i2c-service/eeprom/page-restart-stop
+ok 17 /esp32s3/i2c-service/eeprom/full-array
+ok 18 /esp32s3/i2c-service/eeprom/cancel-busy
+# End of eeprom tests
+# End of i2c-service tests
+# End of esp32s3 tests

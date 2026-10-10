@@ -37,6 +37,28 @@ def git(source, *args, data=None):
     return result.stdout
 
 
+def public_record(record, identity_path):
+    """Publish the standard profile identity without rewriting native lineage."""
+    profile = record['profile']
+    return {
+        'schema_version': 1,
+        'base_commit': record['base_commit'],
+        'source': record['source'],
+        'profile': profile,
+        'inputs': record['inputs'],
+        'applied_files': record['applied_files'],
+        'fingerprint': digest(json.dumps(
+            {'profile': profile, 'inputs': record['inputs']},
+            sort_keys=True, separators=(',', ':')).encode()),
+        'qualification': record['qualification'],
+        'identity_record': {
+            'path': str(identity_path.resolve(strict=True)),
+            'sha256': digest(identity_path.read_bytes()),
+            'operation_fingerprint': record['fingerprint'],
+        },
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--dependencies', type=Path, required=True,
@@ -54,7 +76,7 @@ def main():
     if frozen['fingerprint'] != 'dbe2a8a5ad4e07a607e76ab751e77ac85fe3bf30974359bd25a69354499f9b32':
         raise ValueError('Wrong frozen26 prerequisite record')
     mapping = json.loads((LANE / 'source-map.json').read_text())
-    inputs, patches, copies = {}, [], []
+    inputs, patches, copies, after_copies = {}, [], [], []
     contexts, scopes = {}, {}
     prefix_names = set()
 
@@ -88,11 +110,16 @@ def main():
     shared_uart_api = 'prototypes/uart/' + mapping['gdma_additive_patch']
     for item in common.get('patches', []):
         name = relative(item['source'])
+        copy_phase = item.get('after_copies', False)
+        if not isinstance(copy_phase, bool):
+            raise ValueError(f'Invalid explicit copy phase: {name}')
         if name in prefix_names:
             if common_hashes.get(name, item.get('sha256')) != inputs[name]:
                 raise ValueError(f'Common record changes frozen26 input: {name}')
             if item.get('patch_context', 'strict') != 'strict':
                 raise ValueError(f'Common record changes frozen26 context policy: {name}')
+            if copy_phase:
+                raise ValueError(f'Common record changes frozen26 operation order: {name}')
             continue
         if name.startswith('prototypes/uart/') and name != shared_uart_api:
             raise ValueError('Common dependency profile must exclude UART controller inputs')
@@ -108,7 +135,7 @@ def main():
             raise ValueError(f'Unsupported explicit patch context policy: {policy}')
         contexts[name] = policy
         scopes[name] = {relative(p) for p in item['targets']}
-        patches.append((name, data))
+        (after_copies if copy_phase else patches).append((name, data))
     for item in common.get('copies', []):
         name = relative(item['source'])
         if name in prefix_names:
@@ -141,11 +168,14 @@ def main():
             owned_patch('integration-electrical.patch'),
             owned_patch('integration-qtest.patch'),
             owned_patch(mapping['unit_integration_patch'])]
+    post_names = {name for name, _ in after_copies}
     identity = {'base_commit': BASE, 'frozen_prefix': frozen['fingerprint'],
                 'dependency_record_sha256': digest(args.dependencies.read_bytes()),
                 'inputs': inputs, 'copies': [(n, d) for n, d, _ in copies],
                 'patches': [{'source': n, 'patch_context': contexts[n],
-                             'targets': sorted(scopes[n])} for n, _ in patches + tail]}
+                             'targets': sorted(scopes[n]),
+                             **({'after_copies': True} if n in post_names else {})}
+                            for n, _ in patches + after_copies + tail]}
     fingerprint = digest(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode())
     source = (args.cache_root / f'qemu-uart-{BASE[:12]}-{fingerprint[:16]}').resolve()
     if source.exists():
@@ -172,10 +202,12 @@ def main():
         path = source / destination
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
+    for name, data in after_copies:
+        apply(name, data)
     for name, data in tail:
         apply(name, data)
     applied = {p for _, p, _ in copies}
-    for _, data in patches + tail:
+    for _, data in patches + after_copies + tail:
         for line in data.decode('utf-8').splitlines():
             if line.startswith('+++ b/'):
                 applied.add(relative(line[6:]))
@@ -184,10 +216,18 @@ def main():
               'applied_files': {p: digest((source / p).read_bytes())
                                 if (source / p).is_file() else None
                                 for p in sorted(applied)}}
+    # Public pipeline profile is derived from the exact hashed operation identity.
+    record['profile'] = {
+        'base_commit': BASE,
+        'copies': [{'source': n, 'destination': d} for n, d, _ in copies],
+        'patches': identity['patches'],
+    }
     args.evidence.mkdir(parents=True, exist_ok=True)
-    (args.evidence / f'prepared-{fingerprint[:16]}-source.json').write_text(
-        json.dumps(record, indent=2) + '\n')
+    identity_path = args.evidence / f'prepared-{fingerprint[:16]}-source.json'
+    identity_path.write_text(json.dumps(record, indent=2) + '\n')
     (source / 'uart-source.json').write_text(json.dumps(record, indent=2) + '\n')
+    (args.evidence / f'prepared-{fingerprint[:16]}-public.json').write_text(
+        json.dumps(public_record(record, identity_path), indent=2) + '\n')
     print(source)
 
 

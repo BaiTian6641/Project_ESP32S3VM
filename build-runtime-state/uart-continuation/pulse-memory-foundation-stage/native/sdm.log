@@ -1,0 +1,631 @@
+TAP version 13
+# random seed: R02S8d06283ed4469c19e228f68fe3aa096b
+1..4
+# Start of xtensa tests
+# Start of esp32s3 tests
+# Start of sdm tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=0 density=0 invert=0 ticks=512 high=256
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=0 density=0 invert=1 ticks=512 high=256
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=0 density=-128 invert=0 ticks=512 high=0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=0 density=-128 invert=1 ticks=512 high=0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=0 density=127 invert=0 ticks=512 high=510
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=0 density=127 invert=1 ticks=512 high=510
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=1 density=0 invert=0 ticks=512 high=256
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=1 density=0 invert=1 ticks=512 high=256
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=1 density=-128 invert=0 ticks=512 high=0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=1 density=-128 invert=1 ticks=512 high=0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=1 density=127 invert=0 ticks=512 high=510
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=1 density=127 invert=1 ticks=512 high=510
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=2 density=0 invert=0 ticks=512 high=256
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=2 density=0 invert=1 ticks=512 high=256
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=2 density=-128 invert=0 ticks=512 high=0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=2 density=-128 invert=1 ticks=512 high=0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=2 density=127 invert=0 ticks=512 high=510
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=2 density=127 invert=1 ticks=512 high=510
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=3 density=0 invert=0 ticks=512 high=256
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=3 density=0 invert=1 ticks=512 high=256
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=3 density=-128 invert=0 ticks=512 high=0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=3 density=-128 invert=1 ticks=512 high=0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=3 density=127 invert=0 ticks=512 high=510
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=3 density=127 invert=1 ticks=512 high=510
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=4 density=0 invert=0 ticks=512 high=256
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=4 density=0 invert=1 ticks=512 high=256
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=4 density=-128 invert=0 ticks=512 high=0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=4 density=-128 invert=1 ticks=512 high=0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=4 density=127 invert=0 ticks=512 high=510
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=4 density=127 invert=1 ticks=512 high=510
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=5 density=0 invert=0 ticks=512 high=256
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=5 density=0 invert=1 ticks=512 high=256
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=5 density=-128 invert=0 ticks=512 high=0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=5 density=-128 invert=1 ticks=512 high=0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=5 density=127 invert=0 ticks=512 high=510
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=5 density=127 invert=1 ticks=512 high=510
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=6 density=0 invert=0 ticks=512 high=256
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=6 density=0 invert=1 ticks=512 high=256
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=6 density=-128 invert=0 ticks=512 high=0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=6 density=-128 invert=1 ticks=512 high=0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=6 density=127 invert=0 ticks=512 high=510
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=6 density=127 invert=1 ticks=512 high=510
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=7 density=0 invert=0 ticks=512 high=256
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=7 density=0 invert=1 ticks=512 high=256
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=7 density=-128 invert=0 ticks=512 high=0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=7 density=-128 invert=1 ticks=512 high=0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=7 density=127 invert=0 ticks=512 high=510
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE profile=s3-sdm-second-order-transfer-v1 ch=7 density=127 invert=1 ticks=512 high=510
+ok 1 /xtensa/esp32s3/sdm/all8-density-extremes-inversion-cadence
+# slow test /xtensa/esp32s3/sdm/all8-density-extremes-inversion-cadence executed in 1090.64 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE simultaneous_channels=8 ticks=512 powered_separate_nets=8
+ok 2 /xtensa/esp32s3/sdm/simultaneous-powered-nets
+# slow test /xtensa/esp32s3/sdm/simultaneous-powered-nets executed in 75.16 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_EVIDENCE gate_phase=retained divider_phase=retained source_phase=retained density_errors=zero cpu_reset=retained system_reset=zero
+ok 3 /xtensa/esp32s3/sdm/gates-source-divider-density-reset
+# slow test /xtensa/esp32s3/sdm/gates-source-divider-density-reset executed in 1.01 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-193106.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-193106.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# SDM_RC_SAMPLE tick=1 requested_ns=1000 sampled_ns=1000 voltage_v=0.000000000 expected_v=0.000000000 source_high=1
+# SDM_RC_SAMPLE tick=2 requested_ns=2000 sampled_ns=2000 voltage_v=2.036141792 expected_v=2.038395899 source_high=0
+# SDM_RC_SAMPLE tick=3 requested_ns=3000 sampled_ns=2942 voltage_v=0.824388085 expected_v=0.823982443 source_high=0
+# SDM_RC_SAMPLE tick=4 requested_ns=4000 sampled_ns=4000 voltage_v=0.298643459 expected_v=0.297924927 source_high=1
+# SDM_RC_SAMPLE tick=5 requested_ns=5000 sampled_ns=4202 voltage_v=0.827906954 expected_v=0.827887690 source_high=1
+# SDM_RC_SAMPLE tick=6 requested_ns=6000 sampled_ns=6000 voltage_v=2.858525505 expected_v=2.861227043 source_high=0
+# SDM_RC_SAMPLE tick=7 requested_ns=7000 sampled_ns=6400 voltage_v=1.947342591 expected_v=1.947672723 source_high=0
+# SDM_RC_SAMPLE tick=8 requested_ns=8000 sampled_ns=8000 voltage_v=0.419468958 expected_v=0.418187094 source_high=1
+# SDM_RC_SAMPLE tick=9 requested_ns=9000 sampled_ns=8159 voltage_v=0.827394710 expected_v=0.826745333 source_high=1
+# SDM_RC_SAMPLE tick=10 requested_ns=10000 sampled_ns=10000 voltage_v=2.876143285 expected_v=2.878804147 source_high=0
+# SDM_RC_SAMPLE tick=11 requested_ns=11000 sampled_ns=10158 voltage_v=2.471651819 expected_v=2.473049252 source_high=0
+# SDM_RC_SAMPLE tick=12 requested_ns=12000 sampled_ns=12000 voltage_v=0.422124926 expected_v=0.420756103 source_high=1
+# SDM_RC_SAMPLE tick=13 requested_ns=13000 sampled_ns=12800 voltage_v=1.964476678 expected_v=1.965846571 source_high=1
+# SDM_RC_SAMPLE tick=14 requested_ns=14000 sampled_ns=14000 voltage_v=2.876507657 expected_v=2.879179625 source_high=0
+# SDM_RC_SAMPLE tick=15 requested_ns=15000 sampled_ns=14158 voltage_v=2.471964948 expected_v=2.473371808 source_high=0
+# SDM_RC_SAMPLE tick=16 requested_ns=16000 sampled_ns=16000 voltage_v=0.422178404 expected_v=0.420810981 source_high=1
+# SDM_RC_SAMPLE tick=17 requested_ns=17000 sampled_ns=16158 voltage_v=0.827349696 expected_v=0.826620122 source_high=1
+# SDM_RC_SAMPLE tick=18 requested_ns=18000 sampled_ns=18000 voltage_v=2.876538724 expected_v=2.879187646 source_high=0
+# SDM_RC_SAMPLE tick=19 requested_ns=19000 sampled_ns=18158 voltage_v=2.471991645 expected_v=2.473378698 source_high=0
+# SDM_RC_SAMPLE tick=20 requested_ns=20000 sampled_ns=20000 voltage_v=0.422182964 expected_v=0.420812153 source_high=1
+# SDM_RC_SAMPLE tick=21 requested_ns=21000 sampled_ns=20158 voltage_v=0.827353613 expected_v=0.826621129 source_high=1
+# SDM_RC_SAMPLE tick=22 requested_ns=22000 sampled_ns=22000 voltage_v=2.876539395 expected_v=2.879187817 source_high=0
+# SDM_RC_SAMPLE tick=23 requested_ns=23000 sampled_ns=22158 voltage_v=2.471992222 expected_v=2.473378846 source_high=0
+# SDM_RC_SAMPLE tick=24 requested_ns=24000 sampled_ns=24000 voltage_v=0.422183062 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=25 requested_ns=25000 sampled_ns=24158 voltage_v=0.827353698 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=26 requested_ns=26000 sampled_ns=26000 voltage_v=2.876507007 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=27 requested_ns=27000 sampled_ns=26158 voltage_v=2.471964388 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=28 requested_ns=28000 sampled_ns=28000 voltage_v=0.422178309 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=29 requested_ns=29000 sampled_ns=28158 voltage_v=0.827349613 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=30 requested_ns=30000 sampled_ns=30000 voltage_v=2.876538710 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=31 requested_ns=31000 sampled_ns=30158 voltage_v=2.471991633 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=32 requested_ns=32000 sampled_ns=32000 voltage_v=0.422182962 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=33 requested_ns=33000 sampled_ns=32158 voltage_v=0.827353611 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=34 requested_ns=34000 sampled_ns=34000 voltage_v=2.876539395 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=35 requested_ns=35000 sampled_ns=34158 voltage_v=2.471992222 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=36 requested_ns=36000 sampled_ns=36000 voltage_v=0.422183062 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=37 requested_ns=37000 sampled_ns=36158 voltage_v=0.827353698 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=38 requested_ns=38000 sampled_ns=38000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=39 requested_ns=39000 sampled_ns=38400 voltage_v=1.959626867 expected_v=1.959898847 source_high=0
+# SDM_RC_SAMPLE tick=40 requested_ns=40000 sampled_ns=40000 voltage_v=0.422109757 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=41 requested_ns=41000 sampled_ns=40158 voltage_v=0.827290713 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=42 requested_ns=42000 sampled_ns=42000 voltage_v=2.876528623 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=43 requested_ns=43000 sampled_ns=42158 voltage_v=2.471982965 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=44 requested_ns=44000 sampled_ns=44000 voltage_v=0.422181481 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=45 requested_ns=45000 sampled_ns=44158 voltage_v=0.827352339 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=46 requested_ns=46000 sampled_ns=46000 voltage_v=2.876539177 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=47 requested_ns=47000 sampled_ns=46158 voltage_v=2.471992034 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=48 requested_ns=48000 sampled_ns=48000 voltage_v=0.422183030 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=49 requested_ns=49000 sampled_ns=48158 voltage_v=0.827353670 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=50 requested_ns=50000 sampled_ns=50000 voltage_v=2.876539405 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=51 requested_ns=51000 sampled_ns=50158 voltage_v=2.471992230 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=52 requested_ns=52000 sampled_ns=52000 voltage_v=0.422236163 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=53 requested_ns=53000 sampled_ns=52158 voltage_v=0.827399322 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=54 requested_ns=54000 sampled_ns=54000 voltage_v=2.876547223 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=55 requested_ns=55000 sampled_ns=54158 voltage_v=2.471998949 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=56 requested_ns=56000 sampled_ns=56000 voltage_v=0.422184211 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=57 requested_ns=57000 sampled_ns=56158 voltage_v=0.827354685 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=58 requested_ns=58000 sampled_ns=58000 voltage_v=2.876539579 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=59 requested_ns=59000 sampled_ns=58158 voltage_v=2.471992380 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=60 requested_ns=60000 sampled_ns=60000 voltage_v=0.422183089 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=61 requested_ns=61000 sampled_ns=60158 voltage_v=0.827353721 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=62 requested_ns=62000 sampled_ns=62000 voltage_v=2.876539413 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=63 requested_ns=63000 sampled_ns=62158 voltage_v=2.471992238 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=64 requested_ns=64000 sampled_ns=64000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=65 requested_ns=65000 sampled_ns=64158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=66 requested_ns=66000 sampled_ns=66000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=67 requested_ns=67000 sampled_ns=66158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=68 requested_ns=68000 sampled_ns=68000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=69 requested_ns=69000 sampled_ns=68158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=70 requested_ns=70000 sampled_ns=70000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=71 requested_ns=71000 sampled_ns=70158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=72 requested_ns=72000 sampled_ns=72000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=73 requested_ns=73000 sampled_ns=72158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=74 requested_ns=74000 sampled_ns=74000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=75 requested_ns=75000 sampled_ns=74158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=76 requested_ns=76000 sampled_ns=76000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=77 requested_ns=77000 sampled_ns=76800 voltage_v=1.964503658 expected_v=1.965872556 source_high=1
+# SDM_RC_SAMPLE tick=78 requested_ns=78000 sampled_ns=78000 voltage_v=2.876516213 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=79 requested_ns=79000 sampled_ns=78158 voltage_v=2.471972300 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=80 requested_ns=80000 sampled_ns=80000 voltage_v=0.422179660 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=81 requested_ns=81000 sampled_ns=80158 voltage_v=0.827350774 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=82 requested_ns=82000 sampled_ns=82000 voltage_v=2.876538909 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=83 requested_ns=83000 sampled_ns=82158 voltage_v=2.471991804 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=84 requested_ns=84000 sampled_ns=84000 voltage_v=0.422182991 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=85 requested_ns=85000 sampled_ns=84158 voltage_v=0.827353637 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=86 requested_ns=86000 sampled_ns=86000 voltage_v=2.876539399 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=87 requested_ns=87000 sampled_ns=86158 voltage_v=2.471992225 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=88 requested_ns=88000 sampled_ns=88000 voltage_v=0.422183063 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=89 requested_ns=89000 sampled_ns=88158 voltage_v=0.827353698 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=90 requested_ns=90000 sampled_ns=90000 voltage_v=2.876507007 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=91 requested_ns=91000 sampled_ns=90158 voltage_v=2.471964389 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=92 requested_ns=92000 sampled_ns=92000 voltage_v=0.422178309 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=93 requested_ns=93000 sampled_ns=92158 voltage_v=0.827349614 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=94 requested_ns=94000 sampled_ns=94000 voltage_v=2.876538710 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=95 requested_ns=95000 sampled_ns=94158 voltage_v=2.471991633 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=96 requested_ns=96000 sampled_ns=96000 voltage_v=0.422182962 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=97 requested_ns=97000 sampled_ns=96158 voltage_v=0.827353611 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=98 requested_ns=98000 sampled_ns=98000 voltage_v=2.876539395 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=99 requested_ns=99000 sampled_ns=98158 voltage_v=2.471992222 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=100 requested_ns=100000 sampled_ns=100000 voltage_v=0.422183062 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=101 requested_ns=101000 sampled_ns=100158 voltage_v=0.827353698 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=102 requested_ns=102000 sampled_ns=102000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=103 requested_ns=103000 sampled_ns=102400 voltage_v=1.959626867 expected_v=1.959898847 source_high=0
+# SDM_RC_SAMPLE tick=104 requested_ns=104000 sampled_ns=104000 voltage_v=0.422109757 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=105 requested_ns=105000 sampled_ns=104158 voltage_v=0.827290713 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=106 requested_ns=106000 sampled_ns=106000 voltage_v=2.876528623 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=107 requested_ns=107000 sampled_ns=106158 voltage_v=2.471982965 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=108 requested_ns=108000 sampled_ns=108000 voltage_v=0.422181481 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=109 requested_ns=109000 sampled_ns=108158 voltage_v=0.827352339 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=110 requested_ns=110000 sampled_ns=110000 voltage_v=2.876539177 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=111 requested_ns=111000 sampled_ns=110158 voltage_v=2.471992034 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=112 requested_ns=112000 sampled_ns=112000 voltage_v=0.422183030 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=113 requested_ns=113000 sampled_ns=112158 voltage_v=0.827353670 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=114 requested_ns=114000 sampled_ns=114000 voltage_v=2.876539405 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=115 requested_ns=115000 sampled_ns=114158 voltage_v=2.471992230 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=116 requested_ns=116000 sampled_ns=116000 voltage_v=0.422236163 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=117 requested_ns=117000 sampled_ns=116158 voltage_v=0.827399322 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=118 requested_ns=118000 sampled_ns=118000 voltage_v=2.876547223 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=119 requested_ns=119000 sampled_ns=118158 voltage_v=2.471998949 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=120 requested_ns=120000 sampled_ns=120000 voltage_v=0.422184211 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=121 requested_ns=121000 sampled_ns=120158 voltage_v=0.827354685 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=122 requested_ns=122000 sampled_ns=122000 voltage_v=2.876539579 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=123 requested_ns=123000 sampled_ns=122158 voltage_v=2.471992380 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=124 requested_ns=124000 sampled_ns=124000 voltage_v=0.422183089 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=125 requested_ns=125000 sampled_ns=124158 voltage_v=0.827353721 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=126 requested_ns=126000 sampled_ns=126000 voltage_v=2.876539413 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=127 requested_ns=127000 sampled_ns=126158 voltage_v=2.471992238 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=128 requested_ns=128000 sampled_ns=128000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=129 requested_ns=129000 sampled_ns=128158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=130 requested_ns=130000 sampled_ns=130000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=131 requested_ns=131000 sampled_ns=130158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=132 requested_ns=132000 sampled_ns=132000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=133 requested_ns=133000 sampled_ns=132158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=134 requested_ns=134000 sampled_ns=134000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=135 requested_ns=135000 sampled_ns=134158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=136 requested_ns=136000 sampled_ns=136000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=137 requested_ns=137000 sampled_ns=136158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=138 requested_ns=138000 sampled_ns=138000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=139 requested_ns=139000 sampled_ns=138158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=140 requested_ns=140000 sampled_ns=140000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=141 requested_ns=141000 sampled_ns=140800 voltage_v=1.964503658 expected_v=1.965872556 source_high=1
+# SDM_RC_SAMPLE tick=142 requested_ns=142000 sampled_ns=142000 voltage_v=2.876516213 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=143 requested_ns=143000 sampled_ns=142158 voltage_v=2.471972300 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=144 requested_ns=144000 sampled_ns=144000 voltage_v=0.422179660 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=145 requested_ns=145000 sampled_ns=144158 voltage_v=0.827350774 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=146 requested_ns=146000 sampled_ns=146000 voltage_v=2.876538909 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=147 requested_ns=147000 sampled_ns=146158 voltage_v=2.471991804 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=148 requested_ns=148000 sampled_ns=148000 voltage_v=0.422182991 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=149 requested_ns=149000 sampled_ns=148158 voltage_v=0.827353637 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=150 requested_ns=150000 sampled_ns=150000 voltage_v=2.876539399 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=151 requested_ns=151000 sampled_ns=150158 voltage_v=2.471992225 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=152 requested_ns=152000 sampled_ns=152000 voltage_v=0.422183063 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=153 requested_ns=153000 sampled_ns=152158 voltage_v=0.827353698 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=154 requested_ns=154000 sampled_ns=154000 voltage_v=2.876507007 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=155 requested_ns=155000 sampled_ns=154158 voltage_v=2.471964389 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=156 requested_ns=156000 sampled_ns=156000 voltage_v=0.422178309 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=157 requested_ns=157000 sampled_ns=156158 voltage_v=0.827349614 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=158 requested_ns=158000 sampled_ns=158000 voltage_v=2.876538710 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=159 requested_ns=159000 sampled_ns=158158 voltage_v=2.471991633 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=160 requested_ns=160000 sampled_ns=160000 voltage_v=0.422182962 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=161 requested_ns=161000 sampled_ns=160158 voltage_v=0.827353611 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=162 requested_ns=162000 sampled_ns=162000 voltage_v=2.876539395 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=163 requested_ns=163000 sampled_ns=162158 voltage_v=2.471992222 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=164 requested_ns=164000 sampled_ns=164000 voltage_v=0.422183062 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=165 requested_ns=165000 sampled_ns=164158 voltage_v=0.827353698 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=166 requested_ns=166000 sampled_ns=166000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=167 requested_ns=167000 sampled_ns=166400 voltage_v=1.959626867 expected_v=1.959898847 source_high=0
+# SDM_RC_SAMPLE tick=168 requested_ns=168000 sampled_ns=168000 voltage_v=0.422109757 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=169 requested_ns=169000 sampled_ns=168158 voltage_v=0.827290713 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=170 requested_ns=170000 sampled_ns=170000 voltage_v=2.876528623 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=171 requested_ns=171000 sampled_ns=170158 voltage_v=2.471982965 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=172 requested_ns=172000 sampled_ns=172000 voltage_v=0.422181481 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=173 requested_ns=173000 sampled_ns=172158 voltage_v=0.827352339 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=174 requested_ns=174000 sampled_ns=174000 voltage_v=2.876539177 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=175 requested_ns=175000 sampled_ns=174158 voltage_v=2.471992034 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=176 requested_ns=176000 sampled_ns=176000 voltage_v=0.422183030 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=177 requested_ns=177000 sampled_ns=176158 voltage_v=0.827353670 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=178 requested_ns=178000 sampled_ns=178000 voltage_v=2.876539405 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=179 requested_ns=179000 sampled_ns=178158 voltage_v=2.471992230 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=180 requested_ns=180000 sampled_ns=180000 voltage_v=0.422236163 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=181 requested_ns=181000 sampled_ns=180158 voltage_v=0.827399322 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=182 requested_ns=182000 sampled_ns=182000 voltage_v=2.876547223 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=183 requested_ns=183000 sampled_ns=182158 voltage_v=2.471998949 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=184 requested_ns=184000 sampled_ns=184000 voltage_v=0.422184211 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=185 requested_ns=185000 sampled_ns=184158 voltage_v=0.827354685 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=186 requested_ns=186000 sampled_ns=186000 voltage_v=2.876539579 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=187 requested_ns=187000 sampled_ns=186158 voltage_v=2.471992380 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=188 requested_ns=188000 sampled_ns=188000 voltage_v=0.422183089 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=189 requested_ns=189000 sampled_ns=188158 voltage_v=0.827353721 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=190 requested_ns=190000 sampled_ns=190000 voltage_v=2.876539413 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=191 requested_ns=191000 sampled_ns=190158 voltage_v=2.471992238 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=192 requested_ns=192000 sampled_ns=192000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=193 requested_ns=193000 sampled_ns=192158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=194 requested_ns=194000 sampled_ns=194000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=195 requested_ns=195000 sampled_ns=194158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=196 requested_ns=196000 sampled_ns=196000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=197 requested_ns=197000 sampled_ns=196158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=198 requested_ns=198000 sampled_ns=198000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=199 requested_ns=199000 sampled_ns=198158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=200 requested_ns=200000 sampled_ns=200000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=201 requested_ns=201000 sampled_ns=200158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=202 requested_ns=202000 sampled_ns=202000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=203 requested_ns=203000 sampled_ns=202158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=204 requested_ns=204000 sampled_ns=204000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=205 requested_ns=205000 sampled_ns=204800 voltage_v=1.964503658 expected_v=1.965872556 source_high=1
+# SDM_RC_SAMPLE tick=206 requested_ns=206000 sampled_ns=206000 voltage_v=2.876516213 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=207 requested_ns=207000 sampled_ns=206158 voltage_v=2.471972300 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=208 requested_ns=208000 sampled_ns=208000 voltage_v=0.422179660 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=209 requested_ns=209000 sampled_ns=208158 voltage_v=0.827350774 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=210 requested_ns=210000 sampled_ns=210000 voltage_v=2.876538909 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=211 requested_ns=211000 sampled_ns=210158 voltage_v=2.471991804 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=212 requested_ns=212000 sampled_ns=212000 voltage_v=0.422182991 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=213 requested_ns=213000 sampled_ns=212158 voltage_v=0.827353637 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=214 requested_ns=214000 sampled_ns=214000 voltage_v=2.876539399 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=215 requested_ns=215000 sampled_ns=214158 voltage_v=2.471992225 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=216 requested_ns=216000 sampled_ns=216000 voltage_v=0.422183063 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=217 requested_ns=217000 sampled_ns=216158 voltage_v=0.827353698 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=218 requested_ns=218000 sampled_ns=218000 voltage_v=2.876507007 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=219 requested_ns=219000 sampled_ns=218158 voltage_v=2.471964389 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=220 requested_ns=220000 sampled_ns=220000 voltage_v=0.422178309 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=221 requested_ns=221000 sampled_ns=220158 voltage_v=0.827349614 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=222 requested_ns=222000 sampled_ns=222000 voltage_v=2.876538710 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=223 requested_ns=223000 sampled_ns=222158 voltage_v=2.471991633 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=224 requested_ns=224000 sampled_ns=224000 voltage_v=0.422182962 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=225 requested_ns=225000 sampled_ns=224158 voltage_v=0.827353611 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=226 requested_ns=226000 sampled_ns=226000 voltage_v=2.876539395 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=227 requested_ns=227000 sampled_ns=226158 voltage_v=2.471992222 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=228 requested_ns=228000 sampled_ns=228000 voltage_v=0.422183062 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=229 requested_ns=229000 sampled_ns=228158 voltage_v=0.827353698 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=230 requested_ns=230000 sampled_ns=230000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=231 requested_ns=231000 sampled_ns=230400 voltage_v=1.959626867 expected_v=1.959898847 source_high=0
+# SDM_RC_SAMPLE tick=232 requested_ns=232000 sampled_ns=232000 voltage_v=0.422109757 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=233 requested_ns=233000 sampled_ns=232158 voltage_v=0.827290713 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=234 requested_ns=234000 sampled_ns=234000 voltage_v=2.876528623 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=235 requested_ns=235000 sampled_ns=234158 voltage_v=2.471982965 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=236 requested_ns=236000 sampled_ns=236000 voltage_v=0.422181481 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=237 requested_ns=237000 sampled_ns=236158 voltage_v=0.827352339 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=238 requested_ns=238000 sampled_ns=238000 voltage_v=2.876539177 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=239 requested_ns=239000 sampled_ns=238158 voltage_v=2.471992034 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=240 requested_ns=240000 sampled_ns=240000 voltage_v=0.422183030 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=241 requested_ns=241000 sampled_ns=240158 voltage_v=0.827353670 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=242 requested_ns=242000 sampled_ns=242000 voltage_v=2.876539405 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=243 requested_ns=243000 sampled_ns=242158 voltage_v=2.471992230 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=244 requested_ns=244000 sampled_ns=244000 voltage_v=0.422236163 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=245 requested_ns=245000 sampled_ns=244158 voltage_v=0.827399322 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=246 requested_ns=246000 sampled_ns=246000 voltage_v=2.876547223 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=247 requested_ns=247000 sampled_ns=246158 voltage_v=2.471998949 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=248 requested_ns=248000 sampled_ns=248000 voltage_v=0.422184211 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=249 requested_ns=249000 sampled_ns=248158 voltage_v=0.827354685 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=250 requested_ns=250000 sampled_ns=250000 voltage_v=2.876539579 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=251 requested_ns=251000 sampled_ns=250158 voltage_v=2.471992380 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=252 requested_ns=252000 sampled_ns=252000 voltage_v=0.422183089 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=253 requested_ns=253000 sampled_ns=252158 voltage_v=0.827353721 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=254 requested_ns=254000 sampled_ns=254000 voltage_v=2.876539413 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=255 requested_ns=255000 sampled_ns=254158 voltage_v=2.471992238 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=256 requested_ns=256000 sampled_ns=256000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=257 requested_ns=257000 sampled_ns=256158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=258 requested_ns=258000 sampled_ns=258000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=259 requested_ns=259000 sampled_ns=258158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=260 requested_ns=260000 sampled_ns=260000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=261 requested_ns=261000 sampled_ns=260158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=262 requested_ns=262000 sampled_ns=262000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=263 requested_ns=263000 sampled_ns=262158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=264 requested_ns=264000 sampled_ns=264000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=265 requested_ns=265000 sampled_ns=264158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=266 requested_ns=266000 sampled_ns=266000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=267 requested_ns=267000 sampled_ns=266158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=268 requested_ns=268000 sampled_ns=268000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=269 requested_ns=269000 sampled_ns=268800 voltage_v=1.964503658 expected_v=1.965872556 source_high=1
+# SDM_RC_SAMPLE tick=270 requested_ns=270000 sampled_ns=270000 voltage_v=2.876516213 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=271 requested_ns=271000 sampled_ns=270158 voltage_v=2.471972300 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=272 requested_ns=272000 sampled_ns=272000 voltage_v=0.422179660 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=273 requested_ns=273000 sampled_ns=272158 voltage_v=0.827350774 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=274 requested_ns=274000 sampled_ns=274000 voltage_v=2.876538909 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=275 requested_ns=275000 sampled_ns=274158 voltage_v=2.471991804 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=276 requested_ns=276000 sampled_ns=276000 voltage_v=0.422182991 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=277 requested_ns=277000 sampled_ns=276158 voltage_v=0.827353637 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=278 requested_ns=278000 sampled_ns=278000 voltage_v=2.876539399 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=279 requested_ns=279000 sampled_ns=278158 voltage_v=2.471992225 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=280 requested_ns=280000 sampled_ns=280000 voltage_v=0.422183063 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=281 requested_ns=281000 sampled_ns=280158 voltage_v=0.827353698 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=282 requested_ns=282000 sampled_ns=282000 voltage_v=2.876507007 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=283 requested_ns=283000 sampled_ns=282158 voltage_v=2.471964389 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=284 requested_ns=284000 sampled_ns=284000 voltage_v=0.422178309 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=285 requested_ns=285000 sampled_ns=284158 voltage_v=0.827349614 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=286 requested_ns=286000 sampled_ns=286000 voltage_v=2.876538710 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=287 requested_ns=287000 sampled_ns=286158 voltage_v=2.471991633 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=288 requested_ns=288000 sampled_ns=288000 voltage_v=0.422182962 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=289 requested_ns=289000 sampled_ns=288158 voltage_v=0.827353611 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=290 requested_ns=290000 sampled_ns=290000 voltage_v=2.876539395 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=291 requested_ns=291000 sampled_ns=290158 voltage_v=2.471992222 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=292 requested_ns=292000 sampled_ns=292000 voltage_v=0.422183062 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=293 requested_ns=293000 sampled_ns=292158 voltage_v=0.827353698 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=294 requested_ns=294000 sampled_ns=294000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=295 requested_ns=295000 sampled_ns=294400 voltage_v=1.959626867 expected_v=1.959898847 source_high=0
+# SDM_RC_SAMPLE tick=296 requested_ns=296000 sampled_ns=296000 voltage_v=0.422109757 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=297 requested_ns=297000 sampled_ns=296158 voltage_v=0.827290713 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=298 requested_ns=298000 sampled_ns=298000 voltage_v=2.876528623 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=299 requested_ns=299000 sampled_ns=298158 voltage_v=2.471982965 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=300 requested_ns=300000 sampled_ns=300000 voltage_v=0.422181481 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=301 requested_ns=301000 sampled_ns=300158 voltage_v=0.827352339 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=302 requested_ns=302000 sampled_ns=302000 voltage_v=2.876539177 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=303 requested_ns=303000 sampled_ns=302158 voltage_v=2.471992034 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=304 requested_ns=304000 sampled_ns=304000 voltage_v=0.422183030 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=305 requested_ns=305000 sampled_ns=304158 voltage_v=0.827353670 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=306 requested_ns=306000 sampled_ns=306000 voltage_v=2.876539405 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=307 requested_ns=307000 sampled_ns=306158 voltage_v=2.471992230 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=308 requested_ns=308000 sampled_ns=308000 voltage_v=0.422236163 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=309 requested_ns=309000 sampled_ns=308158 voltage_v=0.827399322 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=310 requested_ns=310000 sampled_ns=310000 voltage_v=2.876547223 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=311 requested_ns=311000 sampled_ns=310158 voltage_v=2.471998949 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=312 requested_ns=312000 sampled_ns=312000 voltage_v=0.422184211 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=313 requested_ns=313000 sampled_ns=312158 voltage_v=0.827354685 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=314 requested_ns=314000 sampled_ns=314000 voltage_v=2.876539579 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=315 requested_ns=315000 sampled_ns=314158 voltage_v=2.471992380 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=316 requested_ns=316000 sampled_ns=316000 voltage_v=0.422183089 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=317 requested_ns=317000 sampled_ns=316158 voltage_v=0.827353721 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=318 requested_ns=318000 sampled_ns=318000 voltage_v=2.876539413 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=319 requested_ns=319000 sampled_ns=318158 voltage_v=2.471992238 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=320 requested_ns=320000 sampled_ns=320000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=321 requested_ns=321000 sampled_ns=320158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=322 requested_ns=322000 sampled_ns=322000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=323 requested_ns=323000 sampled_ns=322158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=324 requested_ns=324000 sampled_ns=324000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=325 requested_ns=325000 sampled_ns=324158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=326 requested_ns=326000 sampled_ns=326000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=327 requested_ns=327000 sampled_ns=326158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=328 requested_ns=328000 sampled_ns=328000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=329 requested_ns=329000 sampled_ns=328158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=330 requested_ns=330000 sampled_ns=330000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=331 requested_ns=331000 sampled_ns=330158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=332 requested_ns=332000 sampled_ns=332000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=333 requested_ns=333000 sampled_ns=332800 voltage_v=1.964503658 expected_v=1.965872556 source_high=1
+# SDM_RC_SAMPLE tick=334 requested_ns=334000 sampled_ns=334000 voltage_v=2.876516213 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=335 requested_ns=335000 sampled_ns=334158 voltage_v=2.471972300 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=336 requested_ns=336000 sampled_ns=336000 voltage_v=0.422179660 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=337 requested_ns=337000 sampled_ns=336158 voltage_v=0.827350774 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=338 requested_ns=338000 sampled_ns=338000 voltage_v=2.876538909 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=339 requested_ns=339000 sampled_ns=338158 voltage_v=2.471991804 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=340 requested_ns=340000 sampled_ns=340000 voltage_v=0.422182991 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=341 requested_ns=341000 sampled_ns=340158 voltage_v=0.827353637 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=342 requested_ns=342000 sampled_ns=342000 voltage_v=2.876539399 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=343 requested_ns=343000 sampled_ns=342158 voltage_v=2.471992225 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=344 requested_ns=344000 sampled_ns=344000 voltage_v=0.422183063 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=345 requested_ns=345000 sampled_ns=344158 voltage_v=0.827353698 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=346 requested_ns=346000 sampled_ns=346000 voltage_v=2.876507007 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=347 requested_ns=347000 sampled_ns=346158 voltage_v=2.471964389 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=348 requested_ns=348000 sampled_ns=348000 voltage_v=0.422178309 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=349 requested_ns=349000 sampled_ns=348158 voltage_v=0.827349614 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=350 requested_ns=350000 sampled_ns=350000 voltage_v=2.876538710 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=351 requested_ns=351000 sampled_ns=350158 voltage_v=2.471991633 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=352 requested_ns=352000 sampled_ns=352000 voltage_v=0.422182962 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=353 requested_ns=353000 sampled_ns=352158 voltage_v=0.827353611 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=354 requested_ns=354000 sampled_ns=354000 voltage_v=2.876539395 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=355 requested_ns=355000 sampled_ns=354158 voltage_v=2.471992222 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=356 requested_ns=356000 sampled_ns=356000 voltage_v=0.422183062 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=357 requested_ns=357000 sampled_ns=356158 voltage_v=0.827353698 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=358 requested_ns=358000 sampled_ns=358000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=359 requested_ns=359000 sampled_ns=358400 voltage_v=1.959626867 expected_v=1.959898847 source_high=0
+# SDM_RC_SAMPLE tick=360 requested_ns=360000 sampled_ns=360000 voltage_v=0.422109757 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=361 requested_ns=361000 sampled_ns=360158 voltage_v=0.827290713 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=362 requested_ns=362000 sampled_ns=362000 voltage_v=2.876528623 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=363 requested_ns=363000 sampled_ns=362158 voltage_v=2.471982965 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=364 requested_ns=364000 sampled_ns=364000 voltage_v=0.422181481 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=365 requested_ns=365000 sampled_ns=364158 voltage_v=0.827352339 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=366 requested_ns=366000 sampled_ns=366000 voltage_v=2.876539177 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=367 requested_ns=367000 sampled_ns=366158 voltage_v=2.471992034 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=368 requested_ns=368000 sampled_ns=368000 voltage_v=0.422183030 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=369 requested_ns=369000 sampled_ns=368158 voltage_v=0.827353670 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=370 requested_ns=370000 sampled_ns=370000 voltage_v=2.876539405 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=371 requested_ns=371000 sampled_ns=370158 voltage_v=2.471992230 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=372 requested_ns=372000 sampled_ns=372000 voltage_v=0.422236163 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=373 requested_ns=373000 sampled_ns=372158 voltage_v=0.827399322 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=374 requested_ns=374000 sampled_ns=374000 voltage_v=2.876547223 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=375 requested_ns=375000 sampled_ns=374158 voltage_v=2.471998949 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=376 requested_ns=376000 sampled_ns=376000 voltage_v=0.422184211 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=377 requested_ns=377000 sampled_ns=376158 voltage_v=0.827354685 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=378 requested_ns=378000 sampled_ns=378000 voltage_v=2.876539579 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=379 requested_ns=379000 sampled_ns=378158 voltage_v=2.471992380 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=380 requested_ns=380000 sampled_ns=380000 voltage_v=0.422183089 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=381 requested_ns=381000 sampled_ns=380158 voltage_v=0.827353721 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=382 requested_ns=382000 sampled_ns=382000 voltage_v=2.876539413 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=383 requested_ns=383000 sampled_ns=382158 voltage_v=2.471992238 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=384 requested_ns=384000 sampled_ns=384000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=385 requested_ns=385000 sampled_ns=384158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=386 requested_ns=386000 sampled_ns=386000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=387 requested_ns=387000 sampled_ns=386158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=388 requested_ns=388000 sampled_ns=388000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=389 requested_ns=389000 sampled_ns=388158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=390 requested_ns=390000 sampled_ns=390000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=391 requested_ns=391000 sampled_ns=390158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=392 requested_ns=392000 sampled_ns=392000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=393 requested_ns=393000 sampled_ns=392158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=394 requested_ns=394000 sampled_ns=394000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=395 requested_ns=395000 sampled_ns=394158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=396 requested_ns=396000 sampled_ns=396000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=397 requested_ns=397000 sampled_ns=396800 voltage_v=1.964503658 expected_v=1.965872556 source_high=1
+# SDM_RC_SAMPLE tick=398 requested_ns=398000 sampled_ns=398000 voltage_v=2.876516213 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=399 requested_ns=399000 sampled_ns=398158 voltage_v=2.471972300 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=400 requested_ns=400000 sampled_ns=400000 voltage_v=0.422179660 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=401 requested_ns=401000 sampled_ns=400158 voltage_v=0.827350774 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=402 requested_ns=402000 sampled_ns=402000 voltage_v=2.876538909 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=403 requested_ns=403000 sampled_ns=402158 voltage_v=2.471991804 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=404 requested_ns=404000 sampled_ns=404000 voltage_v=0.422182991 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=405 requested_ns=405000 sampled_ns=404158 voltage_v=0.827353637 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=406 requested_ns=406000 sampled_ns=406000 voltage_v=2.876539399 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=407 requested_ns=407000 sampled_ns=406158 voltage_v=2.471992225 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=408 requested_ns=408000 sampled_ns=408000 voltage_v=0.422183063 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=409 requested_ns=409000 sampled_ns=408158 voltage_v=0.827353698 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=410 requested_ns=410000 sampled_ns=410000 voltage_v=2.876507007 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=411 requested_ns=411000 sampled_ns=410158 voltage_v=2.471964389 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=412 requested_ns=412000 sampled_ns=412000 voltage_v=0.422178309 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=413 requested_ns=413000 sampled_ns=412158 voltage_v=0.827349614 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=414 requested_ns=414000 sampled_ns=414000 voltage_v=2.876538710 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=415 requested_ns=415000 sampled_ns=414158 voltage_v=2.471991633 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=416 requested_ns=416000 sampled_ns=416000 voltage_v=0.422182962 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=417 requested_ns=417000 sampled_ns=416158 voltage_v=0.827353611 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=418 requested_ns=418000 sampled_ns=418000 voltage_v=2.876539395 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=419 requested_ns=419000 sampled_ns=418158 voltage_v=2.471992222 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=420 requested_ns=420000 sampled_ns=420000 voltage_v=0.422183062 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=421 requested_ns=421000 sampled_ns=420158 voltage_v=0.827353698 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=422 requested_ns=422000 sampled_ns=422000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=423 requested_ns=423000 sampled_ns=422400 voltage_v=1.959626867 expected_v=1.959898847 source_high=0
+# SDM_RC_SAMPLE tick=424 requested_ns=424000 sampled_ns=424000 voltage_v=0.422109757 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=425 requested_ns=425000 sampled_ns=424158 voltage_v=0.827290713 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=426 requested_ns=426000 sampled_ns=426000 voltage_v=2.876528623 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=427 requested_ns=427000 sampled_ns=426158 voltage_v=2.471982965 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=428 requested_ns=428000 sampled_ns=428000 voltage_v=0.422181481 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=429 requested_ns=429000 sampled_ns=428158 voltage_v=0.827352339 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=430 requested_ns=430000 sampled_ns=430000 voltage_v=2.876539177 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=431 requested_ns=431000 sampled_ns=430158 voltage_v=2.471992034 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=432 requested_ns=432000 sampled_ns=432000 voltage_v=0.422183030 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=433 requested_ns=433000 sampled_ns=432158 voltage_v=0.827353670 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=434 requested_ns=434000 sampled_ns=434000 voltage_v=2.876539405 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=435 requested_ns=435000 sampled_ns=434158 voltage_v=2.471992230 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=436 requested_ns=436000 sampled_ns=436000 voltage_v=0.422236163 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=437 requested_ns=437000 sampled_ns=436158 voltage_v=0.827399322 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=438 requested_ns=438000 sampled_ns=438000 voltage_v=2.876547223 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=439 requested_ns=439000 sampled_ns=438158 voltage_v=2.471998949 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=440 requested_ns=440000 sampled_ns=440000 voltage_v=0.422184211 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=441 requested_ns=441000 sampled_ns=440158 voltage_v=0.827354685 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=442 requested_ns=442000 sampled_ns=442000 voltage_v=2.876539579 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=443 requested_ns=443000 sampled_ns=442158 voltage_v=2.471992380 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=444 requested_ns=444000 sampled_ns=444000 voltage_v=0.422183089 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=445 requested_ns=445000 sampled_ns=444158 voltage_v=0.827353721 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=446 requested_ns=446000 sampled_ns=446000 voltage_v=2.876539413 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=447 requested_ns=447000 sampled_ns=446158 voltage_v=2.471992238 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=448 requested_ns=448000 sampled_ns=448000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=449 requested_ns=449000 sampled_ns=448158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=450 requested_ns=450000 sampled_ns=450000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=451 requested_ns=451000 sampled_ns=450158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=452 requested_ns=452000 sampled_ns=452000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=453 requested_ns=453000 sampled_ns=452158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=454 requested_ns=454000 sampled_ns=454000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=455 requested_ns=455000 sampled_ns=454158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=456 requested_ns=456000 sampled_ns=456000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=457 requested_ns=457000 sampled_ns=456158 voltage_v=0.827353700 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=458 requested_ns=458000 sampled_ns=458000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=459 requested_ns=459000 sampled_ns=458158 voltage_v=2.471992235 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=460 requested_ns=460000 sampled_ns=460000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=461 requested_ns=461000 sampled_ns=460800 voltage_v=1.964503658 expected_v=1.965872556 source_high=1
+# SDM_RC_SAMPLE tick=462 requested_ns=462000 sampled_ns=462000 voltage_v=2.876516213 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=463 requested_ns=463000 sampled_ns=462158 voltage_v=2.471972300 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=464 requested_ns=464000 sampled_ns=464000 voltage_v=0.422179660 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=465 requested_ns=465000 sampled_ns=464158 voltage_v=0.827350774 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=466 requested_ns=466000 sampled_ns=466000 voltage_v=2.876538909 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=467 requested_ns=467000 sampled_ns=466158 voltage_v=2.471991804 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=468 requested_ns=468000 sampled_ns=468000 voltage_v=0.422182991 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=469 requested_ns=469000 sampled_ns=468158 voltage_v=0.827353637 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=470 requested_ns=470000 sampled_ns=470000 voltage_v=2.876539399 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=471 requested_ns=471000 sampled_ns=470158 voltage_v=2.471992225 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=472 requested_ns=472000 sampled_ns=472000 voltage_v=0.422183063 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=473 requested_ns=473000 sampled_ns=472158 voltage_v=0.827353698 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=474 requested_ns=474000 sampled_ns=474000 voltage_v=2.876507007 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=475 requested_ns=475000 sampled_ns=474158 voltage_v=2.471964389 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=476 requested_ns=476000 sampled_ns=476000 voltage_v=0.422178309 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=477 requested_ns=477000 sampled_ns=476158 voltage_v=0.827349614 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=478 requested_ns=478000 sampled_ns=478000 voltage_v=2.876538710 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=479 requested_ns=479000 sampled_ns=478158 voltage_v=2.471991633 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=480 requested_ns=480000 sampled_ns=480000 voltage_v=0.422182962 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=481 requested_ns=481000 sampled_ns=480158 voltage_v=0.827353611 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=482 requested_ns=482000 sampled_ns=482000 voltage_v=2.876539395 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=483 requested_ns=483000 sampled_ns=482158 voltage_v=2.471992222 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=484 requested_ns=484000 sampled_ns=484000 voltage_v=0.422183062 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=485 requested_ns=485000 sampled_ns=484158 voltage_v=0.827353698 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=486 requested_ns=486000 sampled_ns=486000 voltage_v=2.876539410 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=487 requested_ns=487000 sampled_ns=486400 voltage_v=1.959626867 expected_v=1.959898847 source_high=0
+# SDM_RC_SAMPLE tick=488 requested_ns=488000 sampled_ns=488000 voltage_v=0.422109757 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=489 requested_ns=489000 sampled_ns=488158 voltage_v=0.827290713 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=490 requested_ns=490000 sampled_ns=490000 voltage_v=2.876528623 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=491 requested_ns=491000 sampled_ns=490158 voltage_v=2.471982965 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=492 requested_ns=492000 sampled_ns=492000 voltage_v=0.422181481 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=493 requested_ns=493000 sampled_ns=492158 voltage_v=0.827352339 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=494 requested_ns=494000 sampled_ns=494000 voltage_v=2.876539177 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=495 requested_ns=495000 sampled_ns=494158 voltage_v=2.471992034 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=496 requested_ns=496000 sampled_ns=496000 voltage_v=0.422183030 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=497 requested_ns=497000 sampled_ns=496158 voltage_v=0.827353670 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=498 requested_ns=498000 sampled_ns=498000 voltage_v=2.876539405 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=499 requested_ns=499000 sampled_ns=498158 voltage_v=2.471992230 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=500 requested_ns=500000 sampled_ns=500000 voltage_v=0.422236163 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=501 requested_ns=501000 sampled_ns=500158 voltage_v=0.827399322 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=502 requested_ns=502000 sampled_ns=502000 voltage_v=2.876547223 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=503 requested_ns=503000 sampled_ns=502158 voltage_v=2.471998949 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=504 requested_ns=504000 sampled_ns=504000 voltage_v=0.422184211 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=505 requested_ns=505000 sampled_ns=504158 voltage_v=0.827354685 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=506 requested_ns=506000 sampled_ns=506000 voltage_v=2.876539579 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=507 requested_ns=507000 sampled_ns=506158 voltage_v=2.471992380 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=508 requested_ns=508000 sampled_ns=508000 voltage_v=0.422183089 expected_v=0.420812179 source_high=1
+# SDM_RC_SAMPLE tick=509 requested_ns=509000 sampled_ns=508158 voltage_v=0.827353721 expected_v=0.826621151 source_high=1
+# SDM_RC_SAMPLE tick=510 requested_ns=510000 sampled_ns=510000 voltage_v=2.876539413 expected_v=2.879187821 source_high=0
+# SDM_RC_SAMPLE tick=511 requested_ns=511000 sampled_ns=510158 voltage_v=2.471992238 expected_v=2.473378849 source_high=0
+# SDM_RC_SAMPLE tick=512 requested_ns=512000 sampled_ns=512000 voltage_v=0.422183065 expected_v=0.420812179 source_high=1
+# SDM_EVIDENCE rc_mean_v=1.650000 rc_ripple_v=2.454437 max_exp_error_v=0.002702 charge_reset=retained mean_method=physical_KCL_complete_window
+ok 4 /xtensa/esp32s3/sdm/passive-rc-physical-mean-ripple-charge
+# slow test /xtensa/esp32s3/sdm/passive-rc-physical-mean-ripple-charge executed in 9.76 secs
+# End of sdm tests
+# End of esp32s3 tests
+# End of xtensa tests

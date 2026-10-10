@@ -1,0 +1,267 @@
+{
+  "version": 3,
+  "id": "spi-psram-direct-both",
+  "name": "Native SPI physical loopback",
+  "profile": {
+    "chip": "esp32s3",
+    "board": "spi-native-simulation-fixture",
+    "module": "bare-esp32s3-simulation-fixture",
+    "reserved_gpios": [
+      19,
+      20,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      43,
+      44
+    ],
+    "reservations_known": true
+  },
+  "firmware": {},
+  "runtime": {
+    "electrical": {
+      "driver_profile": "s3-explicit-finite-v1",
+      "mode": "dc"
+    }
+  },
+  "components": [
+    {
+      "id": "U1",
+      "name": "U1",
+      "kind": "mcu",
+      "type": "mcu",
+      "terminals": [
+        {
+          "id": "U1.vdd",
+          "name": "vdd",
+          "role": "vdd",
+          "domain": "power",
+          "direction": "input"
+        },
+        {
+          "id": "U1.gnd",
+          "name": "gnd",
+          "role": "gnd",
+          "domain": "ground",
+          "direction": "input"
+        },
+        {
+          "id": "U1.io4",
+          "name": "io4",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 4
+        },
+        {
+          "id": "U1.io5",
+          "name": "io5",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 5
+        },
+        {
+          "id": "U1.io6",
+          "name": "io6",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 6
+        },
+        {
+          "id": "U1.io7",
+          "name": "io7",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 7
+        },
+        {
+          "id": "U1.io8",
+          "name": "io8",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 8
+        },
+        {
+          "id": "U1.io9",
+          "name": "io9",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 9
+        },
+        {
+          "id": "U1.io10",
+          "name": "io10",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 10
+        },
+        {
+          "id": "U1.io11",
+          "name": "io11",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 11
+        },
+        {
+          "id": "U1.io12",
+          "name": "io12",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 12
+        },
+        {
+          "id": "U1.io13",
+          "name": "io13",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 13
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "G",
+      "name": "G",
+      "kind": "ground",
+      "type": "ground",
+      "terminals": [
+        {
+          "id": "G.ref",
+          "name": "ref",
+          "role": "ref",
+          "domain": "ground",
+          "direction": "passive"
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "V",
+      "name": "V",
+      "kind": "voltage-source",
+      "type": "voltage-source",
+      "terminals": [
+        {
+          "id": "V.p",
+          "name": "p",
+          "role": "p",
+          "domain": "power",
+          "direction": "output"
+        },
+        {
+          "id": "V.n",
+          "name": "n",
+          "role": "n",
+          "domain": "ground",
+          "direction": "input"
+        }
+      ],
+      "parameters": {
+        "voltage": {
+          "value": 3.3,
+          "unit": "V"
+        }
+      }
+    }
+  ],
+  "nets": [
+    {
+      "id": "gnd",
+      "name": "gnd",
+      "endpoints": [
+        "G.ref",
+        "V.n",
+        "U1.gnd"
+      ]
+    },
+    {
+      "id": "vdd",
+      "name": "vdd",
+      "endpoints": [
+        "V.p",
+        "U1.vdd"
+      ]
+    },
+    {
+      "id": "spi2_loop",
+      "name": "spi2_loop",
+      "endpoints": [
+        "U1.io11",
+        "U1.io13"
+      ]
+    },
+    {
+      "id": "spi2_sclk",
+      "name": "spi2_sclk",
+      "endpoints": [
+        "U1.io12"
+      ]
+    },
+    {
+      "id": "spi2_cs0",
+      "name": "spi2_cs0",
+      "endpoints": [
+        "U1.io10"
+      ]
+    },
+    {
+      "id": "spi2_cs1",
+      "name": "spi2_cs1",
+      "endpoints": [
+        "U1.io9"
+      ]
+    },
+    {
+      "id": "spi3_loop",
+      "name": "spi3_loop",
+      "endpoints": [
+        "U1.io5",
+        "U1.io6"
+      ]
+    },
+    {
+      "id": "spi3_sclk",
+      "name": "spi3_sclk",
+      "endpoints": [
+        "U1.io4"
+      ]
+    },
+    {
+      "id": "spi3_cs0",
+      "name": "spi3_cs0",
+      "endpoints": [
+        "U1.io7"
+      ]
+    },
+    {
+      "id": "spi3_cs1",
+      "name": "spi3_cs1",
+      "endpoints": [
+        "U1.io8"
+      ]
+    }
+  ],
+  "geometry": {
+    "components": {},
+    "nets": {}
+  }
+}

@@ -1,0 +1,387 @@
+{
+  "qemu_sha256": "d83145b84fada9da9d4e86b67bce8e40f4f5f7f6a057589aff6687b4996355c1",
+  "source_fingerprint": "db51ea5bc6c48ecf722dc3661d59779b81d543101763cba9f306730bab7fd7b3",
+  "applied_source_files_verified": 159,
+  "native_suites": {
+    "rmt": {
+      "exit": 0,
+      "returncode": 0,
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 23,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/tests/qtest/esp32s3-rmt-test",
+        "--tap",
+        "--verbose"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+        "UART_QTEST_PROJECT_DIR": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/uart/firmware"
+      },
+      "binary_sha256": "16ca74839b8fa65de68e7e12375a3f30648b567e3565b6067962996696d37b5d",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/rmt.log",
+        "sha256": "9822391287e42b7a0c4bed1ea80dc5f40d3029c60803af3adf829b20c4102d66"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/rmt-stderr.log",
+        "sha256": "880b1a5d57919130ffae5b50c82c765a6a897ea82cabd464ebac88d17b091ada"
+      }
+    },
+    "spi": {
+      "exit": 0,
+      "returncode": 0,
+      "passed": 27,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 27,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/tests/qtest/esp32s3-spi-test",
+        "--tap",
+        "--verbose"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+        "UART_QTEST_PROJECT_DIR": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/uart/firmware"
+      },
+      "binary_sha256": "27b155808d686a6073363e8ffb53dc3448a0fa729df2aca5ed9b711efd5c85bb",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/spi.log",
+        "sha256": "56dc67067af3f314b759ee806a57984db83a33886981cd61114c63c0eeb6710f"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/spi-stderr.log",
+        "sha256": "63ca0ebdc2a549486f59209f4cb7af843e063af50b60dc9aa8bb955c4acc2d6c"
+      }
+    },
+    "spi-service": {
+      "exit": 0,
+      "returncode": 0,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 8,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/tests/unit/test-esp32s3-spi-service",
+        "--tap",
+        "--verbose"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+        "UART_QTEST_PROJECT_DIR": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/uart/firmware"
+      },
+      "binary_sha256": "3a4b3c23ccaa829631d6f3c24a9f4630c869f094c9943c30793959c3a9fc9dea",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/spi-service.log",
+        "sha256": "d5c824c72ad44bf7c26159ee32b1feaae607538c6413b23638069bd4e28e25e6"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/spi-service-stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "uart": {
+      "exit": 0,
+      "returncode": 0,
+      "passed": 67,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 67,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/tests/qtest/esp32s3-uart-test",
+        "--tap",
+        "--verbose"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+        "UART_QTEST_PROJECT_DIR": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/uart/firmware"
+      },
+      "binary_sha256": "809329ad99317c567d699af48a4ca025f9630163161e17fb3a0f4664dafb2058",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/uart.log",
+        "sha256": "b6687c377c51a6ff37ef987a8e7803b9672e1ece14c2ad813ad9f72d33ad2317"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/uart-stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "uhci": {
+      "exit": 0,
+      "returncode": 0,
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 17,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/test-esp32s3-uhci",
+        "--tap",
+        "--verbose"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+        "UART_QTEST_PROJECT_DIR": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/uart/firmware"
+      },
+      "binary_sha256": "f4443b40789a27c60fb445eb4a195fe12f8b5575b9f047bff88e8fbb5647581e",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/uhci.log",
+        "sha256": "43e07d7f37d9f680bfd6a6b834e6a3314dbea3c1afb330ac5c987d148d490503"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/uhci-stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "gdma": {
+      "exit": 0,
+      "returncode": 0,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 18,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/tests/qtest/esp32s3-gdma-test",
+        "--tap",
+        "--verbose"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+        "UART_QTEST_PROJECT_DIR": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/uart/firmware"
+      },
+      "binary_sha256": "cbe164ff60bcedca854d720783e3134ed1690d17d761df2a189481a565679f87",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/gdma.log",
+        "sha256": "4adf07300c6b8f16fb9335ed07359301addfc6431b3db0a7ae9a64030315395e"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/gdma-stderr.log",
+        "sha256": "a56a9404be4536d05bebbd782a38a9d679f71e2bdafaa2cb06a5d3790ac8630f"
+      }
+    },
+    "memory": {
+      "exit": 0,
+      "returncode": 0,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 12,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/tests/qtest/esp32s3-memory-test",
+        "--tap",
+        "--verbose"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+        "UART_QTEST_PROJECT_DIR": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/uart/firmware"
+      },
+      "binary_sha256": "61854135b8f4c02373e8a4beef236271ada718786f9ac22fbbef13057d093209",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/memory.log",
+        "sha256": "7ab98ddabf4559f635a270ba6feb10611a7a617517f4bb14f8d12460a2f5569a"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/memory-stderr.log",
+        "sha256": "e8a2e5bfc49c2903f3bcc7ffda49720775b4f794749bbc67944f9a856d4e5990"
+      },
+      "source_sha256": "856d8fcafd9006138ac62a50ffbca76e07a220d6b6a72dc06aa26330aa475831"
+    },
+    "i2c": {
+      "exit": 0,
+      "returncode": 0,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 18,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/tests/qtest/esp32s3-i2c-test",
+        "--tap",
+        "--verbose"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+        "UART_QTEST_PROJECT_DIR": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/uart/firmware"
+      },
+      "binary_sha256": "b0e0b7f8308db2a8a1f4379eab37b2b1196c6ea7a168230de5f3a23bcfa5bb6e",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/i2c.log",
+        "sha256": "3496ee5c1f9e9a9a6735b80e1c6546b2555c3e91ad2cb78bc1aca9f71c8e9d14"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/i2c-stderr.log",
+        "sha256": "63ca0ebdc2a549486f59209f4cb7af843e063af50b60dc9aa8bb955c4acc2d6c"
+      }
+    },
+    "i2c-service": {
+      "exit": 0,
+      "returncode": 0,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 18,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/tests/unit/test-esp32s3-i2c-service",
+        "--tap",
+        "--verbose"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+        "UART_QTEST_PROJECT_DIR": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/uart/firmware"
+      },
+      "binary_sha256": "3f31e738ea965e9514d457274bafd6f40e17fbdd710fb6104bfe85021b348510",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/i2c-service.log",
+        "sha256": "94108581c295568a9f67798cd0aff5b8e0b8ea47e6f869ed25a6259986a01318"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/i2c-service-stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "lcd-cam": {
+      "exit": 0,
+      "returncode": 0,
+      "passed": 66,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 66,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/tests/qtest/esp32s3-lcd-cam-test",
+        "--tap",
+        "--verbose"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+        "UART_QTEST_PROJECT_DIR": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/uart/firmware"
+      },
+      "binary_sha256": "8c75b34f166e2af3618d8f80fbb1fe2695cc3861c10a755aa8231656224f2c73",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/lcd-cam.log",
+        "sha256": "f06829f514193dc74dd9fe55513a8a342fc11c7a1720604d91810794e5cb3771"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/lcd-cam-stderr.log",
+        "sha256": "71b9fb707e82313a0d5a6eca228cbfb4bb70ad9ad1ff9a1642f8add709a5c0bc"
+      }
+    },
+    "ledc": {
+      "exit": 0,
+      "returncode": 0,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 5,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/tests/qtest/esp32s3-ledc-test",
+        "--tap",
+        "--verbose"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+        "UART_QTEST_PROJECT_DIR": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/uart/firmware"
+      },
+      "binary_sha256": "19208540ac0deb8c42b5921bfe55f9f418e907a521f707c327d28924f496eab9",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/ledc.log",
+        "sha256": "384ba4ecb81a7466cda65f75bed2b8aca7d9ee624be7446675695f94e1a17d0d"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/ledc-stderr.log",
+        "sha256": "b12c66d3f3f0303dd2644369dc49efc6a2d2acadcac3350bb17ec55e356cc7f7"
+      }
+    },
+    "pcnt": {
+      "exit": 0,
+      "returncode": 0,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 4,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/tests/qtest/esp32s3-pcnt-test",
+        "--tap",
+        "--verbose"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+        "UART_QTEST_PROJECT_DIR": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/uart/firmware"
+      },
+      "binary_sha256": "974a5f635caa70cc2488a8e89bcd68676aae8d12c64a032379550afc82af9bf9",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/pcnt.log",
+        "sha256": "9f5762603242cc7b5b3fdeb71b608ff2f9b7f72c2334672ddd7650f8190ffabe"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/pcnt-stderr.log",
+        "sha256": "05b5140e402373a0acec4b2acc0936c7b856d9608cfbdd47151d5e73d75ef2ab"
+      }
+    },
+    "mcpwm": {
+      "exit": 0,
+      "returncode": 0,
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 16,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/tests/qtest/esp32s3-mcpwm-test",
+        "--tap",
+        "--verbose"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+        "UART_QTEST_PROJECT_DIR": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/uart/firmware"
+      },
+      "binary_sha256": "1778f21f9b3de704f56fe8dddd714cbb449467e44bf4e9309203c5d4f467a02c",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/mcpwm.log",
+        "sha256": "868c86a9c18bb4e09864b97963d3269e9d3538440c3a7a2a742cc6ba7388c8ea"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/mcpwm-stderr.log",
+        "sha256": "d05674c08d222f285b00d75dd4ceb75145982a20a16b9c466107713cc2cb4f99"
+      }
+    },
+    "sdm": {
+      "exit": 0,
+      "returncode": 0,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "expected": 4,
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/tests/qtest/esp32s3-sdm-test",
+        "--tap",
+        "--verbose"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+        "UART_QTEST_PROJECT_DIR": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/uart/firmware"
+      },
+      "binary_sha256": "a4abc4a353cf65211462d7e676f908c38ecc584d5b507074a075b91fa029b668",
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/sdm.log",
+        "sha256": "8e7d25de806e5bbfbd9a831992a5080e5a921f810b1fa3ac21aa364be560b5b0"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-db51ea5bc6c48ecf/native/sdm-stderr.log",
+        "sha256": "880b1a5d57919130ffae5b50c82c765a6a897ea82cabd464ebac88d17b091ada"
+      }
+    }
+  },
+  "native_passed_total": 303
+}

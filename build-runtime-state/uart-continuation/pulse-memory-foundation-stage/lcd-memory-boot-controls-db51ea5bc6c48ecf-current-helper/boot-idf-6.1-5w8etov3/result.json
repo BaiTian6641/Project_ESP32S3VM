@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "profile": "idf-6.1",
+  "returncode": 0,
+  "host_elapsed_seconds": 8.80006230197614,
+  "command": [
+    "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/gui-esp32s3-simulator/build-wsl/gui_esp32s3_boot_smoke_test"
+  ],
+  "cwd": "/home/polar/.cache/esp32s3vm/lcd-memory-boot-controls-db51ea5bc6c48ecf-current-helper/boot-idf-6.1-5w8etov3",
+  "environment": {
+    "ESP32S3_QEMU_BIN": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+    "ESP32S3_BOOT_FIRMWARE": "/home/polar/.cache/esp32s3vm/lcd-memory-boot-controls-db51ea5bc6c48ecf-current-helper/boot-idf-6.1-5w8etov3/boot-firmware.bin",
+    "QT_QPA_PLATFORM": "offscreen"
+  },
+  "firmware": {
+    "path": "/home/polar/.cache/esp32s3vm/lcd-memory-boot-controls-db51ea5bc6c48ecf-current-helper/boot-idf-6.1-5w8etov3/boot-firmware.bin",
+    "sha256": "bbb445d0fbba1ee8bd4ad3094ae501ff1dcfd92c3d4aa4179c410bb328b1973a"
+  },
+  "stdout": {
+    "path": "/home/polar/.cache/esp32s3vm/lcd-memory-boot-controls-db51ea5bc6c48ecf-current-helper/boot-idf-6.1-5w8etov3/stdout.log",
+    "sha256": "f74fa30a215cca65b928de45c8f688829f6b02ca7062810aecc65ded1a75f601"
+  },
+  "stderr": {
+    "path": "/home/polar/.cache/esp32s3vm/lcd-memory-boot-controls-db51ea5bc6c48ecf-current-helper/boot-idf-6.1-5w8etov3/stderr.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "test_binary_sha256": "b72dc0daeb0ee2b730ba98cf9510ba15d6191619176e9e1889ff17231b6249b8",
+  "original": {
+    "path": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/boot_smoke/build-idf-6.1/boot-smoke.merged.bin",
+    "sha256": "bbb445d0fbba1ee8bd4ad3094ae501ff1dcfd92c3d4aa4179c410bb328b1973a"
+  },
+  "original_after_sha256": "bbb445d0fbba1ee8bd4ad3094ae501ff1dcfd92c3d4aa4179c410bb328b1973a",
+  "frozen_original_unchanged": true
+}

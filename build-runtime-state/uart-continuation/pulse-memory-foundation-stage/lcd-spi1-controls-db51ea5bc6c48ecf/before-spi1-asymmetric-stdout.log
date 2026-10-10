@@ -1,0 +1,7 @@
+TAP version 13
+# random seed: R02S5b9ae0e4a68a4c54031a2d76279dbb3f
+# Start of xtensa tests
+# Start of esp32s3-memory tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-8f20226da4e2c0c7/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-173552.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-173552.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -m 8M -S -accel qtest
+not ok /xtensa/esp32s3-memory/spi1-asymmetric - ERROR:../tests/qtest/esp32s3-memory-test.c:423:test_spi1_transport: assertion failed (got == p)
+Bail out!

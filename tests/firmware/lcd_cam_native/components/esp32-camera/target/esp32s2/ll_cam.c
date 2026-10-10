@@ -21,7 +21,7 @@
 #include "xclk.h"
 #include "cam_hal.h"
 
-#if (ESP_IDF_VERSION_MAJOR >= 4) && (ESP_IDF_VERSION_MINOR >= 3)
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
 #include "esp_rom_gpio.h"
 #endif
 
@@ -31,6 +31,11 @@
 #define GPIO_PIN_INTR_NEGEDGE GPIO_INTR_NEGEDGE
 #define gpio_matrix_in(a,b,c) esp_rom_gpio_connect_in_signal(a,b,c)
 #define ets_delay_us(a) esp_rom_delay_us(a)
+#endif
+
+#if (ESP_IDF_VERSION_MAJOR > 5)
+#include "soc/dport_access.h"
+#include "soc/gpio_sig_map.h"
 #endif
 
 static const char *TAG = "s2 ll_cam";
@@ -136,7 +141,12 @@ esp_err_t ll_cam_config(cam_obj_t *cam, const camera_config_t *config)
     if(err != ESP_OK) {
         return err;
     }
+#if ESP_IDF_VERSION_MAJOR > 5
+    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S0_CLK_EN);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_I2S0_RST);
+#else
     periph_module_enable(PERIPH_I2S0_MODULE);
+#endif
     // Configure the clock
     I2S0.clkm_conf.clkm_div_num = 2; // 160MHz / 2 = 80MHz
     I2S0.clkm_conf.clkm_div_b = 0;
@@ -277,9 +287,9 @@ static bool ll_cam_calc_rgb_dma(cam_obj_t *cam){
     size_t nodes_per_line = 1;
     size_t lines_per_node = 1;
 
-    // Calculate DMA Node Size so that it's divisable by or divisor of the line width
+    // Calculate DMA Node Size so that it's divisible by or divisor of the line width
     if(line_width >= node_max){
-        // One or more nodes will be requied for one line
+        // One or more nodes will be required for one line
         for(size_t i = node_max; i > 0; i=i-1){
             if ((line_width % i) == 0) {
                 node_size = i;
@@ -321,10 +331,10 @@ static bool ll_cam_calc_rgb_dma(cam_obj_t *cam){
         // Calculate minimum EOF size = max(mode_size, line_size)
         size_t dma_half_buffer_min = node_size * nodes_per_line;
 
-        // Calculate max EOF size divisable by node size
+        // Calculate max EOF size divisible by node size
         size_t dma_half_buffer = (dma_half_buffer_max / dma_half_buffer_min) * dma_half_buffer_min;
 
-        // Adjust EOF size so that height will be divisable by the number of lines in each EOF
+        // Adjust EOF size so that height will be divisible by the number of lines in each EOF
         size_t lines_per_half_buffer = dma_half_buffer / line_width;
         while((cam->height % lines_per_half_buffer) != 0){
             dma_half_buffer = dma_half_buffer - dma_half_buffer_min;
@@ -392,7 +402,7 @@ size_t IRAM_ATTR ll_cam_memcpy(cam_obj_t *cam, uint8_t *out, const uint8_t *in, 
 esp_err_t ll_cam_set_sample_mode(cam_obj_t *cam, pixformat_t pix_format, uint32_t xclk_freq_hz, uint16_t sensor_pid)
 {
     if (pix_format == PIXFORMAT_GRAYSCALE) {
-        if (sensor_pid == OV3660_PID || sensor_pid == OV5640_PID || sensor_pid == NT99141_PID || sensor_pid == SC031GS_PID || sensor_pid == BF20A6_PID || sensor_pid == GC0308_PID) {
+        if (sensor_pid == OV3660_PID || sensor_pid == OV3640_PID || sensor_pid == OV5640_PID || sensor_pid == NT99141_PID || sensor_pid == SC031GS_PID || sensor_pid == BF20A6_PID || sensor_pid == GC0308_PID) {
             cam->in_bytes_per_pixel = 1;       // camera sends Y8
         } else {
             cam->in_bytes_per_pixel = 2;       // camera sends YU/YV

@@ -1,0 +1,2 @@
+Not initializing SPI Flash
+qemu-system-xtensa: GLib: g_timer_elapsed: assertion 'timer != NULL' failed

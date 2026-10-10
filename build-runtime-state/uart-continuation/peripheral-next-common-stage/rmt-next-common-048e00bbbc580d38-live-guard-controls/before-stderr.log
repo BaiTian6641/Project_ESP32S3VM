@@ -1,0 +1,3 @@
+Not initializing SPI Flash
+**
+ERROR:../tests/qtest/esp32s3-rmt-test.c:118:irq: assertion failed (rd(RAW) == raw): (0x00000000 == 0x00100000)

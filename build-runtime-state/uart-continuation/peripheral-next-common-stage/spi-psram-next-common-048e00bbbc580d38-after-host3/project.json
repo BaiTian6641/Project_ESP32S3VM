@@ -1,0 +1,183 @@
+{
+  "version": 3,
+  "id": "spi3-psram-wire",
+  "name": "Actual SPI PSRAM loopback",
+  "profile": {
+    "chip": "esp32s3",
+    "board": "native-quad40-simulation-fixture",
+    "module": "bare-esp32s3",
+    "reserved_gpios": [
+      19,
+      20,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      43,
+      44
+    ],
+    "reservations_known": true
+  },
+  "firmware": {},
+  "runtime": {
+    "electrical": {
+      "driver_profile": "s3-explicit-finite-v1",
+      "mode": "dc"
+    }
+  },
+  "components": [
+    {
+      "id": "U1",
+      "name": "U1",
+      "kind": "mcu",
+      "type": "mcu",
+      "parameters": {},
+      "terminals": [
+        {
+          "id": "U1.vdd",
+          "name": "vdd",
+          "role": "vdd",
+          "domain": "power",
+          "direction": "input"
+        },
+        {
+          "id": "U1.gnd",
+          "name": "gnd",
+          "role": "gnd",
+          "domain": "ground",
+          "direction": "input"
+        },
+        {
+          "id": "U1.io10",
+          "name": "io10",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 10
+        },
+        {
+          "id": "U1.io7",
+          "name": "io7",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 7
+        },
+        {
+          "id": "U1.io9",
+          "name": "io9",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 9
+        },
+        {
+          "id": "U1.io11",
+          "name": "io11",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 11
+        }
+      ]
+    },
+    {
+      "id": "V",
+      "name": "V",
+      "kind": "voltage-source",
+      "type": "voltage-source",
+      "parameters": {
+        "voltage": {
+          "value": 3.3,
+          "unit": "V"
+        }
+      },
+      "terminals": [
+        {
+          "id": "V.p",
+          "name": "p",
+          "role": "p",
+          "domain": "power",
+          "direction": "output"
+        },
+        {
+          "id": "V.n",
+          "name": "n",
+          "role": "n",
+          "domain": "ground",
+          "direction": "input"
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "G",
+      "kind": "ground",
+      "type": "ground",
+      "parameters": {},
+      "terminals": [
+        {
+          "id": "G.ref",
+          "name": "ref",
+          "role": "ref",
+          "domain": "ground",
+          "direction": "passive"
+        }
+      ]
+    }
+  ],
+  "nets": [
+    {
+      "id": "vdd",
+      "name": "vdd",
+      "endpoints": [
+        "V.p",
+        "U1.vdd"
+      ]
+    },
+    {
+      "id": "gnd",
+      "name": "gnd",
+      "endpoints": [
+        "V.n",
+        "G.ref",
+        "U1.gnd"
+      ]
+    },
+    {
+      "id": "data",
+      "name": "data",
+      "endpoints": [
+        "U1.io7",
+        "U1.io9"
+      ]
+    },
+    {
+      "id": "clock",
+      "name": "clock",
+      "endpoints": [
+        "U1.io10"
+      ]
+    },
+    {
+      "id": "cs",
+      "name": "cs",
+      "endpoints": [
+        "U1.io11"
+      ]
+    }
+  ],
+  "geometry": {
+    "components": {},
+    "nets": {}
+  }
+}

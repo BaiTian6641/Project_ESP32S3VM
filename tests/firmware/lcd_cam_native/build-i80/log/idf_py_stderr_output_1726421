@@ -1,0 +1,4 @@
+Command: cmake -G Ninja -DPYTHON_DEPS_CHECKED=1 -DPYTHON=/home/polar/.espressif/python_env/idf5.5_py3.12_env/bin/python -DESP_PLATFORM=1 -DSDKCONFIG=/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native/sdkconfig.i80 -DSDKCONFIG_DEFAULTS=/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native/sdkconfig.defaults;/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native/sdkconfig.i80.defaults -DCCACHE_ENABLE=0 /mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native
+"idf_component.yml" file was found for components:
+	/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native/components/esp32-camera
+However, the component manager is not enabled.

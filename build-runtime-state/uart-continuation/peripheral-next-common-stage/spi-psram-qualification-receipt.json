@@ -1,0 +1,401 @@
+{
+  "schema_version": 1,
+  "status": "PASS_SPI_DIRECT_PSRAM_NATIVE_WIRE_AND_BOTH_SDK_PROGRAMS",
+  "qemu": {
+    "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+    "sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a"
+  },
+  "prepared_source_record": {
+    "path": "build-runtime-state/uart-continuation/peripheral-next-common-stage/preparation/prepared-048e00bbbc580d38-source.json",
+    "sha256": "4f89adaf49721d2188933df7974b4b67e8f01370ad9cbccb72546fe46de624d7"
+  },
+  "public_source_record": {
+    "path": "build-runtime-state/uart-continuation/peripheral-next-common-stage/preparation/prepared-048e00bbbc580d38-public.json",
+    "sha256": "71e45c42c3b35027c0321f34cab2e6068c1a9d2367d66e566974452342cd3ee2"
+  },
+  "native": {
+    "full_closure_passed": 341,
+    "skipped": 0,
+    "spi": 27,
+    "spi_service": 8,
+    "memory": 12,
+    "gdma": 18,
+    "path": "/home/polar/.cache/esp32s3vm/peripheral-next-common-048e00bbbc580d38/native/results.json",
+    "sha256": "79e01186c4c4b21a7aeaf9e9f3d351ccad85d8a030ff81b788a0612e8dd0fdb9"
+  },
+  "wire_controls": [
+    {
+      "phase": "before",
+      "host": 2,
+      "path": "/home/polar/.cache/esp32s3vm/spi-psram-next-common-048e00bbbc580d38-before-host2/result.json",
+      "sha256": "d22b716920b62a9e3e25c81f09fa0dea73cebb71d9275689130d93d718902b7f",
+      "proof": {
+        "status": "EXPECTED_REFUSAL",
+        "qemu": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-cb5fe790230bb56a/build-wsl/qemu-system-xtensa",
+        "qemu_sha256": "da7d4e36304702791b4ed8fea38646c25047bc706c27791b9fe9dea3285f41d3",
+        "host": 2,
+        "observed": {
+          "dirty-old": {
+            "running": false,
+            "spi_cmd": 16777216,
+            "spi_raw": 0,
+            "rx_raw": 0,
+            "tx_raw": 0,
+            "rx_descriptor": [
+              3221225536,
+              1006633088,
+              0
+            ]
+          }
+        },
+        "boundary": "Actual powered GPIO MOSI-to-MISO wire plus genuine CPU cache/committed SSI/GDMA data; no payload or input injection, no hardware/metrology claim."
+      }
+    },
+    {
+      "phase": "before",
+      "host": 3,
+      "path": "/home/polar/.cache/esp32s3vm/spi-psram-next-common-048e00bbbc580d38-before-host3/result.json",
+      "sha256": "30bf9124bfa84b70b45f85e7f875ae31f51a205b671d4623bd86ff05fb84089a",
+      "proof": {
+        "status": "EXPECTED_REFUSAL",
+        "qemu": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-cb5fe790230bb56a/build-wsl/qemu-system-xtensa",
+        "qemu_sha256": "da7d4e36304702791b4ed8fea38646c25047bc706c27791b9fe9dea3285f41d3",
+        "host": 3,
+        "observed": {
+          "dirty-old": {
+            "running": false,
+            "spi_cmd": 16777216,
+            "spi_raw": 0,
+            "rx_raw": 0,
+            "tx_raw": 0,
+            "rx_descriptor": [
+              3221225536,
+              1006633088,
+              0
+            ]
+          }
+        },
+        "boundary": "Actual powered GPIO MOSI-to-MISO wire plus genuine CPU cache/committed SSI/GDMA data; no payload or input injection, no hardware/metrology claim."
+      }
+    },
+    {
+      "phase": "after",
+      "host": 2,
+      "path": "/home/polar/.cache/esp32s3vm/spi-psram-next-common-048e00bbbc580d38-after-host2/result.json",
+      "sha256": "3b206475bb1c16dff09b6b38365029e48e8d97a81b358db2f1c44d9c193d7486",
+      "proof": {
+        "status": "PASS",
+        "qemu": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+        "qemu_sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a",
+        "host": 2,
+        "observed": {
+          "dirty-old": {
+            "running": true,
+            "spi_cmd": 0,
+            "spi_raw": 4096,
+            "rx_raw": 3,
+            "tx_raw": 11,
+            "rx_descriptor": [
+              1074004032,
+              1006633088,
+              0
+            ],
+            "received_hex": "8394a5b6c7d8e9fa0b1c2d3e4f60718293a4b5c6d7e8f90a1b2c3d4e5f708192a3b4c5d6e7f8091a2b3c4d5e6f8091a2b3c4d5e6f708192a3b4c5d6e7f90a1b2"
+          },
+          "writeback-new": {
+            "running": true,
+            "spi_cmd": 0,
+            "spi_raw": 4096,
+            "rx_raw": 3,
+            "tx_raw": 11,
+            "rx_descriptor": [
+              1074004032,
+              1006633088,
+              0
+            ],
+            "received_hex": "577491aecbe805223f5c7996b3d0ed0a2744617e9bb8d5f20f2c496683a0bddaf714314e6b88a5c2dffc193653708daac7e4011e3b587592afcce90623405d7a"
+          }
+        },
+        "boundary": "Actual powered GPIO MOSI-to-MISO wire plus genuine CPU cache/committed SSI/GDMA data; no payload or input injection, no hardware/metrology claim."
+      }
+    },
+    {
+      "phase": "after",
+      "host": 3,
+      "path": "/home/polar/.cache/esp32s3vm/spi-psram-next-common-048e00bbbc580d38-after-host3/result.json",
+      "sha256": "92e95db581c5e1314267bf724bf5413a36e5116650e4e03c5a8dec2012cb6e00",
+      "proof": {
+        "status": "PASS",
+        "qemu": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+        "qemu_sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a",
+        "host": 3,
+        "observed": {
+          "dirty-old": {
+            "running": true,
+            "spi_cmd": 0,
+            "spi_raw": 4096,
+            "rx_raw": 3,
+            "tx_raw": 11,
+            "rx_descriptor": [
+              1074004032,
+              1006633088,
+              0
+            ],
+            "received_hex": "8394a5b6c7d8e9fa0b1c2d3e4f60718293a4b5c6d7e8f90a1b2c3d4e5f708192a3b4c5d6e7f8091a2b3c4d5e6f8091a2b3c4d5e6f708192a3b4c5d6e7f90a1b2"
+          },
+          "writeback-new": {
+            "running": true,
+            "spi_cmd": 0,
+            "spi_raw": 4096,
+            "rx_raw": 3,
+            "tx_raw": 11,
+            "rx_descriptor": [
+              1074004032,
+              1006633088,
+              0
+            ],
+            "received_hex": "577491aecbe805223f5c7996b3d0ed0a2744617e9bb8d5f20f2c496683a0bddaf714314e6b88a5c2dffc193653708daac7e4011e3b587592afcce90623405d7a"
+          }
+        },
+        "boundary": "Actual powered GPIO MOSI-to-MISO wire plus genuine CPU cache/committed SSI/GDMA data; no payload or input injection, no hardware/metrology claim."
+      }
+    }
+  ],
+  "only_wire_control_model_difference": "hw/misc/esp32s3_gpspi.c",
+  "ordinary": [
+    {
+      "sdk": "idf-5.5.5",
+      "path": "/home/polar/.cache/esp32s3vm/spi-psram-next-common-048e00bbbc580d38-ordinary/idf-5.5.5-t3vgqb30/result.json",
+      "sha256": "af77b0e71da178a887c7f91a467d327658eeb1f2c267ed0c1adb548100a3dcbe",
+      "actual_psram_transactions": 8,
+      "original_flash_unchanged": true,
+      "build_receipt": {
+        "path": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/spi-psram-stage/idf-5.5.5-abe7fed3869c6f6b/result.json",
+        "sha256": "18a0b8bcb59fd1ee740083c9471cdd1fa2a58604d170e278777f3c9efedd745d"
+      },
+      "prepared_source": {
+        "path": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/peripheral-next-common-stage/preparation/prepared-048e00bbbc580d38-source.json",
+        "sha256": "4f89adaf49721d2188933df7974b4b67e8f01370ad9cbccb72546fe46de624d7"
+      },
+      "oracle_proof": [
+        {
+          "host": 2,
+          "mode": 0,
+          "bytes": 384,
+          "tx": 1006832064,
+          "rx": 1006832512,
+          "tx_descriptor": 1070505020,
+          "rx_descriptor": 1070505060,
+          "fnv1a": "423b7a45"
+        },
+        {
+          "host": 2,
+          "mode": 1,
+          "bytes": 384,
+          "tx": 1006832064,
+          "rx": 1006832512,
+          "tx_descriptor": 1070505020,
+          "rx_descriptor": 1070505060,
+          "fnv1a": "7f1f6145"
+        },
+        {
+          "host": 2,
+          "mode": 2,
+          "bytes": 384,
+          "tx": 1006832064,
+          "rx": 1006832512,
+          "tx_descriptor": 1070505020,
+          "rx_descriptor": 1070505060,
+          "fnv1a": "70688445"
+        },
+        {
+          "host": 2,
+          "mode": 3,
+          "bytes": 384,
+          "tx": 1006832064,
+          "rx": 1006832512,
+          "tx_descriptor": 1070505020,
+          "rx_descriptor": 1070505060,
+          "fnv1a": "3b5d08c5"
+        },
+        {
+          "host": 3,
+          "mode": 0,
+          "bytes": 384,
+          "tx": 1006832064,
+          "rx": 1006832512,
+          "tx_descriptor": 1070505020,
+          "rx_descriptor": 1070505060,
+          "fnv1a": "55142b45"
+        },
+        {
+          "host": 3,
+          "mode": 1,
+          "bytes": 384,
+          "tx": 1006832064,
+          "rx": 1006832512,
+          "tx_descriptor": 1070505020,
+          "rx_descriptor": 1070505060,
+          "fnv1a": "82e0dd45"
+        },
+        {
+          "host": 3,
+          "mode": 2,
+          "bytes": 384,
+          "tx": 1006832064,
+          "rx": 1006832512,
+          "tx_descriptor": 1070505020,
+          "rx_descriptor": 1070505060,
+          "fnv1a": "537bbcc5"
+        },
+        {
+          "host": 3,
+          "mode": 3,
+          "bytes": 384,
+          "tx": 1006832064,
+          "rx": 1006832512,
+          "tx_descriptor": 1070505020,
+          "rx_descriptor": 1070505060,
+          "fnv1a": "a5c01c45"
+        }
+      ],
+      "evidence_sha256": {
+        "stderr.log": "427be1c51aea07a7bd683c7db6580cf0183f5ed854419390fcdda667605948fc",
+        "compiled-source-identity.json": "170f3c0f05058f6f89486894b37ce6a2981dc9dcffac8892f2761a12ce7ee069",
+        "applied.json": "7e1008ea2b8b512aea2fe6fc6a9f80ecce4062d1c008b3ea862c43ca0254ce26",
+        "guest-errors.log": "4360642f18bc86d7e905cc380f06dae611c7e79b02ec081f401e3406948e02c0",
+        "stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "command.json": "2677a98bccf7dd9c0589cd858d0e8981db121f3bd97660af27ab9a51c919b9cc",
+        "completed.json": "c99384546ae6c82184c999890cb6d5bf6d2e72ecba6837089b99dced1a0a29f2",
+        "uart.log": "237c467fafc2f5ef21a650e2c6972ba45f9589837beb5b8cf3ed2807651cfce9",
+        "project.json": "4675ac1eadefc0d05137011b65911d40e88eb9f98bdb1be7c6ccc43a27a4b2cb",
+        "writable-flash.bin": "8a50b8023188518f357cb63ced36fbc0972ca7f708c16cc739ae2bedcc321e68",
+        "qmp-transcript.json": "deb3616b09e64dff2c2027b8817fbef3de7c9852b2a47b04c55641d482bd5a6a"
+      }
+    },
+    {
+      "sdk": "idf-6.1",
+      "path": "/home/polar/.cache/esp32s3vm/spi-psram-next-common-048e00bbbc580d38-ordinary/idf-6.1-nxm21k8i/result.json",
+      "sha256": "d353fca473b3c82261275f634a2f3b2683a41012b7129720af860527eb5488a9",
+      "actual_psram_transactions": 8,
+      "original_flash_unchanged": true,
+      "build_receipt": {
+        "path": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/spi-psram-stage/idf-6.1-abe7fed3869c6f6b/result.json",
+        "sha256": "a23a3cc5c7b4311b0bd53cbcd0c0390fe1640f8170a437f308dc9e30547f0ac2"
+      },
+      "prepared_source": {
+        "path": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/peripheral-next-common-stage/preparation/prepared-048e00bbbc580d38-source.json",
+        "sha256": "4f89adaf49721d2188933df7974b4b67e8f01370ad9cbccb72546fe46de624d7"
+      },
+      "oracle_proof": [
+        {
+          "host": 2,
+          "mode": 0,
+          "bytes": 384,
+          "tx": 1006832064,
+          "rx": 1006832512,
+          "tx_descriptor": 1070505016,
+          "rx_descriptor": 1070505056,
+          "fnv1a": "423b7a45"
+        },
+        {
+          "host": 2,
+          "mode": 1,
+          "bytes": 384,
+          "tx": 1006832064,
+          "rx": 1006832512,
+          "tx_descriptor": 1070505016,
+          "rx_descriptor": 1070505056,
+          "fnv1a": "7f1f6145"
+        },
+        {
+          "host": 2,
+          "mode": 2,
+          "bytes": 384,
+          "tx": 1006832064,
+          "rx": 1006832512,
+          "tx_descriptor": 1070505016,
+          "rx_descriptor": 1070505056,
+          "fnv1a": "70688445"
+        },
+        {
+          "host": 2,
+          "mode": 3,
+          "bytes": 384,
+          "tx": 1006832064,
+          "rx": 1006832512,
+          "tx_descriptor": 1070505016,
+          "rx_descriptor": 1070505056,
+          "fnv1a": "3b5d08c5"
+        },
+        {
+          "host": 3,
+          "mode": 0,
+          "bytes": 384,
+          "tx": 1006832064,
+          "rx": 1006832512,
+          "tx_descriptor": 1070505016,
+          "rx_descriptor": 1070505056,
+          "fnv1a": "55142b45"
+        },
+        {
+          "host": 3,
+          "mode": 1,
+          "bytes": 384,
+          "tx": 1006832064,
+          "rx": 1006832512,
+          "tx_descriptor": 1070505016,
+          "rx_descriptor": 1070505056,
+          "fnv1a": "82e0dd45"
+        },
+        {
+          "host": 3,
+          "mode": 2,
+          "bytes": 384,
+          "tx": 1006832064,
+          "rx": 1006832512,
+          "tx_descriptor": 1070505016,
+          "rx_descriptor": 1070505056,
+          "fnv1a": "537bbcc5"
+        },
+        {
+          "host": 3,
+          "mode": 3,
+          "bytes": 384,
+          "tx": 1006832064,
+          "rx": 1006832512,
+          "tx_descriptor": 1070505016,
+          "rx_descriptor": 1070505056,
+          "fnv1a": "a5c01c45"
+        }
+      ],
+      "evidence_sha256": {
+        "stderr.log": "9aba5721307ca3acff4e4fbd5e582cbf5469c4f9c8b6b3fd305c9c72fdf53c22",
+        "compiled-source-identity.json": "7da4a87d55af2ce81122a33103975798f18c9b06fa219dd040d94854fdf6cf88",
+        "applied.json": "7e1008ea2b8b512aea2fe6fc6a9f80ecce4062d1c008b3ea862c43ca0254ce26",
+        "guest-errors.log": "4360642f18bc86d7e905cc380f06dae611c7e79b02ec081f401e3406948e02c0",
+        "stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "command.json": "801c2b6169c150f40c633cc1a5459229a5315b671657cc46c1619a6b7146f027",
+        "completed.json": "8ecf59f859368d95784fa74a95ab88056fea5eb53c699d2bd349183d354e0532",
+        "uart.log": "7a89d2d5b70bf7957e00a27a09b02cd721ed772d30678ea1395c752828ce83c4",
+        "project.json": "4675ac1eadefc0d05137011b65911d40e88eb9f98bdb1be7c6ccc43a27a4b2cb",
+        "writable-flash.bin": "e3b346882dfca7db6eed436d6437ded572455ec857b9e0b765fc72e671f0ad9c",
+        "qmp-transcript.json": "4f0cbf444ce84cb5e7adb03dfd79f3071be91d96a043984c96788c3d258c2682"
+      }
+    }
+  ],
+  "actual_direct_psram_transactions": 16,
+  "overlay": {
+    "path": "qemu-extensions/prototypes/spi/0009-psram-dma-transport.patch",
+    "sha256": "e922797bbf1a4ab34a92be9f349dca0c92299b118394fbb8fd6854244e885343",
+    "after_copies": true,
+    "model_sha256": "17517a932d24ea3afb52be5c7e21d85528f01b3c8ffa27de05476449a5acea16",
+    "scope": "Remove only obsolete six-line PSRAM-address refusal; actual canonical MMU/SSI/GDMA/cache and physical wires carry every byte."
+  },
+  "boundaries": [
+    "Both unchanged full SDK5.5.5/6.1 programs reach zero failures/DONE; public SPI_TRANS_DMA_USE_PSRAM plus manual alignment, genuine external TX/RX buffers and internal completed descriptors/IRQ/wire-duration/full payload gates, no internal bounce or fallback.",
+    "Native wire dirty-old/writeback-new and RX CPU-cache stale/invalidate prove real coherence, not a memory-only alias claim.",
+    "Broader slave/multiline/DDR/direct-IO-mux, independent metrology/fast-edge/replay and exact ordinary SDK defects remain separate; no generic SPI completion.",
+    "Canonical operative profile migration and actual publication remain separate. Older private binary/harness failures/reanalysis are preserved and not inherited."
+  ]
+}

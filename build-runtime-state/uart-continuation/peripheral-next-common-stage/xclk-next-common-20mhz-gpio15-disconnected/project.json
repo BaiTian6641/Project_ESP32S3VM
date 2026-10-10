@@ -1,0 +1,170 @@
+{
+  "version": 3,
+  "id": "pulse-xclk-20mhz-disconnected",
+  "name": "Ordinary ESP32-S3 native pulse physical nets",
+  "profile": {
+    "chip": "esp32s3",
+    "board": "esp32-s3-devkitc-1",
+    "module": "esp32-s3-wroom-1"
+  },
+  "firmware": {},
+  "runtime": {
+    "electrical": {
+      "driver_profile": "s3-explicit-finite-v1",
+      "mode": "dc",
+      "edit_charge": "reset"
+    }
+  },
+  "geometry": {
+    "components": {},
+    "nets": {}
+  },
+  "components": [
+    {
+      "id": "U1",
+      "name": "U1",
+      "kind": "mcu",
+      "type": "mcu",
+      "parameters": {},
+      "terminals": [
+        {
+          "id": "U1.vdd",
+          "name": "vdd",
+          "role": "vdd",
+          "domain": "power",
+          "direction": "input"
+        },
+        {
+          "id": "U1.gnd",
+          "name": "gnd",
+          "role": "gnd",
+          "domain": "ground",
+          "direction": "input"
+        },
+        {
+          "id": "U1.io15",
+          "name": "io15",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 15
+        },
+        {
+          "id": "U1.io18",
+          "name": "io18",
+          "role": "gpio",
+          "domain": "digital",
+          "direction": "inout",
+          "gpio": 18
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "G",
+      "kind": "ground",
+      "type": "ground",
+      "parameters": {},
+      "terminals": [
+        {
+          "id": "G.ref",
+          "name": "ref",
+          "role": "ref",
+          "domain": "ground",
+          "direction": "passive"
+        }
+      ]
+    },
+    {
+      "id": "V",
+      "name": "V",
+      "kind": "voltage-source",
+      "type": "voltage-source",
+      "parameters": {
+        "voltage": {
+          "value": 3.3,
+          "unit": "V"
+        }
+      },
+      "terminals": [
+        {
+          "id": "V.p",
+          "name": "p",
+          "role": "p",
+          "domain": "power",
+          "direction": "output"
+        },
+        {
+          "id": "V.n",
+          "name": "n",
+          "role": "n",
+          "domain": "ground",
+          "direction": "input"
+        }
+      ]
+    },
+    {
+      "id": "PullCount",
+      "name": "PullCount",
+      "kind": "resistor",
+      "type": "resistor",
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      },
+      "terminals": [
+        {
+          "id": "PullCount.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "passive"
+        },
+        {
+          "id": "PullCount.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "passive"
+        }
+      ]
+    }
+  ],
+  "nets": [
+    {
+      "id": "gnd",
+      "name": "gnd",
+      "endpoints": [
+        "G.ref",
+        "V.n",
+        "U1.gnd",
+        "PullCount.b"
+      ]
+    },
+    {
+      "id": "vdd",
+      "name": "vdd",
+      "endpoints": [
+        "V.p",
+        "U1.vdd"
+      ]
+    },
+    {
+      "id": "clock",
+      "name": "clock",
+      "endpoints": [
+        "U1.io18",
+        "PullCount.a"
+      ]
+    },
+    {
+      "id": "source",
+      "name": "source",
+      "endpoints": [
+        "U1.io15"
+      ]
+    }
+  ]
+}

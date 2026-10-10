@@ -1,0 +1,29 @@
+{
+  "smoke_executable": {
+    "path": "gui-esp32s3-simulator/build-wsl/gui_esp32s3_boot_smoke_test",
+    "sha256": "b72dc0daeb0ee2b730ba98cf9510ba15d6191619176e9e1889ff17231b6249b8"
+  },
+  "firmware": [
+    {
+      "profile": "idf-6.1",
+      "original": "C:\\Users\\weyst\\Documents\\ChatGPT\\ESP32S3VM\\Project_ESP32S3VM\\tests\\firmware\\boot_smoke\\build-idf-6.1\\boot-smoke.merged.bin",
+      "sha256": "bbb445d0fbba1ee8bd4ad3094ae501ff1dcfd92c3d4aa4179c410bb328b1973a"
+    },
+    {
+      "profile": "idf-5.5.5",
+      "original": "C:\\Users\\weyst\\Documents\\ChatGPT\\ESP32S3VM\\Project_ESP32S3VM\\tests\\firmware\\boot_smoke\\build-idf-5.5.5\\boot-smoke.merged.bin",
+      "sha256": "23bf13220ab1734ee4a4254c54000e9d41671f715a2a2cee6667d129eadf31c9"
+    },
+    {
+      "profile": "arduino-idf-5.5.5",
+      "original": "C:\\Users\\weyst\\Documents\\ChatGPT\\ESP32S3VM\\Project_ESP32S3VM\\tests\\firmware\\arduino_boot\\build-idf-5.5.5\\arduino-boot.merged.bin",
+      "sha256": "7a67c902cdfcecee16cf108f377a33a9ea25ad63339a78b482bba9847c2ea346"
+    }
+  ],
+  "source_authority": {
+    "test_source": "gui-esp32s3-simulator/tests/BootSmokeTest.cpp",
+    "test_source_sha256": "4dee61c5d219bbd640ab975161f90acafe6f0ade41080e3c2f937d724959841c",
+    "build_observed": "cmake --build existingbuild-wsl --target gui_esp32s3_boot_smoke_test -j2: ninja no work to do",
+    "scope": "New current-source helper corpus snapshot; old frozen6d2e original recipe untouched, actual original3firmware hashes retained."
+  }
+}

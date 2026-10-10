@@ -1,0 +1,28 @@
+TAP version 13
+# random seed: R02Sdb462ae0ae161b8b3f7800c0abf3acfb
+1..8
+# Start of xtensa tests
+# Start of esp32s3-electrical tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1841582.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1841582.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 1 /xtensa/esp32s3-electrical/divider-gpio-irq
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1841582.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1841582.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 2 /xtensa/esp32s3-electrical/disconnection-open-drain
+# slow test /xtensa/esp32s3-electrical/disconnection-open-drain executed in 0.56 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1841582.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1841582.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 3 /xtensa/esp32s3-electrical/opposing-drivers-lu
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1841582.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1841582.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 4 /xtensa/esp32s3-electrical/transaction-generation
+# slow test /xtensa/esp32s3-electrical/transaction-generation executed in 0.54 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1841582.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1841582.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# Native ADC ctrl2=0x800f0c07 FSM=0 aperture_ns=1600
+ok 5 /xtensa/esp32s3-electrical/native-adc
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1841582.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1841582.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 6 /xtensa/esp32s3-electrical/unknown-consumer
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1841582.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1841582.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 7 /xtensa/esp32s3-electrical/rc-charge-reset
+# slow test /xtensa/esp32s3-electrical/rc-charge-reset executed in 0.56 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1841582.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1841582.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 8 /xtensa/esp32s3-electrical/rc-firmware-step
+# slow test /xtensa/esp32s3-electrical/rc-firmware-step executed in 0.55 secs
+# End of esp32s3-electrical tests
+# End of xtensa tests

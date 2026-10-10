@@ -68,7 +68,7 @@ static void channel_apply(ESP32S3LedcChannel *c)
     c->update = false;
 }
 
-static void overflow(ESP32S3LedcState *s, unsigned index)
+static void overflow(ESP32S3LedcState *s, unsigned index, unsigned channels)
 {
     ESP32S3LedcTimer *t = &s->timers[index];
     s->int_raw |= B(index);
@@ -78,7 +78,7 @@ static void overflow(ESP32S3LedcState *s, unsigned index)
     }
     for (unsigned i = 0; i < 8; ++i) {
         ESP32S3LedcChannel *c = &s->channels[i];
-        if ((c->active0 & 3) != index) {
+        if (!(channels & B(i)) || (c->active0 & 3) != index) {
             continue;
         }
         if (c->update) {
@@ -117,6 +117,13 @@ static void synchronize(ESP32S3LedcState *s)
     int64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
     uint64_t elapsed = now > s->last_ns ? now - s->last_ns : 0;
     s->last_ns = now;
+    /* Counter elapsed time belongs to the bindings at entry. A shadow
+     * timer reassignment at this deadline must not charge the same channel
+     * again when another timer wraps in the later array slot. */
+    unsigned channels[4] = {0};
+    for (unsigned i = 0; i < 8; ++i) {
+        channels[s->channels[i].active0 & 3] |= B(i);
+    }
     for (unsigned i = 0; i < 4; ++i) {
         ESP32S3LedcTimer *t = &s->timers[i];
         if (!running(s, t)) {
@@ -142,7 +149,7 @@ static void synchronize(ESP32S3LedcState *s)
             t->count += lo;
             if (t->count == period(t)) {
                 t->count = 0;
-                overflow(s, i);
+                overflow(s, i, channels[i]);
             } else {
                 break;
             }

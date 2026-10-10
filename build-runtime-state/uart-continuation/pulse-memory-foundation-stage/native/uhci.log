@@ -1,0 +1,24 @@
+TAP version 13
+# random seed: R02Sc30c86ab10466f6e020dcb9a82137a1c
+1..17
+# Start of esp32s3 tests
+# Start of uhci tests
+ok 1 /esp32s3/uhci/full-duplex
+ok 2 /esp32s3/uhci/owner-peripheral-isolation
+ok 3 /esp32s3/uhci/framed-four-escapes
+ok 4 /esp32s3/uhci/backpressure-selection
+ok 5 /esp32s3/uhci/malformed-rx
+ok 6 /esp32s3/uhci/threshold-exact-boundary
+ok 7 /esp32s3/uhci/accepted-byte-next-descriptor-fault
+ok 8 /esp32s3/uhci/rx-wrong-owner
+ok 9 /esp32s3/uhci/idle-drains-last-fifo-bytes
+ok 10 /esp32s3/uhci/error-eof-cannot-finish-spi
+ok 11 /esp32s3/uhci/demand-arm-restart-notify
+ok 12 /esp32s3/uhci/segment-partial-continues-next
+ok 13 /esp32s3/uhci/segment-full-preserves-prefetch
+ok 14 /esp32s3/uhci/segment-advance-fault-and-reset
+ok 15 /esp32s3/uhci/break-qualified-queued-delimiter
+ok 16 /esp32s3/uhci/break-masked-preserves-zero-payload
+ok 17 /esp32s3/uhci/forty-exact-idle-boundaries
+# End of uhci tests
+# End of esp32s3 tests

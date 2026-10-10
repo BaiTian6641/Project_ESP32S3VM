@@ -1,0 +1,10 @@
+{
+  "status": "SOURCE_FINALIZED_NOT_RUNTIME_QUALIFIED",
+  "source_files_sha256_lf": {
+    "tests/firmware/lcd_cam_native/main/lcd_cam_native.c": "d8f3903529156fb84e83a2cfe87ca99be6f8378e186a169389f52589ee798d2b",
+    "tests/firmware/lcd_cam_native/main/CMakeLists.txt": "10164187f2f24f34901a6f02cdbadbdd0402750a8d7f18ac76a2cf21739cab29",
+    "tests/firmware/lcd_cam_native/graph_vectors.py": "66b410b38b0e548ac9f9e5b86bb6c1ca2f944b6169ac407103381e9744d4a016"
+  },
+  "merged": "Approved official2.1.8 sourcepin+trueSDKversion, SDK6GRAY8/RGB565/RGB888 exactpublicformats, actualI80 internalDMA spans, camera realLEDc/ownedinternalandexternalleases/activepin faultandreset recovery, typedSCCB inout/registered16panel roles; novendorSDKshims. Actual SDK5 RGB build failures corrected by public PSRAM-call and live helper compilation scopes; failed source epochs retained. ActualI80SDKprescalerfailure corrected withpublicXTAL40M source retainingrequested1MHz; nofrequencyincrease orSDKchange. FullpublicRGBdelete/recreation andrealISRproducer-delay/restart phases withsafeauxdelete-retention/perdriverownership; I80publicHALrawcounter0observabilitybeforemicrosecondread, no privateheader/init/clockchange/tolerance; actualexternalbounceM2Cbeforeauxinit. Source-notordinaryqualification.",
+  "runtime_integration": "Fresh immutabledb51 SHA d83145b84fada9da9d4e86b67bce8e40f4f5f7f6a057589aff6687b4996355c1: all303native PASSzeroSKIP with159appliedsourcehashes verified; actualfourSDKmemory lifecycles, threebootcontrols, isolatedSPI1duplex/asymmetric fail-before/pass-after andrealGPIO15physical20MHz connected/disconnected256halfperiods PASS. Strictfullmemory12/4SDK/4SPI1/3boot receipt memory-foundation-ost-qualification.json SHA0d59ec7f4dba52bae5282d32bc31cf7cbc6fbc95d74ff33a2b1d9877d46a24af. Historical160302native preservedseparate. Allordinarynewpin sensor/panel profiles remain unqualified untilactualfreshcompletecapture."
+}

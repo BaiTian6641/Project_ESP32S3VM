@@ -275,6 +275,7 @@ static int init_status(sensor_t *sensor)
 }
 
 static int set_dummy(sensor_t *sensor, int val){ return -1; }
+static int set_gainceiling_dummy(sensor_t *sensor, gainceiling_t val){ return -1; }
 
 static int set_xclk(sensor_t *sensor, int timer, int xclk)
 {
@@ -284,7 +285,7 @@ static int set_xclk(sensor_t *sensor, int timer, int xclk)
     return ret;
 }
 
-int sc030iot_detect(int slv_addr, sensor_id_t *id)
+int esp32_camera_sc030iot_detect(int slv_addr, sensor_id_t *id)
 {
     if (SC030IOT_SCCB_ADDR == slv_addr) {
         uint8_t MIDL = SCCB_Read(slv_addr, SC030_SENSOR_ID_LOW_REG);
@@ -300,7 +301,7 @@ int sc030iot_detect(int slv_addr, sensor_id_t *id)
     return 0;
 }
 
-int sc030iot_init(sensor_t *sensor)
+int esp32_camera_sc030iot_init(sensor_t *sensor)
 {
     // Set function pointers
     sensor->reset = reset;
@@ -318,6 +319,17 @@ int sc030iot_init(sensor_t *sensor)
     sensor->set_awb_gain = set_awb_gain;
     sensor->set_contrast = set_contrast;
     //not supported
+    sensor->set_brightness = set_dummy;
+    sensor->set_gainceiling = set_gainceiling_dummy;
+    sensor->set_whitebal = set_dummy;
+    sensor->set_gain_ctrl = set_dummy;
+    sensor->set_exposure_ctrl = set_dummy;
+    sensor->set_aec2 = set_dummy;
+    sensor->set_dcw = set_dummy;
+    sensor->set_bpc = set_dummy;
+    sensor->set_wpc = set_dummy;
+    sensor->set_raw_gma = set_dummy;
+    sensor->set_lenc = set_dummy;
     sensor->set_denoise = set_dummy;
     sensor->set_quality = set_dummy;
     sensor->set_special_effect = set_dummy;
@@ -329,6 +341,14 @@ int sc030iot_init(sensor_t *sensor)
     sensor->set_reg = set_reg;
     sensor->set_xclk = set_xclk;
     
+    // No autofocus support
+    sensor->af_is_supported = NULL;
+    sensor->af_init = NULL;
+    sensor->af_set_mode = NULL;
+    sensor->af_trigger = NULL;
+    sensor->af_get_status = NULL;
+    sensor->af_set_manual_position = NULL;
+
     ESP_LOGD(TAG, "sc030iot Attached");
 
     return 0;

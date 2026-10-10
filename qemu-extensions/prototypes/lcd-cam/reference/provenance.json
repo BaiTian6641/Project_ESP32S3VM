@@ -36,10 +36,11 @@
       "rules": "Explicit optional host JPEG decoding dependency, listed in requirements.txt. Raw formats need only Python standard library."
     },
     {
-      "url": "https://github.com/espressif/esp32-camera/blob/b3c2aa273a88c7debf2b1683448933ca2b28aad9/sensors/ov2640.c",
-      "identity": "espressif/esp32-camera v2.1.3, b3c2aa273a88c7debf2b1683448933ca2b28aad9",
+      "url": "https://github.com/espressif/esp32-camera/blob/b0556a78e13d42974aae19116f8a1e14c29b0f4d/sensors/ov2640.c",
+      "identity": "espressif/esp32-camera v2.1.8, b0556a78e13d42974aae19116f8a1e14c29b0f4d",
       "sections": "set_framesize / set_window / set_pixformat",
-      "rules": "Ordinary QQVGA 160x120 selects CIF source scene 400x296, crop 400x296 for the 4:3 ratio. Expected scene comes from driver setup and declared functional source contract, never from image bytes being compared."
+      "rules": "Ordinary QQVGA 160x120 selects CIF source scene 400x296, crop 400x296 for the 4:3 ratio. Expected scene comes from driver setup and declared functional source contract, never from image bytes being compared.",
+      "historical_driver_pin": "v2.1.3/b3c2aa273a88c7debf2b1683448933ca2b28aad9 remains retained in historical receipts. Current approved official pin changes symbol names/unsupported autofocus hook; actual OV2640 register/settings data unchanged. New runtime qualification is not inherited."
     },
     {
       "url": "https://github.com/espressif/esp-idf/blob/v5.5.5/components/esp_lcd/rgb/esp_lcd_panel_rgb.c#L303",

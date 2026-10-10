@@ -53,6 +53,10 @@ static void graph(void)
     QDict *r = qtest_qmp(s, "{'execute':'qom-set','arguments':{'path':'/machine/soc/electrical','property':'project-json','value':%s}}", json);
     g_assert_false(qdict_haskey(r, "error"));
     qobject_unref(r);
+    /* QTest dummy CPUs do not execute guest code; cont enables timer dispatch. */
+    r = qtest_qmp(s, "{'execute':'cont'}");
+    g_assert_false(qdict_haskey(r, "error"));
+    qobject_unref(r);
 }
 
 static void sample(bool high)
@@ -204,6 +208,35 @@ static void test_fractional_carry(void)
     qtest_quit(s);
 }
 
+static void test_timer_rebind_coincident_overflow(void)
+{
+    for (unsigned ch = 0; ch < 8; ch++) {
+        unsigned from = ch % 4, to = (from + 1) % 4;
+        setup(ch, from, 0, 4);
+        wr(TCONF(to), DIV | 4 | RESET | UPDATE);
+        wr(TCONF(to), DIV | 4);
+        wr(CH(ch, 12), BIT(31) | BIT(30) | (2U << 20) | (1U << 10) | 1);
+        unsigned flags = BIT(2) | BIT(4) | BIT(15) | (1U << 5);
+        wr(CH(ch, 0), from | flags);
+        wr(0xc8, BIT(4 + ch) | BIT(12 + ch));
+        step(8000);
+        wr(CH(ch, 0), to | flags); /* binding changes at the next old wrap */
+        step(8000);
+        g_assert_cmpuint(rd(CH(ch, 16)), ==, 5 << 4);
+        g_assert_cmphex(rd(0xc4), ==, 0); /* neither fade nor two-wrap IRQ early */
+        g_assert_false(qtest_get_irq(s, 0));
+        sample(true);
+        step(4999); sample(true);
+        step(1); sample(false);
+        step(11000);
+        g_assert_cmpuint(rd(CH(ch, 16)), ==, 6 << 4);
+        g_assert_cmphex(rd(0xc4), ==, BIT(4 + ch) | BIT(12 + ch));
+        g_assert_true(qtest_get_irq(s, 0));
+        sample(true);
+        qtest_quit(s);
+    }
+}
+
 int main(int argc, char **argv)
 {
     g_test_init(&argc, &argv, NULL);
@@ -211,5 +244,6 @@ int main(int argc, char **argv)
     qtest_add_func("/esp32s3/ledc/shadow-pause-gate-idle-reset", test_shadow_pause_gate);
     qtest_add_func("/esp32s3/ledc/fade-overflow-irq", test_fade_overflow_irq);
     qtest_add_func("/esp32s3/ledc/fractional-divider-duty-carry", test_fractional_carry);
+    qtest_add_func("/esp32s3/ledc/timer-rebind-coincident-overflow", test_timer_rebind_coincident_overflow);
     return g_test_run();
 }

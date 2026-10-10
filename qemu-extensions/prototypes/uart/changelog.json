@@ -226,5 +226,25 @@
    "Ordinary host watchdog defaults900s and explicitly accepts3600s, matching the existing RMT diagnostic convention without changing guest timings/assertions. The original connected900s FAIL is preserved; all six images/helpers were strictly refrozen and full connectedPASS completed in1517.165590s. ROM was freshly refrozen/requalified again against the updated QMP helper.",
    "The original ROM panic and old fixed-single-burst validator failures remain immutable. Exact native/ROM identities and proof:build-runtime-state/uart-continuation/rom-stage/qualification-receipt.json."
   ]
+ },
+ {
+  "date": "2026-10-10",
+  "packages": ["UART-01", "UART-02", "UART-03"],
+  "qualification": "Source-publication interface exercised by fresh positive/isolated SPI1-negative preparations and actual strict consumer provenance/Apply. Combineddb51 has303 native PASS plus renewed actual same-executable memory foundation; no new ordinary UART/Arduino/ROM claim.",
+  "changes": [
+   "Publish standard schema1 public profile/input fingerprint separately from the immutable native ordered-operation fingerprint; pin the exact original native record path/SHA/operation fingerprint and retain identical input/applied-source inventories.",
+   "Keep existing cached checkouts and native records untouched. Current ordinary memory callers explicitly supply their actual prepared-source record, not a guessed global record filename.",
+   "Exact scoped combined proof:build-runtime-state/uart-continuation/pulse-memory-foundation-stage/qualification-receipt.json. Broader ordinary pulse/LCD/CAM, I2S and independent primary/metrology gates remain separate."
+  ]
+ },
+ {
+  "date": "2026-10-10",
+  "packages": ["UART-01", "UART-02", "UART-03"],
+  "qualification": "Explicit post-copy source ordering exercised by fresh positive02c5b1fd51470c43 and isolated SPI1-negativec563ba1ac92036cd preparations. Positive executable bf3fc1bd has four actual SDK memory lifecycles, three frozen boot controls and connected/disconnected20MHz resolved-wire checks PASS; no new ordinary UART/Arduino/ROM claim.",
+  "changes": [
+   "Support only explicit Boolean after_copies metadata for additional dependency overlays. Apply these after declared immutable copies and before the UART-owned integration tail; frozen-prefix patches cannot move phase.",
+   "Bind phase ordering into native and standard-public fingerprints, raw input inventories and exact resulting source hashes. Existing input records and cached checkouts remain untouched.",
+   "The current successor contains only exact grounded-voltage-source reduction/factor reuse and unchanged interrupt-input transition suppression, plus physical-current and interrupt-map/gate regressions. No LCD FIFO geometry, conversion, frame or timing assumption is introduced."
+  ]
  }
 ]

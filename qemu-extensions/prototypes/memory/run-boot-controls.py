@@ -19,7 +19,6 @@ import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parents[3]
-ORIGINALS = ROOT / "build-runtime-state/memory-native-2026-10-07/boot-control-originals.json"
 
 
 def digest(path):
@@ -33,10 +32,12 @@ def digest(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--qemu", required=True, type=Path)
+    parser.add_argument("--originals", required=True, type=Path,
+                        help="Explicit frozen corpus/helper identity recipe; historical snapshots are never repinned")
     parser.add_argument("--evidence", required=True, type=Path)
     args = parser.parse_args()
     qemu = args.qemu.resolve(strict=True)
-    spec = json.loads(ORIGINALS.read_text())
+    spec = json.loads(args.originals.resolve(strict=True).read_text())
     smoke = (ROOT / spec["smoke_executable"]["path"].replace("C:\\Users\\weyst\\Documents\\ChatGPT\\ESP32S3VM\\Project_ESP32S3VM\\", "").replace("\\", "/")).resolve(strict=True)
     require = lambda cond, msg: (_ for _ in ()).throw(AssertionError(msg)) if not cond else None
     require(digest(smoke) == spec["smoke_executable"]["sha256"], "Boot smoke executable differs from frozen original")

@@ -1,0 +1,138 @@
+--- a/hw/xtensa/esp32s3.c
++++ b/hw/xtensa/esp32s3.c
+@@ -74,4 +74,8 @@
+ #include "hw/timer/esp32s3_rmt.h"
+ #include "hw/timer/esp32s3_rmt_peers.h"
++#include "hw/misc/esp32s3_ledc.h"
++#include "hw/misc/esp32s3_pcnt.h"
++#include "hw/misc/esp32s3_mcpwm.h"
++#include "hw/misc/esp32s3_sdm.h"
+ #include "hw/gpio/esp32s3_gpio.h"
+ #include "hw/gpio/esp32s3_iomux.h"
+@@ -173,4 +177,8 @@
+     ESP32S3DsState ds;
+     ESP32S3PmsState pms;
++    ESP32S3LedcState ledc;
++    ESP32S3PcntState pcnt;
++    ESP32S3McpwmState mcpwm[2];
++    ESP32S3SdmState sdm;
+ 
+     ESP32S3XtsAesState xts_aes;
+@@ -387,4 +395,9 @@
+         device_cold_reset(DEVICE(&s->gpio));
+         device_cold_reset(DEVICE(&s->pms));
++        device_cold_reset(DEVICE(&s->ledc));
++        device_cold_reset(DEVICE(&s->pcnt));
++        device_cold_reset(DEVICE(&s->mcpwm[0]));
++        device_cold_reset(DEVICE(&s->mcpwm[1]));
++        device_cold_reset(DEVICE(&s->sdm));
+         /* Note: eFuse (OTP), USB-Serial/JTAG console and the RGB framebuffer
+          * are intentionally not reset by the digital domain. */
+@@ -515,4 +528,8 @@
+     case ESP32S3_RST_RMT:      dev = DEVICE(&s->rmt); break;
+     case ESP32S3_RST_DS:       dev = DEVICE(&s->ds); break;
++    case ESP32S3_RST_LEDC:     dev = DEVICE(&s->ledc); break;
++    case ESP32S3_RST_PCNT:     dev = DEVICE(&s->pcnt); break;
++    case ESP32S3_RST_MCPWM0:   dev = DEVICE(&s->mcpwm[0]); break;
++    case ESP32S3_RST_MCPWM1:   dev = DEVICE(&s->mcpwm[1]); break;
+     case ESP32S3_RST_I2C0:     dev = DEVICE(&s->i2c[0]); break;
+     case ESP32S3_RST_I2C1:     dev = DEVICE(&s->i2c[1]); break;
+@@ -1013,4 +1030,11 @@
+     object_initialize_child(OBJECT(ss), "ds", &ss->ds, TYPE_ESP32S3_DS);
+     object_initialize_child(OBJECT(ss), "pms", &ss->pms, TYPE_ESP32S3_PMS);
++    object_initialize_child(OBJECT(ss), "ledc", &ss->ledc, TYPE_ESP32S3_LEDC);
++    object_initialize_child(OBJECT(ss), "pcnt", &ss->pcnt, TYPE_ESP32S3_PCNT);
++    object_initialize_child(OBJECT(ss), "mcpwm0", &ss->mcpwm[0], TYPE_ESP32S3_MCPWM);
++    object_initialize_child(OBJECT(ss), "mcpwm1", &ss->mcpwm[1], TYPE_ESP32S3_MCPWM);
++    qdev_prop_set_uint32(DEVICE(&ss->mcpwm[0]), "group", 0);
++    qdev_prop_set_uint32(DEVICE(&ss->mcpwm[1]), "group", 1);
++    object_initialize_child(OBJECT(ss), "sdm", &ss->sdm, TYPE_ESP32S3_SDM);
+ 
+     object_initialize_child(OBJECT(ss), "lcd_cam", &ss->lcd_cam, TYPE_ESP32S3_LCD_CAM);
+@@ -1539,4 +1563,65 @@
+         sysbus_connect_irq(SYS_BUS_DEVICE(dev), 0,
+                            qdev_get_gpio_in(intmatrix_dev, ETS_RMT_INTR_SOURCE));
++    }
++
++    /* Explicit named SDM functional profile. There is no S3 SYSTEM SDM
++     * gate/reset bit; its function gate is the GPIO SD MISC register. */
++    {
++        DeviceState *dev = DEVICE(&ss->sdm);
++        Object *electrical = object_resolve_path_component(OBJECT(ss), "electrical");
++        object_property_set_link(OBJECT(dev), "electrical", electrical, &error_abort);
++        object_property_set_link(OBJECT(dev), "soc-reset", OBJECT(ss), &error_abort);
++        qdev_connect_clock_in(dev, "apb-clk",
++                              qdev_get_clock_out(DEVICE(&ss->clock), "apb-clk"));
++        sysbus_realize(SYS_BUS_DEVICE(dev), &error_fatal);
++        memory_region_add_subregion_overlap(sys_mem, DR_REG_GPIO_SD_BASE,
++            sysbus_mmio_get_region(SYS_BUS_DEVICE(dev), 0), 2);
++    }
++
++    /* Pulse controllers depend on the one committed native electrical graph.
++     * Connect clock inputs before realization; never replace pad/input state. */
++    {
++        DeviceState *clk = DEVICE(&ss->clock);
++        DeviceState *electrical = DEVICE(object_resolve_path_component(OBJECT(ss), "electrical"));
++        DeviceState *devices[] = {
++            DEVICE(&ss->ledc), DEVICE(&ss->pcnt),
++            DEVICE(&ss->mcpwm[0]), DEVICE(&ss->mcpwm[1]),
++        };
++        const unsigned gates[] = {
++            ESP32S3_GATE_LEDC, ESP32S3_GATE_PCNT,
++            ESP32S3_GATE_MCPWM0, ESP32S3_GATE_MCPWM1,
++        };
++        const unsigned resets[] = {
++            ESP32S3_RST_LEDC, ESP32S3_RST_PCNT,
++            ESP32S3_RST_MCPWM0, ESP32S3_RST_MCPWM1,
++        };
++        const hwaddr bases[] = {
++            DR_REG_LEDC_BASE, DR_REG_PCNT_BASE, DR_REG_PWM0_BASE, DR_REG_PWM1_BASE,
++        };
++        const unsigned sources[] = { 35, 41, 31, 32 };
++        for (unsigned i = 0; i < ARRAY_SIZE(devices); i++) {
++            DeviceState *dev = devices[i];
++            object_property_set_link(OBJECT(dev), "gpio", OBJECT(&ss->gpio), &error_abort);
++            object_property_set_link(OBJECT(dev), "electrical", OBJECT(electrical), &error_abort);
++            object_property_set_link(OBJECT(dev), "soc-reset", OBJECT(ss), &error_abort);
++            qdev_connect_clock_in(dev, "apb-clk", qdev_get_clock_out(clk, "apb-clk"));
++            qdev_connect_gpio_out_named(clk, ESP32S3_CLK_GATES_GPIO, gates[i],
++                                       qdev_get_gpio_in_named(dev, "clock-enable", 0));
++            qdev_connect_gpio_out_named(clk, ESP32S3_CLK_RST_LEVEL_GPIO, resets[i],
++                                       qdev_get_gpio_in_named(dev, "reset-held", 0));
++        }
++        qdev_connect_clock_in(devices[0], "xtal-clk", qdev_get_clock_out(clk, "xtal-clk"));
++        qdev_connect_clock_in(devices[0], "rc-fast-clk", qdev_get_clock_out(clk, "rc-fast-clk"));
++        for (unsigned i = 2; i < ARRAY_SIZE(devices); i++) {
++            qdev_connect_clock_in(devices[i], "pll-f160m-clk",
++                                  qdev_get_clock_out(clk, "pll-f160m-clk"));
++        }
++        for (unsigned i = 0; i < ARRAY_SIZE(devices); i++) {
++            sysbus_realize(SYS_BUS_DEVICE(devices[i]), &error_fatal);
++            memory_region_add_subregion_overlap(sys_mem, bases[i],
++                sysbus_mmio_get_region(SYS_BUS_DEVICE(devices[i]), 0), 0);
++            sysbus_connect_irq(SYS_BUS_DEVICE(devices[i]), 0,
++                               qdev_get_gpio_in(intmatrix_dev, sources[i]));
++        }
+     }
+ 
+--- a/hw/misc/meson.build
++++ b/hw/misc/meson.build
+@@ -160,4 +160,8 @@
+ 
+ system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files(
++  'esp32s3_ledc.c',
++  'esp32s3_pcnt.c',
++  'esp32s3_mcpwm.c',
++  'esp32s3_sdm.c',
+   'esp32s3_lcd_cam.c',
+   'esp32s3_lcd_panel_service.c',
+--- a/tests/qtest/meson.build
++++ b/tests/qtest/meson.build
+@@ -352,4 +352,7 @@
+ qtests_xtensa += [ 'esp32s3-spi-test' ]
+ qtests_xtensa += [ 'esp32s3-rmt-test' ]
++if config_all_devices.has_key('CONFIG_XTENSA_ESP32S3')
++  qtests_xtensa += ['esp32s3-ledc-test', 'esp32s3-pcnt-test', 'esp32s3-mcpwm-test', 'esp32s3-sdm-test']
++endif
+ 
+ if config_all_devices.has_key('CONFIG_XTENSA_ESP32S3')

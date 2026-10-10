@@ -1,0 +1,270 @@
+{
+  "schema_version": 2,
+  "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
+  "prefix_fingerprint": "608897bf2fc8707a221aab0f6437c7c0edd6e58d60233f2a72a7bd758ca6e848",
+  "negative_without_spi1_fix": false,
+  "status": "source-ready",
+  "lineage": "Fresh current published931b foundation plus pulse OST correction and actual OV2640 partial-abort observability; native operationdb51, independently hashed public profile608897. Historic CORE04 records and completed160 runs retained, not inherited as qualification of this new executable.",
+  "prefix_record": "build-runtime-state/uart-continuation/lcd-ordinary-stage/runtime-preparation-ost/prepared-db51ea5bc6c48ecf-public.json",
+  "integrated_profile": "qemu-extensions/prototypes/lcd-cam/foundation-dependencies.json",
+  "negative_profile": "build-runtime-state/uart-continuation/lcd-ordinary-stage/spi1-before-dependencies.json",
+  "negative_record": "build-runtime-state/uart-continuation/lcd-ordinary-stage/spi1-before-preparation/prepared-8f20226da4e2c0c7-source.json",
+  "input_resolution": "Exact native UART preparer operation order and raw patch-context policies recorded in the pinned native identity; public schema1 profile binds identical input and applied-target hashes without mutating the original operation record.",
+  "preparation_order": [
+    {
+      "kind": "copy",
+      "source": "prototypes/memory/copies/ssi_psram.c",
+      "destination": "hw/misc/ssi_psram.c",
+      "sha256": "ec635997d67a0fb3e820e521b8d3c52c34feb721ee7ecce057957731d36f8719"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/memory/copies/ssi_psram.h",
+      "destination": "include/hw/misc/ssi_psram.h",
+      "sha256": "b42bafed212ac922b6e8a36cd5fbfb0f730c1c3d4b462d8dcab9f5b7e04ee6ad"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/memory/copies/esp32s3_cache.c",
+      "destination": "hw/misc/esp32s3_cache.c",
+      "sha256": "a9877647062234d66c576499691cd2df959d142e0e741635853ddd7b7838057c"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/memory/copies/esp32s3_cache.h",
+      "destination": "include/hw/misc/esp32s3_cache.h",
+      "sha256": "08699546d0c1b743efd0afb51df51447144a167b371b1fdb76ed5b4274d81c60"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/memory/copies/esp32s3_psram_cache.c",
+      "destination": "hw/misc/esp32s3_psram_cache.c",
+      "sha256": "958574deb5ecc90c24420007948b2c203dc032f49b04ba32503308bee4ecf6dd"
+    },
+    {
+      "kind": "copy",
+      "source": "prototypes/memory/copies/esp32s3-memory-test.c",
+      "destination": "tests/qtest/esp32s3-memory-test.c",
+      "sha256": "856d8fcafd9006138ac62a50ffbca76e07a220d6b6a72dc06aa26330aa475831"
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/memory/machine-integration-native-foundations.patch",
+      "sha256": "61dadd71dec85627930650c3ab83d851ab03c5764e29811740055a61cf0ba0ef",
+      "targets": [
+        "hw/misc/meson.build",
+        "hw/xtensa/esp32s3.c"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/memory/spi1-transport.patch",
+      "sha256": "f8849d7d5db8cd140bb0c80384d23105358e5af2cab0d375a76288070171c725",
+      "targets": [
+        "hw/ssi/esp32s3_spi.c"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/memory/spi0-cache-phases.patch",
+      "sha256": "8238b21fb729c0eb43a85fe6b6ca9521679517516525f0d81ef47f7273ea0e2b",
+      "targets": [
+        "hw/ssi/esp32s3_spi.c",
+        "include/hw/ssi/esp32s3_spi.h"
+      ]
+    },
+    {
+      "kind": "patch",
+      "source": "prototypes/memory/qtest-integration.patch",
+      "sha256": "3cf7dc0f4ad90fb7778c88549e077a3e7211c14b28f60fd98cd1208e5f7fac55",
+      "targets": [
+        "tests/qtest/meson.build"
+      ]
+    }
+  ],
+  "applied_target_sha256": {
+    "hw/misc/meson.build": "05f2485b1f6b47978eae8251faa20a0b4899b5251fb697e6e08bd48a99c1ca93",
+    "hw/xtensa/esp32s3.c": "05d5f9a68625209f33ef91fa07c4bdbfba88b40e721b57422bd4e066010bbbce",
+    "hw/ssi/esp32s3_spi.c": "5253d640ae07ceb4e449b65ffed5987da3d0c8135b3f4b3afe59aa9aedd4d56a",
+    "include/hw/ssi/esp32s3_spi.h": "519d1da1af1dd33e6cbc972b091254d27d33b299fd1c005ebd26861bbbed5bb9",
+    "tests/qtest/meson.build": "1341b504b327b599d6f5a3fd89c9b1a86014cd1f872e4b8dcd3a837372248d56",
+    "hw/misc/ssi_psram.c": "ec635997d67a0fb3e820e521b8d3c52c34feb721ee7ecce057957731d36f8719",
+    "include/hw/misc/ssi_psram.h": "b42bafed212ac922b6e8a36cd5fbfb0f730c1c3d4b462d8dcab9f5b7e04ee6ad",
+    "hw/misc/esp32s3_cache.c": "a9877647062234d66c576499691cd2df959d142e0e741635853ddd7b7838057c",
+    "include/hw/misc/esp32s3_cache.h": "08699546d0c1b743efd0afb51df51447144a167b371b1fdb76ed5b4274d81c60",
+    "hw/misc/esp32s3_psram_cache.c": "958574deb5ecc90c24420007948b2c203dc032f49b04ba32503308bee4ecf6dd",
+    "tests/qtest/esp32s3-memory-test.c": "856d8fcafd9006138ac62a50ffbca76e07a220d6b6a72dc06aa26330aa475831"
+  },
+  "configuration": {
+    "machine": "esp32s3",
+    "external_capacity_bytes": 8388608,
+    "qemu_arguments": [
+      "-m",
+      "8M"
+    ],
+    "internal_leaf_arguments": [
+      "-m",
+      "0"
+    ],
+    "mode": "SPI1 byte-SSI SPI/QPI protocol; actual SPI0 STR QPI linear8MiB EB/38/24-bit-address/six-read-dummy at80MHz PLL-derived core divided2=40MHz. OPI/DDR rejected; no cycle/electrical claim.",
+    "cpu_window": "0x3c000000..0x3dffffff shared64KiB MMU table; only actual8MiB physical backing permitted",
+    "gdma_window": "same CPU DBUS addresses, MMU translation directly to committed SSI backing; never CPU cache data",
+    "descriptors": "internal only, canonical GDMA validator unchanged",
+    "sram2_ownership": "32KiB DCache reserves0x3fcf8000..0x3fcfffff;64KiB reserves0x3fcf0000..0x3fcfffff; actualCPU/GDMA bus faults",
+    "cache_geometry": "four ways;32KiB with16/32/64B lines or64KiB with32/64B lines; deterministicfunctionalLRU not exactsiliconreplacement",
+    "maintenance": "actual ROM EXTMEM assists; SyncSize cacheblockcount;zeroitems wholecache;WB commitsdirty,CLEAN clearsdirtywithoutcommit,INV discardsdirty; failedSPI0WB retainsdirtyownership and latches syncfaultbit2/W1C",
+    "reset": "CPU-onlyreset preserves sharedcache/MMU/dirtydata. PERIPH/cache reset discardsdirtyCPUstate/invalidatestranslations; externalSSIarray andwarmprotocolmode retained. SharedSPI01controllerreset clearsSPI0phases but retainscachehits/dirtyownership andchipQPI/data.",
+    "availability": "actual programmed SPI0 phases, CS1/chipQPI, sharedSYSTEMSPI01gate/reset andexistingPLLvalidity gatephysicalcachemiss/WB/GDMA requests; cachedhits remainretained. CLOCK_GATE bit0 is register-clock force-on, not a functional gate; bothvalues work. Unsupported/unavailablebus configurations fault, not fake data."
+  },
+  "gdma_contract": {
+    "engine_changes": false,
+    "container": "esp32s3.gdma.memory via existing soc_mr link",
+    "internal": "0x3fc80000..0x3fceffff directDRAM;SRAM2 occupancy-filtered IO alias",
+    "external": "cache.psram_dma translates MMU type/invalid/capacity and returns MEMTX_DECODE_ERROR for fault =>canonical DSCR_ERR/halt",
+    "burst_alignment": "canonical IN bufferaddress andsize aligned16/32/64 per IN_EXT_MEM_BK_SIZE;length exempt;OUT noextraalignment"
+  },
+  "sources": [
+    {
+      "url": "https://documentation.espressif.com/esp32-s3_technical_reference_manual_en.pdf",
+      "sha256": "4484bf8a69035ec42a731c58c64ada6fbd1f1618c5559409f134d9ea083f444f",
+      "version": "1.8",
+      "sections": [
+        "3.4.9",
+        "4.3.3.1",
+        "4.3.3.2",
+        "4.3.3.3",
+        "4.3.4"
+      ]
+    },
+    {
+      "url": "https://docs.espressif.com/projects/esp-idf/en/v5.5.5/esp32s3/api-reference/system/mm_sync.html",
+      "claim": "CPU cache is not coherent with DMA; explicit C2M writeback/M2C invalidate required"
+    },
+    {
+      "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/soc/esp32s3/register/soc/extmem_reg.h",
+      "claim": "externalDMA MMU faultcodes6/7;cache geometry andsync registers"
+    },
+    {
+      "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/heap/port/esp32s3/memory_layout.c",
+      "claim": "actualcacheSRAM2reserved/free ranges"
+    }
+  ],
+  "contracts": [
+    "ssi-contract.json",
+    "spi0-contract.json",
+    "instruction-contract.json",
+    "qtest-contract.json",
+    "../../../tests/firmware/memory_native/qualification.json"
+  ],
+  "unqualified_rows": [
+    {
+      "row": "cache error IRQ delivery and gated-request silicon stall/timeout",
+      "status": "unqualified",
+      "reason": "Native profile exposes actual data refusal/dirty retention, syncfaultstatus and GDMA DSCR_ERR; no silicon interrupt/timing/stall claim."
+    },
+    {
+      "row": "OPI DDR/DQS/register-latency",
+      "status": "rejected, not silently removed",
+      "reason": "byteSSI lacks required edges/DQS/DM; primaryAP datasheet pinned inssi-contract"
+    },
+    {
+      "row": "PSRAM instruction cache independentvisibility/XIP",
+      "status": "unqualified",
+      "reason": "officialsharedIOMMU path retained; no independentIcachePSRAM consumerproof"
+    },
+    {
+      "row": "preload/autoload/lock/tagassist exactbehavior",
+      "status": "unqualified",
+      "reason": "minimum nativeconsumer proof targetsactualwriteback/clean/invalidate/geometry; no newfake completedfeatureclaims"
+    },
+    {
+      "row": "exactreplacementpolicy/cyclelatency/electricalmeasurements",
+      "status": "notclaimed",
+      "reason": "functionalLRU/no hardwareoperations"
+    },
+    {
+      "row": "otherPSRAMcapacities/2T/refresh/electrical",
+      "status": "unsupported",
+      "reason": "actualsupportedcapacity8MiB only"
+    }
+  ],
+  "qualification": "Current same-executable memory renewal inputs only; no PASS claim until all actual12/4SDK/4SPI1/3boot gates execute.",
+  "changelog": [
+    {
+      "date": "2026-10-07",
+      "change": "Newactual8MiBSSIbacking andseparatefiniteCPUwritebackcache/GDMAcommittedMMUview;realcachemaintenance,SRAMcacheownership,busfaults/resetretention;minimalSPI1transferindexboundsfix;authoredordinaryIDFmemoryconsumer andnativeqtests."
+    },
+    {
+      "date": "2026-10-08",
+      "change": "Rebased memory overlay onto corrected native-foundations 0e2ab32b9d57dee3: authored machine-integration-native-foundations.patch (content-identical rebased machine increment; original machine-integration.patch retained frozen), integrated runtime profiles positive/negative prepared via standard tool (bf86b42f/d3dbe302), runner binding moved from retired memory-only prefix manifest to the standard integrated record."
+    },
+    {
+      "date": "2026-10-08",
+      "change": "cache_sync collision rename (Main-approved, mechanical); final composition fixed to memory+LCD/CAM service overlay so consumer evidence binds one binary; prepared e1113009 positive and 4dd2fdcb negative-spi1 checkouts via standard tool (47/46 patches, 42 copies, 107 applied targets)."
+    },
+    {
+      "date": "2026-10-08",
+      "change": "Added UART-owned GDMA TX-info extension triple per Main direction (lcd-cam EspGdmaTxInfo dependency); re-prepared positive e254504f and negative 05e66908 (92/91 inputs, 107 applied targets); superseded e111/4dd2 checkouts preserved with logs."
+    },
+    {
+      "date": "2026-10-08",
+      "change": "Main decision C/B split: CORE-04 qualifies on memory-only ca1b66b2 positive / 6f5b2898 negative (frozen gdma engine and 16-case test untouched); camera-capable tree waits for RubberSwallow i2c restack; lcd-cam overlay NOT scope-cut."
+    },
+    {
+      "date": "2026-10-08",
+      "change": "CPU PSRAM data-path fix: cache MMU translate/invalidate now target address_space_memory with the committed PSRAM bytes aliased at the private ESP32S3_PSRAM_PHYS_BASE (above the 32-bit guest space) instead of an address space rooted in the uninitialised psram_cpu region. Ordinary IDF6.1 quad8MiB firmware previously took LoadStorePIFAddrError on the first PSRAM access; the fixture leaf now reaches the real cache path with zero panics and live cache-line traffic."
+    },
+    {
+      "date": "2026-10-08",
+      "change": "Fixture probe correction (memory_native.c): the unmapped-alias probe is now selected from the actual MMU table and never uses the last DROM entry, which IDF image_process owns as a transient boot-partition map page (MMU_LL_END_DROM_ENTRY_ID); the gdma_unmapped negative rows therefore test a proved-unmapped page."
+    },
+    {
+      "date": "2026-10-08",
+      "change": "Re-prepared candidates on the fixed memory inputs: CORE-04 positive ede49916d8240f89 (45 patches/35 copies) and negative-spi1 72c96aa9fc2f9a5e; camera-phase lcdcam positive 6054e4d32ef03a66 (51 patches/50 copies). ca1b66b2/6f5b2898 and the superseded e254/4dd2/e111/bf86 checkouts preserved with their logs."
+    },
+    {
+      "date": "2026-10-08",
+      "change": "Native memory qtest address-programming fix: SPI_MEM_ADDR.USR_ADDR_VALUE is the full 32-bit field (pinned register definition FIELD(...,0,32)), so pio()/duplex_read() write the address directly instead of the stale addr<<8 shift. The controller/model side was already register-correct; the shift put SSI writes at 256x the intended physical offset, invisible to PIO-vs-PIO comparisons but fatal to the SSI/GDMA shared-backing asserts. 12/12 memory cases pass on fcdc47b8."
+    },
+    {
+      "date": "2026-10-08",
+      "change": "PSRAM system-physical alias base corrected to 0x30000000: the CPU physical address space is 32-bit (TARGET_PHYS_ADDR_SPACE_BITS), so the earlier above-4GiB base was unreachable and ordinary IDF PSRAM startup failed its own memory test. 0x30000000 is private to the model (no guest cache window maps it) and validated end-to-end by the fixture leaf. Re-prepared CORE-04 6dfa7350 positive / 7182364c negative-spi1."
+    },
+    {
+      "date": "2026-10-08",
+      "change": "Host runner contract hardening (run-native-fixture.py): live session artifacts (guest log, QEMU stdout/stderr) are written to native disk and published into the evidence directory after the session closes, transient drvfs read faults are retried, and the unmapped-alias row now requires an MMU-table-verified page (entry_invalid=1, ESP_ERR_NOT_FOUND, DROM window, not IDF's transient boot-partition entry)."
+    },
+    {
+      "date": "2026-10-08",
+      "change": "Review fixes on the CORE-04 inputs: the IOMMU UNMAP event's translated_addr now uses the same ESP32S3_PSRAM_PHYS_BASE rebase as the live translation (notifier consumers saw the chip-linear offset), and the header documents the private alias's guest reachability (no private window exists on a 32-bit physical space). Re-prepared CORE-04 positive aa8b5f8e5c99d410 / negative-spi1 1a8fa5bd6f43c42b; 12/12 memory + 16/16 GDMA qtests and 3/3 boot controls pass on it; 4/4 SDK leaves re-run."
+    }
+  ],
+  "lcd_cam_overlay": {
+    "reason": "run-lcd-cam-consumers.py requires one final prepared checkout whose profile contains actual LCD/sensor/panel services plus the memory targets, with all memory qtest/SDK/boot evidence bound to the same binary",
+    "copies": [
+      "esp32s3_lcd_cam.c/h",
+      "esp32s3_lcd_panel_service.c/h",
+      "esp32s3_ov2640_service.c/h",
+      "esp32s3-lcd-cam-test.c"
+    ],
+    "patches": [
+      "prototypes/lcd-cam/0001-native-lcd-cam-machine-integration.patch 037dfb0f",
+      "prototypes/lcd-cam/0002-native-lcd-cam-qtest-integration.patch 7bf822ca"
+    ],
+    "camera_sccb_blocker": "prototypes/i2c/integration-after-electrical.patch does not apply on this corrected foundation (hw/xtensa/esp32s3.c:147, tests/qtest/meson.build:346); camera profiles remain blocked on the sibling I2C lane rebase"
+  },
+  "negative_fingerprint": "1a8fa5bd6f43c42b5fac202897bcdd7898476cacdb708b7b20bacf8fd0eab553",
+  "gdma_txinfo_increment": {
+    "reason": "lcd-cam controller consumes esp_gdma_read_channel_ex/EspGdmaTxInfo; absent from the a45 foundation; Main directed lane-local composition 2026-10-08",
+    "order": [
+      "prototypes/spi/0001-gdma-peripheral-rx-packet-end.patch d0a472c5",
+      "prototypes/gdma/0004-hw-dma-esp_gdma-served-RX-bytes-survive-post-store-a.patch 7640a6e0",
+      "prototypes/uart/0001-gdma-uhci-demand-and-packet-status.patch 2626ab0c (raw, ignore-space-change)"
+    ],
+    "applicability_proof": "ordered spi->gdma4->uart sequence strict-checked with profile ignore-space-change on memory tree; all clean; reverse-check confirms none pre-existed"
+  },
+  "scope_split": {
+    "core04_binary": "runtime-aa8b5f8e5c99d410 (memory-only); all CORE-04 qtest/SPI1/SDK/boot evidence binds this executable",
+    "camera_tree": "blocked on i2c restack publication; lcd-cam overlay kept whole (ov2640_service.c included); camera/SCCB profiles explicitly blocked, RGB consumer runs only if the panel path compiles without the I2C service, per Main 2026-10-08"
+  }
+}

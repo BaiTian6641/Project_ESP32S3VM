@@ -1,6 +1,7 @@
 # ESP32 Camera Driver
 
 [![Build examples](https://github.com/espressif/esp32-camera/actions/workflows/build.yml/badge.svg)](https://github.com/espressif/esp32-camera/actions/workflows/build.yml) [![Component Registry](https://components.espressif.com/components/espressif/esp32-camera/badge.svg)](https://components.espressif.com/components/espressif/esp32-camera)
+
 ## General Information
 
 This repository hosts ESP32 series Soc compatible driver for image sensors. Additionally it provides a few tools, which allow converting the captured frame data to the more common BMP and JPEG formats.
@@ -17,6 +18,7 @@ This repository hosts ESP32 series Soc compatible driver for image sensors. Addi
 | ------- | -------------- | ---------- | ------------------------------------------------------------ | -------- |
 | OV2640  | 1600 x 1200    | color      | YUV(422/420)/YCbCr422<br>RGB565/555<br>8-bit compressed data<br>8/10-bit Raw RGB data | 1/4"     |
 | OV3660  | 2048 x 1536    | color      | raw RGB data<br/>RGB565/555/444<br/>CCIR656<br/>YCbCr422<br/>compression | 1/5"     |
+| OV3640  | 2048 x 1536    | color      | raw RGB data<br/>RGB565/555/444<br/>CCIR656<br/>YCbCr422<br/>compression | 1/4"     |
 | OV5640  | 2592 x 1944    | color      | RAW RGB<br/>RGB565/555/444<br/>CCIR656<br/>YUV422/420<br/>YCbCr422<br/>compression | 1/4"     |
 | OV7670  | 640 x 480      | color      | Raw Bayer RGB<br/>Processed Bayer RGB<br>YUV/YCbCr422<br>GRB422<br>RGB565/555 | 1/6"     |
 | OV7725  | 640 x 480      | color      | Raw RGB<br/>GRB 422<br/>RGB565/555/444<br/>YCbCr 422         | 1/4"     |
@@ -37,12 +39,11 @@ This repository hosts ESP32 series Soc compatible driver for image sensors. Addi
 - Except when using CIF or lower resolution with JPEG, the driver requires PSRAM to be installed and activated.
 - Using YUV or RGB puts a lot of strain on the chip because writing to PSRAM is not particularly fast. The result is that image data might be missing. This is particularly true if WiFi is enabled. If you need RGB data, it is recommended that JPEG is captured and then turned into RGB using `fmt2rgb888` or `fmt2bmp`/`frame2bmp`.
 - When 1 frame buffer is used, the driver will wait for the current frame to finish (VSYNC) and start I2S DMA. After the frame is acquired, I2S will be stopped and the frame buffer returned to the application. This approach gives more control over the system, but results in longer time to get the frame.
-- When 2 or more frame bufers are used, I2S is running in continuous mode and each frame is pushed to a queue that the application can access. This approach puts more strain on the CPU/Memory, but allows for double the frame rate. Please use only with JPEG.
+- When 2 or more frame buffers are used, I2S is running in continuous mode and each frame is pushed to a queue that the application can access. This approach puts more strain on the CPU/Memory, but allows for double the frame rate. Please use only with JPEG.
 - The Kconfig option `CONFIG_CAMERA_PSRAM_DMA` enables PSRAM DMA mode on ESP32-S2 and ESP32-S3 devices. This flag defaults to false.
 - You can switch PSRAM DMA mode at runtime using `esp_camera_set_psram_mode()`.
 
 ## Installation Instructions
-
 
 ### Using with ESP-IDF
 
@@ -78,7 +79,7 @@ Now the `esp_camera.h` is available to be included:
 #include "esp_camera.h"
 ```
 
-Enable PSRAM on `menuconfig` or type it direclty on `sdkconfig`. Check the [official doc](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/kconfig.html#config-esp32-spiram-support) for more info.
+Enable PSRAM on `menuconfig` or type it directly on `sdkconfig`. Check the [official doc](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/kconfig.html#config-esp32-spiram-support) for more info.
 
 ```
 CONFIG_ESP32_SPIRAM_SUPPORT=y
@@ -146,8 +147,20 @@ static camera_config_t camera_config = {
 
     .jpeg_quality = 12, //0-63, for OV series camera sensors, lower number means higher quality
     .fb_count = 1, //When jpeg mode is used, if fb_count more than one, the driver will work in continuous mode.
-    .grab_mode = CAMERA_GRAB_WHEN_EMPTY//CAMERA_GRAB_LATEST. Sets when buffers should be filled
+    .grab_mode = CAMERA_GRAB_WHEN_EMPTY,//CAMERA_GRAB_LATEST. Sets when buffers should be filled
+    .jpeg_buffer_size = 0//Set to a custom size in bytes for JPEG mode, or 0 to use the default size
 };
+
+/*
+ * The JPEG frame buffer size can be set independently of frame_size, for
+ * example:
+ *
+ *     .frame_size = FRAMESIZE_UXGA,
+ *     .jpeg_buffer_size = 128 * 1024,
+ *
+ * Set jpeg_buffer_size to 0 to use the default size derived from frame_size or
+ * CONFIG_CAMERA_JPEG_MODE_FRAME_SIZE.
+ */
 
 esp_err_t camera_init(){
     //power up the camera if PWDN pin is defined
@@ -366,5 +379,37 @@ esp_err_t bmp_httpd_handler(httpd_req_t *req){
 }
 ```
 
+### Autofocus (OV5640)
 
+This component includes an optional autofocus helper for OV5640 modules that have an AF-capable lens.
 
+- Enable it in `menuconfig`: `Component config` → `Camera configuration` → `Enable autofocus (OV5640)`.
+- Include the header: `#include "esp_camera_af.h"`.
+
+Basic usage:
+
+```c
+#include "esp_camera.h"
+#include "esp_camera_af.h"
+
+// After esp_camera_init(...)
+sensor_t *s = esp_camera_sensor_get();
+
+esp_camera_af_config_t af_cfg = {
+    .mode = ESP_CAMERA_AF_MODE_AUTO,
+    .timeout_ms = 2000,
+};
+
+ESP_ERROR_CHECK(esp_camera_af_init(s, &af_cfg));
+
+// Optional: trigger a single AF cycle and wait for completion
+ESP_ERROR_CHECK(esp_camera_af_trigger(s));
+
+esp_camera_af_status_t st;
+ESP_ERROR_CHECK(esp_camera_af_wait(s, 0, &st));
+```
+
+Notes:
+
+- If autofocus is disabled (or the sensor is not OV5640), the AF APIs return `ESP_ERR_NOT_SUPPORTED`.
+- OV5640 autofocus relies on loading an internal firmware blob over SCCB during `esp_camera_af_init()`.

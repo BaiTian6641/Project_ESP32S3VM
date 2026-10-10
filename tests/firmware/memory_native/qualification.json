@@ -86,9 +86,9 @@
     "For internal: use build=$ESP32S3_IDF_BUILD_ROOT/memory_native-internal and SDKCONFIG_DEFAULTS=$fixture/sdkconfig.defaults only; custom partitions.csv applies to both leaves.",
     "For5.5.5: source ~/.cache/esp32s3vm/idf/idf-5.5.5-b774170ff46c393eeb5e495ea37936038d3f4f4f/activate.sh then use its separate native build root with identical commands."
   ],
-  "run_command": "python3 qemu-extensions/prototypes/memory/run-native-fixture.py --qemu $QEMU --qemu-source $QEMU_SOURCE --flash $build/memory-native.merged.bin --build-dir $build --sdk-metadata $ESP32S3_IDF_METADATA --source-map qemu-extensions/prototypes/memory/source-map.json --idf-profile $ESP32S3_FIXTURE_PROFILE --mode psram --evidence $EVIDENCE_ROOT",
+  "run_command": "python3 qemu-extensions/prototypes/memory/run-native-fixture.py --qemu $QEMU --qemu-source $QEMU_SOURCE --flash $build/memory-native.merged.bin --build-dir $build --sdk-metadata $ESP32S3_IDF_METADATA --source-map qemu-extensions/prototypes/memory/source-map.json --prepared-source-record $PREPARED_SOURCE_RECORD --idf-profile $ESP32S3_FIXTURE_PROFILE --mode psram --evidence $EVIDENCE_ROOT",
   "run_matrix": "Run this command for each locked SDK and both internal/psram leaves (adjust build and --mode); no octal passing leaf.",
-  "evidence_policy": "Fresh retained directory per invocation with scratch writable-flash.bin; each process command, per-process UART/stdout/stderr, per-boot UART, full QMP send/receive/reset transcript, before/after whole-disk and partition SHA256, original unchanged evidence and failure result. Exact locked SDK metadata, project_description and sdkconfig, compiled source hashes, ELF SHA embedded app binding, merged-image built-input binding, QEMU source inventory and executable hash, approved initial source-map hash/pinned preparation inputs and copy-destination hashes. Required .esp32s3vm-memory-inputs/prepared-source.json must bind base/prefix/source-map hash, all immutable input snapshots and prepared target hashes; negative_without_spi1_fix is rejected for this positive runner. Host watchdog never fabricates firmware success. No qtest/provider/guest-state injection.",
+  "evidence_policy": "Fresh retained directory per invocation with scratch writable-flash.bin; each process command, per-process UART/stdout/stderr, per-boot UART, full QMP send/receive/reset transcript, before/after whole-disk and partition SHA256, original unchanged evidence and failure result. Exact locked SDK metadata, project_description and sdkconfig, compiled source hashes, ELF SHA embedded app binding, merged-image built-input binding, QEMU source inventory and executable hash, approved source-map hash/pinned preparation inputs and copy-destination hashes. Required explicit --prepared-source-record binds the actual standard profile/base/fingerprint/inputs/applied targets; no guessed global filename or memory-only overlay substitute. Positive source-map fingerprint and every approved memory operation/target must match; negative_without_spi1_fix is rejected. Only a newline-terminated complete MEMORY_NATIVE_DONE record releases each boot barrier; partial live UART chunks are never treated as completion. Host watchdog never fabricates firmware success. No qtest/provider/guest-state injection.",
   "changelog": [
     {
       "date": "2026-10-07",
@@ -97,6 +97,10 @@
     {
       "date": "2026-10-08",
       "change": "Unmapped-alias probe now selects its page from the actual MMU table (skipping the last DROM entry, IDF's transient boot-partition map page) instead of assuming 0x3dff0000 is unmapped; the earlier assumption failed on ordinary IDF 6.1 startup, which legitimately maps that entry."
+    },
+    {
+      "date": "2026-10-10",
+      "change": "Ordinary memory runner now requires the actual prepared-source record explicitly and waits for a complete newline-terminated DONE row. Actual prior160 same-executable four SDK internal/PSRAM lifecycle runs pass after an observed partial reset-log row; original prelaunch and partial-row failures remain retained. Boot controls likewise require an explicit frozen --originals corpus/helper recipe instead of repinning historical helper identity."
     }
   ]
 }

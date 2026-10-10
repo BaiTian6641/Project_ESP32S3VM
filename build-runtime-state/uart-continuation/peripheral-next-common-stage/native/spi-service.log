@@ -1,0 +1,15 @@
+TAP version 13
+# random seed: R02S967f0dc4b20ede125b544ff289b21425
+1..8
+# Start of esp32s3 tests
+# Start of spi-nor tests
+ok 1 /esp32s3/spi-nor/config-ids
+ok 2 /esp32s3/spi-nor/read-modes
+ok 3 /esp32s3/spi-nor/program-page-wrap
+ok 4 /esp32s3/spi-nor/busy-status
+ok 5 /esp32s3/spi-nor/cs-boundaries
+ok 6 /esp32s3/spi-nor/erase-ranges
+ok 7 /esp32s3/spi-nor/power-controller-reset
+ok 8 /esp32s3/spi-nor/electrical-pipeline
+# End of spi-nor tests
+# End of esp32s3 tests

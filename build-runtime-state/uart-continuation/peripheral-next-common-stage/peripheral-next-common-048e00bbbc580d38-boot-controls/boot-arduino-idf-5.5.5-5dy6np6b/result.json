@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "profile": "arduino-idf-5.5.5",
+  "returncode": 0,
+  "host_elapsed_seconds": 6.140446622041054,
+  "command": [
+    "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/gui-esp32s3-simulator/build-wsl/gui_esp32s3_boot_smoke_test"
+  ],
+  "cwd": "/home/polar/.cache/esp32s3vm/peripheral-next-common-048e00bbbc580d38-boot-controls/boot-arduino-idf-5.5.5-5dy6np6b",
+  "environment": {
+    "ESP32S3_QEMU_BIN": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+    "ESP32S3_BOOT_FIRMWARE": "/home/polar/.cache/esp32s3vm/peripheral-next-common-048e00bbbc580d38-boot-controls/boot-arduino-idf-5.5.5-5dy6np6b/boot-firmware.bin",
+    "QT_QPA_PLATFORM": "offscreen"
+  },
+  "firmware": {
+    "path": "/home/polar/.cache/esp32s3vm/peripheral-next-common-048e00bbbc580d38-boot-controls/boot-arduino-idf-5.5.5-5dy6np6b/boot-firmware.bin",
+    "sha256": "7a67c902cdfcecee16cf108f377a33a9ea25ad63339a78b482bba9847c2ea346"
+  },
+  "stdout": {
+    "path": "/home/polar/.cache/esp32s3vm/peripheral-next-common-048e00bbbc580d38-boot-controls/boot-arduino-idf-5.5.5-5dy6np6b/stdout.log",
+    "sha256": "016a8244e65373b1ac2e47e16a174b5929fb563743ef9a8d9fb13420d95104f1"
+  },
+  "stderr": {
+    "path": "/home/polar/.cache/esp32s3vm/peripheral-next-common-048e00bbbc580d38-boot-controls/boot-arduino-idf-5.5.5-5dy6np6b/stderr.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "test_binary_sha256": "b72dc0daeb0ee2b730ba98cf9510ba15d6191619176e9e1889ff17231b6249b8",
+  "original": {
+    "path": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/arduino_boot/build-idf-5.5.5/arduino-boot.merged.bin",
+    "sha256": "7a67c902cdfcecee16cf108f377a33a9ea25ad63339a78b482bba9847c2ea346"
+  },
+  "original_after_sha256": "7a67c902cdfcecee16cf108f377a33a9ea25ad63339a78b482bba9847c2ea346",
+  "frozen_original_unchanged": true
+}

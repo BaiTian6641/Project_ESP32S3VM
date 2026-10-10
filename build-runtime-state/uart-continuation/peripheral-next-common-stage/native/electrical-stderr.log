@@ -1,0 +1,12 @@
+Not initializing SPI Flash
+qemu-system-xtensa: warning: esp32s3.gpio: pad 5 sampled UNKNOWN (enabled input, no resolved net: attach a physical pull/source via the electrical layer); VM paused (strict profile; resume explicitly after the net resolves)
+Not initializing SPI Flash
+qemu-system-xtensa: warning: esp32s3.gpio: pad 2 sampled UNKNOWN (enabled input, no resolved net: attach a physical pull/source via the electrical layer); VM paused (strict profile; resume explicitly after the net resolves)
+qemu-system-xtensa: native electrical dependency: Actual RTC GPIO sleep request is unavailable in the electrical profile
+Not initializing SPI Flash
+Not initializing SPI Flash
+Not initializing SPI Flash
+Not initializing SPI Flash
+qemu-system-xtensa: warning: esp32s3.gpio: pad 5 sampled UNKNOWN (enabled input, no resolved net: attach a physical pull/source via the electrical layer); VM paused (strict profile; resume explicitly after the net resolves)
+Not initializing SPI Flash
+Not initializing SPI Flash

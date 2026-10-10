@@ -41,6 +41,8 @@ typedef struct OvSensor {
     uint64_t epoch, last_rise, xperiod, last_clock_edge;
     int64_t ready_at;
     uint64_t cycle, frames, bytes, frame_bytes, frame_hash, last_frame_hash;
+    uint64_t partial_frame_aborts, last_abort_bytes, last_abort_ns;
+    const char *last_abort_reason;
     uint64_t half_period;
     unsigned width, height, line_bytes, lines;
     uint8_t image_mode, com10, ctrl0;
@@ -130,6 +132,12 @@ static void drive(OvSensor *s, bool oe, uint8_t byte, bool pclk,
 static void suspend(OvSensor *s, const char *reason)
 {
     bool driven = s->streaming;
+    if (driven && s->frame_bytes) {
+        ++s->partial_frame_aborts;
+        s->last_abort_bytes = s->frame_bytes;
+        s->last_abort_ns = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+        s->last_abort_reason = reason;
+    }
     s->streaming = false;
     s->cycle = 0;
     s->frame_bytes = 0;
@@ -1003,6 +1011,16 @@ static QDict *status_dict(OvSensor *s)
     put_uint(out, "frames", s->frames);
     put_uint(out, "bytes", s->bytes);
     put_uint(out, "xclk_period_ns", s->xperiod);
+    put_uint(out, "active_frame_bytes", s->frame_bytes);
+    put_uint(out, "active_cycle", s->cycle);
+    put_uint(out, "partial_frame_aborts", s->partial_frame_aborts);
+    put_uint(out, "last_abort_bytes", s->last_abort_bytes);
+    put_uint(out, "last_abort_ns", s->last_abort_ns);
+    if (s->last_abort_reason) {
+        qdict_put_str(out, "last_abort_reason", s->last_abort_reason);
+    } else {
+        qdict_put_null(out, "last_abort_reason");
+    }
     put_uint(out, "half_period_ns", s->half_period);
     put_uint(out, "width", s->width);
     put_uint(out, "height", s->height);

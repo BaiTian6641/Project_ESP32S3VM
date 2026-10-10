@@ -100,10 +100,11 @@ static void irq(unsigned raw, unsigned enabled)
 
 static void graph(bool connected)
 {
-    QDict *r = qtest_qmp(s,
-        "{'execute':'qom-set','arguments':{'path':'/machine/soc/electrical',"
-        "'property':'project-json','value':{"
-        "'version':3,'id':'pcnt-native','name':'PCNT native',"
+    QDict *r = qtest_qmp(s, "{'execute':'stop'}");
+    g_assert_false(qdict_haskey(r, "error"));
+    qobject_unref(r);
+    g_autofree char *json = g_strdup_printf(
+        "{'version':3,'id':'pcnt-native','name':'PCNT native',"
         "'profile':{'chip':'esp32s3','board':'esp32-s3-devkitc-1','module':'esp32-s3-wroom-1'},"
         "'firmware':{},'runtime':{'electrical':{'driver_profile':'s3-explicit-finite-v1','mode':'dc'}},"
         "'geometry':{'components':{},'nets':{}},'components':["
@@ -122,8 +123,14 @@ static void graph(bool connected)
         "'nets':[{'id':'gnd','name':'gnd','endpoints':['G.ref','V.n','U.gnd']},"
         "{'id':'vdd','name':'vdd','endpoints':['V.p','U.vdd']},"
         "{'id':'pulse','name':'pulse','endpoints':['U.io4'%s]},"
-        "{'id':'control','name':'control','endpoints':['U.io6','U.io7']}]}}}",
+        "{'id':'control','name':'control','endpoints':['U.io6','U.io7']}]}",
         connected ? ",'U.io5'" : "");
+    r = qtest_qmp(s,
+        "{'execute':'qom-set','arguments':{'path':'/machine/soc/electrical',"
+        "'property':'project-json','value':%s}}", json);
+    g_assert_false(qdict_haskey(r, "error"));
+    qobject_unref(r);
+    r = qtest_qmp(s, "{'execute':'cont'}");
     g_assert_false(qdict_haskey(r, "error"));
     qobject_unref(r);
 }

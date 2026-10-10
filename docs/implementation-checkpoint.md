@@ -5,6 +5,148 @@ parallel implementation in this session. Preserve the reviewed full scope; do no
 reduce completion to the foundation slices below. Historical heartbeat metadata
 is retained in the frozen packet; it is not an inventory of this session's jobs.
 
+## 2026-10-10 — actual OV2640 producer diagnostic source gate PASS
+
+The native producer diagnostic smoke on the exact340 `02c`/`bf3fc` runtime
+closes the OV2640 source-publication prerequisite. It retains256 actual GPIO15
+20MHz25ns half-edges,678 real timed-I2C1 SCCB ACK/data transactions, PID2641/
+MID7fa2, official camera2.1.8 configuration and sensor-derived160×120 RGB565
+geometry with400ns half-period.
+
+Physical PWDN high during solved HREF1/VSYNC0 at74716375ns aborts the real
+active source cycle after11 bytes: counter0→1, exact lastbytes/time/reason.
+Physical RESET low at139436575ns aborts another active cycle after23 bytes:
+counter3→4, exact lastbytes/time/reset-settling reason. Actual SCCB/setup and
+physical-clock recovery subsequently produce fresh active cycles. No sensor
+register setter, forced input/IRQ, fabricated payload, lower clock or source
+cache mutation. Observer sampling10µs does not change25ns model deadlines.
+
+Exact producer-only receipt:
+`build-runtime-state/uart-continuation/camera-ordinary-stage/ov2640-abort-source-smoke-receipt.json`,
+SHA256 `70d14746a65397250d9c697db675a9550a038f29eeefb6bde84ce7ac86c61146`.
+**qtest does not execute the compiled SDK image**: this is neither ordinary26,
+LCDRX/GDMA/decoder nor independent silicon/board metrology qualification.
+The proof is not inherited to the separate341 executable. All old failures and
+current ordinary gates remain preserved; coherent selected publication is now
+actionable.
+
+## 2026-10-10 — staged RMT guard/SPI transport successor341 native PASS
+
+Fresh immutable `048e00bbbc580d38`, executable SHA256
+`ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a`,
+matches all159 applied-source hashes. **341 native cases PASS, zero skipped**.
+Relative to the proven340 foundation, only the RMT model/fixture and SPI2/3
+transport differ; additional overlays preserve original accepted copy bytes.
+
+The live RMT demod-commit guard has a genuinely isolated model-only control:
+identical fixture source fails before with RAW0 instead of RX_ERR0, then passes
+all four RX channels with/without pending filters, shadow-only raw continuity,
+stale filter/idle cancellation, gate/refreset no-replay, exact raw-symbol restart
+and fresh-start rejection. Both **complete unchanged SDK6 connected/disconnected
+RMT profiles PASS** on this exact executable. Exact carrier-envelope recovery
+remains unsupported: primary acquisition/ordering/latency rules and independent
+golden vectors are missing. No inferred envelope decoder.
+
+Both SPI controllers have genuine same-closure PSRAM fail-before/pass-after
+controls, differing only in the obsolete six-line transport refusal. Real
+64-byte powered MOSI→MISO transfers distinguish CPU-dirty TX from committed
+backing, actual writeback, stale primed RX cache and explicit invalidate.
+**Both full SDK5.5.5/6.1 SPI/direct-PSRAM programs PASS** with all legacy loopback
+assertions and16 real384-byte direct-PSRAM transactions across both controllers,
+all four modes and both SDKs. Public PSRAM/manual-alignment APIs, external buffer
+spans, internal descriptor ownership/length/EOF, actual IRQs, wire-duration and
+full payload gates are checked; no internal bounce, fallback or SDK shim.
+Exact proof: `peripheral-next-common-stage/spi-psram-qualification-receipt.json`
+under `build-runtime-state/uart-continuation/`. Extended slave/multiline/DDR/
+direct-IO-mux acceptance remains separate.
+
+The exact successor also passes renewed memory12/SDK4(each three boots)/
+SPI1 isolated controls4/boot3, independently validated from all retained real
+results, source identities and raw TAP/UART data. Strict receipt SHA256:
+`3d6e9eb326ecbb05cad30cbadd4dbbfb56d51cdbcb98076c88822123ac72dbcb`.
+Real connected/disconnected GPIO15 20MHz checks each retain256 resolved25ns
+half-period samples. Exact scoped packet:
+`build-runtime-state/uart-continuation/peripheral-next-common-stage/qualification-receipt.json`.
+
+Current camera/pulse captures retain their original340 source authority paths
+and bytes; this successor does not rebind those live runs. Canonical operative
+profile migration and actual commit/push remain separate. Full goal remains
+active/incomplete; no hardware or independent metrology claim.
+
+## 2026-10-10 — proven grounded-source/IRQ successor340 native PASS
+
+Fresh immutable `02c5b1fd51470c43`, executable SHA256
+`bf3fc1bd42624bdaecd9a7caf0c2fa92474ae1a795e3c09a4b816702bea1b931`,
+matches all **159 applied-source hashes**. **340 native cases PASS, zero skipped**:
+the full303 closure plus interrupt-matrix10, electrical8 and GPIO19.
+
+Only five applied files differ from `db51`: the DC solver/header, interrupt
+matrix, and their electrical/interrupt regression fixtures. Ground-referenced
+ideal sources prescribe exact voltages; the solver eliminates their voltage
+and current variables, solves the actual reduced equations, then recovers
+source currents by KCL and checks every original equation. Factors are reused
+only when the current reduced coefficients match byte for byte; RHS, voltages,
+currents, floating validity and residuals are recomputed. Repeated unchanged
+interrupt input levels no longer recompute the matrix OR; map, gate, reset and
+CPU edge-latch ownership remain separate.
+
+Original frozen foundation inputs and cached checkouts are untouched. Explicit
+Boolean `after_copies` overlays apply after immutable copies and before the UART
+integration tail; both native/public identities bind that ordering.
+Independent read-only solver and ordering/provenance reviews found no
+evidence-backed regression; those reviews are not runtime proof.
+
+The exact same executable passes renewed **memory12, four actual SDK
+internal/PSRAM lifecycles with three boots each, four isolated SPI1 before/after
+controls and three frozen boot images**. The negative SPI1 checkout differs only
+in the SPI1 transport fix, not in the new solver/IRQ foundation. Real GPIO15
+20MHz connected/disconnected checks each retain256 resolved25ns half-period
+samples. Strict memory receipt SHA256:
+`9594de5d6fe5a905c54b5f9cce1a76e61d844c7b3dadbf32372effb48a30e9c2`.
+
+Exact scoped packet:
+`build-runtime-state/uart-continuation/proven-net-irq-foundation-stage/qualification-receipt.json`.
+This releases a source-bound performance successor for real camera and pulse
+captures. **Their ordinary acceptance remains open.** No LCD clock-latch,
+continuous-EOF, pipeline17, underflow/restart geometry or converter inference is
+included. Prior UART/Arduino/ROM ordinary proofs are not inherited.
+Publication still requires a separate actual commit/push receipt.
+
+## 2026-10-10 — combined303 native and renewed real memory foundation PASS
+
+Fresh immutable `db51ea5bc6c48ecf`, executable SHA256
+`d83145b84fada9da9d4e86b67bce8e40f4f5f7f6a057589aff6687b4996355c1`,
+matches all **159 applied-source hashes**. **303 native cases PASS, zero skipped**:
+the prior274 plus LEDC5, PCNT4, MCPWM16 and SDM4. The MCPWM active OST-status
+distinction is SDK-consistent functional inference; ordinary brake-recovery and
+independent silicon timing are separate gates.
+
+The same executable passes the complete renewed memory prerequisite:
+**12 memory TAP cases, four ordinary SDK internal/PSRAM runs with three real
+boots each, four isolated SPI1 fail-before/pass-after controls and three frozen
+boot/control images**. Real GPIO15 20MHz output and a disconnected-wire negative
+each pass256 measured25ns half-period samples. No GPIO-input or IRQ injection,
+fake memory data, hardware operation or octal substitution.
+
+The UART preparer now emits a standard schema1 public record with the actual
+`SHA256({profile,inputs})` identity, while preserving and SHA-pinning its original
+native ordered-operation record. Memory CLI callers supply their actual
+`--prepared-source-record`; the live boot barrier requires a complete
+newline-terminated DONE row. Boot controls use an explicit `--originals`
+corpus/helper identity rather than repinning a historical snapshot.
+
+Exact proof: `build-runtime-state/uart-continuation/pulse-memory-foundation-stage/qualification-receipt.json`.
+The strict aggregate memory receipt validates every real TAP/UART/source/result
+reference; completed native/data/control artifacts are archived with it.
+Publication remains a separate actual commit/push receipt.
+
+**All ordinary pulse and LCD/camera acceptance remains open.** Native GPIO camera
+loops are not OV2640 SCCB, source-abort or ordinary driver proof. No prior
+UART/Arduino/ROM ordinary PASS is attributed to this new binary; I2S/GDMA0008
+is not included in this closure. The approved byte-exact camera2.1.8 migration
+has both-SDK build evidence, but every affected ordinary capture still requires
+fresh qualification. Full simulator goal remains active/incomplete.
+
 ## 2026-10-10 — canonical LCD/camera native fixture66 plus full274 native closure PASS
 
 Fresh immutable `931bf38939aa9c83`, executable SHA256

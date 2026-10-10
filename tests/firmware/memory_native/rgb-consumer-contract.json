@@ -93,7 +93,7 @@
     "When PSRAM is not requested, keep the original RGB332/RGB565/RGB888 formula-generated callback path separate and unchanged."
   ],
   "lifetime": "All run exit paths with a panel call actual ordinary panel_del before releasing consumer storage or semaphore; failed deletion intentionally retains them. Driver framebuffers are never manually freed. The old framebuffer is not rewritten during active OUT DMA.",
-  "internal_regression_scope": "Existing default internal RGB double/bounce/demand modes and all15 bus/bpp profile formulas, bytes, pins and timing requests stay intact; the common external profile is opt-in. Existing hardware octal profiles, frozen ELFs and locked camera2.1.3 component remain untouched.",
+  "internal_regression_scope": "Existing default internal RGB double/bounce/demand modes and all15 bus/bpp profile formulas, bytes, pins and timing requests stay intact; the common external profile is opt-in. Hardware octal profiles and historical camera2.1.3 source/ELFs/evidence remain untouched. Current user-approved official camera2.1.8 source is byte-exact and must be freshly qualified on both SDKs.",
   "host_evidence_required": [
     "Exact source input hashes plus built SDK metadata, compiled source hashes, ELF and merged flash image hashes; the authored source-only receipt is not a build receipt.",
     "Fresh independent native graph Apply before CPU release and immutable full panel captures; no guest byte injection and no payload reconstruction used as a substitute for captured output.",

@@ -1,0 +1,21 @@
+[
+  "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+  "-machine",
+  "esp32s3",
+  "-nographic",
+  "-S",
+  "-monitor",
+  "none",
+  "-accel",
+  "tcg,thread=single",
+  "-icount",
+  "shift=0,align=off,sleep=off",
+  "-serial",
+  "file:/tmp/rmt-native-o8d8gv24/uart.log",
+  "-drive",
+  "file=/tmp/rmt-native-o8d8gv24/flash.bin,if=mtd,format=raw,snapshot=off",
+  "-qmp",
+  "unix:/tmp/rmt-native-o8d8gv24/qmp.sock,server=on,wait=off",
+  "-trace",
+  "enable=esp32s3_rmt_*,file=/tmp/rmt-native-o8d8gv24/model-trace.log"
+]

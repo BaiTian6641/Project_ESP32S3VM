@@ -1,0 +1,122 @@
+[
+  {
+    "phase": "before",
+    "test": "spi1-high-duplex",
+    "command": [
+      "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-2262eaa0a654fad3/build-wsl/tests/qtest/esp32s3-memory-test",
+      "--tap",
+      "--verbose",
+      "-p",
+      "/xtensa/esp32s3-memory/spi1-high-duplex"
+    ],
+    "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-2262eaa0a654fad3",
+    "environment": {
+      "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-2262eaa0a654fad3/build-wsl/qemu-system-xtensa"
+    },
+    "binary": {
+      "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-2262eaa0a654fad3/build-wsl/qemu-system-xtensa",
+      "sha256": "4621c9fe20aefcd98edd4f764c005d3e11125a6252df11dacaa54236cb2a451b"
+    },
+    "test_binary_sha256": "fabcf3759a5e536b6468e8f2375adaa4d769e47f33bfbb11e3c80582a2028e88",
+    "returncode": -6,
+    "stdout": {
+      "path": "/home/polar/.cache/esp32s3vm/peripheral-next-common-spi1-controls-048e00bbbc580d38/before-spi1-high-duplex-stdout.log",
+      "sha256": "cba26d43f4eba51c025e63241bc4a8915f6f5154324a9d2b016416d1d21ea8e1"
+    },
+    "stderr": {
+      "path": "/home/polar/.cache/esp32s3vm/peripheral-next-common-spi1-controls-048e00bbbc580d38/before-spi1-high-duplex-stderr.log",
+      "sha256": "056d29c6452ad622dbd4f38fec845056f9bde60342814e4ef2f6c7606d48884f"
+    },
+    "host_elapsed_ns": 861652204
+  },
+  {
+    "phase": "before",
+    "test": "spi1-asymmetric",
+    "command": [
+      "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-2262eaa0a654fad3/build-wsl/tests/qtest/esp32s3-memory-test",
+      "--tap",
+      "--verbose",
+      "-p",
+      "/xtensa/esp32s3-memory/spi1-asymmetric"
+    ],
+    "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-2262eaa0a654fad3",
+    "environment": {
+      "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-2262eaa0a654fad3/build-wsl/qemu-system-xtensa"
+    },
+    "binary": {
+      "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-2262eaa0a654fad3/build-wsl/qemu-system-xtensa",
+      "sha256": "4621c9fe20aefcd98edd4f764c005d3e11125a6252df11dacaa54236cb2a451b"
+    },
+    "test_binary_sha256": "fabcf3759a5e536b6468e8f2375adaa4d769e47f33bfbb11e3c80582a2028e88",
+    "returncode": -6,
+    "stdout": {
+      "path": "/home/polar/.cache/esp32s3vm/peripheral-next-common-spi1-controls-048e00bbbc580d38/before-spi1-asymmetric-stdout.log",
+      "sha256": "99664feac5280670ea03165c5b024486d0e7f90f71f642ddf1598bd9aebabcbd"
+    },
+    "stderr": {
+      "path": "/home/polar/.cache/esp32s3vm/peripheral-next-common-spi1-controls-048e00bbbc580d38/before-spi1-asymmetric-stderr.log",
+      "sha256": "056d29c6452ad622dbd4f38fec845056f9bde60342814e4ef2f6c7606d48884f"
+    },
+    "host_elapsed_ns": 981004268
+  },
+  {
+    "phase": "after",
+    "test": "spi1-high-duplex",
+    "command": [
+      "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/tests/qtest/esp32s3-memory-test",
+      "--tap",
+      "--verbose",
+      "-p",
+      "/xtensa/esp32s3-memory/spi1-high-duplex"
+    ],
+    "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38",
+    "environment": {
+      "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa"
+    },
+    "binary": {
+      "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+      "sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a"
+    },
+    "test_binary_sha256": "2dfab4ee6695480c7abc74ab055f93a78be9e801866f953ecf64f6307a6b44ae",
+    "returncode": 0,
+    "stdout": {
+      "path": "/home/polar/.cache/esp32s3vm/peripheral-next-common-spi1-controls-048e00bbbc580d38/after-spi1-high-duplex-stdout.log",
+      "sha256": "36bb2cd72af597e3c940aa73558fad44c188929bb445b0b0da9875cb139feed8"
+    },
+    "stderr": {
+      "path": "/home/polar/.cache/esp32s3vm/peripheral-next-common-spi1-controls-048e00bbbc580d38/after-spi1-high-duplex-stderr.log",
+      "sha256": "60af42cd6becb93c09bfefdf8103d8f2938d3a515b599c7bea931199231fbf87"
+    },
+    "host_elapsed_ns": 648545300
+  },
+  {
+    "phase": "after",
+    "test": "spi1-asymmetric",
+    "command": [
+      "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/tests/qtest/esp32s3-memory-test",
+      "--tap",
+      "--verbose",
+      "-p",
+      "/xtensa/esp32s3-memory/spi1-asymmetric"
+    ],
+    "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38",
+    "environment": {
+      "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa"
+    },
+    "binary": {
+      "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+      "sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a"
+    },
+    "test_binary_sha256": "2dfab4ee6695480c7abc74ab055f93a78be9e801866f953ecf64f6307a6b44ae",
+    "returncode": 0,
+    "stdout": {
+      "path": "/home/polar/.cache/esp32s3vm/peripheral-next-common-spi1-controls-048e00bbbc580d38/after-spi1-asymmetric-stdout.log",
+      "sha256": "f34e309d4c57cb62f62fc93dc3aa172c6ec011c9146561eec4f03805f70948c5"
+    },
+    "stderr": {
+      "path": "/home/polar/.cache/esp32s3vm/peripheral-next-common-spi1-controls-048e00bbbc580d38/after-spi1-asymmetric-stderr.log",
+      "sha256": "60af42cd6becb93c09bfefdf8103d8f2938d3a515b599c7bea931199231fbf87"
+    },
+    "host_elapsed_ns": 548270841
+  }
+]

@@ -1,0 +1,3 @@
+Not initializing SPI Flash
+**
+ERROR:../tests/qtest/esp32s3-memory-test.c:423:test_spi1_transport: assertion failed (got == p)

@@ -14,7 +14,13 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_rgb.h"
 #include "esp_timer.h"
+#include "esp_idf_version.h"
+#if CONFIG_LCD_CAM_NATIVE_I80
+#include "hal/systimer_hal.h"
+#include "soc/systimer_struct.h"
+#endif
 #include "driver/gpio.h"
+#include "driver/ledc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -22,11 +28,16 @@
 #define W 64
 #define H 48
 #define BYTES (W * H * 2)
+#if CONFIG_LCD_CAM_NATIVE_I80 || CONFIG_LCD_CAM_NATIVE_RGB
 static const int data_pins[16] = {4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,21};
+#endif
+#if CONFIG_LCD_CAM_NATIVE_I80 || (CONFIG_LCD_CAM_NATIVE_RGB && CONFIG_LCD_CAM_NATIVE_RGB_PIXEL_BITS == 16)
 static uint16_t pixel(unsigned x, unsigned y, unsigned frame)
 {
     return (uint16_t)((((x + frame * 3) & 31) << 11) | (((y * 3 + frame) & 63) << 5) | ((x ^ y ^ frame) & 31));
 }
+#endif
+#if CONFIG_LCD_CAM_NATIVE_I80 || CONFIG_LCD_CAM_NATIVE_CAMERA || (CONFIG_LCD_CAM_NATIVE_RGB && (!CONFIG_LCD_CAM_NATIVE_RGB_BOUNCE || CONFIG_LCD_CAM_NATIVE_PSRAM))
 static uint32_t hash_bytes(const void *buffer, size_t size)
 {
     const uint8_t *p = buffer;
@@ -34,18 +45,21 @@ static uint32_t hash_bytes(const void *buffer, size_t size)
     while (size--) hash = (hash ^ *p++) * 16777619u;
     return hash;
 }
+#endif
+#if CONFIG_LCD_CAM_NATIVE_I80
 static void fill(uint16_t *buffer, unsigned frame)
 {
     for (unsigned y = 0; y < H; ++y)
         for (unsigned x = 0; x < W; ++x) buffer[y * W + x] = pixel(x, y, frame);
 }
+#endif
 static bool check(const char *operation, esp_err_t result)
 {
     printf("LCDCAM API op=%s err=%s code=%ld\n", operation, esp_err_to_name(result), (long)result);
     return result == ESP_OK;
 }
 
-#if CONFIG_LCD_CAM_NATIVE_RGB || CONFIG_LCD_CAM_NATIVE_CAMERA
+#if (CONFIG_LCD_CAM_NATIVE_RGB || CONFIG_LCD_CAM_NATIVE_CAMERA) && CONFIG_LCD_CAM_NATIVE_PSRAM
 static bool requested_psram_ready(void)
 {
 #if CONFIG_LCD_CAM_NATIVE_PSRAM
@@ -71,11 +85,17 @@ static bool requested_psram_ready(void)
 static SemaphoreHandle_t completed;
 static volatile unsigned callbacks;
 static volatile int64_t completion_us[3];
+static volatile uint64_t completion_ticks[3];
+/* Counter read view only: initialization/clock/alarms remain owned by esp_timer. */
+static systimer_hal_context_t callback_counter = {.dev = &SYSTIMER};
 static bool color_done(esp_lcd_panel_io_handle_t io, esp_lcd_panel_io_event_data_t *event, void *ctx)
 {
     (void)io; (void)event; (void)ctx;
     BaseType_t wake = pdFALSE;
-    if (callbacks < 3) completion_us[callbacks] = esp_timer_get_time();
+    if (callbacks < 3) {
+        completion_ticks[callbacks] = systimer_hal_get_counter_value(&callback_counter, 0);
+        completion_us[callbacks] = esp_timer_get_time();
+    }
     ++callbacks;
     xSemaphoreGiveFromISR(completed, &wake);
     return wake == pdTRUE;
@@ -88,7 +108,7 @@ static void run_i80(void)
     esp_lcd_panel_io_handle_t io;
     esp_lcd_panel_handle_t panel;
     esp_lcd_i80_bus_config_t bc = {.dc_gpio_num=2, .wr_gpio_num=1,
-        .clk_src=LCD_CLK_SRC_DEFAULT, .bus_width=8, .max_transfer_bytes=BYTES, .dma_burst_size=16};
+        .clk_src=LCD_CLK_SRC_XTAL, .bus_width=8, .max_transfer_bytes=BYTES, .dma_burst_size=16};
     for (int i=0;i<8;i++) bc.data_gpio_nums[i]=data_pins[i];
     if (!check("i80_bus", esp_lcd_new_i80_bus(&bc,&bus))) return;
     esp_lcd_panel_io_i80_config_t ic = {.cs_gpio_num=3, .pclk_hz=1000000,
@@ -105,6 +125,19 @@ static void run_i80(void)
     for (unsigned frame=0;frame<3;frame++) {
         buffers[frame]=esp_lcd_i80_alloc_draw_buffer(io,BYTES,MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
         if (!buffers[frame]) { puts("LCDCAM ERROR internalRAM allocation"); goto release; }
+        size_t allocated=heap_caps_get_allocated_size(buffers[frame]);
+        bool internal=esp_ptr_internal(buffers[frame]) && esp_ptr_internal((uint8_t*)buffers[frame]+BYTES-1);
+        bool dma=esp_ptr_dma_capable(buffers[frame]);
+        bool external=esp_ptr_external_ram(buffers[frame]);
+        bool distinct=true;
+        for(unsigned prior=0;prior<frame;++prior)
+            distinct=distinct && ((uintptr_t)buffers[prior]+BYTES<=(uintptr_t)buffers[frame] ||
+                (uintptr_t)buffers[frame]+BYTES<=(uintptr_t)buffers[prior]);
+        printf("LCDCAM I80_BUFFER frame=%u alias=%p bytes=%d allocated=%u internal=%u dma=%u external=%u distinct=%u time_us=%lld\n",
+            frame,(void*)buffers[frame],BYTES,(unsigned)allocated,internal,dma,external,distinct,(long long)esp_timer_get_time());
+        if(allocated<BYTES || !internal || !dma || external || !distinct){
+            puts("LCDCAM ERROR i80_owned_internal_dma_storage");goto release;
+        }
         fill(buffers[frame],frame);
         printf("LCDCAM I80_SUBMIT frame=%u width=%d height=%d bytes=%d hash=%08lx wire=rgb565-be callbacks_before=%u time_us=%lld\n",
             frame,W,H,BYTES,(unsigned long)hash_bytes(buffers[frame],BYTES),callbacks,(long long)esp_timer_get_time());
@@ -122,7 +155,7 @@ static void run_i80(void)
             /* DMA ownership is still outstanding: do not free submitted buffers. */
             return;
         }
-        printf("LCDCAM I80_DONE frame=%u callbacks=%u time_us=%lld callback_us=%lld\n",frame,callbacks,(long long)esp_timer_get_time(),(long long)completion_us[frame]);
+        printf("LCDCAM I80_DONE frame=%u callbacks=%u time_us=%lld callback_us=%lld callback_ticks=%llu timer_hz=16000000\n",frame,callbacks,(long long)esp_timer_get_time(),(long long)completion_us[frame],(unsigned long long)completion_ticks[frame]);
     }
     check("panel_delete",esp_lcd_panel_del(panel));
     check("io_delete",esp_lcd_panel_io_del(io));
@@ -164,6 +197,7 @@ static void rgb_fill(uint8_t *buffer, unsigned frame)
         for (unsigned x=0;x<W;++x)
             rgb_pixel_bytes(buffer+y*RGB_STRIDE+x*RGB_PIXEL_BYTES,x,y,frame);
 }
+#if !CONFIG_LCD_CAM_NATIVE_RGB_BOUNCE || CONFIG_LCD_CAM_NATIVE_PSRAM
 static void rgb_pattern_log(const uint8_t *buffer, unsigned frame)
 {
     printf("LCDCAM RGB_PAYLOAD frame=%u bus_width=%d bits_per_pixel=%d width=%d height=%d stride=%d bytes=%d hash=%08lx head=%02x%02x%02x tail=%02x%02x%02x time_us=%lld\n",
@@ -171,6 +205,7 @@ static void rgb_pattern_log(const uint8_t *buffer, unsigned frame)
         (unsigned long)hash_bytes(buffer,RGB_BYTES),buffer[0],buffer[1],buffer[2],
         buffer[RGB_BYTES-3],buffer[RGB_BYTES-2],buffer[RGB_BYTES-1],(long long)esp_timer_get_time());
 }
+#endif
 #if CONFIG_LCD_CAM_NATIVE_PSRAM
 static bool rgb_external_buffer(const char *name, uint8_t *buffer, size_t bytes)
 {
@@ -212,6 +247,8 @@ static volatile uint32_t bounce_hash=2166136261u, bounce_frame_hash;
 static volatile unsigned bounce_frame_bytes, bounce_payload_bytes, bounce_frames;
 static volatile unsigned bounce_errors, bounce_isr_count, bounce_external_isr_bytes;
 static volatile uintptr_t bounce_buffer_alias[2];
+static volatile bool rgb_starve_requested;
+static volatile int64_t rgb_starve_start_us, rgb_starve_end_us;
 static bool bounce_sequence_valid;
 #if CONFIG_LCD_CAM_NATIVE_PSRAM
 static const volatile uint8_t *bounce_source;
@@ -255,6 +292,12 @@ static bool bounce(esp_lcd_panel_handle_t p,void *buffer,int pos,int bytes,void 
         portENTER_CRITICAL_SAFE(&rgb_events_lock);
         ++bounce_errors;++bounce_count;if(in_isr)++bounce_isr_count;
         portEXIT_CRITICAL_SAFE(&rgb_events_lock);return false;
+    }
+    if(in_isr && rgb_starve_requested){
+        rgb_starve_requested=false;
+        int64_t started=esp_timer_get_time();rgb_starve_start_us=started;
+        while(esp_timer_get_time()-started<40000) __asm__ __volatile__("nop");
+        rgb_starve_end_us=esp_timer_get_time();
     }
 #if CONFIG_LCD_CAM_NATIVE_PSRAM
     /* Source remains immutable. These volatile reads consume actual PSRAM
@@ -351,10 +394,124 @@ static bool rgb_retention_log(uint8_t *buffer, const uint8_t *retained, uint32_t
     return true;
 }
 #endif
+/* Insert before run_rgb; globals and callback hook are specified separately. */
+static void rgb_reset_per_driver_bounce(void)
+{
+    /* Only call after a successful driver delete; lifetime model counters
+     * and already-emitted primary evidence are not reset or masked. */
+    portENTER_CRITICAL(&rgb_events_lock);
+    bounce_buffer_alias[0]=bounce_buffer_alias[1]=0;
+    bounce_count=bounce_errors=bounce_isr_count=bounce_external_isr_bytes=0;
+    bounce_frame_bytes=bounce_payload_bytes=bounce_frames=0;
+    bounce_hash=2166136261u;bounce_frame_hash=0;bounce_sequence_valid=false;
+    rgb_starve_requested=false;rgb_starve_start_us=rgb_starve_end_us=0;
+    portEXIT_CRITICAL(&rgb_events_lock);
+}
+static bool rgb_aux_init(esp_lcd_panel_handle_t panel,
+    const esp_lcd_rgb_panel_config_t *config,
+    const esp_lcd_rgb_panel_event_callbacks_t *callbacks, const char *phase)
+{
+    if(!check("rgb_aux_callbacks",esp_lcd_rgb_panel_register_event_callbacks(panel,callbacks,NULL)))return false;
+    if(!config->flags.no_fb){
+        uint8_t *first=NULL,*second=NULL;
+        esp_err_t result=config->num_fbs==2?
+            esp_lcd_rgb_panel_get_frame_buffer(panel,2,(void**)&first,(void**)&second):
+            esp_lcd_rgb_panel_get_frame_buffer(panel,1,(void**)&first);
+        if(!check("rgb_aux_framebuffers",result) || !first)return false;
+        rgb_fill(first,2);if(second)rgb_fill(second,2);
+#if CONFIG_LCD_CAM_NATIVE_PSRAM
+        if(!rgb_external_buffer("resume_fb0",first,RGB_BYTES) ||
+            !rgb_cache_sync("rgb_resume_fb0_writeback",first,false) ||
+            (second && (!rgb_external_buffer("resume_fb1",second,RGB_BYTES) ||
+                !rgb_cache_sync("rgb_resume_fb1_writeback",second,false))))return false;
+#endif
+        printf("LCDCAM RGB_RESUME_SOURCE phase=%s frame=2 fb0=%p fb1=%p bytes=%d time_us=%lld\n",
+            phase,(void*)first,(void*)second,RGB_BYTES,(long long)esp_timer_get_time());
+    }else printf("LCDCAM RGB_RESUME_SOURCE phase=%s frame=0 source=actual_bounce_callback bytes=%d time_us=%lld\n",
+        phase,RGB_BYTES,(long long)esp_timer_get_time());
+    if(!check("rgb_aux_reset",esp_lcd_panel_reset(panel)))return false;
+    unsigned before=vsync_count;
+#if CONFIG_LCD_CAM_NATIVE_PSRAM
+    if(config->flags.no_fb &&
+        (!bounce_source || !rgb_cache_sync("rgb_aux_bounce_source_readback",(uint8_t*)bounce_source,true)))return false;
+#endif
+#if CONFIG_LCD_CAM_NATIVE_PSRAM
+    if(config->flags.no_fb && (!bounce_source ||
+        !rgb_cache_sync("rgb_aux_source_readback",(uint8_t *)(uintptr_t)bounce_source,true)))return false;
+#endif
+    if(!check("rgb_aux_init",esp_lcd_panel_init(panel)))return false;
+    if(config->flags.refresh_on_demand && !check("rgb_aux_refresh",esp_lcd_rgb_panel_refresh(panel)))return false;
+    if(!wait_vsync(before))return false;
+    before=vsync_count;
+    if(config->flags.refresh_on_demand && !check("rgb_aux_refresh",esp_lcd_rgb_panel_refresh(panel)))return false;
+    return wait_vsync(before);
+}
+static bool rgb_public_recreate_and_starve(const esp_lcd_rgb_panel_config_t *original,
+    const esp_lcd_rgb_panel_event_callbacks_t *callbacks, esp_lcd_panel_handle_t *live_panel)
+{
+    esp_lcd_panel_handle_t panel=NULL;
+    bool complete=false;
+    *live_panel=NULL;
+    rgb_reset_per_driver_bounce();
+    puts("LCDCAM RGB_RESUME_BEGIN previous_driver_deleted=1 API=public_recreation");
+    if(!check("rgb_resume_create",esp_lcd_new_rgb_panel(original,&panel)))return false;
+    if(!rgb_aux_init(panel,original,callbacks,"original_mode"))goto done;
+    printf("LCDCAM RGB_RESUME_COMPLETE actual_vsync=%u time_us=%lld\n",vsync_count,(long long)esp_timer_get_time());
+    if(!check("rgb_resume_delete",esp_lcd_panel_del(panel))){*live_panel=panel;return false;}
+    panel=NULL;
+    puts("LCDCAM RGB_RESUME_STOPPED driver_deleted=1");
+    rgb_reset_per_driver_bounce();
+    /* A real SDK bounce producer is delayed once inside its actual ISR.
+     * The GPIO clock/GDMA engine continue operating; no descriptor, IRQ,
+     * frame, timer register or expected capture is manufactured. */
+    esp_lcd_rgb_panel_config_t starve=*original;
+    starve.num_fbs=0;starve.flags.no_fb=1;starve.flags.fb_in_psram=0;
+    starve.flags.refresh_on_demand=0;starve.bounce_buffer_size_px=W*4;
+#if CONFIG_LCD_CAM_NATIVE_PSRAM && !CONFIG_LCD_CAM_NATIVE_RGB_BOUNCE
+    uint8_t *source=heap_caps_aligned_alloc(64,RGB_BYTES,MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT);
+    if(!rgb_external_buffer("starve_source",source,RGB_BYTES)){heap_caps_free(source);return false;}
+    rgb_fill(source,0);
+    if(!rgb_cache_sync("rgb_starve_source_writeback",source,false)){heap_caps_free(source);return false;}
+    bounce_source=source;
+#endif
+    if(!check("rgb_starve_create",esp_lcd_new_rgb_panel(&starve,&panel)))goto starve_done;
+    if(!rgb_aux_init(panel,&starve,callbacks,"starvation_baseline"))goto starve_done;
+    rgb_starve_start_us=rgb_starve_end_us=0;rgb_starve_requested=true;
+    printf("LCDCAM RGB_STARVE_ARM requested_delay_us=40000 baseline_vsync=%u time_us=%lld\n",vsync_count,(long long)esp_timer_get_time());
+    for(unsigned i=0;i<8 && !rgb_starve_end_us;++i){
+        unsigned before=vsync_count;if(!wait_vsync(before))goto starve_done;
+    }
+    if(!rgb_starve_end_us || rgb_starve_end_us-rgb_starve_start_us<40000){
+        puts("LCDCAM ERROR real_bounce_ISR_starvation_not_executed");goto starve_done;
+    }
+    printf("LCDCAM RGB_STARVE_DONE ISR=1 start_us=%lld end_us=%lld elapsed_us=%lld actual_vsync=%u time_us=%lld\n",
+        (long long)rgb_starve_start_us,(long long)rgb_starve_end_us,
+        (long long)(rgb_starve_end_us-rgb_starve_start_us),vsync_count,(long long)esp_timer_get_time());
+    unsigned before=vsync_count;
+    if(!check("rgb_starve_restart",esp_lcd_rgb_panel_restart(panel)) || !wait_vsync(before))goto starve_done;
+    before=vsync_count;if(!wait_vsync(before))goto starve_done;
+    puts("LCDCAM RGB_STARVE_RECOVERED public_restart_completed_actual_VSYNC=1");
+    complete=true;
+starve_done:
+    rgb_starve_requested=false;
+    if(panel && !check("rgb_starve_delete",esp_lcd_panel_del(panel))){*live_panel=panel;return false;}
+    panel=NULL;
+#if CONFIG_LCD_CAM_NATIVE_PSRAM && !CONFIG_LCD_CAM_NATIVE_RGB_BOUNCE
+    bounce_source=NULL;heap_caps_free(source);
+#endif
+    return complete;
+done:
+    if(panel && !check("rgb_resume_delete",esp_lcd_panel_del(panel))){*live_panel=panel;return false;}
+    return false;
+}
+
 static void run_rgb(void)
 {
+#if CONFIG_LCD_CAM_NATIVE_PSRAM
     if(!requested_psram_ready())return;
+#endif
     esp_lcd_panel_handle_t panel=NULL;
+    bool primary_completed=false;
 #if CONFIG_LCD_CAM_NATIVE_RGB_BOUNCE && CONFIG_LCD_CAM_NATIVE_PSRAM
     uint8_t *source=NULL;
 #endif
@@ -364,7 +521,15 @@ static void run_rgb(void)
 #endif
     vsync_event=xSemaphoreCreateCounting(32,0);
     if(!vsync_event){puts("LCDCAM ERROR semaphore");return;}
-    esp_lcd_rgb_panel_config_t c={.clk_src=LCD_CLK_SRC_DEFAULT,.data_width=RGB_BUS,.bits_per_pixel=RGB_BITS,
+    esp_lcd_rgb_panel_config_t c={.clk_src=LCD_CLK_SRC_DEFAULT,.data_width=RGB_BUS,
+#if ESP_IDF_VERSION_MAJOR >= 6
+        /* Same input/output disables conversion. GRAY8 is the public raw
+         * eight-bit transport; the external panel interprets those RGB332 bytes. */
+        .in_color_format=RGB_BITS==8?LCD_COLOR_FMT_GRAY8:RGB_BITS==16?LCD_COLOR_FMT_RGB565:LCD_COLOR_FMT_RGB888,
+        .out_color_format=RGB_BITS==8?LCD_COLOR_FMT_GRAY8:RGB_BITS==16?LCD_COLOR_FMT_RGB565:LCD_COLOR_FMT_RGB888,
+#else
+        .bits_per_pixel=RGB_BITS,
+#endif
         .num_fbs=2,.dma_burst_size=16,.hsync_gpio_num=1,.vsync_gpio_num=2,.de_gpio_num=3,
         .pclk_gpio_num=39,.disp_gpio_num=-1,
         .timings={.pclk_hz=1000000,.h_res=W,.v_res=H,.hsync_pulse_width=2,.hsync_back_porch=4,
@@ -469,6 +634,7 @@ static void run_rgb(void)
     if(!rgb_retention_log(fb0,retained,retained_hash,"before_stop"))goto release;
 #endif
 #endif
+    primary_completed=true;
 release:
     /* Driver deletion stops LCD/GDMA and owns all framebuffer/bounce frees.
      * A failed delete leaves callback-visible storage and semaphore intact. */
@@ -476,6 +642,11 @@ release:
         puts("LCDCAM ERROR rgb_outstanding_storage_retained");return;
     }
     if(panel)printf("LCDCAM RGB_STOPPED driver_deleted=1 time_us=%lld\n",(long long)esp_timer_get_time());
+    panel=NULL;
+    if(primary_completed && !rgb_public_recreate_and_starve(&c,&cb,&panel)){
+        puts("LCDCAM ERROR rgb_public_resume_or_starvation_recovery");
+        if(panel){puts("LCDCAM ERROR rgb_aux_driver_ISR_storage_retained");return;}
+    }
 #if CONFIG_LCD_CAM_NATIVE_RGB_BOUNCE && CONFIG_LCD_CAM_NATIVE_PSRAM
     bounce_source=NULL;heap_caps_free(source);
 #endif
@@ -662,6 +833,13 @@ static bool cam_external_get(cam_owned_t *owned, unsigned frame,
            fb->len > 1 ? fb->buf[fb->len - 2] : 0, fb->buf[fb->len - 1],
            (long long)esp_timer_get_time());
     if (!valid) puts("LCDCAM ERROR camera_external_JPEG_decode");
+    if (valid) {
+        /* The real public slot remains owned; this is not a fabricated frame
+         * or a host-controlled producer. Preserve a bounded read-only lease. */
+        printf("LCDCAM CAM_HOLD_BEGIN frame=%u public_slot_owned=1 requested_hold_us=20000 time_us=%lld\n",
+               frame, (long long)esp_timer_get_time());
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
     return valid;
 }
 
@@ -774,17 +952,32 @@ done:
 
 static void fault_task(void *context)
 {
-    (void)context;ulTaskNotifyTake(pdTRUE,portMAX_DELAY);
+    (void)context;
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     vTaskDelay(pdMS_TO_TICKS(CONFIG_LCD_CAM_NATIVE_FAULT_DELAY_MS));
-    int pin=CONFIG_LCD_CAM_NATIVE_FAULT==1?14:13;
-    int level=CONFIG_LCD_CAM_NATIVE_FAULT==1?1:0;
-    gpio_set_level(pin,level);
-    printf("LCDCAM CAM_PHYSICAL_FAULT pin=%d level=%d time_us=%lld\n",pin,level,(long long)esp_timer_get_time());
+    int64_t deadline = esp_timer_get_time() + 2000000;
+    while (!gpio_get_level(17) || gpio_get_level(16)) {
+        if (esp_timer_get_time() >= deadline) {
+            puts("LCDCAM ERROR physical_fault_no_active_HREF");
+            vTaskDelete(NULL);
+        }
+        vTaskDelay(1);
+    }
+    int pin = CONFIG_LCD_CAM_NATIVE_FAULT == 1 ? 14 : 13;
+    int level = CONFIG_LCD_CAM_NATIVE_FAULT == 1 ? 1 : 0;
+    int64_t active_us = esp_timer_get_time();
+    if (!check("camera_physical_fault", gpio_set_level(pin, level))) {
+        vTaskDelete(NULL);
+    }
+    printf("LCDCAM CAM_PHYSICAL_FAULT pin=%d level=%d href=1 vsync=0 active_us=%lld time_us=%lld\n",
+           pin, level, (long long)active_us, (long long)esp_timer_get_time());
     vTaskDelete(NULL);
 }
 static void run_camera(void)
 {
-    camera_config_t c={.pin_pwdn=14,.pin_reset=13,.pin_xclk=15,.pin_sccb_sda=1,.pin_sccb_scl=2,
+    /* Public external-XCLK convention avoids the official S3 driver's CAM_CLK
+     * routing overwriting the independently qualified physical LEDC net. */
+    camera_config_t c={.pin_pwdn=14,.pin_reset=13,.pin_xclk=-1,.pin_sccb_sda=1,.pin_sccb_scl=2,
         .pin_d0=4,.pin_d1=5,.pin_d2=6,.pin_d3=7,.pin_d4=8,.pin_d5=9,.pin_d6=10,.pin_d7=11,
         .pin_vsync=16,.pin_href=17,.pin_pclk=12,.xclk_freq_hz=20000000,
         .ledc_timer=LEDC_TIMER_0,.ledc_channel=LEDC_CHANNEL_0,.pixel_format=PIXFORMAT_RGB565,
@@ -805,6 +998,17 @@ static void run_camera(void)
     puts("LCDCAM UNQUALIFIED hardware_PSRAM_fixture native_external_requires_quad40_cache32_direct_DMA");
 #endif
 #endif
+    const ledc_timer_config_t xclk_timer = {
+        .speed_mode=LEDC_LOW_SPEED_MODE, .duty_resolution=LEDC_TIMER_1_BIT,
+        .timer_num=LEDC_TIMER_0, .freq_hz=20000000, .clk_cfg=LEDC_USE_APB_CLK
+    };
+    const ledc_channel_config_t xclk_channel = {
+        .gpio_num=15, .speed_mode=LEDC_LOW_SPEED_MODE, .channel=LEDC_CHANNEL_0,
+        .intr_type=LEDC_INTR_DISABLE, .timer_sel=LEDC_TIMER_0, .duty=1, .hpoint=0
+    };
+    if (!check("camera_ledc_timer", ledc_timer_config(&xclk_timer)) ||
+        !check("camera_ledc_channel", ledc_channel_config(&xclk_channel))) return;
+    puts("LCDCAM CAM_XCLK gpio=15 source=LEDC channel=0 timer=0 requested_hz=20000000 resolution=1 duty=1");
     if(!check("camera_init",esp_camera_init(&c)))return;
     sensor_t *sensor=esp_camera_sensor_get();
     if(!sensor){puts("LCDCAM ERROR missing_sensor");return;}
@@ -816,6 +1020,7 @@ static void run_camera(void)
         return;
     }
     run_camera_external(&c);
+    check("camera_ledc_stop", ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0));
     return;
 #endif
     TaskHandle_t fault=NULL;
@@ -833,38 +1038,90 @@ static void run_camera(void)
         if(raw)valid=valid && fb->len==160*120*2;
         else valid=valid && fb->len>=4 && fb->buf[0]==0xff && fb->buf[1]==0xd8 && fb->buf[fb->len-2]==0xff && fb->buf[fb->len-1]==0xd9;
         if(!valid)++invalid;
+        camera_fb_t snapshot = *fb;
+        uint32_t before_hash = hash_bytes(fb->buf, fb->len);
+        printf("LCDCAM CAM_BUFFER frame=%u handle=%p payload=%p len=%u timestamp_us=%lld time_us=%lld\n",
+               frame, (void *)fb, fb->buf, (unsigned)fb->len,
+               (long long)((int64_t)fb->timestamp.tv_sec * 1000000 + fb->timestamp.tv_usec),
+               (long long)esp_timer_get_time());
         printf("LCDCAM CAM_FRAME frame=%u width=%u height=%u format=%d len=%u hash=%08lx valid=%d head=%02x%02x tail=%02x%02x time_us=%lld\n",
             frame,(unsigned)fb->width,(unsigned)fb->height,fb->format,(unsigned)fb->len,
             (unsigned long)hash_bytes(fb->buf,fb->len),valid,fb->len?fb->buf[0]:0,fb->len>1?fb->buf[1]:0,
             fb->len>1?fb->buf[fb->len-2]:0,fb->len?fb->buf[fb->len-1]:0,(long long)esp_timer_get_time());
-        if(CONFIG_LCD_CAM_NATIVE_SLOW_MS)vTaskDelay(pdMS_TO_TICKS(CONFIG_LCD_CAM_NATIVE_SLOW_MS));
+        int64_t hold_begin = esp_timer_get_time();
+        printf("LCDCAM CAM_HOLD_BEGIN frame=%u owned=1 requested_hold_us=%u time_us=%lld\n",
+               frame, CONFIG_LCD_CAM_NATIVE_SLOW_MS * 1000u, (long long)hold_begin);
+        /* Keep the public slot owned while the sole collector takes its lease. */
+        vTaskDelay(pdMS_TO_TICKS(CONFIG_LCD_CAM_NATIVE_SLOW_MS ?
+                               CONFIG_LCD_CAM_NATIVE_SLOW_MS : 20));
+        bool metadata_same = fb->buf == snapshot.buf && fb->len == snapshot.len &&
+            fb->width == snapshot.width && fb->height == snapshot.height &&
+            fb->format == snapshot.format &&
+            fb->timestamp.tv_sec == snapshot.timestamp.tv_sec &&
+            fb->timestamp.tv_usec == snapshot.timestamp.tv_usec;
+        uint32_t after_hash = hash_bytes(snapshot.buf, snapshot.len);
+        printf("LCDCAM CAM_RETAIN frame=%u before_hash=%08lx after_hash=%08lx metadata_same=%u unchanged=%u elapsed_us=%lld time_us=%lld\n",
+               frame, (unsigned long)before_hash, (unsigned long)after_hash,
+               metadata_same, before_hash == after_hash,
+               (long long)(esp_timer_get_time() - hold_begin), (long long)esp_timer_get_time());
+        if (!metadata_same || before_hash != after_hash) {
+            ++invalid;
+            puts("LCDCAM ERROR camera_owned_buffer_changed");
+        }
         esp_camera_fb_return(fb);
         printf("LCDCAM CAM_RETURN frame=%u time_us=%lld\n",frame,(long long)esp_timer_get_time());
     }
     printf("LCDCAM CAM_SUMMARY received=%u invalid=%u buffers=%u slow_ms=%u fault=%u\n",received,invalid,
         CONFIG_LCD_CAM_NATIVE_FB_COUNT,CONFIG_LCD_CAM_NATIVE_SLOW_MS,CONFIG_LCD_CAM_NATIVE_FAULT);
     if(!check("camera_deinit",esp_camera_deinit()))return;
-    if(CONFIG_LCD_CAM_NATIVE_FAULT==2){
-        gpio_set_level(13,1);
+    if(CONFIG_LCD_CAM_NATIVE_FAULT){
+        if (!check("camera_physical_recovery",
+                   gpio_set_level(CONFIG_LCD_CAM_NATIVE_FAULT == 1 ? 14 : 13,
+                                  CONFIG_LCD_CAM_NATIVE_FAULT == 1 ? 0 : 1))) return;
         if(!check("camera_reinit_after_reset",esp_camera_init(&c)))return;
         camera_fb_t *fb=esp_camera_fb_get();
         if(!fb)puts("LCDCAM ERROR reset_recovery_timeout");
         else {
-            printf("LCDCAM CAM_RECOVERY width=%u height=%u format=%d len=%u hash=%08lx valid=%d time_us=%lld\n",
+            uint32_t before_hash = hash_bytes(fb->buf, fb->len);
+            camera_fb_t snapshot = *fb;
+            printf("LCDCAM CAM_BUFFER frame=4 handle=%p payload=%p len=%u timestamp_us=%lld time_us=%lld\n",
+                   (void *)fb, fb->buf, (unsigned)fb->len,
+                   (long long)((int64_t)fb->timestamp.tv_sec * 1000000 + fb->timestamp.tv_usec),
+                   (long long)esp_timer_get_time());
+            printf("LCDCAM CAM_RECOVERY frame=4 width=%u height=%u format=%d len=%u hash=%08lx valid=%d head=%02x%02x tail=%02x%02x time_us=%lld\n",
                 (unsigned)fb->width,(unsigned)fb->height,fb->format,(unsigned)fb->len,
-                (unsigned long)hash_bytes(fb->buf,fb->len),
+                (unsigned long)before_hash,
                 fb->width==160 && fb->height==120 && fb->format==c.pixel_format && fb->len==38400,
+                fb->len ? fb->buf[0] : 0, fb->len > 1 ? fb->buf[1] : 0,
+                fb->len > 1 ? fb->buf[fb->len-2] : 0, fb->len ? fb->buf[fb->len-1] : 0,
                 (long long)esp_timer_get_time());
+            int64_t hold_begin = esp_timer_get_time();
+            printf("LCDCAM CAM_HOLD_BEGIN frame=4 owned=1 requested_hold_us=20000 time_us=%lld\n",
+                   (long long)hold_begin);
+            vTaskDelay(pdMS_TO_TICKS(20));
+            uint32_t after_hash = hash_bytes(snapshot.buf, snapshot.len);
+            bool metadata_same = fb->buf == snapshot.buf && fb->len == snapshot.len &&
+                fb->width == snapshot.width && fb->height == snapshot.height &&
+                fb->format == snapshot.format &&
+                fb->timestamp.tv_sec == snapshot.timestamp.tv_sec &&
+                fb->timestamp.tv_usec == snapshot.timestamp.tv_usec;
+            printf("LCDCAM CAM_RETAIN frame=4 before_hash=%08lx after_hash=%08lx metadata_same=%u unchanged=%u elapsed_us=%lld time_us=%lld\n",
+                   (unsigned long)before_hash, (unsigned long)after_hash, metadata_same,
+                   before_hash == after_hash, (long long)(esp_timer_get_time() - hold_begin),
+                   (long long)esp_timer_get_time());
             esp_camera_fb_return(fb);
+            printf("LCDCAM CAM_RETURN frame=4 time_us=%lld\n",(long long)esp_timer_get_time());
             printf("LCDCAM CAM_RECOVERY_RETURN time_us=%lld\n",(long long)esp_timer_get_time());
         }
         check("camera_recovery_deinit",esp_camera_deinit());
     }
+    check("camera_ledc_stop", ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0));
 }
 #endif
 void app_main(void)
 {
-    puts("LCDCAM BEGIN idf=5.5.5 camera=v2.1.3 hash=fnv1a32 no_authored_PASS_claim");
+    printf("LCDCAM BEGIN idf=%d.%d.%d camera=v2.1.8 hash=fnv1a32 no_authored_PASS_claim\n",
+           ESP_IDF_VERSION_MAJOR, ESP_IDF_VERSION_MINOR, ESP_IDF_VERSION_PATCH);
 #if CONFIG_LCD_CAM_NATIVE_I80
     run_i80();
 #elif CONFIG_LCD_CAM_NATIVE_RGB

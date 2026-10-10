@@ -1,0 +1,21 @@
+{
+  "status": "EXPECTED_REFUSAL",
+  "qemu": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-cb5fe790230bb56a/build-wsl/qemu-system-xtensa",
+  "qemu_sha256": "da7d4e36304702791b4ed8fea38646c25047bc706c27791b9fe9dea3285f41d3",
+  "host": 2,
+  "observed": {
+    "dirty-old": {
+      "running": false,
+      "spi_cmd": 16777216,
+      "spi_raw": 0,
+      "rx_raw": 0,
+      "tx_raw": 0,
+      "rx_descriptor": [
+        3221225536,
+        1006633088,
+        0
+      ]
+    }
+  },
+  "boundary": "Actual powered GPIO MOSI-to-MISO wire plus genuine CPU cache/committed SSI/GDMA data; no payload or input injection, no hardware/metrology claim."
+}

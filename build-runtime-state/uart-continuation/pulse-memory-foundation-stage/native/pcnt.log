@@ -1,0 +1,17 @@
+TAP version 13
+# random seed: R02S33be899bb4ffbe5912ec38f18a2b5154
+1..4
+# Start of xtensa tests
+# Start of esp32s3 tests
+# Start of pcnt tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-191248.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-191248.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 1 /xtensa/esp32s3/pcnt/units-channels-actions
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-191248.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-191248.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 2 /xtensa/esp32s3/pcnt/watchpoints-limits-irq
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-191248.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-191248.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 3 /xtensa/esp32s3/pcnt/filters-stop-reset-gate
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-191248.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-191248.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 4 /xtensa/esp32s3/pcnt/route-validity
+# End of pcnt tests
+# End of esp32s3 tests
+# End of xtensa tests

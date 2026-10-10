@@ -1,0 +1,19 @@
+[
+  "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+  "-machine",
+  "esp32s3",
+  "-S",
+  "-nographic",
+  "-monitor",
+  "none",
+  "-serial",
+  "none",
+  "-accel",
+  "qtest",
+  "-qmp",
+  "unix:/tmp/pulse-xclk-k1sijfp9/qmp.sock,server=on,wait=off",
+  "-qtest",
+  "unix:/tmp/pulse-xclk-k1sijfp9/qtest.sock,server=on,wait=off",
+  "-qtest-log",
+  "/dev/null"
+]

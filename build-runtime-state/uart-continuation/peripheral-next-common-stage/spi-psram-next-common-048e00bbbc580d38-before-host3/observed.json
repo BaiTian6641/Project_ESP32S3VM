@@ -1,0 +1,14 @@
+{
+  "dirty-old": {
+    "running": false,
+    "spi_cmd": 16777216,
+    "spi_raw": 0,
+    "rx_raw": 0,
+    "tx_raw": 0,
+    "rx_descriptor": [
+      3221225536,
+      1006633088,
+      0
+    ]
+  }
+}

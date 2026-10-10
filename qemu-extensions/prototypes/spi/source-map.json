@@ -3,14 +3,14 @@
   "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
   "prefix_fingerprint": "dbe2a8a5ad4e07a607e76ab751e77ac85fe3bf30974359bd25a69354499f9b32",
   "license": "GPL-2.0-or-later",
-  "status": "current-foundation-qualified:182 native and25 ordinary scenario outcomes PASS",
-  "native_checkout": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-eb6707129054f40a",
+  "status": "source-bound SPI transport refinement:341 native and both complete SDK5.5.5/6.1 direct-PSRAM programs PASS; extended SPI gates remain separate",
+  "native_checkout": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38",
   "build_dir": "build-wsl",
-  "evidence": "build-runtime-state/uart-continuation/spi-stage",
+  "evidence": "build-runtime-state/uart-continuation/peripheral-next-common-stage",
   "foundation_dependencies": {
     "source": "foundation-dependencies.json",
     "preparer": "../uart/prepare.py",
-    "contract": "Frozen common source record; apply each shared clock/GDMA/NativeNet dependency exactly once, then the UART-owned tail. No standalone-prefix copy or duplicate provider overlay."
+    "contract": "Exact frozen common closure with explicit postcopy NetIRQ/RMT/SPI-PSRAM overlays before UART tail; each shared dependency applied once. Original accepted copy bytes and historical source records remain immutable."
   },
   "copies": [
     {
@@ -41,12 +41,22 @@
   "patches": [
     "0008-current-foundation-integration.patch"
   ],
+  "post_copy_overlays": [
+    {
+      "source": "0009-psram-dma-transport.patch",
+      "sha256": "e922797bbf1a4ab34a92be9f349dca0c92299b118394fbb8fd6854244e885343",
+      "targets": ["hw/misc/esp32s3_gpspi.c"],
+      "applied_sha256": {
+        "hw/misc/esp32s3_gpspi.c": "17517a932d24ea3afb52be5c7e21d85528f01b3c8ffa27de05476449a5acea16"
+      }
+    }
+  ],
   "required_graph_contract": "integration-requirements.json",
   "canonical_gates": [
     "SPI0/1 official flash path remains unchanged",
     "Slave remains SPI-03 unqualified",
     "Dual/quad/octal/DDR remain SPI-03 unqualified",
-    "Internal-SRAM DMA qualified; SPI-specific PSRAM/EDMA workloads remain unqualified despite the separately qualified mapped-memory foundation",
+    "Internal-SRAM and actual SPI-specific quad40 PSRAM DMA qualified on bothcontrollers/bothSDKs through public APIs/cache/wire/descriptor proof; octal/DDR memory paths and independent metrology remain unqualified",
     "No claimed fast/edge equivalence or replay until both paths are truly exercised",
     "NOR mode1/2 unsupported; controller mode1/2 qualifies separately through actual loopback wire",
     "ESP32-S3 half-duplex both TX and RX data phases are unsupported by the pinned target capability/ordinary driver",
@@ -63,7 +73,7 @@
     }
   ],
   "integration_patch": "0008-current-foundation-integration.patch",
-  "graph_status": "source-bound native182 plus ordinary20 and expected strict-negatives5 PASS",
+  "graph_status": "Current341 native, isolated actual PSRAM cache/wire controls and both complete SDK direct-PSRAM programs PASS; originalNOR/strictnegative/extended rows require their own exact-executable proofs",
   "historical_restack": {
     "foundation_source": "/home/polar/.cache/esp32s3vm/qemu-runtime-40edccac4156-0e2ab32b9d57dee3",
     "foundation_fingerprint": "0e2ab32b9d57dee3d0454e063153f820877477e692a145a380640cd3a3193ccd",
@@ -84,7 +94,7 @@
     }
   ],
   "qtest_registered_cases": 27,
-  "current_backend_qualification": {
+  "historical_backend_qualification": {
     "source_fingerprint": "eb6707129054f40aa9310491a675c921db80ddf190efafb02acaafb1739968d9",
     "binary_sha256": "cabeb9c4eed50ab27f8896a2d3a0f9fe5860920450679ea1b3ffe8bead6bc967",
     "applied_source_files_verified": 136,
@@ -104,6 +114,37 @@
     "ordinary_status": "All25 outcomes PASS on the same executable:18 I2C/UART completed runs,2 complete SPI fixtures and5 expected strict pauses; no failing/time-out/cancelled run inherited",
     "firmware_source_identity": "75b29a1690026621153125d67e70097ae973e3cacccc68b35a2ca0b80e6f4f56",
     "ordinary_evidence": "build-runtime-state/uart-continuation/spi-stage/qualification-receipt.json"
+  },
+  "current_backend_qualification": {
+    "source_fingerprint": "048e00bbbc580d383ab3686ff6474f6f3d041ba34316c8bb9d013ef60e30109a",
+    "binary_sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a",
+    "applied_source_files_verified": 159,
+    "native_cases": {
+      "rmt": 24,
+      "spi": 27,
+      "spi-service": 8,
+      "uart": 67,
+      "uhci": 17,
+      "gdma": 18,
+      "memory": 12,
+      "i2c": 18,
+      "i2c-service": 18,
+      "lcd-cam": 66,
+      "ledc": 5,
+      "pcnt": 4,
+      "mcpwm": 16,
+      "sdm": 4,
+      "intmatrix": 10,
+      "electrical": 8,
+      "gpio": 19
+    },
+    "native_failed": 0,
+    "native_skipped": 0,
+    "evidence": "build-runtime-state/uart-continuation/peripheral-next-common-stage/native/results.json",
+    "ordinary_status": "Both complete unchanged SDK5.5.5/6.1 SPI loopback+directPSRAM programs PASS,16 real384-byte external-DMA transactions; original NOR/strict-negatives/extended profiles are not inherited to this executable.",
+    "ordinary_evidence": "build-runtime-state/uart-continuation/peripheral-next-common-stage/spi-psram-qualification-receipt.json",
+    "post_copy_overlay": "0009-psram-dma-transport.patch",
+    "unqualified": "Slave/multiline/DDR/directIOmux/fast-edge/replay remain separate current SPIExtendedStage criteria."
   },
   "independent_clock_dependency": {
     "source": "prototypes/coreclk/0013-hw-xtensa-esp32s3-BBPLL-power-validity-decoupled-from.patch",

@@ -194,6 +194,9 @@ static void graph(bool parallel, bool rc)
     QDict *reply = qtest_qmp(s, "{'execute':'qom-set','arguments':{'path':'/machine/soc/electrical','property':'project-json','value':%s}}", json->str);
     g_assert_false(qdict_haskey(reply, "error"));
     qobject_unref(reply);
+    reply = qtest_qmp(s, "{'execute':'cont'}");
+    g_assert_false(qdict_haskey(reply, "error"));
+    qobject_unref(reply);
     g_string_free(json, true);
     qobject_unref(p);
 }
@@ -343,29 +346,61 @@ static void test_rc(void)
     configure(0, 0, DIVIDER);
     Reference r = { .density = 0 };
     wr(0x24, FUNCTION);
-    double expected = 0, sum = 0, low = 3.3, high = 0, max_error = 0;
+    double expected = 0, low = 3.3, high = 0, max_error = 0;
+    double window_initial = 0, window_final = 0;
+    unsigned window_high_ticks = 0;
+    int64_t epoch = qtest_clock_step(s, 0);
     /* Explicit finite driver R=40 ohm, R=1 kohm, C=1 nF.
-     * Exponential integration of each REAL previous pulse interval supplies
-     * the independent physical oracle. Never substitute density*Vdd at GPIO.
+     * snapshot-json is a committed solver frame, not an implicit live sample.
+     * Compare the independent exponential trajectory at its actual timestamp.
+     * Integrate the physical RC mean by KCL over the complete steady window:
+     * integral(Vc dt) = integral(Vsource dt) - RC * (Vc_end - Vc_start).
+     * Neither pad voltage nor the SDM raw pulse source is averaged/replaced.
      */
-    const double decay = exp(-1e-6 / (1040 * 1e-9));
+    const double tau = 1040 * 1e-9;
+    const double decay = exp(-1e-6 / tau);
     for (unsigned n = 0; n < 512; n++) {
-        expected = (r.level ? 3.3 : 0) +
-                   (expected - (r.level ? 3.3 : 0)) * decay;
+        double interval_initial = expected;
+        double target = r.level ? 3.3 : 0;
+        if (n >= 256 && r.level) {
+            window_high_ticks++;
+        }
+        expected = target + (expected - target) * decay;
         step(1000);
         next(&r);
         QDict *snap = snapshot();
+        int64_t sampled_ns = g_ascii_strtoll(qdict_get_str(snap, "timestamp_ns"), NULL, 10);
+        int64_t interval_ns = epoch + n * 1000;
+        g_assert_cmpint(sampled_ns, >=, interval_ns);
+        g_assert_cmpint(sampled_ns, <=, interval_ns + 1000);
+        double sampled_expected = target + (interval_initial - target) *
+                                  exp(-(sampled_ns - interval_ns) * 1e-9 / tau);
         double actual = voltage(snap, 5);
-        max_error = MAX(max_error, fabs(actual - expected));
-        g_assert_cmpfloat_with_epsilon(actual, expected, .015);
+        bool source_high = sampled_ns == interval_ns + 1000 ? r.level : target != 0;
+        double source_v = voltage(snap, 4);
+        g_assert_true(source_high ? source_v > 2.4 : source_v < .8);
+        max_error = MAX(max_error, fabs(actual - sampled_expected));
+        g_test_message("SDM_RC_SAMPLE tick=%u requested_ns=%" PRId64 " sampled_ns=%" PRId64
+                       " voltage_v=%.9f expected_v=%.9f source_high=%u",
+                       n + 1, interval_ns + 1000, sampled_ns, actual, sampled_expected, source_high);
+        g_assert_cmpfloat_with_epsilon(actual, sampled_expected, .015);
+        if (n == 255) {
+            g_assert_cmpint(sampled_ns, ==, interval_ns + 1000);
+            window_initial = actual;
+        }
+        if (n == 511) {
+            g_assert_cmpint(sampled_ns, ==, interval_ns + 1000);
+        }
         if (n >= 256) {
-            sum += actual;
+            window_final = actual;
             low = MIN(low, actual);
             high = MAX(high, actual);
         }
         qobject_unref(snap);
     }
-    g_assert_cmpfloat_with_epsilon(sum / 256, 1.65, .015);
+    double mean = 3.3 * window_high_ticks / 256 -
+                  tau * (window_final - window_initial) / (256e-6);
+    g_assert_cmpfloat_with_epsilon(mean, 1.65, .015);
     g_assert_cmpfloat(high - low, >, .1); /* pulse-resolved ripple, not DC mean */
     wr(0x24, 0);
     QDict *before = snapshot();
@@ -380,7 +415,7 @@ static void test_rc(void)
     g_assert_cmpstr(qdict_get_str(after, "generation"), ==, generation);
     g_assert_cmpfloat_with_epsilon(voltage(after, 5), charged, .000001);
     qobject_unref(after);
-    g_test_message("SDM_EVIDENCE rc_mean_v=%.6f rc_ripple_v=%.6f max_exp_error_v=%.6f charge_reset=retained", sum / 256, high - low, max_error);
+    g_test_message("SDM_EVIDENCE rc_mean_v=%.6f rc_ripple_v=%.6f max_exp_error_v=%.6f charge_reset=retained mean_method=physical_KCL_complete_window", mean, high - low, max_error);
     qtest_quit(s);
 }
 

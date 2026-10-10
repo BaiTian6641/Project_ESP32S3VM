@@ -571,8 +571,8 @@
   ],
   "firmware": {
     "project": "tests/firmware/lcd_cam_native",
-    "official_camera_release": "v2.1.3",
-    "official_camera_commit": "b3c2aa273a88c7debf2b1683448933ca2b28aad9",
+    "official_camera_release": "v2.1.8",
+    "official_camera_commit": "b0556a78e13d42974aae19116f8a1e14c29b0f4d",
     "source_lock": "tests/firmware/lcd_cam_native/component-lock.json",
     "qualification": "Firmware build delegated; no runtime proof yet."
   },

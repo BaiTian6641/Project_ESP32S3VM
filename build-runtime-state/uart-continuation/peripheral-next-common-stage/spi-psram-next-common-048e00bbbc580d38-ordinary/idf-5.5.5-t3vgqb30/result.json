@@ -1,0 +1,138 @@
+{
+  "status": "PASS",
+  "sdk_profile": "idf-5.5.5",
+  "qemu": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+  "qemu_sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a",
+  "build_receipt": {
+    "path": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/spi-psram-stage/idf-5.5.5-abe7fed3869c6f6b/result.json",
+    "sha256": "18a0b8bcb59fd1ee740083c9471cdd1fa2a58604d170e278777f3c9efedd745d"
+  },
+  "prepared_source": {
+    "path": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/peripheral-next-common-stage/preparation/prepared-048e00bbbc580d38-source.json",
+    "sha256": "4f89adaf49721d2188933df7974b4b67e8f01370ad9cbccb72546fe46de624d7"
+  },
+  "evidence": "/home/polar/.cache/esp32s3vm/spi-psram-next-common-048e00bbbc580d38-ordinary/idf-5.5.5-t3vgqb30",
+  "boundary": "Actual normal SDK public SPI APIs with real direct quad40 PSRAM buffers and powered GPIO loopback; no memory-only inference, hardware/metrology or advanced/slave/multiline claim.",
+  "command": [
+    "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+    "-machine",
+    "esp32s3",
+    "-m",
+    "8M",
+    "-S",
+    "-nographic",
+    "-monitor",
+    "none",
+    "-serial",
+    "file:/home/polar/.cache/esp32s3vm/spi-psram-next-common-048e00bbbc580d38-ordinary/idf-5.5.5-t3vgqb30/uart.log",
+    "-drive",
+    "file=/home/polar/.cache/esp32s3vm/spi-psram-next-common-048e00bbbc580d38-ordinary/idf-5.5.5-t3vgqb30/writable-flash.bin,if=mtd,format=raw,cache=writethrough",
+    "-qmp",
+    "unix:/tmp/spi-psram-sdk-n_338lgj/qmp.sock,server=on,wait=off",
+    "-d",
+    "guest_errors",
+    "-D",
+    "/home/polar/.cache/esp32s3vm/spi-psram-next-common-048e00bbbc580d38-ordinary/idf-5.5.5-t3vgqb30/guest-errors.log",
+    "-accel",
+    "tcg,thread=single",
+    "-icount",
+    "shift=0,align=off,sleep=off"
+  ],
+  "oracle_proof": [
+    {
+      "host": 2,
+      "mode": 0,
+      "bytes": 384,
+      "tx": 1006832064,
+      "rx": 1006832512,
+      "tx_descriptor": 1070505020,
+      "rx_descriptor": 1070505060,
+      "fnv1a": "423b7a45"
+    },
+    {
+      "host": 2,
+      "mode": 1,
+      "bytes": 384,
+      "tx": 1006832064,
+      "rx": 1006832512,
+      "tx_descriptor": 1070505020,
+      "rx_descriptor": 1070505060,
+      "fnv1a": "7f1f6145"
+    },
+    {
+      "host": 2,
+      "mode": 2,
+      "bytes": 384,
+      "tx": 1006832064,
+      "rx": 1006832512,
+      "tx_descriptor": 1070505020,
+      "rx_descriptor": 1070505060,
+      "fnv1a": "70688445"
+    },
+    {
+      "host": 2,
+      "mode": 3,
+      "bytes": 384,
+      "tx": 1006832064,
+      "rx": 1006832512,
+      "tx_descriptor": 1070505020,
+      "rx_descriptor": 1070505060,
+      "fnv1a": "3b5d08c5"
+    },
+    {
+      "host": 3,
+      "mode": 0,
+      "bytes": 384,
+      "tx": 1006832064,
+      "rx": 1006832512,
+      "tx_descriptor": 1070505020,
+      "rx_descriptor": 1070505060,
+      "fnv1a": "55142b45"
+    },
+    {
+      "host": 3,
+      "mode": 1,
+      "bytes": 384,
+      "tx": 1006832064,
+      "rx": 1006832512,
+      "tx_descriptor": 1070505020,
+      "rx_descriptor": 1070505060,
+      "fnv1a": "82e0dd45"
+    },
+    {
+      "host": 3,
+      "mode": 2,
+      "bytes": 384,
+      "tx": 1006832064,
+      "rx": 1006832512,
+      "tx_descriptor": 1070505020,
+      "rx_descriptor": 1070505060,
+      "fnv1a": "537bbcc5"
+    },
+    {
+      "host": 3,
+      "mode": 3,
+      "bytes": 384,
+      "tx": 1006832064,
+      "rx": 1006832512,
+      "tx_descriptor": 1070505020,
+      "rx_descriptor": 1070505060,
+      "fnv1a": "a5c01c45"
+    }
+  ],
+  "actual_psram_transactions": 8,
+  "original_flash_unchanged": true,
+  "evidence_sha256": {
+    "stderr.log": "427be1c51aea07a7bd683c7db6580cf0183f5ed854419390fcdda667605948fc",
+    "compiled-source-identity.json": "170f3c0f05058f6f89486894b37ce6a2981dc9dcffac8892f2761a12ce7ee069",
+    "applied.json": "7e1008ea2b8b512aea2fe6fc6a9f80ecce4062d1c008b3ea862c43ca0254ce26",
+    "guest-errors.log": "4360642f18bc86d7e905cc380f06dae611c7e79b02ec081f401e3406948e02c0",
+    "stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "command.json": "2677a98bccf7dd9c0589cd858d0e8981db121f3bd97660af27ab9a51c919b9cc",
+    "completed.json": "c99384546ae6c82184c999890cb6d5bf6d2e72ecba6837089b99dced1a0a29f2",
+    "uart.log": "237c467fafc2f5ef21a650e2c6972ba45f9589837beb5b8cf3ed2807651cfce9",
+    "project.json": "4675ac1eadefc0d05137011b65911d40e88eb9f98bdb1be7c6ccc43a27a4b2cb",
+    "writable-flash.bin": "8a50b8023188518f357cb63ced36fbc0972ca7f708c16cc739ae2bedcc321e68",
+    "qmp-transcript.json": "deb3616b09e64dff2c2027b8817fbef3de7c9852b2a47b04c55641d482bd5a6a"
+  }
+}

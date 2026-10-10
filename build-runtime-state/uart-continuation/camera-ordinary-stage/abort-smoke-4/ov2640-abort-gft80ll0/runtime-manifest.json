@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-10T11:28:13.394432+00:00",
+  "host": {
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "architecture": "x86_64"
+  },
+  "qemu": {
+    "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/qemu-system-xtensa",
+    "sha256": "bf3fc1bd42624bdaecd9a7caf0c2fa92474ae1a795e3c09a4b816702bea1b931",
+    "version": "QEMU emulator version 9.2.2",
+    "machine": "esp32s3",
+    "source": {
+      "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43",
+      "commit": "40edccac415693c5130f91c01d84176ae6008566",
+      "tracked_changes": "M backends/meson.build\n M gdbstub/gdbstub.c\n M hw/adc/meson.build\n M hw/char/esp32_uart.c\n M hw/char/esp32s3_uart.c\n M hw/char/meson.build\n M hw/dma/esp32s3_gdma.c\n M hw/dma/esp_gdma.c\n M hw/gpio/esp32_gpio.c\n M hw/gpio/esp32s3_gpio.c\n M hw/gpio/meson.build\n M hw/i2c/meson.build\n M hw/misc/esp32s3_cache.c\n M hw/misc/esp32s3_rtc_cntl.c\n M hw/misc/esp_aes.c\n M hw/misc/esp_ds.c\n M hw/misc/esp_hmac.c\n M hw/misc/esp_rsa.c\n M hw/misc/esp_sha.c\n M hw/misc/meson.build\n M hw/misc/ssi_psram.c\n M hw/net/can/esp32s3_twai.c\n M hw/net/can/esp32s3_twai.h\n M hw/ssi/esp32s3_spi.c\n M hw/ssi/meson.build\n M hw/timer/esp_systimer.c\n M hw/timer/esp_timg.c\n M hw/timer/meson.build\n M hw/timer/trace-events\n M hw/xtensa/esp32s3.c\n M hw/xtensa/esp32s3_clk.c\n M hw/xtensa/esp32s3_intc.c\n M hw/xtensa/pic_cpu.c\n M include/hw/char/esp32_uart.h\n M include/hw/char/esp32s3_uart.h\n M include/hw/dma/esp_gdma.h\n M include/hw/gpio/esp32_gpio.h\n M include/hw/gpio/esp32s3_gpio.h\n M include/hw/misc/esp32s3_cache.h\n M include/hw/misc/esp32s3_rtc_cntl.h\n M include/hw/misc/esp_aes.h\n M include/hw/misc/esp_ds.h\n M include/hw/misc/esp_hmac.h\n M include/hw/misc/esp_rsa.h\n M include/hw/misc/esp_sha.h\n M include/hw/misc/ssi_psram.h\n M include/hw/ssi/esp32s3_spi.h\n M include/hw/timer/esp_systimer.h\n M include/hw/timer/esp_timg.h\n M include/hw/xtensa/esp32s3_clk.h\n M include/hw/xtensa/esp32s3_clk_defs.h\n M include/hw/xtensa/esp32s3_intc.h\n M include/sysemu/runstate.h\n M meson.build\n M migration/migration-hmp-cmds.c\n M migration/migration.c\n M migration/savevm.c\n M qapi/qom.json\n M system/cpus.c\n M system/runstate.c\n M system/vl.c\n M target/xtensa/cpu.c\n M target/xtensa/cpu.h\n M target/xtensa/gdbstub.c\n M target/xtensa/helper.c\n M target/xtensa/op_helper.c\n M target/xtensa/translate_tie_esp32s3.c\n M tests/qtest/meson.build\n M tests/unit/meson.build\n M util/qemu-timer.c"
+    }
+  },
+  "firmware": [
+    {
+      "path": "/home/polar/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/builds/camera-ordinary-c553ed905d41b264c806b8b0f22af994234c37be61509efdd1d6c082f635b36c/camera-rgb565/merged-flash.bin",
+      "sha256": "ae841c5e1372369201aba5db44a723576cc24f7767d8ad28f56ce87ef5767bd8",
+      "bytes": 4194304
+    }
+  ],
+  "qualification": "identity only; attach actual test results separately"
+}

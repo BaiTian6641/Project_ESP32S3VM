@@ -1,0 +1,7 @@
+# ninja log v6
+125172	125779	1791365453595642900	esp-idf/esp_system/ld/memory.ld	f5a09d963b08bc89
+125172	125779	1791365453595642900	/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native/build-i80/esp-idf/esp_system/ld/memory.ld	f5a09d963b08bc89
+125284	126120	1791365453944798600	esp-idf/esp_system/ld/sections.ld.in	515d7ec8c52c8706
+125284	126120	1791365453944798600	/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native/build-i80/esp-idf/esp_system/ld/sections.ld.in	515d7ec8c52c8706
+125869	129357	1791365455367075300	partition_table/partition-table.bin	84acd7601925b29e
+125869	129357	1791365455367075300	/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/tests/firmware/lcd_cam_native/build-i80/partition_table/partition-table.bin	84acd7601925b29e

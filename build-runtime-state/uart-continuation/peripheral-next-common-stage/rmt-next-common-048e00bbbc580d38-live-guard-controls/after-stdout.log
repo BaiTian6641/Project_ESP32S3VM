@@ -1,0 +1,27 @@
+TAP version 13
+# random seed: R02S7d27ee099f3195f625b8b0103df25776
+# Start of xtensa tests
+# Start of esp32s3 tests
+# Start of rmt tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1917572.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1917572.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# RX0 live demod pending=0 canceled; exact raw restart
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1917572.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1917572.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# RX0 live demod pending=1 canceled; exact raw restart
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1917572.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1917572.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# RX1 live demod pending=0 canceled; exact raw restart
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1917572.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1917572.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# RX1 live demod pending=1 canceled; exact raw restart
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1917572.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1917572.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# RX2 live demod pending=0 canceled; exact raw restart
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1917572.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1917572.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# RX2 live demod pending=1 canceled; exact raw restart
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1917572.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1917572.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# RX3 live demod pending=0 canceled; exact raw restart
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1917572.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1917572.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# RX3 live demod pending=1 canceled; exact raw restart
+ok 1 /xtensa/esp32s3/rmt/rx-live-demod-commit
+# slow test /xtensa/esp32s3/rmt/rx-live-demod-commit executed in 2.63 secs
+# End of rmt tests
+# End of esp32s3 tests
+# End of xtensa tests
+1..1

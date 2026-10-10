@@ -1,0 +1,9 @@
+TAP version 13
+# random seed: R02S72b1f30827829187651c3aeab94ecd7a
+# Start of xtensa tests
+# Start of esp32s3-memory tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1788843.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1788843.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -M esp32s3 -m 8M -S -accel qtest
+ok 1 /xtensa/esp32s3-memory/spi1-high-duplex
+# End of esp32s3-memory tests
+# End of xtensa tests
+1..1

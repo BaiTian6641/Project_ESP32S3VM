@@ -1,0 +1,277 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "qemu": {
+    "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/qemu-system-xtensa",
+    "sha256": "bf3fc1bd42624bdaecd9a7caf0c2fa92474ae1a795e3c09a4b816702bea1b931"
+  },
+  "prepared_source_record": {
+    "path": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/lcd-ordinary-stage/runtime-preparation-proven-net-irq-tests/prepared-02c5b1fd51470c43-public.json",
+    "sha256": "754b77fa52f33f4dd0add28682309632b2bda91ae2860030aebb072026d2acd0"
+  },
+  "runtime_manifest": {
+    "path": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/lcd-ordinary-stage/runtime-manifest-proven-net-irq-base.json",
+    "sha256": "f06cb4dc414bbbeed5ac3f04a4cbf0394a13cfc225b1ba5046ce079d4e2f54a7"
+  },
+  "qtest": {
+    "exit": 0,
+    "returncode": 0,
+    "passed": 12,
+    "failed": 0,
+    "skipped": 0,
+    "expected": 12,
+    "command": [
+      "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/tests/qtest/esp32s3-memory-test",
+      "--tap",
+      "--verbose"
+    ],
+    "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43",
+    "environment": {
+      "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/qemu-system-xtensa",
+      "UART_QTEST_PROJECT_DIR": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/uart/firmware"
+    },
+    "binary_sha256": "cd709be7606dd4ee726e245194548361d5c06ca8c91f9774c567ad6a42347eda",
+    "stdout": {
+      "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-02c5b1fd51470c43/native/memory.log",
+      "sha256": "307ccfceb128680445088c6cc835ca1524dca212bbee8dab62ec25b6a7c4db6f"
+    },
+    "stderr": {
+      "path": "/home/polar/.cache/esp32s3vm/lcd-ordinary-combined-02c5b1fd51470c43/native/memory-stderr.log",
+      "sha256": "e8a2e5bfc49c2903f3bcc7ffda49720775b4f794749bbc67944f9a856d4e5990"
+    },
+    "source_sha256": "856d8fcafd9006138ac62a50ffbca76e07a220d6b6a72dc06aa26330aa475831"
+  },
+  "sdk_consumers": [
+    {
+      "idf_profile": "idf-5.5.5",
+      "mode": "internal",
+      "result": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-memory-renewal-02c5b1fd51470c43-complete-record/idf-5.5.5-internal-20261008T123536-ffbgh3aa/idf-5.5.5-internal-20261010T181317-pn7sp3kt/result.json",
+        "sha256": "57c164b6b7c55ae4bfa81c921a5efa8b63b4de243f0ede56b0486cc09993e99c"
+      },
+      "uart_logs": [
+        {
+          "path": "/home/polar/.cache/esp32s3vm/lcd-memory-renewal-02c5b1fd51470c43-complete-record/idf-5.5.5-internal-20261008T123536-ffbgh3aa/idf-5.5.5-internal-20261010T181317-pn7sp3kt/boot1-uart.log",
+          "sha256": "33d3a6f16de030f9ad83db0aa21d70883ff1737ee51be6bc7f032a5ec1b55031"
+        },
+        {
+          "path": "/home/polar/.cache/esp32s3vm/lcd-memory-renewal-02c5b1fd51470c43-complete-record/idf-5.5.5-internal-20261008T123536-ffbgh3aa/idf-5.5.5-internal-20261010T181317-pn7sp3kt/boot2-uart.log",
+          "sha256": "ae92e8fedf81933f56ea7358963924df51180be1b8d9d69b28248c916b63e053"
+        },
+        {
+          "path": "/home/polar/.cache/esp32s3vm/lcd-memory-renewal-02c5b1fd51470c43-complete-record/idf-5.5.5-internal-20261008T123536-ffbgh3aa/idf-5.5.5-internal-20261010T181317-pn7sp3kt/boot3-uart.log",
+          "sha256": "38e9e4fc1acc52c252768873f8b5e7c3bc673d4126612d66efabb73d42e91acf"
+        }
+      ]
+    },
+    {
+      "idf_profile": "idf-5.5.5",
+      "mode": "psram",
+      "result": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-memory-renewal-02c5b1fd51470c43-complete-record/idf-5.5.5-psram-20261008T123745-d0y5us3_/idf-5.5.5-psram-20261010T181340-2ej3nshk/result.json",
+        "sha256": "e732fa304e256623eef77f8420eac1e28eac2162f7fa157ce1d566b1d0c7c717"
+      },
+      "uart_logs": [
+        {
+          "path": "/home/polar/.cache/esp32s3vm/lcd-memory-renewal-02c5b1fd51470c43-complete-record/idf-5.5.5-psram-20261008T123745-d0y5us3_/idf-5.5.5-psram-20261010T181340-2ej3nshk/boot1-uart.log",
+          "sha256": "cc7049477265602cef8b984a5b13a67ae42208633083a59ed6035de62834a850"
+        },
+        {
+          "path": "/home/polar/.cache/esp32s3vm/lcd-memory-renewal-02c5b1fd51470c43-complete-record/idf-5.5.5-psram-20261008T123745-d0y5us3_/idf-5.5.5-psram-20261010T181340-2ej3nshk/boot2-uart.log",
+          "sha256": "16480bceffc967aa81c6f4d158c8bb6a821c1d0e09b5063b1989599a3ac16122"
+        },
+        {
+          "path": "/home/polar/.cache/esp32s3vm/lcd-memory-renewal-02c5b1fd51470c43-complete-record/idf-5.5.5-psram-20261008T123745-d0y5us3_/idf-5.5.5-psram-20261010T181340-2ej3nshk/boot3-uart.log",
+          "sha256": "2e0cbd41dee6f4ae3a1eaed385930e6fa879f43ab646b56f45f285aa277113e9"
+        }
+      ]
+    },
+    {
+      "idf_profile": "idf-6.1",
+      "mode": "internal",
+      "result": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-memory-renewal-02c5b1fd51470c43-complete-record/idf-6.1-internal-20261008T123528-4i1ipyj7/idf-6.1-internal-20261010T181200-r0irvk3n/result.json",
+        "sha256": "40613ad68ddfa3a96017f62efd63aa26184ec7718676c46c32dc3410854aa149"
+      },
+      "uart_logs": [
+        {
+          "path": "/home/polar/.cache/esp32s3vm/lcd-memory-renewal-02c5b1fd51470c43-complete-record/idf-6.1-internal-20261008T123528-4i1ipyj7/idf-6.1-internal-20261010T181200-r0irvk3n/boot1-uart.log",
+          "sha256": "5482b980604ed0312d490b4ba9dec99de1d6426a4e790813d076b77c79c7c37b"
+        },
+        {
+          "path": "/home/polar/.cache/esp32s3vm/lcd-memory-renewal-02c5b1fd51470c43-complete-record/idf-6.1-internal-20261008T123528-4i1ipyj7/idf-6.1-internal-20261010T181200-r0irvk3n/boot2-uart.log",
+          "sha256": "52a42504e84d1427ef366e40915e47382e4740104714bd9f409b9489e7728558"
+        },
+        {
+          "path": "/home/polar/.cache/esp32s3vm/lcd-memory-renewal-02c5b1fd51470c43-complete-record/idf-6.1-internal-20261008T123528-4i1ipyj7/idf-6.1-internal-20261010T181200-r0irvk3n/boot3-uart.log",
+          "sha256": "37fd5477473c409713172bf55d36f8f3dca5795aeb293581ce949f13c11b07ca"
+        }
+      ]
+    },
+    {
+      "idf_profile": "idf-6.1",
+      "mode": "psram",
+      "result": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-memory-renewal-02c5b1fd51470c43-complete-record/idf-6.1-psram-20261008T123522-wg6m26an/idf-6.1-psram-20261010T181233-5xr5woya/result.json",
+        "sha256": "6884c3729cf483ce9845e86b1117689901997680b14ac38d868329703e5c0a77"
+      },
+      "uart_logs": [
+        {
+          "path": "/home/polar/.cache/esp32s3vm/lcd-memory-renewal-02c5b1fd51470c43-complete-record/idf-6.1-psram-20261008T123522-wg6m26an/idf-6.1-psram-20261010T181233-5xr5woya/boot1-uart.log",
+          "sha256": "a1f580fa7561995d239b4f4492befd3cfb8658da3f6688a8a52469eed2ece64f"
+        },
+        {
+          "path": "/home/polar/.cache/esp32s3vm/lcd-memory-renewal-02c5b1fd51470c43-complete-record/idf-6.1-psram-20261008T123522-wg6m26an/idf-6.1-psram-20261010T181233-5xr5woya/boot2-uart.log",
+          "sha256": "2c8422e8a25a4eb7d2a11b321207e970942a68c5fc1aa237bb662a15ada79d69"
+        },
+        {
+          "path": "/home/polar/.cache/esp32s3vm/lcd-memory-renewal-02c5b1fd51470c43-complete-record/idf-6.1-psram-20261008T123522-wg6m26an/idf-6.1-psram-20261010T181233-5xr5woya/boot3-uart.log",
+          "sha256": "179649dcecbb10a3a81a3253416ae225c66028970519c21c636312741ea33ecc"
+        }
+      ]
+    }
+  ],
+  "spi1_controls": [
+    {
+      "phase": "before",
+      "test": "spi1-high-duplex",
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c563ba1ac92036cd/build-wsl/tests/qtest/esp32s3-memory-test",
+        "--tap",
+        "--verbose",
+        "-p",
+        "/xtensa/esp32s3-memory/spi1-high-duplex"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c563ba1ac92036cd",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c563ba1ac92036cd/build-wsl/qemu-system-xtensa"
+      },
+      "binary": {
+        "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c563ba1ac92036cd/build-wsl/qemu-system-xtensa",
+        "sha256": "4d094ad488a8680522c5e03061f882c64b3f7b658a599eded8a59ade0d63e0c8"
+      },
+      "test_binary_sha256": "cc7a1386624a9faaa775e88e873621c6e0e40681a2ed495cee0d8ea0e195115e",
+      "returncode": -6,
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-spi1-controls-02c5b1fd51470c43/before-spi1-high-duplex-stdout.log",
+        "sha256": "18d22d6d6693a97f189b16a29a7924cc6ebced32e721ce0f4d953fdb098aa76d"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-spi1-controls-02c5b1fd51470c43/before-spi1-high-duplex-stderr.log",
+        "sha256": "056d29c6452ad622dbd4f38fec845056f9bde60342814e4ef2f6c7606d48884f"
+      },
+      "host_elapsed_ns": 611983747
+    },
+    {
+      "phase": "before",
+      "test": "spi1-asymmetric",
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c563ba1ac92036cd/build-wsl/tests/qtest/esp32s3-memory-test",
+        "--tap",
+        "--verbose",
+        "-p",
+        "/xtensa/esp32s3-memory/spi1-asymmetric"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c563ba1ac92036cd",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c563ba1ac92036cd/build-wsl/qemu-system-xtensa"
+      },
+      "binary": {
+        "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-c563ba1ac92036cd/build-wsl/qemu-system-xtensa",
+        "sha256": "4d094ad488a8680522c5e03061f882c64b3f7b658a599eded8a59ade0d63e0c8"
+      },
+      "test_binary_sha256": "cc7a1386624a9faaa775e88e873621c6e0e40681a2ed495cee0d8ea0e195115e",
+      "returncode": -6,
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-spi1-controls-02c5b1fd51470c43/before-spi1-asymmetric-stdout.log",
+        "sha256": "5b683379eb9c0fa3373517a539875bd944ffb61e90b20325a020b9f82b9254ff"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-spi1-controls-02c5b1fd51470c43/before-spi1-asymmetric-stderr.log",
+        "sha256": "056d29c6452ad622dbd4f38fec845056f9bde60342814e4ef2f6c7606d48884f"
+      },
+      "host_elapsed_ns": 519501705
+    },
+    {
+      "phase": "after",
+      "test": "spi1-high-duplex",
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/tests/qtest/esp32s3-memory-test",
+        "--tap",
+        "--verbose",
+        "-p",
+        "/xtensa/esp32s3-memory/spi1-high-duplex"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/qemu-system-xtensa"
+      },
+      "binary": {
+        "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/qemu-system-xtensa",
+        "sha256": "bf3fc1bd42624bdaecd9a7caf0c2fa92474ae1a795e3c09a4b816702bea1b931"
+      },
+      "test_binary_sha256": "cd709be7606dd4ee726e245194548361d5c06ca8c91f9774c567ad6a42347eda",
+      "returncode": 0,
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-spi1-controls-02c5b1fd51470c43/after-spi1-high-duplex-stdout.log",
+        "sha256": "8dc4e88397d37b0987497ad1d9b3a50e43aaa74dab9894a372d7462b2dc01e74"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-spi1-controls-02c5b1fd51470c43/after-spi1-high-duplex-stderr.log",
+        "sha256": "60af42cd6becb93c09bfefdf8103d8f2938d3a515b599c7bea931199231fbf87"
+      },
+      "host_elapsed_ns": 401551030
+    },
+    {
+      "phase": "after",
+      "test": "spi1-asymmetric",
+      "command": [
+        "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/tests/qtest/esp32s3-memory-test",
+        "--tap",
+        "--verbose",
+        "-p",
+        "/xtensa/esp32s3-memory/spi1-asymmetric"
+      ],
+      "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43",
+      "environment": {
+        "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/qemu-system-xtensa"
+      },
+      "binary": {
+        "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-02c5b1fd51470c43/build-wsl/qemu-system-xtensa",
+        "sha256": "bf3fc1bd42624bdaecd9a7caf0c2fa92474ae1a795e3c09a4b816702bea1b931"
+      },
+      "test_binary_sha256": "cd709be7606dd4ee726e245194548361d5c06ca8c91f9774c567ad6a42347eda",
+      "returncode": 0,
+      "stdout": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-spi1-controls-02c5b1fd51470c43/after-spi1-asymmetric-stdout.log",
+        "sha256": "a35f09fa2303c41654747442922832a618e12148c9be0ba2a15ac574a17ea2cf"
+      },
+      "stderr": {
+        "path": "/home/polar/.cache/esp32s3vm/lcd-spi1-controls-02c5b1fd51470c43/after-spi1-asymmetric-stderr.log",
+        "sha256": "60af42cd6becb93c09bfefdf8103d8f2938d3a515b599c7bea931199231fbf87"
+      },
+      "host_elapsed_ns": 401507173
+    }
+  ],
+  "boot_control": [
+    {
+      "profile": "arduino-idf-5.5.5",
+      "status": "PASS",
+      "result_path": "/home/polar/.cache/esp32s3vm/lcd-memory-boot-controls-02c5b1fd51470c43-current-helper/boot-arduino-idf-5.5.5-ce0i6km_/result.json",
+      "result_sha256": "cd58a5cb9ccc3a46116856d80aee2dcd950ecc6b028cf9a810c5a8c08d263faf"
+    },
+    {
+      "profile": "idf-5.5.5",
+      "status": "PASS",
+      "result_path": "/home/polar/.cache/esp32s3vm/lcd-memory-boot-controls-02c5b1fd51470c43-current-helper/boot-idf-5.5.5-7fnfu3rp/result.json",
+      "result_sha256": "069206737b9f0a500d55c873dfd3d1fbb6a539307b0c4164d0961dbb6211378b"
+    },
+    {
+      "profile": "idf-6.1",
+      "status": "PASS",
+      "result_path": "/home/polar/.cache/esp32s3vm/lcd-memory-boot-controls-02c5b1fd51470c43-current-helper/boot-idf-6.1-2q4ya3oh/result.json",
+      "result_sha256": "fcbe7a2758777065d4d454ba122c13292100bf925c3b1a490b540ee1a42a4f8f"
+    }
+  ],
+  "boundary": "Actual same-executable12 memory TAP,4 ordinary SDK data/persistence lifecycles,4 isolated SPI1 controls,3 frozen-image boot controls. No external LCD/CAM, octal, silicon timing or physical-hardware claim."
+}

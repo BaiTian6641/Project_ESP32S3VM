@@ -1,0 +1,30 @@
+{
+  "status": "PASS",
+  "returncode": 0,
+  "command": [
+    "python3",
+    "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/rmt/run-native-fixture.py",
+    "--qemu",
+    "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+    "--mode",
+    "connected",
+    "--evidence",
+    "/home/polar/.cache/esp32s3vm/rmt-next-common-048e00bbbc580d38-posix-connected",
+    "--flash",
+    "/home/polar/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/builds/rmt_native/facdfd3cbb2b6daa6bcb0626c176d03ffb32eb2c8bad889af2fab097c5fad25c/build/rmt-native.merged.bin",
+    "--sdkconfig",
+    "/home/polar/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/builds/rmt_native/facdfd3cbb2b6daa6bcb0626c176d03ffb32eb2c8bad889af2fab097c5fad25c/build/sdkconfig",
+    "--watchdog-seconds",
+    "3600"
+  ],
+  "qemu_sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a",
+  "prepared_record": {
+    "path": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/peripheral-next-common-stage/preparation/prepared-048e00bbbc580d38-source.json",
+    "sha256": "4f89adaf49721d2188933df7974b4b67e8f01370ad9cbccb72546fe46de624d7"
+  },
+  "result": {
+    "path": "/home/polar/.cache/esp32s3vm/rmt-next-common-048e00bbbc580d38-posix-connected/connected-20261010T185941-ibx6go_i/result.json",
+    "sha256": "0180331ae659d27ecc4a6537f3d81f49ce2b39c8d8d032f081843dd217612f13"
+  },
+  "boundary": "Actual unchanged full SDK6 RMT ordinary fixture; no hardware timing or RX carrier-envelope recovery qualification."
+}

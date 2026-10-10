@@ -2,17 +2,17 @@
   "schema_version": 1,
   "fixture": "lcd_cam_native external camera consumer",
   "status": "SOURCE_READY_NOT_EXERCISED",
-  "build_authorized": false,
+  "build_authorized": true,
   "runtime_qualified": false,
   "firmware_source": "tests/firmware/lcd_cam_native/main/lcd_cam_native.c",
   "ownership": "Only the CONFIG_LCD_CAM_NATIVE_CAMERA helpers/run_camera and the three new camera mode defaults are authored by this consumer worker. Includes, dependencies, Kconfig, common quad defaults, qualification and final combined firmware hash belong to the parent integration owner.",
   "camera_component": {
     "name": "espressif/esp32-camera",
-    "version": "2.1.3",
-    "commit": "b3c2aa273a88c7debf2b1683448933ca2b28aad9",
-    "source": "https://github.com/espressif/esp32-camera/tree/b3c2aa273a88c7debf2b1683448933ca2b28aad9",
+    "version": "2.1.8",
+    "commit": "b0556a78e13d42974aae19116f8a1e14c29b0f4d",
+    "source": "https://github.com/espressif/esp32-camera/tree/b0556a78e13d42974aae19116f8a1e14c29b0f4d",
     "local_path": "tests/firmware/lcd_cam_native/components/esp32-camera",
-    "policy": "Existing locked official component is read-only; no private driver access, force flag, vendor changes or fabricated DMA payload.",
+    "policy": "User-approved byte-exact official v2.1.8 on both locked SDKs. Historical v2.1.3 source/build/evidence retained, never inherited as new-pin runtime proof. No private driver access, force flag, vendor/SDK shim or fabricated DMA payload.",
     "public_api": ["esp_camera_init", "esp_camera_get_psram_mode", "esp_camera_fb_get", "esp_camera_fb_return", "esp_camera_deinit"],
     "psram_mode": "CONFIG_CAMERA_PSRAM_DMA=y sets g_psram_dma_mode before ordinary initialization. cam_config copies it to the active PSRAM mode and allocates per-frame DMA descriptors pointing directly to the external payload. Public esp_camera_get_psram_mode is required before and after init. Public esp_camera_set_psram_mode exists but is unnecessary here: it sets the same flag and performs a real deinit/reinit; it is deliberately not called while buffers are held.",
     "timeout": "Unmodified esp_camera_fb_get uses FB_GET_TIMEOUT=4000/portTICK_PERIOD_MS and cam_take tracks its remaining bounded timeout. Null gets log actual elapsed_us and abort the external consumer without an internal fallback. A host electrical pause is not a returned guest timeout."
@@ -104,9 +104,8 @@
     "aligned_range": "Consumer msync start=fb.buf&~31; size=round_up(capacity+(fb.buf-start),32). A16-aligned pointer has cache32 remainder0 or16: at most16 bytes of owned prefix and16 bytes of owned trailing guard are touched. Full range endpoints must be external RAM. The range never extends into adjacent dirty allocator metadata or another allocation. It covers the full bounded capture capacity, not an unsafe arbitrary partial JPEG length rounded outside ownership.",
     "cache_operations": "Real esp_cache_msync with DIR_M2C|INVALIDATE and an aligned owned range is checked before the first CPU payload/hash/header/decode read, again after the measured frame interval, on held-peer recovery checks, and immediately before each return/rearm. ESP_CACHE_MSYNC_FLAG_UNALIGNED is never used. The consumer never writes the input payload; no unnecessary C2M operation is fabricated for read-only input.",
     "primary_sources": [
-      "https://github.com/espressif/esp32-camera/blob/b3c2aa273a88c7debf2b1683448933ca2b28aad9/driver/cam_hal.c#L437-L529",
-      "https://github.com/espressif/esp32-camera/blob/b3c2aa273a88c7debf2b1683448933ca2b28aad9/target/esp32s3/ll_cam.c#L68-L89",
-      "https://github.com/espressif/esp32-camera/blob/b3c2aa273a88c7debf2b1683448933ca2b28aad9/target/esp32s3/ll_cam.c#L435-L534",
+      "https://github.com/espressif/esp32-camera/blob/b0556a78e13d42974aae19116f8a1e14c29b0f4d/driver/cam_hal.c",
+      "https://github.com/espressif/esp32-camera/blob/b0556a78e13d42974aae19116f8a1e14c29b0f4d/target/esp32s3/ll_cam.c",
       "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/esp_mm/include/esp_cache.h"
     ]
   },

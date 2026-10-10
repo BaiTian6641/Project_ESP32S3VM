@@ -1,0 +1,19 @@
+Adding SPI flash device
+ssi_psram: unsupported command (command 0xab, SPI mode)
+M25P80: Read id (command 0x90/0xAB) is not supported by device
+ssi_psram: unsupported command (command 0x05, SPI mode)
+ssi_psram: unsupported command (command 0x05, SPI mode)
+ssi_psram: unsupported command (command 0x5a, SPI mode)
+M25P80: Unknown cmd 5a
+ssi_psram: unsupported command (command 0x7a, SPI mode)
+M25P80: Unknown cmd 7a
+ssi_psram: unsupported command (command 0x05, SPI mode)
+ssi_psram: unsupported command (command 0x05, SPI mode)
+ssi_psram: unsupported command (command 0x05, SPI mode)
+ssi_psram: control command contains extra bytes (command 0x35, SPI mode)
+ssi_psram: unsupported command (command 0x04, SPI mode)
+esp32s3.apb_saradc: DIG timer trigger is not modeled (ADC-03); stored, no conversions
+Invalid read at addr 0x10200C, size 4, region 'er', reason: rejected
+Invalid read at addr 0x10200C, size 4, region 'er', reason: rejected
+ssi_psram: Exit QPI is available only in QPI mode (command 0xf5, SPI mode)
+Invalid read at addr 0x10200C, size 4, region 'er', reason: rejected

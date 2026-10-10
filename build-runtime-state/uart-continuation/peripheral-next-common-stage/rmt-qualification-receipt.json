@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "status": "PASS_FUNCTIONAL_GUARD_AND_EXISTING_RMT_PROFILES",
+  "qemu": {
+    "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+    "sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a"
+  },
+  "prepared_source_record": {
+    "path": "build-runtime-state/uart-continuation/peripheral-next-common-stage/preparation/prepared-048e00bbbc580d38-source.json",
+    "sha256": "4f89adaf49721d2188933df7974b4b67e8f01370ad9cbccb72546fe46de624d7"
+  },
+  "public_source_record": {
+    "path": "build-runtime-state/uart-continuation/peripheral-next-common-stage/preparation/prepared-048e00bbbc580d38-public.json",
+    "sha256": "71e45c42c3b35027c0321f34cab2e6068c1a9d2367d66e566974452342cd3ee2"
+  },
+  "native": {
+    "path": "/home/polar/.cache/esp32s3vm/peripheral-next-common-048e00bbbc580d38/native/results.json",
+    "sha256": "79e01186c4c4b21a7aeaf9e9f3d351ccad85d8a030ff81b788a0612e8dd0fdb9",
+    "full_closure_passed": 341,
+    "rmt_passed": 24,
+    "skipped": 0,
+    "applied_source_files_verified": 159
+  },
+  "isolated_controls": {
+    "path": "/home/polar/.cache/esp32s3vm/rmt-next-common-048e00bbbc580d38-live-guard-controls/results.json",
+    "sha256": "77ec1b5c16eacd76c93dff79f0be6c91c1bd36279a511bf0dcfb4071a878acae",
+    "only_applied_difference": "hw/timer/esp32s3_rmt.c",
+    "fixture_source_identical": true,
+    "actual": [
+      {
+        "phase": "before",
+        "returncode": -6,
+        "command": [
+          "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-7bec59fa997831f6/build-wsl/tests/qtest/esp32s3-rmt-test",
+          "--tap",
+          "--verbose",
+          "-p",
+          "/xtensa/esp32s3/rmt/rx-live-demod-commit"
+        ],
+        "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-7bec59fa997831f6",
+        "environment": {
+          "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-7bec59fa997831f6/build-wsl/qemu-system-xtensa"
+        },
+        "qemu": {
+          "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-7bec59fa997831f6/build-wsl/qemu-system-xtensa",
+          "sha256": "3801f291003457a01037a4405382141284e78acee1bd8f168c5ff66dac69aeab"
+        },
+        "fixture": {
+          "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-7bec59fa997831f6/build-wsl/tests/qtest/esp32s3-rmt-test",
+          "sha256": "375698faf490a097abe190c1a76314176575cb9a438e267fd690c16800d218d6"
+        },
+        "stdout": {
+          "path": "/home/polar/.cache/esp32s3vm/rmt-next-common-048e00bbbc580d38-live-guard-controls/before-stdout.log",
+          "sha256": "5517d396e4510294092dd026f9fe5dec751b451c556572f83965194ccfd06c8e"
+        },
+        "stderr": {
+          "path": "/home/polar/.cache/esp32s3vm/rmt-next-common-048e00bbbc580d38-live-guard-controls/before-stderr.log",
+          "sha256": "853bbbc61f9ab7417a2617fd211a6dda3c3a096cf1407ced521d4841cc881b56"
+        }
+      },
+      {
+        "phase": "after",
+        "returncode": 0,
+        "command": [
+          "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/tests/qtest/esp32s3-rmt-test",
+          "--tap",
+          "--verbose",
+          "-p",
+          "/xtensa/esp32s3/rmt/rx-live-demod-commit"
+        ],
+        "cwd": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38",
+        "environment": {
+          "QTEST_QEMU_BINARY": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa"
+        },
+        "qemu": {
+          "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+          "sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a"
+        },
+        "fixture": {
+          "path": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/tests/qtest/esp32s3-rmt-test",
+          "sha256": "572c2fd588a517a39e1ddca379c90d2946031d0e9d3ceccd91ce4b528efc3a2a"
+        },
+        "stdout": {
+          "path": "/home/polar/.cache/esp32s3vm/rmt-next-common-048e00bbbc580d38-live-guard-controls/after-stdout.log",
+          "sha256": "ba7d4e63c0775be2f08e9e0aaf25777ab45a8e52a8918d5858fd035687108982"
+        },
+        "stderr": {
+          "path": "/home/polar/.cache/esp32s3vm/rmt-next-common-048e00bbbc580d38-live-guard-controls/after-stderr.log",
+          "sha256": "bcfc31f249704a009f98cca467abbbfd757a57b8ce7a51dcd6897b7a3fe22c2c"
+        }
+      }
+    ]
+  },
+  "ordinary": [
+    {
+      "mode": "connected",
+      "path": "/home/polar/.cache/esp32s3vm/rmt-next-common-048e00bbbc580d38-posix-connected/qualification.json",
+      "sha256": "fbec9233277f07206e9ca08995ea631004cac99c2593248bbef981bbfa8773be",
+      "proof": {
+        "status": "PASS",
+        "returncode": 0,
+        "command": [
+          "python3",
+          "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/rmt/run-native-fixture.py",
+          "--qemu",
+          "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+          "--mode",
+          "connected",
+          "--evidence",
+          "/home/polar/.cache/esp32s3vm/rmt-next-common-048e00bbbc580d38-posix-connected",
+          "--flash",
+          "/home/polar/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/builds/rmt_native/facdfd3cbb2b6daa6bcb0626c176d03ffb32eb2c8bad889af2fab097c5fad25c/build/rmt-native.merged.bin",
+          "--sdkconfig",
+          "/home/polar/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/builds/rmt_native/facdfd3cbb2b6daa6bcb0626c176d03ffb32eb2c8bad889af2fab097c5fad25c/build/sdkconfig",
+          "--watchdog-seconds",
+          "3600"
+        ],
+        "qemu_sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a",
+        "prepared_record": {
+          "path": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/peripheral-next-common-stage/preparation/prepared-048e00bbbc580d38-source.json",
+          "sha256": "4f89adaf49721d2188933df7974b4b67e8f01370ad9cbccb72546fe46de624d7"
+        },
+        "result": {
+          "path": "/home/polar/.cache/esp32s3vm/rmt-next-common-048e00bbbc580d38-posix-connected/connected-20261010T185941-ibx6go_i/result.json",
+          "sha256": "0180331ae659d27ecc4a6537f3d81f49ce2b39c8d8d032f081843dd217612f13"
+        },
+        "boundary": "Actual unchanged full SDK6 RMT ordinary fixture; no hardware timing or RX carrier-envelope recovery qualification."
+      }
+    },
+    {
+      "mode": "disconnected",
+      "path": "/home/polar/.cache/esp32s3vm/rmt-next-common-048e00bbbc580d38-posix-disconnected/qualification.json",
+      "sha256": "73f9d6ea1d118c7212c5d05b938ac5e43bd3782cfbf4ea7b88b294c987cfbad7",
+      "proof": {
+        "status": "PASS",
+        "returncode": 0,
+        "command": [
+          "python3",
+          "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/qemu-extensions/prototypes/rmt/run-native-fixture.py",
+          "--qemu",
+          "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+          "--mode",
+          "disconnected",
+          "--evidence",
+          "/home/polar/.cache/esp32s3vm/rmt-next-common-048e00bbbc580d38-posix-disconnected",
+          "--flash",
+          "/home/polar/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/builds/rmt_native/1c85c3ae0e706d0b16906bbae49f44d60a3753bb4f9a1cc59f969cf73d183b15/build/rmt-native.merged.bin",
+          "--sdkconfig",
+          "/home/polar/.cache/esp32s3vm/idf/idf-6.1-fff9895c82d744c7237be8847347bdd1b07c6643/builds/rmt_native/1c85c3ae0e706d0b16906bbae49f44d60a3753bb4f9a1cc59f969cf73d183b15/build/sdkconfig",
+          "--watchdog-seconds",
+          "3600"
+        ],
+        "qemu_sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a",
+        "prepared_record": {
+          "path": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/peripheral-next-common-stage/preparation/prepared-048e00bbbc580d38-source.json",
+          "sha256": "4f89adaf49721d2188933df7974b4b67e8f01370ad9cbccb72546fe46de624d7"
+        },
+        "result": {
+          "path": "/home/polar/.cache/esp32s3vm/rmt-next-common-048e00bbbc580d38-posix-disconnected/disconnected-20261010T185941-cwz76jwe/result.json",
+          "sha256": "3b3c827a3c37753da121ad262818ab4a707f9861082c2d6b0e12011622ff211a"
+        },
+        "boundary": "Actual unchanged full SDK6 RMT ordinary fixture; no hardware timing or RX carrier-envelope recovery qualification."
+      }
+    }
+  ],
+  "overlay": {
+    "path": "qemu-extensions/prototypes/rmt/0002-live-demod-commit-guard.patch",
+    "sha256": "defc769a535faa5982840e1114125c60faa495688b34e321d76be8f82032f4ce",
+    "after_copies": true,
+    "model_sha256": "911b1d286c78ba316a283e5948e46dfc5e3c3fc768666de63ef7bef64dc5c516",
+    "native_fixture_sha256": "0ba2acf358db9bea157932b925c306dd928a9892a6873f75bd3931960871e3eb"
+  },
+  "boundaries": [
+    "Exact RX carrier-envelope acquisition/counters/ordering/latency still lacks primary algorithm/independent golden vectors. Guard rejects unsupported committed demod mode; it does not implement demodulation.",
+    "All4 RXchannels with/withoutpendingfilters, applied-vs-shadow behavior, realIRQ/cancellation, gate/refreset no-replay, exactraw-symbolrestart andfresh-start rejection are exercised.",
+    "No physical-board/metrology, new SPI ordinary acceptance or inherited different-executable proof.",
+    "Canonical operative source-profile migration/publication remain separate; current camera02c authority inputs untouched."
+  ]
+}

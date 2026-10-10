@@ -87,7 +87,7 @@
     "electrical/net-adapter.c": "00eea258dee763b4ae8ff064f32db1fcb5ee49cceacc60aa6261a3f533d7a8b1",
     "prototypes/memory/copies/ssi_psram.c": "ec635997d67a0fb3e820e521b8d3c52c34feb721ee7ecce057957731d36f8719",
     "prototypes/hostbus/hostbus-probe.h": "d33fd684efda06e440e0041259681731e72691ad3b8c0cfb50b7432239d79130",
-    "prototypes/lcd-cam/copies/esp32s3_ov2640_service.c": "e4c7bff53efd808f185ea4d50659a98aba28fb243b01866b1cfa80a93e4faec2",
+    "prototypes/lcd-cam/copies/esp32s3_ov2640_service.c": "4ac10946e0206f6f31bc442ff17f9c87990ae3d2ccaaf345f1ef4644f0231688",
     "prototypes/lcd-cam/copies/esp32s3_lcd_cam.c": "518a464106a6781c1c707fb41ba477c9f45972e6cdd382b79f8bbad59dcc6d5b",
     "prototypes/adc/copies/esp32s3_adc_provider.h": "63530e845df5830b6ec61f165f68fbf174c57373d9947969eb57399ee3530fd0",
     "prototypes/electrical-runtime/copies/esp32s3_electrical_observers.h": "fcdeecf87e9ff5d67b64d3f47b8b91cf47142b4bb79ae4cd209171ad7424cdb6",
@@ -113,7 +113,36 @@
     "prototypes/spi/copies/esp32s3-spi-test.c": "0d52c471fbed3c54e9797ca41e959bfe6918c79951f3900f68d29db5c174cb77",
     "prototypes/spi/copies/esp32s3_spi_binding.c": "f8599c3fb9995ddabb0c82d09fd3ddf7494348c01d9281b23d32f1eb62444130",
     "prototypes/spi/copies/esp32s3_spi_binding.h": "68271682b23aad58d20cb4b647ef82745d9d5b5e6d01277ad551eadf8fdfdb4f",
-    "prototypes/gdma/0007-hw-dma-peripheral-direction-reset-isolation.patch": "6d8db4f7884418256fd4305d6034906cfa2a471a814ab0cb2a43910c730f3de0"
+    "prototypes/gdma/0007-hw-dma-peripheral-direction-reset-isolation.patch": "6d8db4f7884418256fd4305d6034906cfa2a471a814ab0cb2a43910c730f3de0",
+    "prototypes/rmt/0001-current-foundation-integration.patch": "ca423a223b051510493f9d0a23528d3d9732fe40394a6d5531cac8baf01acdbf",
+    "prototypes/rmt/copies/esp32s3_rmt.c": "c29af90003628368216af5b4d6603ef4e77ccab525c1d9281f4d1c8e3a4e9f7c",
+    "prototypes/rmt/copies/esp32s3_rmt.h": "1784b5c56dcb8f3e5f40e55ec6536a1b590ddd1591571ce0f675b573f0a523f6",
+    "prototypes/rmt/copies/esp32s3-rmt-test.c": "8605f43312aa6b7ac485ba918b74c16ab8a969f01e1ef76a1893672ab3894f09",
+    "prototypes/rmt/copies/esp32s3_rmt_ws2812.c": "bce4232ba5e95d72bba891e99afb7714cefe4c45b9089a89b8a2cb689b2e0016",
+    "prototypes/rmt/copies/esp32s3_rmt_ws2812.h": "338d17f0fff95d169cac12d7fc655a031c01200b95c837870787ae4560611728",
+    "prototypes/rmt/copies/esp32s3_rmt_nec.c": "03ff6852def8980df16d22ba30b05e9eda417a3c4b38fc1954439b915e2eb771",
+    "prototypes/rmt/copies/esp32s3_rmt_nec.h": "0360a3b4148dd6d9e85f522e95ec992524e5c750d9275a1a25febb5edf26ad9a",
+    "prototypes/rmt/copies/esp32s3_rmt_peers.h": "b02d1cec69c168948206cd17a1d5a711331303479af77827ed8a671f4fa4f528",
+    "prototypes/rmt/copies/esp32s3_rmt_peers.c": "d7000b59b1edf55d352dc859970e01f9712e60e31345d7de6db6f1b7961de3f4",
+    "prototypes/pulse/copies/esp32s3_ledc.c": "608b14945d631c9f33b16ad6b61b74a8166c19163bcd7a0a29b9b5170f3e2074",
+    "prototypes/pulse/copies/esp32s3_ledc.h": "0c696c2c1e17b2454e6cdf697946ee9309bc62238ec34143fa7b5b4560f89e07",
+    "prototypes/pulse/copies/esp32s3-ledc-test.c": "4421ceddd4cadbc0fc5500bdd88c344385101b87f305a59e53aee184b243a054",
+    "prototypes/pulse/copies/esp32s3_pcnt.c": "9908316acca7a02b58b2cd7d6d963d26b3782b92e0cc897c88c85ce97ba1900b",
+    "prototypes/pulse/copies/esp32s3_pcnt.h": "f1b50dce3844219087c8f99779b5fc564b50762e7fcd2bc7137c9505988e1396",
+    "prototypes/pulse/copies/esp32s3-pcnt-test.c": "f8beefa91896af0d9f83824864b84e2b0f4254267efdad4b7e06a903ae8352c1",
+    "prototypes/pulse/copies/esp32s3_mcpwm.c": "d0d8b3d9756cf1a1f9a14ba2f2548665a2b284061ea4d4ed5150b12466712c0e",
+    "prototypes/pulse/copies/esp32s3_mcpwm.h": "676e35c61be2423793d726cd1401e57fae0f0c8aeaaf0a7dbb6758239f270e53",
+    "prototypes/pulse/copies/esp32s3-mcpwm-test.c": "631d746faba64669a985700e61bc845c01db6addbade2269abe960103805c71b",
+    "prototypes/pulse/copies/esp32s3_sdm.c": "07713d4440c269978d8047a40ea177e9639fd294b0e93c19db4d3e62ce89619e",
+    "prototypes/pulse/copies/esp32s3_sdm.h": "aa64ffd83cadbab92c0a801fceaecca52196360d8b3050d9b0b22155d03487fd",
+    "prototypes/pulse/copies/esp32s3-sdm-test.c": "1da4b091eab3cc69aa729e57d164758d8706678b153fb111cc610e7a32214654",
+    "prototypes/pulse/0005-current-foundation-integration.patch": "27f529e42cd802b4140164ad81bd355b96022d0ab2139edf7f2e8f79e189d68a",
+    "prototypes/electrical-runtime/0002-exact-grounded-source-factor-reuse.patch": "b1720f641e34c6c865385abf18b63d56199a58145abd2f8bd6d716e3e43a34a4",
+    "prototypes/intc/0004-unchanged-input-transition-guard.patch": "275b43be885926ea598173c7461513b8fd3d9172c43e839c8cc42b8444c7b276",
+    "prototypes/intc/0005-repeated-level-map-gate-regression.patch": "f7b00a821e9979176f1da5e24a3d345bf31984e9d579d8c2885dbda4aada9fae",
+    "prototypes/electrical-runtime/0003-native-physical-current-test-contract.patch": "18f009fb0178d9d19a8648609a333cb7cf722d05f390282d6233eb555c1da9f3",
+    "prototypes/rmt/0002-live-demod-commit-guard.patch": "defc769a535faa5982840e1114125c60faa495688b34e321d76be8f82032f4ce",
+    "prototypes/spi/0009-psram-dma-transport.patch": "e922797bbf1a4ab34a92be9f349dca0c92299b118394fbb8fd6854244e885343"
   },
   "profile": {
     "base_commit": "40edccac415693c5130f91c01d84176ae6008566",
@@ -619,6 +648,73 @@
           "hw/dma/esp_gdma.c"
         ],
         "patch_context": "ignore-space-change"
+      },
+      {
+        "source": "prototypes/rmt/0001-current-foundation-integration.patch",
+        "targets": [
+          "hw/xtensa/esp32s3.c",
+          "hw/timer/meson.build",
+          "hw/timer/trace-events",
+          "tests/qtest/meson.build"
+        ],
+        "patch_context": "strict"
+      },
+      {
+        "source": "prototypes/pulse/0005-current-foundation-integration.patch",
+        "targets": [
+          "hw/xtensa/esp32s3.c",
+          "hw/misc/meson.build",
+          "tests/qtest/meson.build"
+        ],
+        "patch_context": "strict"
+      },
+      {
+        "source": "prototypes/intc/0004-unchanged-input-transition-guard.patch",
+        "patch_context": "strict",
+        "targets": [
+          "hw/xtensa/esp32s3_intc.c"
+        ]
+      },
+      {
+        "source": "prototypes/electrical-runtime/0002-exact-grounded-source-factor-reuse.patch",
+        "patch_context": "strict",
+        "after_copies": true,
+        "targets": [
+          "hw/adc/net-dc.c",
+          "hw/adc/net-dc.h"
+        ]
+      },
+      {
+        "source": "prototypes/intc/0005-repeated-level-map-gate-regression.patch",
+        "patch_context": "strict",
+        "targets": [
+          "tests/qtest/esp32s3-intmatrix-test.c"
+        ]
+      },
+      {
+        "source": "prototypes/electrical-runtime/0003-native-physical-current-test-contract.patch",
+        "patch_context": "strict",
+        "after_copies": true,
+        "targets": [
+          "tests/qtest/esp32s3-electrical-test.c"
+        ]
+      },
+      {
+        "source": "prototypes/rmt/0002-live-demod-commit-guard.patch",
+        "patch_context": "strict",
+        "after_copies": true,
+        "targets": [
+          "hw/timer/esp32s3_rmt.c",
+          "tests/qtest/esp32s3-rmt-test.c"
+        ]
+      },
+      {
+        "source": "prototypes/spi/0009-psram-dma-transport.patch",
+        "patch_context": "strict",
+        "after_copies": true,
+        "targets": [
+          "hw/misc/esp32s3_gpspi.c"
+        ]
       }
     ],
     "copies": [
@@ -853,7 +949,92 @@
       {
         "source": "prototypes/spi/copies/esp32s3_spi_binding.h",
         "destination": "include/hw/ssi/esp32s3_spi_binding.h"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3_rmt.c",
+        "destination": "hw/timer/esp32s3_rmt.c"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3_rmt.h",
+        "destination": "include/hw/timer/esp32s3_rmt.h"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3-rmt-test.c",
+        "destination": "tests/qtest/esp32s3-rmt-test.c"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3_rmt_ws2812.c",
+        "destination": "hw/timer/esp32s3_rmt_ws2812.c"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3_rmt_ws2812.h",
+        "destination": "include/hw/timer/esp32s3_rmt_ws2812.h"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3_rmt_nec.c",
+        "destination": "hw/timer/esp32s3_rmt_nec.c"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3_rmt_nec.h",
+        "destination": "include/hw/timer/esp32s3_rmt_nec.h"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3_rmt_peers.h",
+        "destination": "include/hw/timer/esp32s3_rmt_peers.h"
+      },
+      {
+        "source": "prototypes/rmt/copies/esp32s3_rmt_peers.c",
+        "destination": "hw/timer/esp32s3_rmt_peers.c"
+      },
+      {
+        "source": "prototypes/pulse/copies/esp32s3_ledc.c",
+        "destination": "hw/misc/esp32s3_ledc.c"
+      },
+      {
+        "source": "prototypes/pulse/copies/esp32s3_ledc.h",
+        "destination": "include/hw/misc/esp32s3_ledc.h"
+      },
+      {
+        "source": "prototypes/pulse/copies/esp32s3-ledc-test.c",
+        "destination": "tests/qtest/esp32s3-ledc-test.c"
+      },
+      {
+        "source": "prototypes/pulse/copies/esp32s3_pcnt.c",
+        "destination": "hw/misc/esp32s3_pcnt.c"
+      },
+      {
+        "source": "prototypes/pulse/copies/esp32s3_pcnt.h",
+        "destination": "include/hw/misc/esp32s3_pcnt.h"
+      },
+      {
+        "source": "prototypes/pulse/copies/esp32s3-pcnt-test.c",
+        "destination": "tests/qtest/esp32s3-pcnt-test.c"
+      },
+      {
+        "source": "prototypes/pulse/copies/esp32s3_mcpwm.c",
+        "destination": "hw/misc/esp32s3_mcpwm.c"
+      },
+      {
+        "source": "prototypes/pulse/copies/esp32s3_mcpwm.h",
+        "destination": "include/hw/misc/esp32s3_mcpwm.h"
+      },
+      {
+        "source": "prototypes/pulse/copies/esp32s3-mcpwm-test.c",
+        "destination": "tests/qtest/esp32s3-mcpwm-test.c"
+      },
+      {
+        "source": "prototypes/pulse/copies/esp32s3_sdm.c",
+        "destination": "hw/misc/esp32s3_sdm.c"
+      },
+      {
+        "source": "prototypes/pulse/copies/esp32s3_sdm.h",
+        "destination": "include/hw/misc/esp32s3_sdm.h"
+      },
+      {
+        "source": "prototypes/pulse/copies/esp32s3-sdm-test.c",
+        "destination": "tests/qtest/esp32s3-sdm-test.c"
       }
     ]
-  }
+  },
+  "qualification": "Staged successor recipe ONLY: exact independently reviewed/qualified RMT live-demod guard and SPI-specific PSRAM transport candidates layered after unchanged accepted copies on proven02c NetIRQ closure. No new runtime/common/native/ordinary claim; final aggregate fresh build, source-bound native and every affected ordinary proof required. Current02c camera/pulse epoch inputs remain unchanged. Exact RMT envelope recovery and broader SPI extended gates remain open."
 }

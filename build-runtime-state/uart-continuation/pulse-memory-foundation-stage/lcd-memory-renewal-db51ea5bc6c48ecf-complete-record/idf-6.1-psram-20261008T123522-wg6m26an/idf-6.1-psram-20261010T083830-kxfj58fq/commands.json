@@ -1,0 +1,34 @@
+[
+  [
+    "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+    "-machine",
+    "esp32s3",
+    "-nographic",
+    "-monitor",
+    "none",
+    "-qmp",
+    "tcp:127.0.0.1:47348,server=on,wait=off",
+    "-m",
+    "8M",
+    "-serial",
+    "file:/home/polar/.cache/esp32s3vm/memory-session1-c__9u28m/session1-uart.log",
+    "-drive",
+    "file=/home/polar/.cache/esp32s3vm/memory-run-vqavdm4e/writable-flash.bin,if=mtd,format=raw,cache=writethrough"
+  ],
+  [
+    "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa",
+    "-machine",
+    "esp32s3",
+    "-nographic",
+    "-monitor",
+    "none",
+    "-qmp",
+    "tcp:127.0.0.1:46072,server=on,wait=off",
+    "-m",
+    "8M",
+    "-serial",
+    "file:/home/polar/.cache/esp32s3vm/memory-session2-fs9vwbo6/session2-uart.log",
+    "-drive",
+    "file=/home/polar/.cache/esp32s3vm/memory-run-vqavdm4e/writable-flash.bin,if=mtd,format=raw,cache=writethrough"
+  ]
+]

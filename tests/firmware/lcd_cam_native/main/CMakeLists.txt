@@ -1,1 +1,6 @@
-idf_component_register(SRCS "lcd_cam_native.c" INCLUDE_DIRS "." REQUIRES esp_lcd esp32-camera esp_driver_gpio esp_timer esp_mm esp_psram)
+if(IDF_VERSION_MAJOR GREATER_EQUAL 6)
+    set(counter_component esp_hal_systimer)
+else()
+    set(counter_component hal)
+endif()
+idf_component_register(SRCS "lcd_cam_native.c" INCLUDE_DIRS "." REQUIRES esp_lcd esp32-camera esp_driver_gpio esp_driver_ledc esp_timer esp_mm esp_psram ${counter_component})

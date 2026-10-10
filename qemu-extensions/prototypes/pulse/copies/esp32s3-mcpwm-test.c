@@ -77,6 +77,9 @@ static void graph(void)
     QDict *r = qtest_qmp(q, "{'execute':'qom-set','arguments':{'path':'/machine/soc/electrical','property':'project-json','value':%s}}", j->str);
     g_assert_false(qdict_haskey(r, "error"));
     qobject_unref(r);
+    r = qtest_qmp(q, "{'execute':'cont'}");
+    g_assert_false(qdict_haskey(r, "error"));
+    qobject_unref(r);
     g_string_free(j, true);
 }
 static void setup(unsigned g)
@@ -88,7 +91,8 @@ static void setup(unsigned g)
     qtest_writel(q, SYS(0x60), 0x00028401);
     qtest_writel(q, SYS(0x18), qtest_readl(q, SYS(0x18)) | BIT(17) | BIT(20));
     for (unsigned p = 4; p <= 17; p++) {
-        qtest_writel(q, PAD(p), INPUT);
+        qtest_writel(q, PAD(p), p == 17 ?
+                    ESP32S3_IOMUX_MCU_SEL_GPIO << R_IO_MUX_GPIOn_MCU_SEL_SHIFT : INPUT);
         if (p < 16) {
             qtest_writel(q, GPIO(GPIO_FUNC_OUT_SEL_CFG_OFFSET(p)), 156 + p);
         }
@@ -353,6 +357,9 @@ static void test_negative_capture(void)
     for (unsigned variant = 0; variant < 3; variant++) {
         setup(0);
         unsigned pad = variant == 0 ? 17 : 16;
+        if (variant == 0) {
+            qtest_writel(q, PAD(17), INPUT); /* Only this negative consumer uses UNKNOWN. */
+        }
         matrix(166, pad);
         if (variant == 1) {
             qtest_writel(q, PAD(16), ESP32S3_IOMUX_MCU_SEL_GPIO << R_IO_MUX_GPIOn_MCU_SEL_SHIFT);
@@ -366,6 +373,140 @@ static void test_negative_capture(void)
         qtest_quit(q);
     }
 }
+static void test_period_shadow_field_width(void)
+{
+    static const unsigned methods[] = {1, 2, 3, 3};
+    static const bool sync[] = {false, true, false, true};
+    for (unsigned g = 0; g < 2; g++) {
+        for (unsigned t = 0; t < 3; t++) {
+            for (unsigned k = 0; k < G_N_ELEMENTS(methods); k++) {
+                setup(g);
+                configure(t, 9, 3, 6, 1);
+                wr(T(t, 0), (19 << 8) | (methods[k] << 24));
+                if (sync[k]) {
+                    wr(T(t, 8), 1 | BIT(1)); /* software sync, phase zero */
+                } else {
+                    step(1000); /* old ten-tick period commits at TEZ */
+                }
+                g_assert_cmpuint(rd(T(t, 12)) & 0xffff, ==, 1);
+                wr(0x11c, UINT32_MAX);
+                step(1999);
+                g_assert_cmphex(rd(0x114) & BIT(t + 3), ==, 0);
+                step(1);
+                g_assert_cmphex(rd(0x114) & BIT(t + 3), ==, BIT(t + 3));
+                level(out(t, 0), true);
+                qtest_quit(q);
+            }
+        }
+    }
+}
+
+static void test_sync_direction_field_width(void)
+{
+    for (unsigned g = 0; g < 2; g++) {
+        for (unsigned t = 0; t < 3; t++) {
+            setup(g);
+            configure(t, 9, 3, 6, 3);
+            wr(T(t, 8), 1 | BIT(1) | (5 << 4) | BIT(20));
+            g_assert_cmphex(rd(T(t, 12)), ==, BIT(16) | 4);
+            step(500);
+            g_assert_cmphex(rd(T(t, 12)), ==, 1); /* real TEZ reverses up */
+            matrix((g ? 169 : 160) + t, 16);
+            wr(0x34, (4 + t) << (3 * t));
+            wr(T(t, 8), 1 | (5 << 4) | BIT(20));
+            source(true);
+            g_assert_cmphex(rd(T(t, 12)), ==, BIT(16) | 4);
+            step(500);
+            g_assert_cmphex(rd(T(t, 12)), ==, 1);
+            qtest_quit(q);
+        }
+    }
+}
+
+static void test_sync_above_period_wrap(void)
+{
+    for (unsigned g = 0; g < 2; g++) {
+        setup(g);
+        configure(0, 9, 3, 6, 1);
+        wr(T(0, 8), 1 | BIT(1) | (0xfffeU << 4));
+        g_assert_cmpuint(rd(T(0, 12)) & 0xffff, ==, 0xffff);
+        step(100);
+        g_assert_cmpuint(rd(T(0, 12)) & 0xffff, ==, 0);
+        step(100);
+        g_assert_cmpuint(rd(T(0, 12)) & 0xffff, ==, 1);
+        level(out(0, 0), true);
+        step(300);
+        level(out(0, 0), false);
+        qtest_quit(q);
+    }
+}
+
+static void test_gate_external_edge_baseline(void)
+{
+    for (unsigned g = 0; g < 2; g++) {
+        for (unsigned c = 0; c < 3; c++) {
+            setup(g);
+            configure(c, 99, 30, 60, 1);
+            matrix((g ? 169 : 160) + c, 16);
+            wr(0x34, (4 + c) << (3 * c));
+            wr(T(c, 8), 1 | (5 << 4));
+            matrix((g ? 175 : 166) + c, 16);
+            wr(0xe8, 1);
+            wr(0xf0 + 4 * c, 1 | BIT(1) | BIT(2));
+            wr(0x11c, UINT32_MAX);
+            unsigned gate = g ? 20 : 17;
+            qtest_writel(q, SYS(0x18), qtest_readl(q, SYS(0x18)) & ~BIT(gate));
+            source(true); /* real input changed with the consumer stopped */
+            qtest_writel(q, SYS(0x18), qtest_readl(q, SYS(0x18)) | BIT(gate));
+            g_assert_cmphex(rd(0x114) & BIT(27 + c), ==, 0);
+            g_assert_cmpuint(rd(T(c, 12)) & 0xffff, ==, 1);
+            source(false); /* first post-resume falling transition is real */
+            g_assert_cmphex(rd(0x114) & BIT(27 + c), ==, BIT(27 + c));
+            g_assert_cmphex(rd(0x108) & BIT(c), ==, BIT(c));
+            wr(0x11c, BIT(27 + c));
+            source(true);
+            g_assert_cmphex(rd(0x114) & BIT(27 + c), ==, BIT(27 + c));
+            g_assert_cmphex(rd(0x108) & BIT(c), ==, 0);
+            g_assert_cmpuint(rd(T(c, 12)) & 0xffff, ==, 6);
+            qtest_quit(q);
+        }
+    }
+}
+
+static void test_ost_deasserted_status_recovery(void)
+{
+    for (unsigned g = 0; g < 2; g++) {
+        for (unsigned o = 0; o < 3; o++) {
+            setup(g);
+            configure(o, 9, 3, 6, 1);
+            matrix((g ? 169 : 160) + 3, 16);
+            wr(0xe4, 1 | BIT(3));
+            wr(O(o, 0x2c), BIT(7) | (1 << 14));
+            wr(0x110, BIT(24 + o));
+            source(true); step(100);
+            level(out(o, 0), false);
+            g_assert_cmphex(rd(0xe4) & BIT(6), ==, BIT(6));
+            g_assert_cmphex(rd(O(o, 0x34)) & 2, ==, 2);
+            g_assert_true(qtest_get_irq(q, 0));
+            source(false); step(100);
+            /* A genuinely inactive source permits public SDK recovery, but
+             * its previous forced output and pending interrupt remain. */
+            g_assert_cmphex(rd(0xe4) & BIT(6), ==, 0);
+            g_assert_cmphex(rd(O(o, 0x34)) & 2, ==, 0);
+            g_assert_cmphex(rd(0x114) & BIT(12), ==, BIT(12));
+            g_assert_cmphex(rd(0x114) & BIT(24 + o), ==, BIT(24 + o));
+            g_assert_true(qtest_get_irq(q, 0));
+            level(out(o, 0), false);
+            wr(O(o, 0x30), 1);
+            level(out(o, 0), true);
+            wr(0x11c, UINT32_MAX);
+            g_assert_false(qtest_get_irq(q, 0));
+            step(100); level(out(o, 0), false);
+            qtest_quit(q);
+        }
+    }
+}
+
 int main(int argc, char **argv)
 {
     g_test_init(&argc, &argv, NULL);
@@ -380,5 +521,10 @@ int main(int argc, char **argv)
     qtest_add_func("/esp32s3/mcpwm/negative-physical-inputs", test_negative_capture);
     qtest_add_func("/esp32s3/mcpwm/ost-clear-active-fault", test_ost_clear_active_fault);
     qtest_add_func("/esp32s3/mcpwm/nci-next-event-toggle", test_nci_next_event_toggle);
+    qtest_add_func("/esp32s3/mcpwm/period-shadow-field-width", test_period_shadow_field_width);
+    qtest_add_func("/esp32s3/mcpwm/sync-direction-field-width", test_sync_direction_field_width);
+    qtest_add_func("/esp32s3/mcpwm/sync-above-period-wrap", test_sync_above_period_wrap);
+    qtest_add_func("/esp32s3/mcpwm/gate-external-edge-baseline", test_gate_external_edge_baseline);
+    qtest_add_func("/esp32s3/mcpwm/ost-deasserted-status-recovery", test_ost_deasserted_status_recovery);
     return g_test_run();
 }

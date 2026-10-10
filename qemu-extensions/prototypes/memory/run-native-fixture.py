@@ -198,7 +198,7 @@ def wait_boot(proc, uart, offset, watchdog):
     deadline = time.monotonic() + watchdog
     while True:
         text = read_guest_log(uart, offset, deadline)
-        if re.search(r"^MEMORY_NATIVE_DONE .*$", text, re.M):
+        if re.search(r"^MEMORY_NATIVE_DONE [^\r\n]*\r?\n", text, re.M):
             require(len(re.findall(r"^MEMORY_NATIVE_BOOT ", text, re.M)) == 1, "Unexpected spontaneous reboot")
             return text
         require(proc.poll() is None, f"QEMU exited {proc.returncode} before complete consumer outcome")
@@ -345,10 +345,9 @@ def provenance(args, evidence):
             source_map.get("negative_without_spi1_fix") is False,
             "Source map does not describe the approved frozen positive candidate")
     (evidence / "source-map.json").write_text(json.dumps(source_map, indent=2) + "\n")
-    # Standard tools/prepare-qemu-runtime.py integrated record; the retired
-    # memory-only prefix+delta manifest is not accepted for this lineage.
-    prepared_path = pathlib.Path(__file__).resolve().parents[3] / \
-        f"build-runtime-state/runtime-{source_map['prefix_fingerprint'][:16]}-source.json"
+    # Bind the actual prepared lineage explicitly; its filename/location is not
+    # an identity and need not come from one particular preparation frontend.
+    prepared_path = args.prepared_source_record.resolve(strict=True)
     prepared = json.loads(prepared_path.read_text())
     require(prepared["base_commit"] == source_map["base_commit"] and
             prepared["fingerprint"] == source_map["prefix_fingerprint"] and
@@ -392,7 +391,7 @@ def provenance(args, evidence):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ("qemu", "qemu-source", "flash", "build-dir", "sdk-metadata", "source-map", "evidence"):
+    for name in ("qemu", "qemu-source", "flash", "build-dir", "sdk-metadata", "source-map", "prepared-source-record", "evidence"):
         parser.add_argument(f"--{name}", required=True, type=pathlib.Path)
     parser.add_argument("--mode", required=True, choices=("internal", "psram"))
     parser.add_argument("--idf-profile", required=True, choices=LOCKS)

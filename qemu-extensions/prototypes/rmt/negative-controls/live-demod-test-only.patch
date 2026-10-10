@@ -1,0 +1,69 @@
+diff --git a/tests/qtest/esp32s3-rmt-test.c b/tests/qtest/esp32s3-rmt-test.c
+--- a/tests/qtest/esp32s3-rmt-test.c
++++ b/tests/qtest/esp32s3-rmt-test.c
+@@ -1253,6 +1253,58 @@
+     qtest_quit(s);
+ }
+ 
++static void test_rx_live_demod_commit(void)
++{
++    for (unsigned ch = 0; ch < 4; ch++) {
++        for (unsigned pending = 0; pending < 2; pending++) {
++            setup(); software_output();
++            qtest_writel(s, GPIO(GPIO_FUNC_IN_SEL_CFG_OFFSET(81 + ch)),
++                         BIT(7) | 5);
++            uint32_t raw = 80 | (100 << 8) | BIT(24);
++            uint32_t flags = RX_OWNER | (pending ? BIT(4) | (160 << 5) : 0);
++            rx_setup(ch, 80, 100, flags);
++            step(1000); software_drive(true); step(1000);
++            wr(RX_CONF0(ch), raw | BIT(28));
++            /* Shadow-only demod writes leave the applied raw receiver alive. */
++            irq(0, 0);
++            g_assert_cmphex(rd(RX_STATUS(ch)) & FSM_MASK, ==, BIT(22));
++            wr(RX_CONF1(ch), flags | BIT(0) | RX_UPDATE);
++            irq(RX_ERR(ch), 0);
++            g_assert_cmphex(rd(RX_STATUS(ch)) & FSM_MASK, ==, 0);
++            rx_to_apb(ch);
++            uint32_t before = captured(ch, 0);
++            software_drive(false); step(300000);
++            software_drive(true); step(300000);
++            g_assert_cmphex(captured(ch, 0), ==, before);
++            irq(RX_ERR(ch), 0);
++            /* Gates and phase reset cannot replay a canceled filter/idle. */
++            uint32_t gate = qtest_readl(s, SYS(0x18));
++            qtest_writel(s, SYS(0x18), gate & ~BIT(9));
++            qtest_writel(s, SYS(0x18), gate);
++            wr(REF_RST, BIT(4 + ch)); step(300000);
++            irq(RX_ERR(ch), 0);
++            rx_disable(ch); wr(CLR, UINT32_MAX);
++            software_drive(false);
++            rx_setup(ch, 80, 100, RX_OWNER);
++            step(1000); software_drive(true); step(7000);
++            software_drive(false); step(11000); software_drive(true);
++            rx_disable(ch); rx_to_apb(ch);
++            g_assert_cmphex(captured(ch, 0), ==, symbol(7, true, 11, false));
++            irq(0, 0);
++            /* Fresh-start rejection shares the same guard. */
++            wr(RX_CONF0(ch), raw | BIT(28));
++            wr(RX_CONF1(ch), RX_OWNER | BIT(0) | RX_UPDATE);
++            irq(RX_ERR(ch), 0);
++            uint32_t reset = qtest_readl(s, SYS(0x20));
++            qtest_writel(s, SYS(0x20), reset | BIT(9));
++            qtest_writel(s, SYS(0x20), reset & ~BIT(9));
++            step(300000); irq(0, 0);
++            g_test_message("RX%u live demod pending=%u canceled; exact raw restart", ch, pending);
++            qtest_quit(s);
++        }
++    }
++}
++
+ int main(int argc, char **argv)
+ {
+     g_test_init(&argc, &argv, NULL);
+@@ -1279,5 +1331,6 @@
+     qtest_add_func("/esp32s3/rmt/peer/nec-disconnected", test_peer_nec_disconnected);
+     qtest_add_func("/esp32s3/rmt/rx-live-clock-ref-reset", test_rx_live_clock_ref_reset);
+     qtest_add_func("/esp32s3/rmt/rx-pending-filter-clock", test_rx_pending_filter_clock);
++    qtest_add_func("/esp32s3/rmt/rx-live-demod-commit", test_rx_live_demod_commit);
+     return g_test_run();
+ }

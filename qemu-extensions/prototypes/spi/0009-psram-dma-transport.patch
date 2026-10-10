@@ -1,0 +1,16 @@
+diff --git a/hw/misc/esp32s3_gpspi.c b/hw/misc/esp32s3_gpspi.c
+--- a/hw/misc/esp32s3_gpspi.c
++++ b/hw/misc/esp32s3_gpspi.c
+@@ -114,12 +114,6 @@
+     if (!st->fsm_active || st->halted || st->peripheral != peripheral(s)) {
+         return false;
+     }
+-    /* This lane deliberately qualifies internal RAM only. External cache
+-     * aliases are not proof of an EDMA/PSRAM reachable memory path. */
+-    if (st->cur_buf_addr >= 0x3c000000 && st->cur_buf_addr < 0x3e000000) {
+-        pause_dependency(s, "PSRAM DMA path is unsupported/unqualified");
+-        return false;
+-    }
+     return rx ? esp_gdma_write_channel(s->gdma, chan, byte, 1) :
+                 esp_gdma_read_channel(s->gdma, chan, byte, 1);
+ }

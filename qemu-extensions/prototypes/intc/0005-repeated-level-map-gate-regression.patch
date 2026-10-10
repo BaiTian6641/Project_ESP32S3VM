@@ -1,0 +1,87 @@
+diff --git a/tests/qtest/esp32s3-intmatrix-test.c b/tests/qtest/esp32s3-intmatrix-test.c
+--- a/tests/qtest/esp32s3-intmatrix-test.c
++++ b/tests/qtest/esp32s3-intmatrix-test.c
+@@ -398,6 +398,74 @@
+ 
+     esp32s3_intmatrix_teardown();
+ }
++/* External matrix-line boundary, including the real CPU edge input 10.
++ * CPU INTSET latching/INTCLEAR acknowledgement are not intercepted here:
++ * those remain in pic_cpu.c/exc_helper.c. Repeated publications must not
++ * replace the genuine low->high transitions which reach that owner. */
++static void test_repeated_levels_map_gate_and_reassert(void)
++{
++    esp32s3_intmatrix_setup();
++    map_source(0, SRC_UART0, 4);
++    map_source(1, SRC_UART0, 10);
++    drive_source(SRC_UART0, 1);
++    for (unsigned i = 0; i < 32; ++i) {
++        drive_source(SRC_UART0, i & 1 ? 7 : 1);
++        drive_source(SRC_SDIO_HOST, 0);
++        g_assert_true(out_level(0, 4));
++        g_assert_true(out_level(1, 10));
++        g_assert_true(source_status(0, SRC_UART0));
++        g_assert_true(source_status(1, SRC_UART0));
++    }
++
++    /* Detach/remap while still high without any subsequent input edge. */
++    map_source(0, SRC_UART0, 6);
++    map_source(1, SRC_UART0, 6);
++    drive_source(SRC_UART0, 1);
++    g_assert_all_lines_low();
++    g_assert_true(source_status(0, SRC_UART0));
++    map_source(0, SRC_UART0, 4);
++    map_source(1, SRC_UART0, 10);
++    g_assert_true(out_level(0, 4));
++    g_assert_true(out_level(1, 10));
++
++    /* A source clear followed by repeated low publications clears the
++     * physical line; the next real source assertion must raise it again. */
++    drive_source(SRC_UART0, 0);
++    for (unsigned i = 0; i < 32; ++i) {
++        drive_source(SRC_UART0, 0);
++        g_assert_all_lines_low();
++    }
++    drive_source(SRC_UART0, 1);
++    g_assert_true(out_level(0, 4));
++    g_assert_true(out_level(1, 10));
++
++    /* Enabled CPU1 follows the genuine clear; CPU0 holds its old state.
++     * Re-enable must propagate the stored low even without a new input. */
++    qtest_writel(global_qtest, CLOCK_GATE_REG(0), 0);
++    drive_source(SRC_UART0, 0);
++    drive_source(SRC_UART0, 0);
++    g_assert_true(out_level(0, 4));
++    g_assert_true(source_status(0, SRC_UART0));
++    g_assert_false(out_level(1, 10));
++    g_assert_false(source_status(1, SRC_UART0));
++    qtest_writel(global_qtest, CLOCK_GATE_REG(0), CLK_EN);
++    g_assert_all_lines_low();
++    g_assert_false(source_status(0, SRC_UART0));
++
++    /* The inverse gate transition must propagate a stored assertion too. */
++    qtest_writel(global_qtest, CLOCK_GATE_REG(1), 0);
++    drive_source(SRC_UART0, 1);
++    drive_source(SRC_UART0, 7);
++    g_assert_true(out_level(0, 4));
++    g_assert_false(out_level(1, 10));
++    qtest_writel(global_qtest, CLOCK_GATE_REG(1), CLK_EN);
++    g_assert_true(out_level(1, 10));
++    drive_source(SRC_SDIO_HOST, 0);
++    drive_source(SRC_UART0, 0);
++    g_assert_all_lines_low();
++    esp32s3_intmatrix_teardown();
++}
++
+ 
+ int main(int argc, char **argv)
+ {
+@@ -419,6 +487,8 @@
+     qtest_add_func("esp32s3-intmatrix/machine-reset", test_machine_reset);
+     qtest_add_func("esp32s3-intmatrix/clock-gate-freeze",
+                    test_clock_gate_freeze);
++    qtest_add_func("esp32s3-intmatrix/repeated-levels-map-gate-reassert",
++                   test_repeated_levels_map_gate_and_reassert);
+ 
+     ret = g_test_run();
+ 

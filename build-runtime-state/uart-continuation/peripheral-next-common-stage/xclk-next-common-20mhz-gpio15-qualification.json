@@ -1,0 +1,58 @@
+[
+  {
+    "status": "PASS",
+    "mode": "connected",
+    "binary": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+    "binary_sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a",
+    "prepared_record": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/peripheral-next-common-stage/preparation/prepared-048e00bbbc580d38-source.json",
+    "prepared_record_sha256": "4f89adaf49721d2188933df7974b4b67e8f01370ad9cbccb72546fe46de624d7",
+    "pin": 15,
+    "sense_pin": 18,
+    "matrix_signal": 73,
+    "channel": 0,
+    "timer": 0,
+    "source_hz": 80000000,
+    "resolution_bits": 1,
+    "divider_fixed8": 512,
+    "period_ns": 50,
+    "high_ns": 25,
+    "observed_half_periods": 256,
+    "evidence_hashes": {
+      "command.json": "40ae17bed1ca2b738052277540686f0a21e26766c661a24bbd3e6d8cc83708da",
+      "project.json": "890b55fba7c7c37d5b65fa4b0d5358b9173e1674cbb7e94d5602909da1333c1a",
+      "qmp.log": "947a796c6892b32f6725a0406b9dcb9d478c4ba70661a38e0099a0ad15f2c843",
+      "qtest.log": "42468a6dfdecfdb7f861c90f3067b25e6c712ab9128a49158082ba46c0f2015e",
+      "raw-edges.json": "c330cf677c7fc9d02d625b7197894723678d7cb0f942312d4903bd41eb66ad3f",
+      "stderr.log": "f7a91a532aef159341e0a5cf4928632e99566dc29a3af9a8366a1b3473a16f38"
+    },
+    "boundary": "Real powered NativeNet20MHz resolved pad edges and real disconnected-wire negative; functional native timing, not independent silicon/board/camera metrology"
+  },
+  {
+    "status": "PASS",
+    "mode": "disconnected",
+    "binary": "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa",
+    "binary_sha256": "ad0ebe2e22eef17a5fd8482309319b35b757711e752de3b5dd43d00bf6c9eb0a",
+    "prepared_record": "/mnt/c/Users/weyst/Documents/ChatGPT/ESP32S3VM/Project_ESP32S3VM/build-runtime-state/uart-continuation/peripheral-next-common-stage/preparation/prepared-048e00bbbc580d38-source.json",
+    "prepared_record_sha256": "4f89adaf49721d2188933df7974b4b67e8f01370ad9cbccb72546fe46de624d7",
+    "pin": 15,
+    "sense_pin": 18,
+    "matrix_signal": 73,
+    "channel": 0,
+    "timer": 0,
+    "source_hz": 80000000,
+    "resolution_bits": 1,
+    "divider_fixed8": 512,
+    "period_ns": 50,
+    "high_ns": 25,
+    "observed_half_periods": 256,
+    "evidence_hashes": {
+      "command.json": "7e3542625a427a826b97e7194fd3741505f36330a776c5f2b6aa867869225644",
+      "project.json": "60c990e6fe8612dd1e9e8e04fdc316d3f929c464d959754f4cab2bd2eb972d97",
+      "qmp.log": "cae3bc95ad8715322f4dafb87924055a6383c9e41a93e3a82e1893a03a93c3e5",
+      "qtest.log": "42468a6dfdecfdb7f861c90f3067b25e6c712ab9128a49158082ba46c0f2015e",
+      "raw-edges.json": "5df60643e00fbc5d3a6ce41486c2018da162ca3d4822d217db26c8a155be47b4",
+      "stderr.log": "f7a91a532aef159341e0a5cf4928632e99566dc29a3af9a8366a1b3473a16f38"
+    },
+    "boundary": "Real powered NativeNet20MHz resolved pad edges and real disconnected-wire negative; functional native timing, not independent silicon/board/camera metrology"
+  }
+]

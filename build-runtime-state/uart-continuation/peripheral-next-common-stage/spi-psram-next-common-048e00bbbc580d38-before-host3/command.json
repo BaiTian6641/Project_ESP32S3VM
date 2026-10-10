@@ -1,0 +1,23 @@
+[
+  "/home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-cb5fe790230bb56a/build-wsl/qemu-system-xtensa",
+  "-machine",
+  "esp32s3",
+  "-m",
+  "8M",
+  "-S",
+  "-nographic",
+  "-monitor",
+  "none",
+  "-serial",
+  "none",
+  "-accel",
+  "qtest",
+  "-d",
+  "guest_errors",
+  "-qmp",
+  "unix:/tmp/spi-psram-wire-2h4ea0vi/qmp.sock,server=on,wait=off",
+  "-qtest",
+  "unix:/tmp/spi-psram-wire-2h4ea0vi/qtest.sock,server=on,wait=off",
+  "-qtest-log",
+  "/dev/null"
+]

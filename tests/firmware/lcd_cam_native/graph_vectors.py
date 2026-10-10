@@ -74,11 +74,22 @@ def project(scenario="i80"):
     parts[-1]["kind"] = "device"
     parts[-1]["parameters"] = {}
     parts[-1]["attributes"] = {
+        "native_model": kind,
         "native_camera" if camera else "native_lcd_panel": params}
+    for t in parts[-1]["terminals"]:
+        if camera and t["role"] in ("sda", "scl"):
+            t["direction"] = "inout"
+        elif camera and t["role"] in ("pclk", "vsync", "href", *(f"d{i}" for i in range(8))):
+            t["direction"] = "output"
+        else:
+            t["direction"] = "input"
+    if not camera:
+        for i in range(len([r for r in mapping if r.startswith("d") and r[1:].isdigit()]), 16):
+            parts[-1]["terminals"].append(dict(terminal("D", f"d{i}"), direction="input"))
     if rgb:
         # Official RGB panel has no reset GPIO. Real external reset is held
         # deasserted by a passive resistor, not an invented firmware pin.
-        parts[-1]["terminals"].append(terminal("D", "reset"))
+        parts[-1]["terminals"].append(dict(terminal("D", "reset"), direction="input"))
         parts.append(component("ResetPull", "resistor", [terminal("ResetPull", "a", "passive"),
             terminal("ResetPull", "b", "passive")], {"resistance": {"value": 10000, "unit": "ohm"}}))
         nets[1]["endpoints"].append("ResetPull.b")

@@ -1,0 +1,989 @@
+{
+  "version": 3,
+  "id": "lcd-cam-native-camera-rgb565",
+  "name": "LCD CAM native camera-rgb565",
+  "profile": {
+    "chip": "esp32s3",
+    "board": "esp32-s3-devkitc-1",
+    "module": "esp32-s3-wroom-1"
+  },
+  "firmware": {},
+  "runtime": {
+    "electrical": {
+      "driver_profile": "s3-explicit-finite-v1",
+      "mode": "dc"
+    }
+  },
+  "components": [
+    {
+      "id": "U1",
+      "name": "U1",
+      "type": "mcu",
+      "kind": "mcu",
+      "terminals": [
+        {
+          "id": "U1.vdd",
+          "name": "vdd",
+          "role": "vdd",
+          "domain": "power",
+          "direction": "unspecified"
+        },
+        {
+          "id": "U1.gnd",
+          "name": "gnd",
+          "role": "gnd",
+          "domain": "ground",
+          "direction": "unspecified"
+        },
+        {
+          "id": "U1.io1",
+          "name": "io1",
+          "role": "io1",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 1
+        },
+        {
+          "id": "U1.io2",
+          "name": "io2",
+          "role": "io2",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 2
+        },
+        {
+          "id": "U1.io4",
+          "name": "io4",
+          "role": "io4",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 4
+        },
+        {
+          "id": "U1.io5",
+          "name": "io5",
+          "role": "io5",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 5
+        },
+        {
+          "id": "U1.io6",
+          "name": "io6",
+          "role": "io6",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 6
+        },
+        {
+          "id": "U1.io7",
+          "name": "io7",
+          "role": "io7",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 7
+        },
+        {
+          "id": "U1.io8",
+          "name": "io8",
+          "role": "io8",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 8
+        },
+        {
+          "id": "U1.io9",
+          "name": "io9",
+          "role": "io9",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 9
+        },
+        {
+          "id": "U1.io10",
+          "name": "io10",
+          "role": "io10",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 10
+        },
+        {
+          "id": "U1.io11",
+          "name": "io11",
+          "role": "io11",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 11
+        },
+        {
+          "id": "U1.io12",
+          "name": "io12",
+          "role": "io12",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 12
+        },
+        {
+          "id": "U1.io13",
+          "name": "io13",
+          "role": "io13",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 13
+        },
+        {
+          "id": "U1.io14",
+          "name": "io14",
+          "role": "io14",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 14
+        },
+        {
+          "id": "U1.io15",
+          "name": "io15",
+          "role": "io15",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 15
+        },
+        {
+          "id": "U1.io16",
+          "name": "io16",
+          "role": "io16",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 16
+        },
+        {
+          "id": "U1.io17",
+          "name": "io17",
+          "role": "io17",
+          "domain": "digital",
+          "direction": "unspecified",
+          "gpio": 17
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "V",
+      "name": "V",
+      "type": "voltage-source",
+      "kind": "voltage-source",
+      "terminals": [
+        {
+          "id": "V.p",
+          "name": "p",
+          "role": "p",
+          "domain": "power",
+          "direction": "unspecified"
+        },
+        {
+          "id": "V.n",
+          "name": "n",
+          "role": "n",
+          "domain": "ground",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "voltage": {
+          "value": 3.3,
+          "unit": "V"
+        }
+      }
+    },
+    {
+      "id": "G",
+      "name": "G",
+      "type": "ground",
+      "kind": "ground",
+      "terminals": [
+        {
+          "id": "G.ref",
+          "name": "ref",
+          "role": "ref",
+          "domain": "ground",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "D",
+      "name": "D",
+      "type": "ov2640-dvp",
+      "kind": "device",
+      "terminals": [
+        {
+          "id": "D.vdd",
+          "name": "vdd",
+          "role": "vdd",
+          "domain": "power",
+          "direction": "input"
+        },
+        {
+          "id": "D.gnd",
+          "name": "gnd",
+          "role": "gnd",
+          "domain": "ground",
+          "direction": "input"
+        },
+        {
+          "id": "D.sda",
+          "name": "sda",
+          "role": "sda",
+          "domain": "digital",
+          "direction": "inout"
+        },
+        {
+          "id": "D.scl",
+          "name": "scl",
+          "role": "scl",
+          "domain": "digital",
+          "direction": "inout"
+        },
+        {
+          "id": "D.d0",
+          "name": "d0",
+          "role": "d0",
+          "domain": "digital",
+          "direction": "output"
+        },
+        {
+          "id": "D.d1",
+          "name": "d1",
+          "role": "d1",
+          "domain": "digital",
+          "direction": "output"
+        },
+        {
+          "id": "D.d2",
+          "name": "d2",
+          "role": "d2",
+          "domain": "digital",
+          "direction": "output"
+        },
+        {
+          "id": "D.d3",
+          "name": "d3",
+          "role": "d3",
+          "domain": "digital",
+          "direction": "output"
+        },
+        {
+          "id": "D.d4",
+          "name": "d4",
+          "role": "d4",
+          "domain": "digital",
+          "direction": "output"
+        },
+        {
+          "id": "D.d5",
+          "name": "d5",
+          "role": "d5",
+          "domain": "digital",
+          "direction": "output"
+        },
+        {
+          "id": "D.d6",
+          "name": "d6",
+          "role": "d6",
+          "domain": "digital",
+          "direction": "output"
+        },
+        {
+          "id": "D.d7",
+          "name": "d7",
+          "role": "d7",
+          "domain": "digital",
+          "direction": "output"
+        },
+        {
+          "id": "D.pclk",
+          "name": "pclk",
+          "role": "pclk",
+          "domain": "digital",
+          "direction": "output"
+        },
+        {
+          "id": "D.reset",
+          "name": "reset",
+          "role": "reset",
+          "domain": "digital",
+          "direction": "input"
+        },
+        {
+          "id": "D.pwdn",
+          "name": "pwdn",
+          "role": "pwdn",
+          "domain": "digital",
+          "direction": "input"
+        },
+        {
+          "id": "D.xclk",
+          "name": "xclk",
+          "role": "xclk",
+          "domain": "digital",
+          "direction": "input"
+        },
+        {
+          "id": "D.vsync",
+          "name": "vsync",
+          "role": "vsync",
+          "domain": "digital",
+          "direction": "output"
+        },
+        {
+          "id": "D.href",
+          "name": "href",
+          "role": "href",
+          "domain": "digital",
+          "direction": "output"
+        }
+      ],
+      "parameters": {},
+      "attributes": {
+        "native_model": "ov2640-dvp",
+        "native_camera": {
+          "source": "color-bars",
+          "timing_profile": "ov2640-functional-dvp-v1"
+        }
+      }
+    },
+    {
+      "id": "Pull-sda",
+      "name": "Pull-sda",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Pull-sda.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Pull-sda.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 4700,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Pull-scl",
+      "name": "Pull-scl",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Pull-scl.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Pull-scl.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 4700,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Pull-d0",
+      "name": "Pull-d0",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Pull-d0.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Pull-d0.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Pull-d1",
+      "name": "Pull-d1",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Pull-d1.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Pull-d1.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Pull-d2",
+      "name": "Pull-d2",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Pull-d2.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Pull-d2.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Pull-d3",
+      "name": "Pull-d3",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Pull-d3.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Pull-d3.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Pull-d4",
+      "name": "Pull-d4",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Pull-d4.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Pull-d4.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Pull-d5",
+      "name": "Pull-d5",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Pull-d5.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Pull-d5.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Pull-d6",
+      "name": "Pull-d6",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Pull-d6.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Pull-d6.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Pull-d7",
+      "name": "Pull-d7",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Pull-d7.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Pull-d7.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Pull-pclk",
+      "name": "Pull-pclk",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Pull-pclk.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Pull-pclk.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Pull-reset",
+      "name": "Pull-reset",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Pull-reset.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Pull-reset.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Pull-pwdn",
+      "name": "Pull-pwdn",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Pull-pwdn.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Pull-pwdn.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Pull-xclk",
+      "name": "Pull-xclk",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Pull-xclk.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Pull-xclk.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Pull-vsync",
+      "name": "Pull-vsync",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Pull-vsync.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Pull-vsync.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    },
+    {
+      "id": "Pull-href",
+      "name": "Pull-href",
+      "type": "resistor",
+      "kind": "resistor",
+      "terminals": [
+        {
+          "id": "Pull-href.a",
+          "name": "a",
+          "role": "a",
+          "domain": "passive",
+          "direction": "unspecified"
+        },
+        {
+          "id": "Pull-href.b",
+          "name": "b",
+          "role": "b",
+          "domain": "passive",
+          "direction": "unspecified"
+        }
+      ],
+      "parameters": {
+        "resistance": {
+          "value": 10000,
+          "unit": "ohm"
+        }
+      }
+    }
+  ],
+  "nets": [
+    {
+      "id": "gnd",
+      "name": "gnd",
+      "endpoints": [
+        "G.ref",
+        "V.n",
+        "U1.gnd",
+        "D.gnd",
+        "Pull-d0.b",
+        "Pull-d1.b",
+        "Pull-d2.b",
+        "Pull-d3.b",
+        "Pull-d4.b",
+        "Pull-d5.b",
+        "Pull-d6.b",
+        "Pull-d7.b",
+        "Pull-pclk.b",
+        "Pull-pwdn.b",
+        "Pull-xclk.b",
+        "Pull-vsync.b",
+        "Pull-href.b"
+      ]
+    },
+    {
+      "id": "vdd",
+      "name": "vdd",
+      "endpoints": [
+        "V.p",
+        "U1.vdd",
+        "D.vdd",
+        "Pull-sda.b",
+        "Pull-scl.b",
+        "Pull-reset.b"
+      ]
+    },
+    {
+      "id": "sda",
+      "name": "sda",
+      "endpoints": [
+        "U1.io1",
+        "D.sda",
+        "Pull-sda.a"
+      ]
+    },
+    {
+      "id": "scl",
+      "name": "scl",
+      "endpoints": [
+        "U1.io2",
+        "D.scl",
+        "Pull-scl.a"
+      ]
+    },
+    {
+      "id": "d0",
+      "name": "d0",
+      "endpoints": [
+        "U1.io4",
+        "D.d0",
+        "Pull-d0.a"
+      ]
+    },
+    {
+      "id": "d1",
+      "name": "d1",
+      "endpoints": [
+        "U1.io5",
+        "D.d1",
+        "Pull-d1.a"
+      ]
+    },
+    {
+      "id": "d2",
+      "name": "d2",
+      "endpoints": [
+        "U1.io6",
+        "D.d2",
+        "Pull-d2.a"
+      ]
+    },
+    {
+      "id": "d3",
+      "name": "d3",
+      "endpoints": [
+        "U1.io7",
+        "D.d3",
+        "Pull-d3.a"
+      ]
+    },
+    {
+      "id": "d4",
+      "name": "d4",
+      "endpoints": [
+        "U1.io8",
+        "D.d4",
+        "Pull-d4.a"
+      ]
+    },
+    {
+      "id": "d5",
+      "name": "d5",
+      "endpoints": [
+        "U1.io9",
+        "D.d5",
+        "Pull-d5.a"
+      ]
+    },
+    {
+      "id": "d6",
+      "name": "d6",
+      "endpoints": [
+        "U1.io10",
+        "D.d6",
+        "Pull-d6.a"
+      ]
+    },
+    {
+      "id": "d7",
+      "name": "d7",
+      "endpoints": [
+        "U1.io11",
+        "D.d7",
+        "Pull-d7.a"
+      ]
+    },
+    {
+      "id": "pclk",
+      "name": "pclk",
+      "endpoints": [
+        "U1.io12",
+        "D.pclk",
+        "Pull-pclk.a"
+      ]
+    },
+    {
+      "id": "reset",
+      "name": "reset",
+      "endpoints": [
+        "U1.io13",
+        "D.reset",
+        "Pull-reset.a"
+      ]
+    },
+    {
+      "id": "pwdn",
+      "name": "pwdn",
+      "endpoints": [
+        "U1.io14",
+        "D.pwdn",
+        "Pull-pwdn.a"
+      ]
+    },
+    {
+      "id": "xclk",
+      "name": "xclk",
+      "endpoints": [
+        "U1.io15",
+        "D.xclk",
+        "Pull-xclk.a"
+      ]
+    },
+    {
+      "id": "vsync",
+      "name": "vsync",
+      "endpoints": [
+        "U1.io16",
+        "D.vsync",
+        "Pull-vsync.a"
+      ]
+    },
+    {
+      "id": "href",
+      "name": "href",
+      "endpoints": [
+        "U1.io17",
+        "D.href",
+        "Pull-href.a"
+      ]
+    }
+  ],
+  "geometry": {
+    "components": {},
+    "nets": {}
+  }
+}

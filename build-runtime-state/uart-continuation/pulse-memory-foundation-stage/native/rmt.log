@@ -1,0 +1,499 @@
+TAP version 13
+# random seed: R02Se7a1338a930666da9d3d0fb9d0d412a6
+1..23
+# Start of xtensa tests
+# Start of esp32s3 tests
+# Start of rmt tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=0 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x004600c0
+# sample ns=6999 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x004600c0
+# sample ns=7000 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x004600c0
+# sample ns=17999 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x004600c0
+# sample ns=18000 GPIO5=1 raw=0x00000100 tx0=0x00400001 rx0=0x004600c1
+# sample ns=22999 GPIO5=1 raw=0x00000100 tx0=0x00400001 rx0=0x004600c1
+# sample ns=23000 GPIO5=0 raw=0x00000101 tx0=0x00000002 rx0=0x004600c1
+# RX closed halves: 0x000b8007 0x8005
+ok 1 /xtensa/esp32s3/rmt/symbols-irq-w1c
+# slow test /xtensa/esp32s3/rmt/symbols-irq-w1c executed in 0.61 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=8999 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=9000 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# source=1 group=1+0/0 divider=80 tick_ns=1000 done_ns=22000
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=4499 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=4500 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# source=1 group=1+0/0 divider=40 tick_ns=500 done_ns=11000
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=8999 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=9000 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# source=3 group=1+0/0 divider=40 tick_ns=1000 done_ns=22000
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=17999 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=18000 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# source=3 group=2+0/0 divider=40 tick_ns=2000 done_ns=44000
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=13499 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=13500 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# source=1 group=1+1/2 divider=80 tick_ns=1500 done_ns=33000
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=57599 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=57600 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# source=3 group=1+0/0 divider=256 tick_ns=6400 done_ns=140800
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=35999 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=36000 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# source=2 group=1+0/0 divider=70 tick_ns=4000 done_ns=88000
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=262 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=263 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# fractional tick_ns=18.75 edge_ns=263 done_ns=600
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=89999 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=90000 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# live APB->XTAL edge_ns=90000 done_ns=190000
+ok 2 /xtensa/esp32s3/rmt/dividers-sources
+# slow test /xtensa/esp32s3/rmt/dividers-sources executed in 4.71 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 3 /xtensa/esp32s3/rmt/rx-first-edge-idle-filter
+# slow test /xtensa/esp32s3/rmt/rx-first-edge-idle-filter executed in 2.66 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 4 /xtensa/esp32s3/rmt/rx-owner-overflow-threshold
+# slow test /xtensa/esp32s3/rmt/rx-owner-overflow-threshold executed in 1.48 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=576000 GPIO5=1 raw=0x00000100 tx0=0x00400000 rx0=0x000600c0
+# sample ns=584999 GPIO5=1 raw=0x00000100 tx0=0x00400000 rx0=0x000600c0
+# sample ns=585000 GPIO5=0 raw=0x00000100 tx0=0x00400000 rx0=0x000600c0
+# wrap: 48 original +24 refill symbols; end_ns=1056000
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 5 /xtensa/esp32s3/rmt/wrap-refill-underflow
+# slow test /xtensa/esp32s3/rmt/wrap-refill-underflow executed in 1.29 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=10000 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=210000 GPIO5=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=10000 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=10000 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=10000 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 6 /xtensa/esp32s3/rmt/stop-reset-gate
+# slow test /xtensa/esp32s3/rmt/stop-reset-gate executed in 3.33 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=0 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=999 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=1000 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=2999 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=3000 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=4000 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=6000 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=10000 GPIO5=0 raw=0x00000001 tx0=0x00000001 rx0=0x000600c0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=10000 GPIO5=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=10000 GPIO7=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=10000 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=10000 GPIO7=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=16999 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=16999 GPIO7=1 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=17000 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=17000 GPIO7=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=54000 GPIO5=1 raw=0x00001000 tx0=0x00000001 rx0=0x000600c0
+ok 7 /xtensa/esp32s3/rmt/carrier-sync-loop
+# slow test /xtensa/esp32s3/rmt/carrier-sync-loop executed in 1.99 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 8 /xtensa/esp32s3/rmt/topology-no-hidden-loopback
+# slow test /xtensa/esp32s3/rmt/topology-no-hidden-loopback executed in 0.55 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 9 /xtensa/esp32s3/rmt/all-channel-masks
+# slow test /xtensa/esp32s3/rmt/all-channel-masks executed in 1.22 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# RX wrap: 64 exact symbols, 16 replaced, ns=896000
+ok 10 /xtensa/esp32s3/rmt/rx-wrap
+# slow test /xtensa/esp32s3/rmt/rx-wrap executed in 1.57 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=0 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x004600c0
+# sample ns=7000 GPIO5=1 raw=0x00000000 tx0=0x00400000 rx0=0x004600c0
+# sample ns=18000 GPIO5=0 raw=0x00000000 tx0=0x00400001 rx0=0x004600c1
+# sample ns=23000 GPIO5=1 raw=0x00000001 tx0=0x00000002 rx0=0x004600c1
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 11 /xtensa/esp32s3/rmt/matrix-inversion-input-enable
+# slow test /xtensa/esp32s3/rmt/matrix-inversion-input-enable executed in 1.44 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# DMA: 128 exact closed symbols, 3 descriptors, TX ns=1541000 RX ns=1592000 terminal_len=132 terminal_desc=0x3fc93018
+ok 12 /xtensa/esp32s3/rmt/dma-long-chain
+# slow test /xtensa/esp32s3/rmt/dma-long-chain executed in 1.55 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# DMA: 128 exact closed symbols, 3 descriptors, TX ns=1541000 RX ns=1592000 terminal_len=132 terminal_desc=0x3fc93018
+ok 13 /xtensa/esp32s3/rmt/dma-exact-capacity-eof
+# slow test /xtensa/esp32s3/rmt/dma-exact-capacity-eof executed in 1.20 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 14 /xtensa/esp32s3/rmt/dma-cancel-faults
+# slow test /xtensa/esp32s3/rmt/dma-cancel-faults executed in 4.11 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 15 /xtensa/esp32s3/rmt/dma-reassignment
+# slow test /xtensa/esp32s3/rmt/dma-reassignment executed in 1.28 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# RX live groupdivider200 REF_RST: elapsed1000 ticks retained, idle_done_ns=1201000
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# RX APB->XTAL divider80->200 REF_RST: exact closed word=0x00018009 ns=23000
+ok 16 /xtensa/esp32s3/rmt/rx-live-clock-ref-reset
+# slow test /xtensa/esp32s3/rmt/rx-live-clock-ref-reset executed in 0.92 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# RX pendingfilter qualified_edge_ns=4000 idle_done_ns=9000
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# RX mixedfilter qualified edges4/16/22us exact word=0x0006800c
+ok 17 /xtensa/esp32s3/rmt/rx-pending-filter-clock
+# slow test /xtensa/esp32s3/rmt/rx-pending-filter-clock executed in 1.34 secs
+# Start of peer tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=50400 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=51650 GPIO5=0 raw=0x00000000 tx0=0x00400001 rx0=0x000600c0
+# sample ns=52900 GPIO5=0 raw=0x00000000 tx0=0x00400002 rx0=0x000600c0
+# sample ns=54550 GPIO5=0 raw=0x00000000 tx0=0x00400003 rx0=0x000600c0
+# sample ns=55400 GPIO5=0 raw=0x00000000 tx0=0x00400004 rx0=0x000600c0
+# sample ns=56650 GPIO5=0 raw=0x00000000 tx0=0x00400005 rx0=0x000600c0
+# sample ns=58300 GPIO5=0 raw=0x00000000 tx0=0x00400006 rx0=0x000600c0
+# sample ns=59150 GPIO5=0 raw=0x00000000 tx0=0x00400007 rx0=0x000600c0
+# sample ns=60400 GPIO5=0 raw=0x00000000 tx0=0x00400008 rx0=0x000600c0
+# sample ns=61650 GPIO5=0 raw=0x00000000 tx0=0x00400009 rx0=0x000600c0
+# sample ns=63300 GPIO5=0 raw=0x00000000 tx0=0x0040000a rx0=0x000600c0
+# sample ns=64550 GPIO5=0 raw=0x00000000 tx0=0x0040000b rx0=0x000600c0
+# sample ns=65400 GPIO5=0 raw=0x00000000 tx0=0x0040000c rx0=0x000600c0
+# sample ns=67050 GPIO5=0 raw=0x00000000 tx0=0x0040000d rx0=0x000600c0
+# sample ns=67900 GPIO5=0 raw=0x00000000 tx0=0x0040000e rx0=0x000600c0
+# sample ns=69150 GPIO5=0 raw=0x00000000 tx0=0x0040000f rx0=0x000600c0
+# sample ns=70400 GPIO5=0 raw=0x00000000 tx0=0x00400010 rx0=0x000600c0
+# sample ns=72050 GPIO5=0 raw=0x00000000 tx0=0x00400011 rx0=0x000600c0
+# sample ns=72900 GPIO5=0 raw=0x00000000 tx0=0x00400012 rx0=0x000600c0
+# sample ns=74550 GPIO5=0 raw=0x00000000 tx0=0x00400013 rx0=0x000600c0
+# sample ns=75400 GPIO5=0 raw=0x00000000 tx0=0x00400014 rx0=0x000600c0
+# sample ns=77050 GPIO5=0 raw=0x00000000 tx0=0x00400015 rx0=0x000600c0
+# sample ns=78300 GPIO5=0 raw=0x00000000 tx0=0x00400016 rx0=0x000600c0
+# sample ns=79150 GPIO5=0 raw=0x00000000 tx0=0x00400017 rx0=0x000600c0
+# sample ns=129950 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=130800 GPIO5=0 raw=0x00000000 tx0=0x00400001 rx0=0x000600c0
+# sample ns=132450 GPIO5=0 raw=0x00000000 tx0=0x00400002 rx0=0x000600c0
+# sample ns=133300 GPIO5=0 raw=0x00000000 tx0=0x00400003 rx0=0x000600c0
+# sample ns=134950 GPIO5=0 raw=0x00000000 tx0=0x00400004 rx0=0x000600c0
+# sample ns=135800 GPIO5=0 raw=0x00000000 tx0=0x00400005 rx0=0x000600c0
+# sample ns=137450 GPIO5=0 raw=0x00000000 tx0=0x00400006 rx0=0x000600c0
+# sample ns=187650 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=189100 GPIO5=0 raw=0x00000000 tx0=0x00400001 rx0=0x000600c0
+# sample ns=190750 GPIO5=0 raw=0x00000000 tx0=0x00400002 rx0=0x000600c0
+# sample ns=191600 GPIO5=0 raw=0x00000000 tx0=0x00400003 rx0=0x000600c0
+# sample ns=193250 GPIO5=0 raw=0x00000000 tx0=0x00400004 rx0=0x000600c0
+# sample ns=194100 GPIO5=0 raw=0x00000000 tx0=0x00400005 rx0=0x000600c0
+# sample ns=195750 GPIO5=0 raw=0x00000000 tx0=0x00400006 rx0=0x000600c0
+# sample ns=197000 GPIO5=0 raw=0x00000000 tx0=0x00400007 rx0=0x000600c0
+# sample ns=198250 GPIO5=0 raw=0x00000000 tx0=0x00400008 rx0=0x000600c0
+# sample ns=199500 GPIO5=0 raw=0x00000000 tx0=0x00400009 rx0=0x000600c0
+# sample ns=200350 GPIO5=0 raw=0x00000000 tx0=0x0040000a rx0=0x000600c0
+# sample ns=201600 GPIO5=0 raw=0x00000000 tx0=0x0040000b rx0=0x000600c0
+# sample ns=203250 GPIO5=0 raw=0x00000000 tx0=0x0040000c rx0=0x000600c0
+# sample ns=204500 GPIO5=0 raw=0x00000000 tx0=0x0040000d rx0=0x000600c0
+# sample ns=205350 GPIO5=0 raw=0x00000000 tx0=0x0040000e rx0=0x000600c0
+# sample ns=207000 GPIO5=0 raw=0x00000000 tx0=0x0040000f rx0=0x000600c0
+# sample ns=208250 GPIO5=0 raw=0x00000000 tx0=0x00400010 rx0=0x000600c0
+# sample ns=209500 GPIO5=0 raw=0x00000000 tx0=0x00400011 rx0=0x000600c0
+# sample ns=210750 GPIO5=0 raw=0x00000000 tx0=0x00400012 rx0=0x000600c0
+# sample ns=211600 GPIO5=0 raw=0x00000000 tx0=0x00400013 rx0=0x000600c0
+# sample ns=213250 GPIO5=0 raw=0x00000000 tx0=0x00400014 rx0=0x000600c0
+# sample ns=214500 GPIO5=0 raw=0x00000000 tx0=0x00400015 rx0=0x000600c0
+# sample ns=215750 GPIO5=0 raw=0x00000000 tx0=0x00400016 rx0=0x000600c0
+# sample ns=217000 GPIO5=0 raw=0x00000000 tx0=0x00400017 rx0=0x000600c0
+# sample ns=317800 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=318650 GPIO5=0 raw=0x00000000 tx0=0x00400001 rx0=0x000600c0
+# sample ns=320300 GPIO5=0 raw=0x00000000 tx0=0x00400002 rx0=0x000600c0
+# sample ns=321150 GPIO5=0 raw=0x00000000 tx0=0x00400003 rx0=0x000600c0
+# sample ns=322800 GPIO5=0 raw=0x00000000 tx0=0x00400004 rx0=0x000600c0
+# sample ns=323650 GPIO5=0 raw=0x00000000 tx0=0x00400005 rx0=0x000600c0
+# sample ns=325300 GPIO5=0 raw=0x00000000 tx0=0x00400006 rx0=0x000600c0
+# sample ns=326550 GPIO5=0 raw=0x00000000 tx0=0x00400007 rx0=0x000600c0
+# sample ns=327800 GPIO5=0 raw=0x00000000 tx0=0x00400008 rx0=0x000600c0
+# sample ns=329050 GPIO5=0 raw=0x00000000 tx0=0x00400009 rx0=0x000600c0
+# sample ns=329900 GPIO5=0 raw=0x00000000 tx0=0x0040000a rx0=0x000600c0
+# sample ns=331150 GPIO5=0 raw=0x00000000 tx0=0x0040000b rx0=0x000600c0
+# sample ns=332800 GPIO5=0 raw=0x00000000 tx0=0x0040000c rx0=0x000600c0
+# sample ns=334050 GPIO5=0 raw=0x00000000 tx0=0x0040000d rx0=0x000600c0
+# sample ns=334900 GPIO5=0 raw=0x00000000 tx0=0x0040000e rx0=0x000600c0
+# sample ns=336550 GPIO5=0 raw=0x00000000 tx0=0x0040000f rx0=0x000600c0
+# sample ns=337800 GPIO5=0 raw=0x00000000 tx0=0x00400010 rx0=0x000600c0
+# sample ns=339050 GPIO5=0 raw=0x00000000 tx0=0x00400011 rx0=0x000600c0
+# sample ns=340300 GPIO5=0 raw=0x00000000 tx0=0x00400012 rx0=0x000600c0
+# sample ns=341150 GPIO5=0 raw=0x00000000 tx0=0x00400013 rx0=0x000600c0
+# sample ns=342800 GPIO5=0 raw=0x00000000 tx0=0x00400014 rx0=0x000600c0
+# sample ns=344050 GPIO5=0 raw=0x00000000 tx0=0x00400015 rx0=0x000600c0
+# sample ns=345300 GPIO5=0 raw=0x00000000 tx0=0x00400016 rx0=0x000600c0
+# sample ns=346550 GPIO5=0 raw=0x00000000 tx0=0x00400017 rx0=0x000600c0
+# WS actual GRB=123456 first latch_ns=129150 MCU reset retained external power epoch
+ok 18 /xtensa/esp32s3/rmt/peer/ws-latch-hold-power-reset
+# slow test /xtensa/esp32s3/rmt/peer/ws-latch-hold-power-reset executed in 4.65 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=50800 GPIO5=0 raw=0x00000000 tx0=0x00400000 rx0=0x000600c0
+# sample ns=52050 GPIO5=0 raw=0x00000000 tx0=0x00400001 rx0=0x000600c0
+# sample ns=53300 GPIO5=0 raw=0x00000000 tx0=0x00400002 rx0=0x000600c0
+# sample ns=54550 GPIO5=0 raw=0x00000000 tx0=0x00400003 rx0=0x000600c0
+# sample ns=55800 GPIO5=0 raw=0x00000000 tx0=0x00400004 rx0=0x000600c0
+# sample ns=57050 GPIO5=0 raw=0x00000000 tx0=0x00400005 rx0=0x000600c0
+# sample ns=58300 GPIO5=0 raw=0x00000000 tx0=0x00400006 rx0=0x000600c0
+# sample ns=59550 GPIO5=0 raw=0x00000000 tx0=0x00400007 rx0=0x000600c0
+# sample ns=60400 GPIO5=0 raw=0x00000000 tx0=0x00400008 rx0=0x000600c0
+# sample ns=61650 GPIO5=0 raw=0x00000000 tx0=0x00400009 rx0=0x000600c0
+# sample ns=62900 GPIO5=0 raw=0x00000000 tx0=0x0040000a rx0=0x000600c0
+# sample ns=64150 GPIO5=0 raw=0x00000000 tx0=0x0040000b rx0=0x000600c0
+# sample ns=65400 GPIO5=0 raw=0x00000000 tx0=0x0040000c rx0=0x000600c0
+# sample ns=66650 GPIO5=0 raw=0x00000000 tx0=0x0040000d rx0=0x000600c0
+# sample ns=67900 GPIO5=0 raw=0x00000000 tx0=0x0040000e rx0=0x000600c0
+# sample ns=69150 GPIO5=0 raw=0x00000000 tx0=0x0040000f rx0=0x000600c0
+# sample ns=70400 GPIO5=0 raw=0x00000000 tx0=0x00400010 rx0=0x000600c0
+# sample ns=72050 GPIO5=0 raw=0x00000000 tx0=0x00400011 rx0=0x000600c0
+# sample ns=73300 GPIO5=0 raw=0x00000000 tx0=0x00400012 rx0=0x000600c0
+# sample ns=74550 GPIO5=0 raw=0x00000000 tx0=0x00400013 rx0=0x000600c0
+# sample ns=75800 GPIO5=0 raw=0x00000000 tx0=0x00400014 rx0=0x000600c0
+# sample ns=77050 GPIO5=0 raw=0x00000000 tx0=0x00400015 rx0=0x000600c0
+# sample ns=78300 GPIO5=0 raw=0x00000000 tx0=0x00400016 rx0=0x000600c0
+# sample ns=79550 GPIO5=0 raw=0x00000000 tx0=0x00400017 rx0=0x000600c0
+ok 19 /xtensa/esp32s3/rmt/peer/ws-disconnected
+# slow test /xtensa/esp32s3/rmt/peer/ws-disconnected executed in 1.55 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=99999999 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c0
+# sample ns=100000000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c0
+# sample ns=109000000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c0
+# sample ns=113500000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c1
+# sample ns=114060000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c1
+# sample ns=114620000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c2
+# sample ns=115180000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c2
+# sample ns=115740000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c3
+# sample ns=116300000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c3
+# sample ns=117990000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c4
+# sample ns=118550000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c4
+# sample ns=119110000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c5
+# sample ns=119670000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c5
+# sample ns=121360000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c6
+# sample ns=121920000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c6
+# sample ns=123610000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c7
+# sample ns=124170000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c7
+# sample ns=124730000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c8
+# sample ns=125290000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c8
+# sample ns=125850000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c9
+# sample ns=126410000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c9
+# sample ns=128100000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600ca
+# sample ns=128660000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600ca
+# sample ns=130350000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600cb
+# sample ns=130910000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600cb
+# sample ns=131470000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600cc
+# sample ns=132030000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600cc
+# sample ns=133720000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600cd
+# sample ns=134280000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600cd
+# sample ns=134840000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600ce
+# sample ns=135400000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600ce
+# sample ns=135960000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600cf
+# sample ns=136520000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600cf
+# sample ns=138210000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d0
+# sample ns=138770000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d0
+# sample ns=140460000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d1
+# sample ns=141020000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d1
+# sample ns=142710000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d2
+# sample ns=143270000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d2
+# sample ns=144960000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d3
+# sample ns=145520000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d3
+# sample ns=147210000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d4
+# sample ns=147770000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d4
+# sample ns=148330000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d5
+# sample ns=148890000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d5
+# sample ns=149450000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d6
+# sample ns=150010000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d6
+# sample ns=151700000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d7
+# sample ns=152260000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d7
+# sample ns=152820000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d8
+# sample ns=153380000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d8
+# sample ns=155070000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d9
+# sample ns=155630000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d9
+# sample ns=156190000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600da
+# sample ns=156750000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600da
+# sample ns=157310000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600db
+# sample ns=157870000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600db
+# sample ns=158430000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600dc
+# sample ns=158990000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600dc
+# sample ns=160680000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600dd
+# sample ns=161240000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600dd
+# sample ns=162930000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600de
+# sample ns=163490000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600de
+# sample ns=164050000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600df
+# sample ns=164610000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600df
+# sample ns=166300000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600e0
+# sample ns=166860000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600e0
+# sample ns=167420000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600e1
+# sample ns=167980000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600e1
+# NEC actual source bytes=34cba758 closed RMT words=33 final mark=560us done_ns=177981000
+# sample ns=277981000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c0
+# sample ns=1099999999 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c0
+# sample ns=1100000000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c0
+# sample ns=1109000000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c0
+# sample ns=1113500000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c1
+# sample ns=1114060000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c1
+# sample ns=1114620000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c2
+# sample ns=1115180000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c2
+# sample ns=1115740000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c3
+# sample ns=1116300000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c3
+# sample ns=1117990000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c4
+# sample ns=1118550000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c4
+# sample ns=1119110000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c5
+# sample ns=1119670000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c5
+# sample ns=1121360000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c6
+# sample ns=1121920000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c6
+# sample ns=1123610000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c7
+# sample ns=1124170000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c7
+# sample ns=1124730000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c8
+# sample ns=1125290000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c8
+# sample ns=1125850000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600c9
+# sample ns=1126410000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c9
+# sample ns=1128100000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600ca
+# sample ns=1128660000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600ca
+# sample ns=1130350000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600cb
+# sample ns=1130910000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600cb
+# sample ns=1131470000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600cc
+# sample ns=1132030000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600cc
+# sample ns=1133720000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600cd
+# sample ns=1134280000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600cd
+# sample ns=1134840000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600ce
+# sample ns=1135400000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600ce
+# sample ns=1135960000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600cf
+# sample ns=1136520000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600cf
+# sample ns=1138210000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d0
+# sample ns=1138770000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d0
+# sample ns=1140460000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d1
+# sample ns=1141020000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d1
+# sample ns=1142710000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d2
+# sample ns=1143270000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d2
+# sample ns=1144960000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d3
+# sample ns=1145520000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d3
+# sample ns=1147210000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d4
+# sample ns=1147770000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d4
+# sample ns=1148330000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d5
+# sample ns=1148890000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d5
+# sample ns=1149450000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d6
+# sample ns=1150010000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d6
+# sample ns=1151700000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d7
+# sample ns=1152260000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d7
+# sample ns=1152820000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d8
+# sample ns=1153380000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d8
+# sample ns=1155070000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600d9
+# sample ns=1155630000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600d9
+# sample ns=1156190000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600da
+# sample ns=1156750000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600da
+# sample ns=1157310000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600db
+# sample ns=1157870000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600db
+# sample ns=1158430000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600dc
+# sample ns=1158990000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600dc
+# sample ns=1160680000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600dd
+# sample ns=1161240000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600dd
+# sample ns=1162930000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600de
+# sample ns=1163490000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600de
+# sample ns=1164050000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600df
+# sample ns=1164610000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600df
+# sample ns=1166300000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600e0
+# sample ns=1166860000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600e0
+# sample ns=1167420000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x004600e1
+# sample ns=1167980000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600e1
+# NEC actual source bytes=34cba758 closed RMT words=33 final mark=560us done_ns=1177981000
+ok 20 /xtensa/esp32s3/rmt/peer/nec-exact-reset
+# slow test /xtensa/esp32s3/rmt/peer/nec-exact-reset executed in 8.47 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=100000000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=102000000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=109000000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=308999999 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=309000000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=318000000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=322500000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=323060000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=323620000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=324180000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=324740000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=325300000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=326990000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=327550000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=328110000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=328670000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=330360000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=330920000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=332610000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=333170000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=333730000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=334290000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=334850000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=335410000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=337100000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=337660000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=339350000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=339910000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=340470000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=341030000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=342720000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=343280000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=343840000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=344400000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=344960000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=345520000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=347210000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=347770000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=349460000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=350020000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=351710000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=352270000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=353960000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=354520000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=356210000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=356770000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=357330000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=357890000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=358450000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=359010000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=360700000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=361260000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=361820000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=362380000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=364070000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=364630000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=365190000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=365750000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=366310000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=366870000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=367430000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=367990000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=369680000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=370240000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=371930000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=372490000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=373050000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=373610000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=375300000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=375860000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=376420000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+# sample ns=376980000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+ok 21 /xtensa/esp32s3/rmt/peer/nec-power-cancel
+# slow test /xtensa/esp32s3/rmt/peer/nec-power-cancel executed in 3.71 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=100000000 GPIO8=0 raw=0x00000000 tx0=0x00000000 rx0=0x000600c0
+ok 22 /xtensa/esp32s3/rmt/peer/nec-missing-pull
+# slow test /xtensa/esp32s3/rmt/peer/nec-missing-pull executed in 1.00 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-db51ea5bc6c48ecf/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-163503.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-163503.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# sample ns=100000000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c0
+# sample ns=109000000 GPIO8=1 raw=0x00000000 tx0=0x00000000 rx0=0x004600c0
+ok 23 /xtensa/esp32s3/rmt/peer/nec-disconnected
+# End of peer tests
+# End of rmt tests
+# End of esp32s3 tests
+# End of xtensa tests

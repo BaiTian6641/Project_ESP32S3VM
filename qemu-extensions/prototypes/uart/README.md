@@ -53,6 +53,24 @@ modified by this lane.
 7. Apply `integration.patch`, `integration-electrical.patch`,
    `integration-qtest.patch`, and `integration-unit.patch`.
 
+Additional dependency patches default to the pre-copy phase. An explicit Boolean
+`after_copies: true` places an overlay after all declared copies and before the
+UART-owned integration tail. This is required when the target is itself copied
+from an immutable foundation; changing that original input or patching before
+its copy would invalidate or overwrite the update. Frozen-prefix patches cannot
+change phase. Ordered phase metadata, raw patch bytes, exact target scopes and
+resulting target hashes are bound in both source-record identities.
+
+`prepare.py` publishes two source records in `--evidence`. The native
+`prepared-<operation>-source.json` binds exact ordered operations and explicit
+patch-context policies; its fingerprint still names the immutable checkout.
+`prepared-<operation>-public.json` uses standard schema1 and the
+`SHA256({profile,inputs})` fingerprint required by ordinary memory/LCD consumers.
+It binds identical input/applied-file inventories and pins the original native
+record by absolute path, SHA256 and operation fingerprint. Neither record
+qualifies a build or behavior; existing cached checkouts/records are never
+rewritten. Supply the public record explicitly to standard consumer runners.
+
 The three UART controllers remain `/machine/soc/uart0`, `uart1`, `uart2`, mapped
 at `0x60000000`, `0x60010000`, `0x6002e000`, each through S3 ID/REG_UPDATE at
 `0x80`. `/machine/soc/uart-memory` owns one physical 1024-byte array.

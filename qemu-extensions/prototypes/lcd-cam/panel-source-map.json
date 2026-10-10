@@ -8,6 +8,17 @@
     "copies/esp32s3_lcd_panel_service.c",
     "copies/esp32s3_lcd_panel_service.h"
   ],
+  "ordinary_collector": {
+    "path": "run-native-fixture.py",
+    "panel_oracle": "panel_native_oracle.py",
+    "authority": "One real public QMP Apply/capture collector shared with camera; reuses memory collector read-only GDMA and provenance machinery, no synthetic pixels or ACKs.",
+    "source_gate": "Fresh native ext4 immutable fixture inventory, exact pinned SDK/submodules, unmodified official camera and local public esp_jpeg1.3.1 Component Manager resolution, actual compiler command sources, app ELF digest and exact merged-image inputs.",
+    "scope": "16 ordinary panel profiles per SDK, plus distinct quad40 external double/bounce and genuine physical graph negatives; raw immutable captures and host stop/resume retained.",
+    "clock_contract": "Established UART/RMT deterministic launch: -accel tcg,thread=single -icount shift=0,align=off,sleep=off, with normal machine CPU count retained. Functional virtual timing for exact physical model edges, not CPU cycle accuracy or hardware reference metrology; actual command and host stop/resume boundaries are preserved.",
+    "sdk6_transport": "Explicit equal in/out_color_format; GRAY8 supplies raw eight-bit transport for unchanged RGB332 payload (no conversion); RGB565/RGB888 match 16/24-bit payloads. SDK5 retains bits_per_pixel.",
+    "camera_dependency": "One approved official esp32-camera v2.1.8 commit b0556a78e13d42974aae19116f8a1e14c29b0f4d is required byte-exact on BOTH pinned SDKs. Earlier v2.1.3 new/legacy SCCB compile failures and successful SDK5 images remain historical diagnostics only, never new-pin build/runtime proof. No vendor/SDK patch, header alias or silent mode omission.",
+    "qualification": "Authored collection contract only; acceptance requires each actual case result and independent byte/timing/ownership oracle. No physical/reference/metrology claim."
+  },
   "license": "GPL-2.0-or-later; native executable only, no Qt linkage",
   "sources": [
     {
@@ -28,6 +39,18 @@
       "publisher": "Espressif ESP-IDF",
       "version": "v5.4",
       "use": "official reset/sleep-exit/MADCTL/COLMOD/RAMCTRL init sequence, inclusive CASET/RASET endpoints, RGB565 and byte-per-component RGB666"
+    },
+    {
+      "url": "https://github.com/espressif/esp-idf/blob/b774170ff46c393eeb5e495ea37936038d3f4f4f/components/esp_lcd/rgb/esp_lcd_panel_rgb.c",
+      "publisher": "Espressif ESP-IDF",
+      "version": "Pinned v5.5.5 b774170ff46c393eeb5e495ea37936038d3f4f4f",
+      "use": "Public bits_per_pixel override, physical active wire cycles=h_res*bpp/data_width, actual GDMA EOF/bounce/VSYNC callbacks and separate S3 restart link; no old-buffer overwrite solely from an EOF callback."
+    },
+    {
+      "url": "https://github.com/espressif/esp-idf/blob/fff9895c82d744c7237be8847347bdd1b07c6643/components/esp_lcd/rgb/esp_lcd_panel_rgb.c",
+      "publisher": "Espressif ESP-IDF",
+      "version": "Pinned v6.1 fff9895c82d744c7237be8847347bdd1b07c6643",
+      "use": "Explicit public in/out_color_format controls buffer depth; equal formats disable conversion. GRAY8 is unchanged eight-bit transport, RGB565/RGB888 retain16/24-bit payloads and all declared physical wire-cycle timing. S3 AHB GDMA uses actual EOF handler, not the AXI-only link-switch callback."
     },
     {
       "url": "https://raw.githubusercontent.com/espressif/esp-idf/v5.4/components/esp_lcd/rgb/include/esp_lcd_panel_rgb.h",

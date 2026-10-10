@@ -1,0 +1,75 @@
+TAP version 13
+# random seed: R02Sa5828c19d9fffee5b1e2a1e40bd97b21
+1..27
+# Start of xtensa tests
+# Start of esp32s3 tests
+# Start of spi2 tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 1 /xtensa/esp32s3/spi2/busy-last-edge-no-receiver
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 2 /xtensa/esp32s3/spi2/deadline-traversal-reset-gate-cancel
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 3 /xtensa/esp32s3/spi2/interrupt-mask-w1c-software-set
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 4 /xtensa/esp32s3/spi2/update-and-active-snapshot
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 5 /xtensa/esp32s3/spi2/setup-hold-keep-cs-phase-duration
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 6 /xtensa/esp32s3/spi2/xtal-pll80-all-clock-modes
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 7 /xtensa/esp32s3/spi2/pll-powered-independent-cpu-mux-and-power-gate
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 8 /xtensa/esp32s3/spi2/softreset-local-system-gate-abort
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 9 /xtensa/esp32s3/spi2/register-width-bounds-full-pio
+# slow test /xtensa/esp32s3/spi2/register-width-bounds-full-pio executed in 0.87 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 10 /xtensa/esp32s3/spi2/pio-overflow-strict-pause
+# slow test /xtensa/esp32s3/spi2/pio-overflow-strict-pause executed in 0.91 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 11 /xtensa/esp32s3/spi2/unknown-rx-strict-pause
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 12 /xtensa/esp32s3/spi2/gdma-opposite-direction-reset-preserves-active-tx
+# End of spi2 tests
+# Start of spi3 tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 13 /xtensa/esp32s3/spi3/busy-last-edge-no-receiver
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 14 /xtensa/esp32s3/spi3/deadline-traversal-reset-gate-cancel
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 15 /xtensa/esp32s3/spi3/interrupt-mask-w1c-software-set
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 16 /xtensa/esp32s3/spi3/update-and-active-snapshot
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 17 /xtensa/esp32s3/spi3/setup-hold-keep-cs-phase-duration
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 18 /xtensa/esp32s3/spi3/xtal-pll80-all-clock-modes
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 19 /xtensa/esp32s3/spi3/pll-powered-independent-cpu-mux-and-power-gate
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 20 /xtensa/esp32s3/spi3/softreset-local-system-gate-abort
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 21 /xtensa/esp32s3/spi3/register-width-bounds-full-pio
+# slow test /xtensa/esp32s3/spi3/register-width-bounds-full-pio executed in 0.91 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 22 /xtensa/esp32s3/spi3/pio-overflow-strict-pause
+# slow test /xtensa/esp32s3/spi3/pio-overflow-strict-pause executed in 1.04 secs
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 23 /xtensa/esp32s3/spi3/unknown-rx-strict-pause
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 24 /xtensa/esp32s3/spi3/gdma-opposite-direction-reset-preserves-active-tx
+# End of spi3 tests
+# Start of spi tests
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 25 /xtensa/esp32s3/spi/independent-controllers
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 26 /xtensa/esp32s3/spi/gdma-multidescriptor-4105-byte-tx-cpha0
+# starting QEMU: exec /home/polar/.cache/esp32s3vm/qemu-uart-40edccac4156-048e00bbbc580d38/build-wsl/qemu-system-xtensa -qtest unix:/tmp/qtest-1884791.sock -qtest-log /dev/null -chardev socket,path=/tmp/qtest-1884791.qmp,id=char0 -mon chardev=char0,mode=control -display none -audio none -machine esp32s3 -S -L pc-bios -global driver=esp32s3.gpio,property=strap_mode,value=0x00 -accel qtest
+ok 27 /xtensa/esp32s3/spi/gdma-multidescriptor-4105-byte-tx-cpha1
+# End of spi tests
+# End of esp32s3 tests
+# End of xtensa tests
